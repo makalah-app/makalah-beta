@@ -583,7 +583,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       {!hasMessages ? (
         /* EMPTY STATE: Input centered vertically */
         <div className="flex min-h-full items-center justify-center p-4 md:p-6">
-          <div className="w-full max-w-2xl md:max-w-4xl mx-auto">
+          <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2">
                 Makalah AI Assistant
@@ -626,7 +626,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         <>
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto">
-            <div className="w-full max-w-2xl md:max-w-4xl mx-auto p-3 md:p-4" ref={chatAreaRef}>
+            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
               {/* Streaming Controls */}
               {(status === 'streaming' || status === 'submitted') && (
                 <div className="mb-4 flex justify-end">
@@ -700,7 +700,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
           {/* Fixed Bottom Input Area - Responsive */}
           <div className="shrink-0 border-t border-border bg-background">
-            <div className="w-full max-w-2xl md:max-w-4xl mx-auto p-3 md:p-4">
+            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
               <ChatInput
                 className="transition-all duration-200 ease-in-out"
                 sendMessage={sendMessage}

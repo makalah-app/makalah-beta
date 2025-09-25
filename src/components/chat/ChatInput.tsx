@@ -3,29 +3,35 @@
 /**
  * ChatInput - Input component dengan send functionality dan keyboard shortcuts
  *
- * MIGRATED TO AI ELEMENTS:
- * - Uses AI Elements PromptInput components for consistent design
+ * UPDATED TO AI ELEMENTS:
+ * - Uses official AI SDK Elements PromptInput components for consistency
  * - Integrates dengan existing useChat hook sendMessage
- * - Preserves keyboard shortcuts dan file attachment functionality
+ * - Simplified structure following AI SDK Elements patterns
  *
  * DESIGN COMPLIANCE:
- * - AI Elements styling dengan shadcn/ui base components
+ * - AI SDK Elements styling dengan 3px border radius
  * - Button patterns yang consistent dengan design system
  * - Auto-resize textarea functionality dari AI Elements
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, type FormEventHandler } from 'react';
 import {
   PromptInput,
-  PromptInputBody,
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputTools,
+  PromptInputButton,
   PromptInputSubmit,
-  type PromptInputMessage,
+  type PromptInputProps,
 } from '../ai-elements/prompt-input';
 import { Button } from '../ui/button';
 import { PlusIcon } from 'lucide-react';
+
+// Define message structure for AI SDK compatibility
+export interface PromptInputMessage {
+  text?: string;
+  files?: FileList;
+}
 
 interface ChatInputProps {
   sendMessage: (message: { text: string }) => void; // AI SDK v5 pattern - CreateUIMessage object
@@ -49,34 +55,34 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [text, setText] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle form submission dengan AI Elements pattern
-  const handleSubmit = (message: PromptInputMessage) => {
-    if (!message.text?.trim() && !message.files?.length && !selectedFiles?.length) return;
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault();
+
+    if (!text?.trim() && !selectedFiles?.length) return;
     if (disabled || status !== 'ready') return;
 
     // Send message using AI SDK sendMessage (AI SDK v5 pattern - CreateUIMessage object)
-    const messageText = message.text?.trim() || '';
+    const messageText = text.trim();
 
-    // Handle files if present (from PromptInput or selected files)
-    const files = message.files?.length ? message.files : selectedFiles;
-    if (files?.length) {
-      let fileNames;
-      if (selectedFiles) {
-        fileNames = Array.from(selectedFiles).map(f => f.name).join(', ');
-      } else {
-        fileNames = message.files?.map(f => f.filename || 'Unknown file').join(', ');
-      }
+    // Handle files if present
+    if (selectedFiles?.length) {
+      const fileNames = Array.from(selectedFiles).map(f => f.name).join(', ');
       const messageWithFiles = `${messageText}\n\n[Files attached: ${fileNames}]`;
       sendMessage({ text: messageWithFiles });
-      console.log('[ChatInput] Files attached:', files);
+      console.log('[ChatInput] Files attached:', selectedFiles);
 
       // Clear selected files after sending
       clearFiles();
     } else {
       sendMessage({ text: messageText });
     }
+
+    // Clear text after sending
+    setText('');
   };
 
   // Handle file selection
@@ -144,7 +150,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div className={className}>
       {/* Test Scenarios (Development Mode) */}
       {testMode && (
-        <div className="mb-4 rounded-lg border border-dashed border-orange-300 bg-orange-50 p-4 dark:border-orange-700 dark:bg-orange-950">
+        <div className="mb-4 rounded-[3px] border border-dashed border-orange-300 bg-orange-50 p-4 dark:border-orange-700 dark:bg-orange-950">
           <div className="mb-2 text-sm font-medium text-orange-800 dark:text-orange-200">
             Test Scenarios
           </div>
@@ -166,14 +172,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+        <div className="mb-4 rounded-[3px] border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
           {error}
         </div>
       )}
 
       {/* File Preview */}
       {selectedFiles && selectedFiles.length > 0 && (
-        <div className="mb-4 rounded-lg border border-border bg-card p-3">
+        <div className="mb-4 rounded-[3px] border border-border bg-card p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
               {selectedFiles.length} file(s) attached
@@ -208,43 +214,36 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         className="hidden"
       />
 
-      {/* AI Elements PromptInput - Standardized Style */}
-      <PromptInput
-        className="rounded-[5px] border-border bg-muted divide-y-0"
-        onSubmit={handleSubmit}
-      >
+      {/* AI Elements PromptInput - Clean Standard Implementation */}
+      <PromptInput onSubmit={handleSubmit}>
+        {/* Textarea Input - AI SDK Elements Style */}
+        <PromptInputTextarea
+          placeholder={disabled ? 'Tunggu...' : placeholder}
+          disabled={disabled}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
 
-        <PromptInputBody>
-          {/* Textarea Input - Standardized Style */}
-          <PromptInputTextarea
-            className="px-5 py-3 text-base border-none bg-transparent placeholder:text-muted-foreground focus:ring-0 focus:outline-none"
-            placeholder={disabled ? 'Tunggu...' : placeholder}
-            disabled={disabled}
+        {/* Toolbar with Actions - AI SDK Elements Style */}
+        <PromptInputToolbar>
+          <PromptInputTools>
+            {/* File Upload Button - Using PromptInputButton */}
+            <PromptInputButton
+              onClick={handleFileUploadClick}
+              disabled={disabled}
+              variant="ghost"
+            >
+              <PlusIcon className="h-8 w-8" />
+            </PromptInputButton>
+          </PromptInputTools>
+
+          {/* Submit Button - AI SDK Elements Standard */}
+          <PromptInputSubmit
+            variant="ghost"
+            status={status}
+            disabled={disabled || status !== 'ready' || !text.trim()}
           />
-
-          {/* Toolbar with Actions - Standardized Style */}
-          <PromptInputToolbar className="p-2.5">
-            <PromptInputTools>
-              {/* File Upload Button */}
-              <Button
-                onClick={handleFileUploadClick}
-                disabled={disabled}
-                variant="ghost"
-                size="icon"
-                className="rounded-[5px] text-muted-foreground hover:text-foreground hover:bg-accent h-9 w-9 focus:outline-none focus:ring-0 border-0"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </PromptInputTools>
-
-            {/* Submit Button - Standardized Style */}
-            <PromptInputSubmit
-              className="rounded-[5px] bg-accent-500 hover:bg-accent-400 text-white"
-              status={status}
-              disabled={disabled || status !== 'ready'}
-            />
-          </PromptInputToolbar>
-        </PromptInputBody>
+        </PromptInputToolbar>
       </PromptInput>
 
       {/* Status Message */}

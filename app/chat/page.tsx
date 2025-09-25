@@ -23,17 +23,38 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
 } from '../../src/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../src/components/ui/dropdown-menu';
-import { Button } from '../../src/components/ui/button';
 import { Avatar, AvatarFallback } from '../../src/components/ui/avatar';
 import { Input } from '../../src/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../src/components/ui/tooltip';
 
+function MobileHeader() {
+  const { openMobile } = useSidebar();
+
+  if (openMobile) return null;
+
+  return (
+    <div className="flex md:hidden items-center justify-between p-4 border-b border-border">
+      <div className="flex items-center gap-3">
+        <SidebarTrigger />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center text-sm font-semibold">
+            M
+          </div>
+          <span className="font-semibold">Makalah AI</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
@@ -459,6 +480,9 @@ function ChatPageContent() {
           </Sidebar>
 
           <main className="flex-1 flex flex-col">
+            {/* Mobile Header Bar - Only visible on mobile and when sidebar closed */}
+            <MobileHeader />
+
             {/* Natural LLM Intelligence Interface - No Rigid Workflow Controls */}
             <ChatContainer
               key={currentChatId}
