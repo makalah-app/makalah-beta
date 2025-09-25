@@ -912,7 +912,7 @@ export function createDefaultConfig(): AiConfig {
         }
       },
       approvalGates: {
-        enabled: true,
+        enabled: false,
         required: {
           research_analysis: true,
           outline_generation: true,
@@ -923,8 +923,8 @@ export function createDefaultConfig(): AiConfig {
           final_formatting: true
         },
         autoApproval: {
-          research_analysis: false,
-          outline_generation: false,
+          research_analysis: true,
+          outline_generation: true,
           content_drafting: true,
           citation_integration: true,
           structure_refinement: false,

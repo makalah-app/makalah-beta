@@ -154,7 +154,7 @@ user_preferences           → Personalized settings dan preferences
 workflows                  → Academic workflow instances
 workflow_phases            → Phase progression tracking
 workflow_context           → Research context dan metadata
-approval_gates             → Human-in-the-loop checkpoints
+approval_gates             → Reserved for optional human review metadata (currently disabled)
 
 -- Content Management
 artifacts                  → Generated academic content
@@ -199,7 +199,6 @@ ChatContainer              → Main chat interface dengan streaming support
 MessageDisplay             → Markdown rendering dengan syntax highlighting
 ChatInput                  → AI SDK Elements PromptInput integration
 StreamingHandler           → Real-time message streaming dengan smooth animations
-ApprovalGates              → Human-in-the-loop approval system
 ```
 
 #### **Admin Dashboard**
@@ -518,7 +517,7 @@ streaming/
 ├── sse-handler.ts            # Server-Sent Events handler
 ├── academic-events.ts        # Academic workflow events
 ├── workflow-manager.ts       # Workflow orchestration
-└── approval-gates.ts         # Human-in-the-loop gates
+└── approval-gates.ts         # Legacy HITL helpers (archived in current build)
 ```
 
 #### **Database Layer**
@@ -573,11 +572,6 @@ interface ModelConfiguration {
 // 7-Phase workflow dapat dikustomisasi per institution
 const workflowConfiguration = {
   enabledPhases: [1, 2, 3, 4, 5, 6, 7],
-  approvalGates: {
-    phase2: { required: true, timeout: 300000 },
-    phase4: { required: true, timeout: 600000 },
-    phase6: { required: false, timeout: 180000 }
-  },
   qualityThresholds: {
     academicTone: 0.8,
     citationCount: 5,
@@ -864,8 +858,8 @@ describe('Academic Workflow E2E', () => {
     // 3. Verify phase progression
     await expect(page.locator('[data-testid=phase-indicator]')).toContainText('Phase 1');
 
-    // 4. Test approval gates
-    await page.click('[data-testid=approve-phase]');
+    // 4. Prompt guided progression (natural language)
+    await page.click('[data-testid=send-message]');
     await expect(page.locator('[data-testid=phase-indicator]')).toContainText('Phase 2');
 
     // 5. Verify artifact generation

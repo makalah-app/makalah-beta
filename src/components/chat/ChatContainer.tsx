@@ -658,7 +658,6 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     addToolResult={addToolResult}
                     sendMessage={sendMessage}
                     citations={citations}
-                    allMessages={messages}
                   />
                 ))}
               </div>

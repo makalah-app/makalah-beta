@@ -479,7 +479,7 @@ export interface WorkflowState {
   currentPhase: AcademicPhase;
   completedPhases: AcademicPhase[];
   phaseHistory: PhaseTransition[];
-  approvalGates: ApprovalGate[];
+  approvalGates?: ApprovalGate[];
   blockers: WorkflowBlocker[];
   estimatedCompletion?: Date;
 }

@@ -8,7 +8,16 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit -p tsconfig.app.json",
-    "type-check:watch": "tsc --noEmit --watch"
+    "type-check:watch": "tsc --noEmit --watch",
+    "secrets": "npx tsx scripts/secrets-cli.ts",
+    "secrets:store": "npm run secrets store",
+    "secrets:get": "npm run secrets get",
+    "secrets:rotate": "npm run secrets rotate",
+    "secrets:check": "npm run secrets check",
+    "secrets:list": "npm run secrets list",
+    "secrets:health": "npm run secrets health",
+    "secrets:validate": "npm run secrets validate",
+    "secrets:generate": "npm run secrets generate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.15",
@@ -77,9 +86,11 @@
     "@types/react-dom": "^18.3.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
+    "commander": "^13.1.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
     "node-fetch": "^2.7.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.4.0"
   },
   "engines": {

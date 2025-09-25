@@ -115,7 +115,6 @@ export const STREAMING_CONFIG = {
     'text-end',
     'tool-call',
     'tool-result',
-    'approval-request',
     'phase-transition',
     'error',
     'done'
