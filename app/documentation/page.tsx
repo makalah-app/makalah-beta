@@ -69,7 +69,6 @@ export default function DocumentationPage() {
         return (
           <div className="space-y-8">
             <div>
-              <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Mulai</div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
                   <Brain className="w-5 h-5 text-primary" />
@@ -88,26 +87,26 @@ export default function DocumentationPage() {
                 untuk peneliti dan mahasiswa Indonesia yang ingin meningkatkan kualitas penulisan akademik mereka.
               </p>
 
-              <Card className="border-l-4 border-l-primary">
+              <Card className="border-l-4 border-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Fitur Utama</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2 text-muted-foreground">
+                  <ul className="space-y-2 text-muted-foreground list-disc pl-5">
                     <li>
-                      • <strong>Chat dengan AI Agent</strong> - Berinteraksi langsung dengan AI untuk panduan penulisan
+                      <strong>Chat dengan AI Agent</strong> - Berinteraksi langsung dengan AI untuk panduan penulisan
                     </li>
                     <li>
-                      • <strong>Sistem Penelitian</strong> - Kelola dokumen dan file penelitian dengan mudah
+                      <strong>Sistem Penelitian</strong> - Kelola dokumen dan file penelitian dengan mudah
                     </li>
                     <li>
-                      • <strong>7 Fase Terstruktur</strong> - Proses penulisan yang sistematis dan terarah
+                      <strong>7 Fase Terstruktur</strong> - Proses penulisan yang sistematis dan terarah
                     </li>
                     <li>
-                      • <strong>Web Search Integration</strong> - Pencarian akademik yang terintegrasi dengan AI
+                      <strong>Web Search Integration</strong> - Pencarian akademik yang terintegrasi dengan AI
                     </li>
                     <li>
-                      • <strong>Kolaborasi Real-time</strong> - Bekerja sama dengan tim peneliti lainnya
+                      <strong>Kolaborasi Real-time</strong> - Bekerja sama dengan tim peneliti lainnya
                     </li>
                   </ul>
                 </CardContent>
@@ -165,7 +164,7 @@ export default function DocumentationPage() {
             </div>
 
             <div className="space-y-6">
-              <Card className="border-l-4 border-l-primary">
+              <Card className="border-l-4 border-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Langkah 1: Mulai Chat Baru</CardTitle>
                 </CardHeader>
@@ -177,9 +176,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-green-500">
+              <Card className="border-l-4 border-secondary">
                 <CardHeader>
-                  <CardTitle className="text-green-500">Langkah 2: Klarifikasi Topik</CardTitle>
+                  <CardTitle className="text-secondary-foreground">Langkah 2: Klarifikasi Topik</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -189,9 +188,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-blue-500">
+              <Card className="border-l-4 border-muted">
                 <CardHeader>
-                  <CardTitle className="text-blue-500">Langkah 3: Ikuti 7 Fase</CardTitle>
+                  <CardTitle className="text-foreground">Langkah 3: Ikuti 7 Fase</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -237,7 +236,7 @@ export default function DocumentationPage() {
                 <Card key={item.phase} className="hover:bg-card/70 transition-colors">
                   <CardContent className="pt-6">
                     <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 flex items-center justify-center text-white font-semibold mr-4 bg-primary rounded-[3px]">
+                      <div className="w-8 h-8 flex items-center justify-center text-primary-foreground font-semibold mr-4 bg-primary rounded-[3px]">
                         {item.phase}
                       </div>
                       <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
@@ -267,23 +266,23 @@ export default function DocumentationPage() {
             </div>
 
             <div className="space-y-8">
-              <Card className="border-l-4 border-l-primary">
+              <Card className="border-l-4 border-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Informasi yang Kami Kumpulkan</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• Data akun pengguna (nama, email, preferensi)</li>
-                    <li>• Konten makalah dan dokumen yang dibuat</li>
-                    <li>• Riwayat interaksi dengan AI Agent</li>
-                    <li>• Data penggunaan platform untuk peningkatan layanan</li>
+                  <ul className="space-y-2 text-muted-foreground list-disc pl-5">
+                    <li>Data akun pengguna (nama, email, preferensi)</li>
+                    <li>Konten makalah dan dokumen yang dibuat</li>
+                    <li>Riwayat interaksi dengan AI Agent</li>
+                    <li>Data penggunaan platform untuk peningkatan layanan</li>
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-green-500">
+              <Card className="border-l-4 border-secondary">
                 <CardHeader>
-                  <CardTitle className="text-green-500">Penggunaan Data</CardTitle>
+                  <CardTitle className="text-secondary-foreground">Penggunaan Data</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -294,9 +293,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-l-blue-500">
+              <Card className="border-l-4 border-muted">
                 <CardHeader>
-                  <CardTitle className="text-blue-500">Keamanan Data</CardTitle>
+                  <CardTitle className="text-foreground">Keamanan Data</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -333,18 +332,9 @@ export default function DocumentationPage() {
   };
 
   return (
-    <div className="relative">
-      {/* Hero Pattern Background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-
+    <div className="relative min-h-screen">
       <SidebarProvider>
-        <div className="flex relative z-10 min-h-screen">
+        <div className="flex min-h-screen">
           {/* Sidebar */}
           <Sidebar
             collapsible="none"
