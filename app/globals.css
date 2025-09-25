@@ -373,3 +373,49 @@
 .select-hover {
   @apply hover:bg-gray-50 hover:bg-opacity-50 dark:hover:bg-gray-700 hover:border-blue-400 focus:border-blue-500 transition-all duration-200 cursor-pointer;
 }
+
+/* Ultra thin scrollbar for sidebar - 2px width, subtle appearance */
+.sidebar-thin-scroll::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.sidebar-thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.sidebar-thin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+.sidebar-thin-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+}
+
+/* Firefox scrollbar support */
+.sidebar-thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+/* Optional: Nearly invisible scrollbar variant */
+.sidebar-invisible-scroll::-webkit-scrollbar {
+  width: 1px;
+  height: 1px;
+}
+
+.sidebar-invisible-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-invisible-scroll::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.1);
+  border-radius: 1px;
+}
+
+.sidebar-invisible-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+}
