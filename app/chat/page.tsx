@@ -28,13 +28,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '../../src/components/ui/button';
 import { Avatar, AvatarFallback } from '../../src/components/ui/avatar';
 import { Input } from '../../src/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../src/components/ui/tooltip';
 
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
-  const { conversations, loading: historyLoading } = useChatHistory();
+  const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Helper function untuk truncate judul - CLEAN & SIMPLE
@@ -88,7 +89,7 @@ function ChatPageContent() {
     return groups;
   };
 
-  const conversationGroups = groupConversationsByDate(filteredConversations.slice(0, 50));
+  const conversationGroups = groupConversationsByDate(filteredConversations);
   const activeConversationId = getActiveConversationId();
 
   // ✅ CRITICAL FIX: Initialize chat ID with stable dependencies - REMOVE currentChatId from deps to prevent loop
@@ -307,8 +308,8 @@ function ChatPageContent() {
                 <SidebarMenu>
                   <SidebarMenuItem className="border-b border-border py-2">
                     <SidebarMenuButton onClick={handleNewChat}>
-                      <MessageSquare className="w-4 h-4" />
-                      <span>New chat</span>
+                      <MessageSquare className="w-4 h-4 text-sm" />
+                      <span>Percakapan Baru</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
@@ -327,24 +328,38 @@ function ChatPageContent() {
                       <SidebarMenu>
                         {groupConversations.map((conversation) => {
                           const isActive = activeConversationId === conversation.id;
+                          const fullTitle = conversation.title || 'New Conversation';
+                          const shouldShowTooltip = fullTitle.length > 39;
+
                           return (
-                            <SidebarMenuItem key={conversation.id} className="group">
+                            <SidebarMenuItem key={conversation.id}>
                               <div className="flex items-center gap-1">
-                                <SidebarMenuButton
-                                  onClick={() => handleConversationClick(conversation.id)}
-                                  className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
-                                    isActive ? 'bg-muted/70 text-primary font-medium' : 'text-muted-foreground'
-                                  }`}
-                                >
-                                  <MessageCircle className="w-4 h-4" />
-                                  <span className="truncate">
-                                    {truncateTitle(conversation.title || 'New Conversation', 24)}
-                                  </span>
-                                  {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-                                </SidebarMenuButton>
+                                <TooltipProvider>
+                                  <Tooltip delayDuration={500}>
+                                    <TooltipTrigger asChild>
+                                      <SidebarMenuButton
+                                        onClick={() => handleConversationClick(conversation.id)}
+                                        className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
+                                          isActive ? 'bg-muted/70 text-primary font-medium' : 'text-muted-foreground'
+                                        }`}
+                                      >
+                                        <MessageCircle className="w-4 h-4" />
+                                        <span className="truncate">
+                                          {truncateTitle(fullTitle, 39)}
+                                        </span>
+                                        {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                                      </SidebarMenuButton>
+                                    </TooltipTrigger>
+                                    {shouldShowTooltip && (
+                                      <TooltipContent side="right" className="max-w-xs rounded-[3px] bg-green-600 text-white">
+                                        <p className="text-xs">{fullTitle}</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
                                 <button
                                   onClick={() => handleDeleteConversation(conversation.id)}
-                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
+                                  className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
                                   aria-label="Delete conversation"
                                 >
                                   <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
@@ -369,6 +384,35 @@ function ChatPageContent() {
                           <span className="text-muted-foreground text-sm">
                             {searchQuery ? 'No matching conversations' : 'No conversations yet'}
                           </span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              )}
+
+              {/* Load More Button */}
+              {!searchQuery && hasMore && filteredConversations.length > 0 && (
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={loadMore}
+                          disabled={loadingMore}
+                          className="w-full justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {loadingMore ? (
+                            <>
+                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4 mr-2" />
+                              <span>Sebelumnya</span>
+                            </>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </SidebarMenu>
