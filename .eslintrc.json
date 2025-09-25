@@ -1,0 +1,32 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "CallExpression[callee.object.callee.name='require'][callee.object.arguments.0.value='crypto'][callee.property.name='randomUUID']",
+        "message": "❌ CRYPTO ERROR PREVENTION: Use generateUUID() from @/lib/utils/uuid-generator instead of require('crypto').randomUUID()."
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "crypto",
+            "message": "❌ CRYPTO ERROR PREVENTION: Import specific utilities from @/lib/utils/uuid-generator or @/lib/utils/crypto-polyfill instead of Node.js crypto module to ensure cross-environment compatibility."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["test-utils/**/*.js", "tests/**/*.js", "**/*.test.js", "**/*.test.ts", "**/crypto-polyfill.ts"],
+      "rules": {
+        "no-restricted-syntax": "off",
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

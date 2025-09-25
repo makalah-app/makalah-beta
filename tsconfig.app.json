@@ -1,0 +1,37 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "plugins": [],
+    "types": []
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/admin/**/*",
+    "app/auth/**/*",
+    "app/layout.tsx",
+    "src/lib/ai/config.ts",
+    
+    "src/lib/ai/tools/search/**/*",
+    
+    "src/lib/ai/model-registry.ts",
+    
+    "src/components/admin/**/*",
+    "src/components/auth/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "src/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "temp_complete_route.ts",
+    "app/api/**",
+    "app/chat/**",
+    "app/conversations/**",
+    "src/lib/error-handling/**",
+    "src/lib/utils/crypto-polyfill.ts",
+    "src/lib/database/**"
+  ]
+}

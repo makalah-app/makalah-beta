@@ -1,0 +1,285 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/components/theme/ThemeProvider';
+
+interface FormData {
+  email: string;
+  password: string;
+  fullName?: string;
+  confirmPassword?: string;
+}
+
+export default function AuthPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { login, register, isLoading, error } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+    fullName: "",
+    confirmPassword: ""
+  });
+
+  // Component mount check
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Check URL params for tab
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'register') {
+      setIsRegisterMode(true);
+    }
+  }, [searchParams]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (isRegisterMode) {
+        if (formData.password !== formData.confirmPassword) {
+          alert('Password tidak cocok');
+          return;
+        }
+        await register({
+          email: formData.email,
+          password: formData.password,
+          fullName: formData.fullName || '',
+          role: 'student', // Default role untuk registrasi umum
+        });
+        // Redirect to login after successful registration
+        setIsRegisterMode(false);
+        setFormData({ email: formData.email, password: '', fullName: '', confirmPassword: '' });
+      } else {
+        await login({
+          email: formData.email,
+          password: formData.password,
+          rememberMe,
+        });
+
+        // Get redirect URL from search params
+        const redirectTo = searchParams.get('redirectTo');
+
+        // Validate redirect URL for security (must be internal URL)
+        const isValidRedirect = redirectTo &&
+          (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) &&
+          !redirectTo.includes('../') &&
+          !redirectTo.startsWith('/auth'); // Prevent redirect loop
+
+        if (isValidRedirect) {
+          router.push(redirectTo);
+        } else {
+          // Default behavior: redirect to chat
+          router.push('/chat');
+        }
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+    }
+  };
+
+  const toggleMode = () => {
+    setIsRegisterMode(!isRegisterMode);
+    setFormData({ email: '', password: '', fullName: '', confirmPassword: '' });
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  if (!mounted) {
+    return null; // Prevent hydration mismatch
+  }
+
+  return (
+    <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-6 py-12 relative">
+        <div className={`absolute inset-0 opacity-30 ${resolvedTheme === "light" ? "hero-pattern-light" : "hero-pattern-dark"}`}></div>
+
+        <div className="w-full max-w-md relative z-10">
+          <Card className="p-8 border-border bg-card shadow-lg">
+            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
+                  <div className="logo-m-small">
+                    M
+                  </div>
+                </Link>
+              </div>
+              <h1 className="text-xl font-medium mb-2 text-foreground font-heading">
+                {isRegisterMode ? 'Daftar Akun Baru' : 'Masuk ke Akun'}
+              </h1>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-ui-loose">
+              {isRegisterMode && (
+                <div className="space-ui-medium">
+                  <Label htmlFor="fullName" className="text-sm font-medium text-foreground">
+                    Nama Lengkap
+                  </Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan nama lengkap"
+                    required
+                  />
+                </div>
+              )}
+
+              <div className="space-ui-medium">
+                <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="nama@email.com"
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-ui-medium">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Masukkan password"
+                    className="pl-10 pr-10"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {isRegisterMode && (
+                <div className="space-ui-medium">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                    Konfirmasi Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="Konfirmasi password"
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {!isRegisterMode && (
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    />
+                    <Label htmlFor="remember" className="text-muted-foreground cursor-pointer">
+                      Ingat saya
+                    </Label>
+                  </div>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-primary hover:text-primary/80 transition-colors hover:underline"
+                  >
+                    Lupa password?
+                  </Link>
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-destructive text-center">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Loading...' : (isRegisterMode ? 'Daftar' : 'Masuk')}
+              </Button>
+            </form>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                {isRegisterMode ? 'Sudah punya akun?' : 'Belum punya akun?'}{" "}
+                <Button
+                  variant="link"
+                  onClick={toggleMode}
+                  className="h-auto p-0 font-medium"
+                >
+                  {isRegisterMode ? 'Masuk sekarang' : 'Daftar sekarang'}
+                </Button>
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

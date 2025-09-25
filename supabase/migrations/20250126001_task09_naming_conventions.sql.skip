@@ -1,0 +1,363 @@
+-- Migration: Task 09 - Naming Conventions System
+-- Description: Structured naming patterns untuk academic artifacts
+-- Author: Database Architect - Task 09 Implementation
+-- Date: 2025-01-26
+
+-- =====================================================
+-- NAMING CONVENTION ENUMS AND TYPES
+-- =====================================================
+
+-- Create artifact category enum untuk directory structure
+CREATE TYPE artifact_category AS ENUM (
+    'research',
+    'drafts', 
+    'citations',
+    'references',
+    'templates',
+    'uploads',
+    'generated',
+    'backups',
+    'archive'
+);
+
+-- Create file organization structure type
+CREATE TYPE file_organization AS (
+    user_path TEXT,
+    workflow_path TEXT,
+    phase_path TEXT,
+    category_path TEXT,
+    version_path TEXT,
+    full_path TEXT
+);
+
+-- =====================================================
+-- NAMING CONVENTION FUNCTIONS
+-- =====================================================
+
+-- Function to generate structured file path dengan naming conventions
+CREATE OR REPLACE FUNCTION generate_artifact_file_path(
+    user_uuid UUID,
+    workflow_uuid UUID,
+    phase_name TEXT DEFAULT NULL,
+    artifact_name TEXT,
+    artifact_type_val artifact_type,
+    version_number INTEGER DEFAULT 1,
+    file_extension TEXT DEFAULT '.txt'
+)
+RETURNS TEXT AS $$
+DECLARE
+    user_folder TEXT;
+    workflow_folder TEXT;
+    phase_folder TEXT;
+    category_folder TEXT;
+    filename TEXT;
+    full_path TEXT;
+    safe_artifact_name TEXT;
+BEGIN
+    -- Get user email untuk folder name
+    SELECT REPLACE(LOWER(email), '@', '_at_') INTO user_folder
+    FROM public.users WHERE id = user_uuid;
+    
+    IF user_folder IS NULL THEN
+        user_folder := 'user_' || SUBSTRING(user_uuid::TEXT, 1, 8);
+    END IF;
+    
+    -- Create workflow folder dari workflow name atau ID
+    SELECT COALESCE(
+        LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9_]', '_', 'g')), 
+        'workflow_' || SUBSTRING(workflow_uuid::TEXT, 1, 8)
+    ) INTO workflow_folder
+    FROM public.workflows WHERE id = workflow_uuid;
+    
+    IF workflow_folder IS NULL THEN
+        workflow_folder := 'workflow_' || SUBSTRING(workflow_uuid::TEXT, 1, 8);
+    END IF;
+    
+    -- Create phase folder if provided
+    IF phase_name IS NOT NULL THEN
+        phase_folder := LOWER(REGEXP_REPLACE(phase_name, '[^a-zA-Z0-9_]', '_', 'g'));
+    ELSE
+        phase_folder := 'general';
+    END IF;
+    
+    -- Map artifact type to category folder
+    category_folder := CASE artifact_type_val
+        WHEN 'research_document' THEN 'research'
+        WHEN 'outline' THEN 'drafts'
+        WHEN 'draft_section' THEN 'drafts'
+        WHEN 'final_document' THEN 'research'
+        WHEN 'citation_list' THEN 'citations'
+        WHEN 'reference_material' THEN 'references'
+        WHEN 'user_upload' THEN 'uploads'
+        WHEN 'ai_generated' THEN 'generated'
+        WHEN 'template' THEN 'templates'
+        WHEN 'backup' THEN 'backups'
+        ELSE 'general'
+    END;
+    
+    -- Sanitize artifact name
+    safe_artifact_name := LOWER(REGEXP_REPLACE(artifact_name, '[^a-zA-Z0-9_\-]', '_', 'g'));
+    safe_artifact_name := REGEXP_REPLACE(safe_artifact_name, '_+', '_', 'g');
+    safe_artifact_name := TRIM(safe_artifact_name, '_');
+    
+    -- Generate filename dengan version
+    filename := safe_artifact_name || '_v' || version_number::TEXT || file_extension;
+    
+    -- Construct full path
+    full_path := 'artifacts/' || 
+                user_folder || '/' ||
+                workflow_folder || '/' ||
+                phase_folder || '/' ||
+                category_folder || '/' ||
+                filename;
+    
+    RETURN full_path;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to parse file path dan extract components
+CREATE OR REPLACE FUNCTION parse_artifact_file_path(file_path TEXT)
+RETURNS file_organization AS $$
+DECLARE
+    path_segments TEXT[];
+    result file_organization;
+BEGIN
+    path_segments := string_to_array(file_path, '/');
+    
+    -- Validate path structure (minimum 6 segments: bucket/user/workflow/phase/category/file)
+    IF array_length(path_segments, 1) < 6 THEN
+        RAISE EXCEPTION 'Invalid file path structure: %', file_path;
+    END IF;
+    
+    result.user_path := path_segments[2];
+    result.workflow_path := path_segments[3];
+    result.phase_path := path_segments[4];
+    result.category_path := path_segments[5];
+    result.version_path := SUBSTRING(path_segments[6] FROM '_v(\d+)');
+    result.full_path := file_path;
+    
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to validate naming convention compliance
+CREATE OR REPLACE FUNCTION validate_naming_convention(
+    file_path TEXT,
+    expected_user_id UUID DEFAULT NULL,
+    expected_workflow_id UUID DEFAULT NULL
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    path_parts file_organization;
+    user_match BOOLEAN := true;
+    workflow_match BOOLEAN := true;
+BEGIN
+    -- Parse the path
+    path_parts := parse_artifact_file_path(file_path);
+    
+    -- Validate user folder if expected_user_id provided
+    IF expected_user_id IS NOT NULL THEN
+        SELECT COUNT(*) > 0 INTO user_match
+        FROM public.users
+        WHERE id = expected_user_id
+        AND (
+            REPLACE(LOWER(email), '@', '_at_') = path_parts.user_path OR
+            ('user_' || SUBSTRING(id::TEXT, 1, 8)) = path_parts.user_path
+        );
+    END IF;
+    
+    -- Validate workflow folder if expected_workflow_id provided
+    IF expected_workflow_id IS NOT NULL THEN
+        SELECT COUNT(*) > 0 INTO workflow_match
+        FROM public.workflows
+        WHERE id = expected_workflow_id
+        AND (
+            LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9_]', '_', 'g')) = path_parts.workflow_path OR
+            ('workflow_' || SUBSTRING(id::TEXT, 1, 8)) = path_parts.workflow_path
+        );
+    END IF;
+    
+    -- Check path structure dan component validity
+    RETURN (
+        file_path ~ '^artifacts\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_\-]+_v\d+\.[a-z0-9]+$' AND
+        user_match AND
+        workflow_match AND
+        path_parts.category_path IN ('research', 'drafts', 'citations', 'references', 'templates', 'uploads', 'generated', 'backups', 'general')
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- BATCH NAMING FUNCTIONS
+-- =====================================================
+
+-- Function to generate batch file paths untuk multiple artifacts
+CREATE OR REPLACE FUNCTION generate_batch_artifact_paths(
+    user_uuid UUID,
+    workflow_uuid UUID,
+    artifact_names TEXT[],
+    artifact_types artifact_type[],
+    phase_name TEXT DEFAULT NULL,
+    base_version INTEGER DEFAULT 1
+)
+RETURNS TABLE(
+    artifact_name TEXT,
+    artifact_type artifact_type,
+    generated_path TEXT,
+    version_number INTEGER
+) AS $$
+DECLARE
+    i INTEGER;
+BEGIN
+    -- Validate input arrays have same length
+    IF array_length(artifact_names, 1) != array_length(artifact_types, 1) THEN
+        RAISE EXCEPTION 'artifact_names and artifact_types arrays must have same length';
+    END IF;
+    
+    FOR i IN 1..array_length(artifact_names, 1) LOOP
+        artifact_name := artifact_names[i];
+        artifact_type := artifact_types[i];
+        generated_path := generate_artifact_file_path(
+            user_uuid,
+            workflow_uuid,
+            phase_name,
+            artifact_names[i],
+            artifact_types[i],
+            base_version,
+            CASE artifact_types[i]
+                WHEN 'research_document' THEN '.pdf'
+                WHEN 'outline' THEN '.md'
+                WHEN 'draft_section' THEN '.md'
+                WHEN 'final_document' THEN '.pdf'
+                WHEN 'citation_list' THEN '.bib'
+                WHEN 'reference_material' THEN '.pdf'
+                WHEN 'user_upload' THEN '.txt'
+                WHEN 'ai_generated' THEN '.json'
+                WHEN 'template' THEN '.tpl'
+                WHEN 'backup' THEN '.bak'
+                ELSE '.txt'
+            END
+        );
+        version_number := base_version;
+        
+        RETURN NEXT;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to clean up naming violations
+CREATE OR REPLACE FUNCTION fix_naming_violations()
+RETURNS TABLE(
+    artifact_id UUID,
+    old_path TEXT,
+    new_path TEXT,
+    fixed BOOLEAN
+) AS $$
+DECLARE
+    artifact_record RECORD;
+    corrected_path TEXT;
+    file_ext TEXT;
+BEGIN
+    FOR artifact_record IN 
+        SELECT id, file_path, user_id, workflow_id, name, artifact_type, current_version
+        FROM public.artifacts
+        WHERE file_path IS NOT NULL
+        AND NOT validate_naming_convention(file_path, user_id, workflow_id)
+    LOOP
+        -- Extract file extension dari current path
+        file_ext := SUBSTRING(artifact_record.file_path FROM '\.([a-z0-9]+)$');
+        IF file_ext IS NULL THEN
+            file_ext := '.txt';
+        ELSE
+            file_ext := '.' || file_ext;
+        END IF;
+        
+        -- Generate corrected path
+        corrected_path := generate_artifact_file_path(
+            artifact_record.user_id,
+            artifact_record.workflow_id,
+            NULL, -- phase_name will be determined from workflow
+            artifact_record.name,
+            artifact_record.artifact_type,
+            artifact_record.current_version,
+            file_ext
+        );
+        
+        -- Return results for review (don't actually update yet)
+        artifact_id := artifact_record.id;
+        old_path := artifact_record.file_path;
+        new_path := corrected_path;
+        fixed := (corrected_path != artifact_record.file_path);
+        
+        RETURN NEXT;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- UTILITY FUNCTIONS FOR PATH MANAGEMENT
+-- =====================================================
+
+-- Function to get artifact statistics by path structure
+CREATE OR REPLACE FUNCTION get_path_statistics()
+RETURNS TABLE(
+    category TEXT,
+    count BIGINT,
+    total_size BIGINT,
+    avg_size NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH path_analysis AS (
+        SELECT 
+            (parse_artifact_file_path(file_path)).category_path as category,
+            file_size
+        FROM public.artifacts
+        WHERE file_path IS NOT NULL AND status = 'active'
+    )
+    SELECT 
+        pa.category,
+        COUNT(*) as count,
+        COALESCE(SUM(pa.file_size), 0) as total_size,
+        ROUND(AVG(pa.file_size), 2) as avg_size
+    FROM path_analysis pa
+    GROUP BY pa.category
+    ORDER BY count DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to detect naming conflicts
+CREATE OR REPLACE FUNCTION detect_naming_conflicts()
+RETURNS TABLE(
+    conflict_path TEXT,
+    artifact_ids UUID[],
+    conflict_count BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        file_path,
+        array_agg(id) as artifact_ids,
+        COUNT(*) as conflict_count
+    FROM public.artifacts
+    WHERE file_path IS NOT NULL AND status != 'deleted'
+    GROUP BY file_path
+    HAVING COUNT(*) > 1
+    ORDER BY conflict_count DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- COMMENTS AND DOCUMENTATION
+-- =====================================================
+
+COMMENT ON FUNCTION generate_artifact_file_path() IS 'Generates structured file paths following naming conventions';
+COMMENT ON FUNCTION parse_artifact_file_path() IS 'Parses file path into organized components';
+COMMENT ON FUNCTION validate_naming_convention() IS 'Validates file path compliance dengan naming standards';
+COMMENT ON FUNCTION generate_batch_artifact_paths() IS 'Generates multiple artifact paths in batch operations';
+COMMENT ON FUNCTION fix_naming_violations() IS 'Identifies dan suggests fixes untuk naming violations';
+COMMENT ON FUNCTION get_path_statistics() IS 'Provides statistics on file organization by category';
+COMMENT ON FUNCTION detect_naming_conflicts() IS 'Detects duplicate file paths yang need resolution';
+
+COMMENT ON TYPE file_organization IS 'Structured representation of parsed file path components';
+COMMENT ON TYPE artifact_category IS 'Standard categories for artifact organization';

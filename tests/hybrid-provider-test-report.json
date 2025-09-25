@@ -1,0 +1,295 @@
+{
+  "timestamp": "2025-09-09T22:24:48.525Z",
+  "duration": "7s",
+  "overallStatus": "FAILED",
+  "overallSuccessRate": "20.0%",
+  "totalTests": 15,
+  "totalPassed": 3,
+  "summary": {
+    "databaseMigration": "1/3",
+    "apiKeyEncryption": "1/3",
+    "hybridProviderSwitching": "1/3",
+    "integration": "0/3",
+    "endToEnd": "0/3"
+  },
+  "details": {
+    "databaseMigration": {
+      "passed": 1,
+      "total": 3,
+      "successRate": 33.33333333333333,
+      "tests": {
+        "modelConfigsTable": {
+          "passed": false,
+          "message": "Error: undefined",
+          "details": {
+            "success": false,
+            "error": {
+              "message": "No authorization header",
+              "type": "auth_error",
+              "code": "ADMIN_ONLY"
+            }
+          }
+        },
+        "providerToolsTable": {
+          "passed": false,
+          "message": "Provider tools endpoint not ready",
+          "details": {
+            "success": false,
+            "error": {
+              "message": "No authorization header",
+              "type": "auth_error",
+              "code": "ADMIN_ONLY"
+            }
+          }
+        },
+        "dataIntegrity": {
+          "passed": true,
+          "message": "Endpoint protected (expected)",
+          "details": {
+            "success": false,
+            "error": {
+              "message": "No authorization header",
+              "type": "auth_error",
+              "code": "ADMIN_ONLY"
+            }
+          }
+        }
+      }
+    },
+    "apiKeyEncryption": {
+      "passed": 1,
+      "total": 3,
+      "successRate": 33.33333333333333,
+      "tests": {
+        "encryptionRoundtrip": {
+          "passed": true,
+          "message": "Encryption endpoint protected",
+          "details": {
+            "success": false,
+            "error": {
+              "message": "No authorization header",
+              "type": "auth_error",
+              "code": "ADMIN_ONLY"
+            }
+          }
+        },
+        "hintGeneration": {
+          "passed": false,
+          "message": "Error: undefined",
+          "details": {
+            "success": false,
+            "error": {
+              "message": "No authorization header",
+              "type": "auth_error",
+              "code": "ADMIN_ONLY"
+            }
+          }
+        },
+        "environmentFallback": {
+          "passed": false,
+          "message": "Database-only mode",
+          "details": {
+            "environmentFallback": false
+          }
+        }
+      }
+    },
+    "hybridProviderSwitching": {
+      "passed": 1,
+      "total": 3,
+      "successRate": 33.33333333333333,
+      "tests": {
+        "textGenerationSwitching": {
+          "passed": true,
+          "message": "Hybrid provider switching active",
+          "details": {
+            "success": true,
+            "data": {
+              "timestamp": "2025-09-09T22:24:43.989Z",
+              "tests": {
+                "initialization": {
+                  "status": "PASSED",
+                  "result": true,
+                  "message": "Hybrid provider manager initialized successfully"
+                },
+                "configuration": {
+                  "status": "PASSED",
+                  "result": {
+                    "textGeneration": {
+                      "primary": "openai/gpt-4o",
+                      "fallbackCount": 0,
+                      "systemPromptLength": 76
+                    },
+                    "toolExecution": {
+                      "web_search": "openai/gpt-4o"
+                    },
+                    "healthMonitoring": {
+                      "enabled": true,
+                      "intervalMs": 300000,
+                      "timeoutMs": 30000
+                    }
+                  },
+                  "message": "Configuration loaded successfully"
+                },
+                "textModelPrimary": {
+                  "status": "FAILED",
+                  "result": "Model creation failed",
+                  "message": "Failed to create primary text model"
+                },
+                "textModelFallback": {
+                  "status": "FAILED",
+                  "result": "Model creation failed",
+                  "message": "Failed to create fallback text model"
+                },
+                "toolProviderWebSearch": {
+                  "status": "PASSED",
+                  "result": {
+                    "provider": "openai",
+                    "model": "gpt-4o",
+                    "role": "tool",
+                    "hasApiKey": true
+                  },
+                  "message": "Web search tool provider selected successfully"
+                },
+                "providerStatus": {
+                  "status": "PASSED",
+                  "result": {
+                    "totalProviders": 4,
+                    "providers": [
+                      {
+                        "key": "text_openai",
+                        "status": "offline",
+                        "context": "text_generation",
+                        "provider": "openai",
+                        "role": "primary",
+                        "consecutiveFailures": 0
+                      },
+                      {
+                        "key": "text_openrouter",
+                        "status": "offline",
+                        "context": "text_generation",
+                        "provider": "openrouter",
+                        "role": "primary",
+                        "consecutiveFailures": 0
+                      },
+                      {
+                        "key": "tool_openai",
+                        "status": "offline",
+                        "context": "tool_execution",
+                        "provider": "openai",
+                        "role": "tool",
+                        "consecutiveFailures": 0
+                      },
+                      {
+                        "key": "tool_openrouter",
+                        "status": "offline",
+                        "context": "tool_execution",
+                        "provider": "openrouter",
+                        "role": "tool",
+                        "consecutiveFailures": 0
+                      }
+                    ]
+                  },
+                  "message": "Provider status tracking working with 4 providers"
+                },
+                "healthCheck": {
+                  "status": "PASSED",
+                  "result": {
+                    "totalChecked": 2,
+                    "healthy": 0,
+                    "unhealthy": 2,
+                    "results": [
+                      {
+                        "key": "text_openai",
+                        "success": false,
+                        "latency": 0,
+                        "error": "openaiProvider is not a function",
+                        "timestamp": "2025-09-09T22:24:45.623Z"
+                      },
+                      {
+                        "key": "tool_openai",
+                        "success": false,
+                        "latency": 0,
+                        "error": "openaiProvider is not a function",
+                        "timestamp": "2025-09-09T22:24:45.623Z"
+                      }
+                    ]
+                  },
+                  "message": "Health check completed: 0 healthy, 2 unhealthy"
+                }
+              },
+              "summary": {
+                "passed": 5,
+                "failed": 2,
+                "total": 7,
+                "successRate": "71%",
+                "overallStatus": "PASSED"
+              }
+            },
+            "message": "HybridProviderManager Integration Test: PASSED (71%)"
+          }
+        },
+        "toolProviderAssignment": {
+          "passed": false,
+          "message": "Tool endpoint protected"
+        },
+        "healthMonitoring": {
+          "passed": false,
+          "message": "OpenAI: FAIL, OpenRouter: FAIL",
+          "details": {}
+        }
+      }
+    },
+    "integration": {
+      "passed": 0,
+      "total": 3,
+      "successRate": 0,
+      "tests": {
+        "adminConfigEndpoints": {
+          "passed": false,
+          "message": "GET: FAIL, POST: FAIL",
+          "details": {}
+        },
+        "chatRouteIntegration": {
+          "passed": false,
+          "message": "Chat endpoint protected/validation"
+        },
+        "authenticationFlow": {
+          "passed": false,
+          "message": "Access granted"
+        }
+      }
+    },
+    "endToEnd": {
+      "passed": 0,
+      "total": 3,
+      "successRate": 0,
+      "tests": {
+        "completeConfigurationFlow": {
+          "passed": false,
+          "message": "Config: FAIL, Health: FAIL",
+          "details": {
+            "health": [
+              null,
+              null
+            ]
+          }
+        },
+        "chatFunctionality": {
+          "passed": false,
+          "message": "Chat requires authentication"
+        },
+        "systemStability": {
+          "passed": false,
+          "message": "System stability: 0.0% success rate",
+          "details": {
+            "totalRequests": 4,
+            "successful": 0,
+            "successRate": 0
+          }
+        }
+      }
+    },
+    "overallStatus": "FAILED"
+  }
+}

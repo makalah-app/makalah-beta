@@ -1,0 +1,722 @@
+/**
+ * CHAT API ROUTE - DUAL PROVIDER IMPLEMENTATION
+ * 
+ * AI SDK v5 compliant streaming dengan Gemini 2.5 Pro primary (OpenRouter)
+ * dan OpenAI GPT-4o-mini fallback. Enhanced academic workflow support.
+ */
+
+import { 
+  streamText, 
+  UIMessage, 
+  convertToModelMessages, 
+  stepCountIs, 
+  tool, 
+  isToolUIPart, 
+  getToolName,
+  createUIMessageStreamResponse,
+  createUIMessageStream
+} from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+import type { AcademicMetadata } from '../../../src/components/chat/ChatContainer';
+import { getPrimaryModel, getFallbackModel, getDefaultModelConfig } from '../../../src/lib/ai/config';
+import { getResearchTools, initializeTools } from '../../../src/lib/ai/tools';
+import { CompletionSignalUtils } from '../../../src/lib/ai/workflow/completion-signals';
+import { processToolResultsForApproval } from '../../../src/lib/ai/workflow/hitl-integration';
+import { ArtifactTrigger } from '../../../src/lib/ai/workflow/artifact-trigger';
+import { fileTools } from '../../../src/lib/ai/tools/file-tools';
+import { citationTools } from '../../../src/lib/ai/tools/citation-analysis-tools';
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
+
+// Define custom message type with academic metadata
+export type AcademicUIMessage = UIMessage<AcademicMetadata>;
+
+// Phase completion tools for HITL approval system - NO execute functions untuk automatic HITL behavior
+const phaseCompletionTools = {
+  complete_phase_1: tool({
+    description: 'Complete Phase 1: Topic Definition and Research Scope after delivering comprehensive topic analysis',
+    inputSchema: z.object({
+      topic_title: z.string().describe('Final refined topic title'),
+      research_scope: z.string().describe('Defined research scope and boundaries'),
+      research_questions: z.array(z.string()).describe('Main research questions to be addressed'),
+      methodology_approach: z.string().describe('Planned research methodology'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_2: tool({
+    description: 'Complete Phase 2: Literature Review and Data Collection after delivering comprehensive source analysis',
+    inputSchema: z.object({
+      sources_found: z.number().describe('Number of relevant sources identified'),
+      literature_themes: z.array(z.string()).describe('Main themes identified from literature'),
+      data_collection_summary: z.string().describe('Summary of data collection process'),
+      research_gaps: z.string().describe('Identified gaps in existing research'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_3: tool({
+    description: 'Complete Phase 3: Outline Creation and Structure Planning after delivering detailed paper structure',
+    inputSchema: z.object({
+      outline_structure: z.string().describe('Detailed paper outline with sections and subsections'),
+      estimated_length: z.string().describe('Estimated paper length and section distribution'),
+      flow_logic: z.string().describe('Logical flow between sections'),
+      key_arguments: z.array(z.string()).describe('Key arguments to be developed'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_4: tool({
+    description: 'Complete Phase 4: Draft Writing and Content Development after delivering substantial draft content',
+    inputSchema: z.object({
+      sections_completed: z.array(z.string()).describe('Paper sections that have been drafted'),
+      word_count: z.number().describe('Current draft word count'),
+      content_quality: z.string().describe('Assessment of content quality and completeness'),
+      remaining_work: z.string().describe('Remaining writing work to be completed'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_5: tool({
+    description: 'Complete Phase 5: Citation Integration and Reference Management after proper academic formatting',
+    inputSchema: z.object({
+      citations_added: z.number().describe('Number of citations properly integrated'),
+      reference_style: z.string().describe('Citation style used (APA, MLA, etc.)'),
+      bibliography_complete: z.boolean().describe('Whether bibliography is complete'),
+      citation_quality: z.string().describe('Assessment of citation quality and accuracy'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_6: tool({
+    description: 'Complete Phase 6: Review and Quality Assurance after comprehensive paper review',
+    inputSchema: z.object({
+      review_areas: z.array(z.string()).describe('Areas reviewed (content, structure, citations, etc.)'),
+      quality_score: z.string().describe('Overall quality assessment'),
+      improvements_made: z.string().describe('Key improvements implemented'),
+      remaining_issues: z.string().describe('Any remaining issues to address'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+
+  complete_phase_7: tool({
+    description: 'Complete Phase 7: Final Formatting and Submission Preparation after delivering publication-ready paper',
+    inputSchema: z.object({
+      formatting_complete: z.boolean().describe('Whether final formatting is complete'),
+      submission_requirements: z.string().describe('Submission requirements addressed'),
+      final_word_count: z.number().describe('Final paper word count'),
+      quality_checklist: z.array(z.string()).describe('Final quality checklist items completed'),
+      deliverables_preview: z.string().describe('Preview of what will be delivered in this phase'),
+    }),
+    outputSchema: z.string(),
+    // NO execute function - enables automatic HITL behavior
+  }),
+};
+
+export async function POST(req: Request) {
+  try {
+    console.log('[Chat API] Initializing NATIVE OpenAI web search system...');
+    
+    // Native OpenAI implementation - no custom tools needed for primary provider
+    console.log('[Chat API] 🌐 Using built-in OpenAI web search - no mock data!');
+    
+    // Extract chatId from headers for persistence
+    const chatId = req.headers.get('X-Chat-Id') || undefined;
+    console.log(`[Chat API] 📋 ChatId from headers: ${chatId || 'not provided'}`);
+    
+    // Parse request body with additional academic workflow parameters
+    const { 
+      messages, 
+      phase = 1, 
+      testMode = false,
+      customKey 
+    }: { 
+      messages: AcademicUIMessage[];
+      phase?: number;
+      testMode?: boolean;
+      customKey?: string;
+    } = await req.json();
+
+    // Initialize artifact trigger untuk phase approval handling
+    const artifactTrigger = new ArtifactTrigger();
+    
+    // Check for phase approval using ArtifactTrigger detection
+    const phaseApprovalContext = artifactTrigger.detectPhaseApproval(messages);
+    
+    if (phaseApprovalContext) {
+      console.log(`[Chat API] 🎯 Phase approval detected:`, phaseApprovalContext);
+      
+      if (phaseApprovalContext.approved) {
+        console.log(`[Chat API] 🎉 Phase ${phaseApprovalContext.phase} approved - artifact generation will be triggered in stream`);
+      } else {
+        console.log(`[Chat API] 🔄 Phase ${phaseApprovalContext.phase} revision requested: ${phaseApprovalContext.feedback}`);
+      }
+    }
+
+    // 🚀 DYNAMIC PHASE TRANSITION LOGIC - Auto-increment phase after approval
+    let currentPhase = phase;
+    // COMMENTED OUT: Premature phase transition causes artifacts to be buried under next phase content
+    // Phase transition now happens naturally in next message cycle after user sees artifact
+    // if (phaseApprovalContext?.approved && phaseApprovalContext.phase < 7) {
+    //   currentPhase = phaseApprovalContext.phase + 1;
+    //   console.log(`[Chat API] 🚀 PHASE TRANSITION: Approved Phase ${phaseApprovalContext.phase} → Advancing to Phase ${currentPhase}`);
+    // }
+    
+    console.log(`[Chat API] Processing ${messages.length} messages, Phase: ${currentPhase}${testMode ? ' (TEST MODE)' : ''}`);
+    
+    // Debug: Log first message structure untuk troubleshooting
+    if (messages.length > 0) {
+      console.log('[Chat API] First message structure:', {
+        id: messages[0].id,
+        role: messages[0].role,
+        hasContent: !!messages[0].parts && messages[0].parts.length > 0,
+        hasMetadata: !!messages[0].metadata
+      });
+    }
+
+    // Validate and ensure messages have proper structure
+    if (!Array.isArray(messages) || messages.length === 0) {
+      throw new Error('Messages array is required and must not be empty');
+    }
+
+    // 🛠️ FIX 2: Defensive message validation - ensure all messages have proper UIMessage structure
+    const validatedMessages = messages.map((msg, index) => {
+      // Ensure every message has required UIMessage properties
+      const validatedMessage: AcademicUIMessage = {
+        id: msg.id || `msg-${Date.now()}-${index}`,
+        role: msg.role || 'user',
+        parts: msg.parts || [
+          // Create text part from content if parts is missing
+          { type: 'text', text: (msg as any).content || '' }
+        ],
+        metadata: msg.metadata
+      };
+
+      // Log validation for debugging
+      if (!msg.parts) {
+        console.log(`[Chat API] 🛠️ Fixed message ${index}: Added missing parts array`);
+      }
+
+      return validatedMessage;
+    });
+
+    // 🛠️ FIX 1: Filter out input-available parts before conversion (MessageConversionError fix)
+    const messagesForModel = validatedMessages.map(message => ({
+      ...message,
+      parts: message.parts?.filter(part => 
+        !(isToolUIPart(part) && part.state === 'input-available')
+      ) || []
+    }));
+
+    // Convert UI messages to model messages using AI SDK function
+    // This is the CRITICAL fix - harus menggunakan convertToModelMessages
+    let modelMessages;
+    try {
+      modelMessages = convertToModelMessages(messagesForModel);
+      console.log(`[Chat API] ✅ Successfully converted ${validatedMessages.length} UI messages to ${modelMessages.length} model messages (filtered ${validatedMessages.length - messagesForModel.length} approval parts)`);
+    } catch (conversionError) {
+      console.error('[Chat API] ❌ Message conversion failed:', conversionError);
+      console.log('[Chat API] 🔄 Attempting fallback message recovery...');
+      
+      // 🛠️ FIX 4: Enhanced error recovery - create minimal valid message structure
+      try {
+        // Extract text from the most recent message as fallback
+        const lastMessage = validatedMessages[validatedMessages.length - 1];
+        const textContent = lastMessage?.parts?.find(part => part.type === 'text')?.text ||
+                           (lastMessage as any)?.content ||
+                           'Hello';
+        
+        const fallbackMessages = [{
+          id: `fallback-msg-${Date.now()}`,
+          role: 'user' as const,
+          parts: [{ type: 'text' as const, text: textContent }]
+        }] as AcademicUIMessage[];
+        
+        modelMessages = convertToModelMessages(fallbackMessages);
+        console.log(`[Chat API] ✅ Fallback recovery successful with message: "${textContent.substring(0, 50)}..."`);
+      } catch (fallbackError) {
+        console.error('[Chat API] ❌ Fallback recovery also failed:', fallbackError);
+        throw new Error(`Message processing failed completely. Original: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`);
+      }
+    }
+    
+    // Get default configuration for academic writing from database
+    const defaultConfig = await getDefaultModelConfig();
+    
+    // Build dynamic system prompt dari database dengan phase context  
+    const databaseSystemPrompt = defaultConfig.system;
+    const primarySystemPrompt = `${databaseSystemPrompt}
+
+🎓 ACADEMIC PHASE: ${currentPhase}/7 - ${getPhaseDescription(currentPhase)}
+
+📊 WORKFLOW PROGRESS REMINDER:
+You are currently in Phase ${currentPhase} of 7 total phases. ${currentPhase < 7 ? `There are still ${7 - currentPhase} phases remaining after this one.` : 'This is the final phase.'}
+NEVER act as if the workflow is complete until Phase 7 is finished!
+
+${phaseApprovalContext ? `
+🎉 PHASE APPROVAL CONTEXT: ${phaseApprovalContext.approved ? `Phase ${phaseApprovalContext.phase} APPROVED - Generate artifact and ADVANCE to Phase ${phaseApprovalContext.phase + 1}!` : `Phase ${phaseApprovalContext.phase} needs revision: ${phaseApprovalContext.feedback}`}
+` : ''}
+${phaseApprovalContext?.approved ? `
+🎯 ENTERING NEW PHASE - NATURAL DEVELOPMENT REQUIRED:
+${currentPhase === 2 ? '🔍 Phase 2: Literature Review - Discuss approach and methodology before proceeding' : ''}
+${currentPhase === 3 ? '📝 Phase 3: Paper Outline - Present structure options for user development' : ''}
+${currentPhase === 4 ? '✍️ Phase 4: Draft Writing - Discuss content approach before writing' : ''}
+${currentPhase === 5 ? '📚 Phase 5: Citation Integration - Review referencing needs with user' : ''}
+${currentPhase === 6 ? '🔍 Phase 6: Quality Review - Identify review priorities collaboratively' : ''}
+${currentPhase === 7 ? '🎯 Phase 7: Final Preparation - Discuss formatting requirements together' : ''}
+` : ''}
+
+⚠️ CRITICAL COMPLIANCE CHECKLIST:
+□ Always show ${7 - currentPhase} phases remaining
+□ Always provide 2-5 options (NEVER just 1)
+□ Always engage after artifact (request validation)
+□ Always guide to next phase (NEVER "ada yang lain?")
+□ Always maintain academic focus until Phase 7 complete
+
+${testMode ? '🧪 TEST MODE: Force web search and demonstrate complete URL citation workflow.' : ''}`;
+
+    // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
+    const stream = createUIMessageStream({
+      execute: async ({ writer }) => {
+        console.log('[Chat API] 🚀 HITL Integration: Processing tool results and handling approvals');
+        
+        // HITL INTEGRATION: Process tool calls from last message for approval handling
+        const processedMessages = await processToolResultsForApproval(
+          messages, 
+          writer,
+          phaseCompletionTools
+        );
+
+        let modelUsed = 'gpt-4o'; // 🔄 SWAPPED: Now OpenAI GPT-4o is primary
+        let providerUsed = 'openai'; // 🔄 SWAPPED: Now OpenAI is primary provider
+        let primaryExecuted = false;
+        let primarySuccess = false;
+        let writerUsed = false;
+
+        try {
+          // 🚀 HIGH PRIORITY FIX 1: EXCLUSIVE EXECUTION PATTERN
+          // PRIMARY: Native OpenAI with built-in web search capabilities
+          console.log('[Chat API] 🚀 Using NATIVE OpenAI GPT-4o with built-in web search (EXCLUSIVE EXECUTION)');
+          
+          primaryExecuted = true;
+          const result = streamText({
+            model: openai.responses('gpt-4o'), // 🔥 NATIVE OpenAI reasoning model with web search
+            messages: convertToModelMessages(processedMessages),
+            system: primarySystemPrompt,
+            stopWhen: stepCountIs(3), // 🔧 CRITICAL: Multi-step tool calling for search results
+            tools: {
+              web_search_preview: openai.tools.webSearchPreview({
+                searchContextSize: 'high', // 🌐 Maximum search context for comprehensive results
+              }),
+              // Phase completion tools for HITL approval system
+              ...phaseCompletionTools,
+              // File upload and processing tools for academic documents
+              ...fileTools,
+              // Citation analysis tools for academic research
+              ...citationTools,
+            },
+            toolChoice: testMode ? 
+              { type: 'tool', toolName: 'web_search_preview' } : // 🧪 Force search in test mode
+              'auto', // 🔄 Auto selection for normal usage
+            temperature: defaultConfig.temperature,
+            maxRetries: 3,
+            frequencyPenalty: defaultConfig.frequencyPenalty,
+            presencePenalty: defaultConfig.presencePenalty,
+          });
+          
+          console.log('[Chat API] ✅ Native OpenAI web search initialized');
+          
+          // 🔧 CRITICAL FIX: PROPER STREAM COMPLETION
+          if (!writerUsed) {
+            writer.merge(result.toUIMessageStream({ 
+              originalMessages: processedMessages,
+              sendFinish: true // ✅ FIXED: Allow stream to properly complete
+            }));
+            writerUsed = true;
+            console.log('[Chat API] ✅ Primary stream merged with proper completion');
+          }
+          
+          // Wait for response to ensure completion
+          const response = await result.response;
+          primarySuccess = true;
+          console.log('[Chat API] ✅ Primary execution FULLY completed - fallback will be blocked');
+
+          // 🔄 TASK 03 DATABASE INTEGRATION: Fire-and-forget message persistence
+          // CRITICAL: Only runs AFTER primarySuccess = true to ensure stream completion
+          try {
+            const { persistMessagesAsync } = await import('../../../src/lib/database/message-persistence');
+            
+            // Generate session ID for persistence tracking
+            const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Fire-and-forget async persistence (won't block or interfere with response)
+            persistMessagesAsync(messages, {
+              conversationId: chatId, // Use chatId from X-Chat-Id header
+              userId: 'system', // Default user - can be enhanced later with actual user data
+              phase: currentPhase,
+              sessionId,
+              streamCoordinationData: {
+                primaryExecuted,
+                primarySuccess,
+                writerUsed
+              }
+            });
+            
+            console.log('[Chat API] 🔄 Initiated async message persistence (fire-and-forget)');
+          } catch (persistenceError) {
+            // ERROR ISOLATION: Don't let persistence errors affect main chat flow
+            console.error('[Chat API] ⚠️ Message persistence init failed (isolated):', persistenceError);
+          }
+
+          // Generate artifact if phase was approved
+          if (phaseApprovalContext?.approved) {
+            console.log(`[Chat API] 🎉 Generating artifact for approved Phase ${phaseApprovalContext.phase}`);
+            
+            try {
+              // Generate session ID untuk artifact storage
+              const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              
+              // Generate artifact synchronously
+              const artifactResult = await artifactTrigger.generateArtifactAfterApproval(
+                phaseApprovalContext,
+                messages,
+                sessionId,
+                'system' // Default user ID
+              );
+              
+              if (artifactResult.success) {
+                console.log(`[Chat API] ✅ Artifact generated successfully: ${artifactResult.artifactId}`);
+                
+                // Write artifact data to stream for frontend display
+                writer.write({
+                  type: 'data-artifact',
+                  data: {
+                    type: 'artifact',
+                    id: artifactResult.artifactId,
+                    title: artifactResult.artifactData?.title || `Phase ${phaseApprovalContext.phase} Artifact`,
+                    content: artifactResult.artifactData?.content || '',
+                    metadata: {
+                      phase: phaseApprovalContext.phase,
+                      wordCount: artifactResult.artifactData?.metadata?.wordCount || 0,
+                      lastModified: Date.now(),
+                      tags: artifactResult.artifactData?.metadata?.tags || [],
+                    },
+                  },
+                });
+                
+                console.log(`[Chat API] 📄 Artifact data sent to frontend via writer.write()`);
+                
+                // ARTIFACT PERSISTENCE INTEGRATION: Add artifact data to message parts
+                // This ensures artifact data persists in database for page refresh display
+                try {
+                  const { updateMessageWithArtifact } = await import('../../../src/lib/database/message-persistence');
+                  
+                  // Small delay to ensure message persistence completes first
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                  
+                  // Find the last assistant message to attach artifact to
+                  const lastAssistantMessage = messages.slice().reverse().find(msg => msg.role === 'assistant');
+                  
+                  if (lastAssistantMessage && chatId) {
+                    await updateMessageWithArtifact(
+                      chatId,
+                      lastAssistantMessage.id,
+                      {
+                        type: 'artifact',
+                        id: artifactResult.artifactId,
+                        title: artifactResult.artifactData?.title || `Phase ${phaseApprovalContext.phase} Artifact`,
+                        content: artifactResult.artifactData?.content || '',
+                        metadata: {
+                          phase: phaseApprovalContext.phase,
+                          wordCount: artifactResult.artifactData?.metadata?.wordCount || 0,
+                          lastModified: Date.now(),
+                          tags: artifactResult.artifactData?.metadata?.tags || [],
+                        },
+                      }
+                    );
+                    
+                    console.log(`[Chat API] 🔄 Artifact integration initiated for message ${lastAssistantMessage.id}`);
+                  }
+                } catch (integrationError) {
+                  // Error isolation - don't affect main flow
+                  console.error(`[Chat API] ⚠️ Artifact integration failed (isolated):`, integrationError);
+                }
+              } else {
+                console.error(`[Chat API] ❌ Artifact generation failed: ${artifactResult.error}`);
+              }
+            } catch (error) {
+              console.error(`[Chat API] ❌ Artifact generation error:`, error);
+            }
+          }
+
+        } catch (primaryError) {
+          console.error('[Chat API] ❌ Primary provider failed:', {
+            error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+            phase,
+            messageCount: messages.length,
+            primaryExecuted,
+            primarySuccess
+          });
+          
+          // 🔧 ENHANCED ERROR BOUNDARY - STRICT FALLBACK CONDITION  
+          // ONLY execute fallback if primary truly failed AND no writer was used
+          if (!primarySuccess && !writerUsed) {
+            console.log('[Chat API] 🔄 PRIMARY FAILED (no output generated) - Initiating fallback to OpenRouter Gemini');
+          
+          // Initialize custom tools only for fallback
+          initializeTools();
+          const fallbackTools = getResearchTools();
+          console.log(`[Chat API] 🛠️ Fallback tools loaded: ${Object.keys(fallbackTools).length}`);
+          
+          modelUsed = 'gemini-2.5-pro';
+          providerUsed = 'openrouter-fallback';
+      
+      const fallbackSystemPrompt = `You are Gemini 2.5 Pro (via OpenRouter fallback), serving as backup when OpenAI native search is unavailable.
+
+🎓 ACADEMIC PHASE: ${currentPhase}/7 - ${getPhaseDescription(currentPhase)}
+${phaseApprovalContext ? `
+🎉 PHASE APPROVAL CONTEXT: ${phaseApprovalContext.approved ? `Phase ${phaseApprovalContext.phase} APPROVED - Generate artifact and ADVANCE to Phase ${phaseApprovalContext.phase + 1}!` : `Phase ${phaseApprovalContext.phase} needs revision: ${phaseApprovalContext.feedback}`}
+` : ''}
+// REMOVED: OLD duplicate conflicting system prompt with IMMEDIATE behaviors
+
+🔄 FALLBACK MODE: Using custom search tools as alternative to OpenAI native search
+
+SEARCH CAPABILITY:
+- Use web_search tool for current information needs  
+- Process search results into comprehensive responses
+- Include source URLs when available
+- Academic-focused research assistance
+
+IMPORTANT:
+- This is fallback mode - search may use alternative providers
+- Still provide comprehensive, sourced responses
+- Maintain academic rigor despite technical limitations
+- Call phase completion tools ONLY after explicit user completion confirmation
+
+// REMOVED: Duplicate PHASE COMPLETION WORKFLOW section
+
+${testMode ? '🧪 TEST MODE: Test fallback search functionality.' : ''}`;
+
+          try {
+            const fallbackModel = getFallbackModel();
+            console.log('[Chat API] Fallback model initialized successfully');
+            
+            const fallbackResult = streamText({
+              model: fallbackModel,
+              messages: convertToModelMessages(processedMessages),
+              system: fallbackSystemPrompt,
+              temperature: defaultConfig.temperature,
+              maxRetries: 2,
+              // 🔧 MEDIUM PRIORITY FIX 5: ALIGNED tool configuration with primary system
+              tools: {
+                ...fallbackTools, // Custom web search tools for fallback
+                ...phaseCompletionTools, // Phase completion tools (consistent with primary)
+                ...fileTools, // File upload and processing tools for consistency
+                ...citationTools, // Citation analysis tools for consistency
+              },
+              toolChoice: 'auto',
+              stopWhen: stepCountIs(3), // 🔧 MEDIUM PRIORITY FIX 4: ALIGNED multi-step count with primary
+            });
+            
+            console.log('[Chat API] ✅ Fallback provider streaming initialized');
+            
+            // 🔧 HIGH PRIORITY FIX 3: SINGLE WRITER PATH - Fallback execution only if primary failed
+            if (!writerUsed) {
+              writer.merge(fallbackResult.toUIMessageStream({ 
+                originalMessages: processedMessages,
+                sendStart: false // Coordinate with any previous stream attempts
+              }));
+              writerUsed = true;
+              console.log('[Chat API] ✅ Fallback stream merged - exclusive execution');
+              
+              // 🔄 TASK 03 DATABASE INTEGRATION: Fire-and-forget message persistence (fallback path)
+              try {
+                const { persistMessagesAsync } = await import('../../../src/lib/database/message-persistence');
+                
+                // Generate session ID for persistence tracking
+                const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Fire-and-forget async persistence (won't block or interfere with response)
+                persistMessagesAsync(messages, {
+                  conversationId: chatId, // Use chatId from X-Chat-Id header
+                  userId: 'system', // Default user - can be enhanced later with actual user data
+                  phase: currentPhase,
+                  sessionId,
+                  streamCoordinationData: {
+                    primaryExecuted,
+                    primarySuccess: false, // Fallback path, so primary failed
+                    writerUsed
+                  }
+                });
+                
+                console.log('[Chat API] 🔄 Initiated async message persistence (fallback, fire-and-forget)');
+              } catch (persistenceError) {
+                // ERROR ISOLATION: Don't let persistence errors affect main chat flow
+                console.error('[Chat API] ⚠️ Message persistence init failed (fallback, isolated):', persistenceError);
+              }
+            } else {
+              console.log('[Chat API] ⚠️ Writer already used - skipping fallback merge to prevent double output');
+            }
+
+            // Generate artifact if phase was approved (fallback path)
+            if (phaseApprovalContext?.approved) {
+              console.log(`[Chat API] 🎉 Generating artifact for approved Phase ${phaseApprovalContext.phase} (fallback)`);
+              
+              try {
+                // Generate session ID untuk artifact storage
+                const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Generate artifact synchronously
+                const artifactResult = await artifactTrigger.generateArtifactAfterApproval(
+                  phaseApprovalContext,
+                  messages,
+                  sessionId,
+                  'system' // Default user ID
+                );
+                
+                if (artifactResult.success) {
+                  console.log(`[Chat API] ✅ Artifact generated successfully: ${artifactResult.artifactId} (fallback)`);
+                  
+                  // Write artifact data to stream for frontend display
+                  writer.write({
+                    type: 'data-artifact',
+                    data: {
+                      type: 'artifact',
+                      id: artifactResult.artifactId,
+                      title: artifactResult.artifactData?.title || `Phase ${phaseApprovalContext.phase} Artifact`,
+                      content: artifactResult.artifactData?.content || '',
+                      metadata: {
+                        phase: phaseApprovalContext.phase,
+                        wordCount: artifactResult.artifactData?.metadata?.wordCount || 0,
+                        lastModified: Date.now(),
+                        tags: artifactResult.artifactData?.metadata?.tags || [],
+                      },
+                    },
+                  });
+                  
+                  console.log(`[Chat API] 📄 Artifact data sent to frontend via writer.write() (fallback)`);
+                  
+                  // ARTIFACT PERSISTENCE INTEGRATION (FALLBACK PATH): Add artifact data to message parts
+                  // This ensures artifact data persists in database for page refresh display
+                  try {
+                    const { updateMessageWithArtifact } = await import('../../../src/lib/database/message-persistence');
+                    
+                    // Small delay to ensure message persistence completes first
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Find the last assistant message to attach artifact to
+                    const lastAssistantMessage = messages.slice().reverse().find(msg => msg.role === 'assistant');
+                    
+                    if (lastAssistantMessage && chatId) {
+                      await updateMessageWithArtifact(
+                        chatId,
+                        lastAssistantMessage.id,
+                        {
+                          type: 'artifact',
+                          id: artifactResult.artifactId,
+                          title: artifactResult.artifactData?.title || `Phase ${phaseApprovalContext.phase} Artifact`,
+                          content: artifactResult.artifactData?.content || '',
+                          metadata: {
+                            phase: phaseApprovalContext.phase,
+                            wordCount: artifactResult.artifactData?.metadata?.wordCount || 0,
+                            lastModified: Date.now(),
+                            tags: artifactResult.artifactData?.metadata?.tags || [],
+                          },
+                        }
+                      );
+                      
+                      console.log(`[Chat API] 🔄 Artifact integration initiated for message ${lastAssistantMessage.id} (fallback)`);
+                    }
+                  } catch (integrationError) {
+                    // Error isolation - don't affect main flow
+                    console.error(`[Chat API] ⚠️ Artifact integration failed (fallback, isolated):`, integrationError);
+                  }
+                } else {
+                  console.error(`[Chat API] ❌ Artifact generation failed: ${artifactResult.error} (fallback)`);
+                }
+              } catch (error) {
+                console.error(`[Chat API] ❌ Artifact generation error:`, error, '(fallback)');
+              }
+            }
+            
+          } catch (fallbackError) {
+            console.error('[Chat API] 💥 Both providers failed:', {
+              primaryError: primaryError instanceof Error ? primaryError.message : String(primaryError),
+              fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+              phase,
+              writerUsed
+            });
+            
+            const primaryMsg = primaryError instanceof Error ? primaryError.message : String(primaryError);
+            const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+            throw new Error(`Both AI providers failed: Primary (${primaryMsg}), Fallback (${fallbackMsg})`);
+          }
+          } else if (primarySuccess && writerUsed) {
+            console.log('[Chat API] ✅ Primary succeeded with output - fallback execution BLOCKED');
+          } else {
+            console.log('[Chat API] ⚠️ Unexpected state - no fallback needed');
+          }
+        }
+      },
+    });
+
+    console.log('[Chat API] ✅ Returning createUIMessageStreamResponse with HITL integration');
+
+    // Return createUIMessageStreamResponse as per AI SDK v5 documentation
+    return createUIMessageStreamResponse({ stream });
+    
+  } catch (error) {
+    console.error('[Chat API] 💥 Fatal API error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      request_info: {
+        method: 'POST',
+        url: '/api/chat'
+      }
+    });
+    
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : 'Internal server error',
+      provider_status: 'both_unavailable',
+      timestamp: Date.now(),
+      suggestion: 'Please try again. If the issue persists, both AI providers may be temporarily unavailable.',
+    }), {
+      status: 500,
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Provider-Status': 'error'
+      },
+    });
+  }
+}
+
+// Helper function to get phase description
+function getPhaseDescription(phase: number): string {
+  const phases = [
+    '', // 0 - not used
+    'Scope Definition & Research Planning - Define topic, scope, research questions',
+    'Literature Review & Data Collection - Discuss search approach and methodology', 
+    'Outlining & Structure Planning - Explore structure options and develop collaboratively',
+    'Writing & Drafting - WRITE substantial content with academic structure',
+    'Citation & Reference Management - INTEGRATE citations and format references',
+    'Review & Quality Assurance - REVIEW content quality and completeness',
+    'Final Editing & Submission Preparation - FORMAT for publication submission'
+  ];
+  
+  return phases[phase] || 'Unknown Phase';
+}

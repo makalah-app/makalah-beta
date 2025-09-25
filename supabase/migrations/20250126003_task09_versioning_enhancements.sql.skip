@@ -1,0 +1,554 @@
+-- Migration: Task 09 - Versioning System Enhancements
+-- Description: Advanced versioning dengan semantic versioning dan conflict resolution
+-- Author: Database Architect - Task 09 Implementation
+-- Date: 2025-01-26
+
+-- =====================================================
+-- SEMANTIC VERSIONING SUPPORT
+-- =====================================================
+
+-- Create semantic version type
+CREATE TYPE semantic_version AS (
+    major INTEGER,
+    minor INTEGER,
+    patch INTEGER,
+    pre_release TEXT,
+    build_metadata TEXT,
+    full_version TEXT
+);
+
+-- Function to parse semantic version string
+CREATE OR REPLACE FUNCTION parse_semantic_version(version_string TEXT)
+RETURNS semantic_version AS $$
+DECLARE
+    result semantic_version;
+    version_pattern TEXT := '^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9\-\.]+))?(?:\+([a-zA-Z0-9\-\.]+))?$';
+    matches TEXT[];
+BEGIN
+    matches := regexp_matches(version_string, version_pattern);
+    
+    IF matches IS NULL THEN
+        RAISE EXCEPTION 'Invalid semantic version format: %', version_string;
+    END IF;
+    
+    result.major := matches[1]::INTEGER;
+    result.minor := matches[2]::INTEGER; 
+    result.patch := matches[3]::INTEGER;
+    result.pre_release := matches[4];
+    result.build_metadata := matches[5];
+    result.full_version := version_string;
+    
+    RETURN result;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Return fallback version
+        result.major := 1;
+        result.minor := 0;
+        result.patch := 0;
+        result.pre_release := NULL;
+        result.build_metadata := NULL;
+        result.full_version := '1.0.0';
+        RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to generate next semantic version
+CREATE OR REPLACE FUNCTION next_semantic_version(
+    current_version TEXT,
+    bump_type TEXT DEFAULT 'patch' -- 'major', 'minor', 'patch'
+)
+RETURNS TEXT AS $$
+DECLARE
+    current_sem semantic_version;
+    new_version TEXT;
+BEGIN
+    current_sem := parse_semantic_version(current_version);
+    
+    CASE bump_type
+        WHEN 'major' THEN
+            new_version := (current_sem.major + 1)::TEXT || '.0.0';
+        WHEN 'minor' THEN
+            new_version := current_sem.major::TEXT || '.' || (current_sem.minor + 1)::TEXT || '.0';
+        WHEN 'patch' THEN
+            new_version := current_sem.major::TEXT || '.' || current_sem.minor::TEXT || '.' || (current_sem.patch + 1)::TEXT;
+        ELSE
+            RAISE EXCEPTION 'Invalid bump type: %. Use major, minor, or patch', bump_type;
+    END CASE;
+    
+    RETURN new_version;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to compare semantic versions
+CREATE OR REPLACE FUNCTION compare_semantic_versions(version1 TEXT, version2 TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+    v1 semantic_version;
+    v2 semantic_version;
+BEGIN
+    v1 := parse_semantic_version(version1);
+    v2 := parse_semantic_version(version2);
+    
+    -- Compare major
+    IF v1.major != v2.major THEN
+        RETURN SIGN(v1.major - v2.major);
+    END IF;
+    
+    -- Compare minor
+    IF v1.minor != v2.minor THEN
+        RETURN SIGN(v1.minor - v2.minor);
+    END IF;
+    
+    -- Compare patch
+    IF v1.patch != v2.patch THEN
+        RETURN SIGN(v1.patch - v2.patch);
+    END IF;
+    
+    -- If pre-release exists, handle comparison
+    IF v1.pre_release IS NULL AND v2.pre_release IS NOT NULL THEN
+        RETURN 1; -- No pre-release > pre-release
+    ELSIF v1.pre_release IS NOT NULL AND v2.pre_release IS NULL THEN
+        RETURN -1;
+    ELSIF v1.pre_release IS NOT NULL AND v2.pre_release IS NOT NULL THEN
+        RETURN SIGN(LENGTH(v1.pre_release) - LENGTH(v2.pre_release)); -- Simple comparison
+    END IF;
+    
+    RETURN 0; -- Versions are equal
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- ENHANCED VERSIONING FUNCTIONS
+-- =====================================================
+
+-- Function to create semantic version with automatic bumping
+CREATE OR REPLACE FUNCTION create_semantic_artifact_version(
+    artifact_uuid UUID,
+    version_name_val TEXT DEFAULT NULL,
+    change_type TEXT DEFAULT 'patch', -- 'major', 'minor', 'patch'
+    change_summary_val TEXT DEFAULT NULL,
+    content_data JSONB DEFAULT NULL,
+    created_by_uuid UUID DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+    current_version_record RECORD;
+    new_version_number INTEGER;
+    new_semantic_version TEXT;
+    new_version_id UUID;
+    user_uuid UUID;
+BEGIN
+    user_uuid := COALESCE(created_by_uuid, auth.user_id());
+    
+    -- Get current latest version
+    SELECT av.version_number, av.version_name, a.current_version, a.name
+    INTO current_version_record
+    FROM public.artifact_versions av
+    JOIN public.artifacts a ON a.id = av.artifact_id
+    WHERE av.artifact_id = artifact_uuid
+    ORDER BY av.version_number DESC
+    LIMIT 1;
+    
+    IF current_version_record IS NULL THEN
+        -- First version
+        new_version_number := 1;
+        new_semantic_version := '1.0.0';
+    ELSE
+        new_version_number := current_version_record.version_number + 1;
+        
+        -- Generate semantic version
+        IF current_version_record.version_name IS NOT NULL 
+           AND current_version_record.version_name ~ '^\d+\.\d+\.\d+' THEN
+            new_semantic_version := next_semantic_version(current_version_record.version_name, change_type);
+        ELSE
+            -- Generate based on change type
+            CASE change_type
+                WHEN 'major' THEN
+                    new_semantic_version := '2.0.0';
+                WHEN 'minor' THEN
+                    new_semantic_version := '1.' || (new_version_number % 100)::TEXT || '.0';
+                ELSE
+                    new_semantic_version := '1.0.' || new_version_number::TEXT;
+            END CASE;
+        END IF;
+    END IF;
+    
+    -- Create new version record
+    INSERT INTO public.artifact_versions (
+        artifact_id,
+        version_number,
+        version_name,
+        action,
+        structured_content,
+        change_summary,
+        is_major_version,
+        rollback_point,
+        created_by,
+        created_via,
+        parent_version_id
+    ) VALUES (
+        artifact_uuid,
+        new_version_number,
+        COALESCE(version_name_val, new_semantic_version),
+        'created'::version_action,
+        content_data,
+        COALESCE(change_summary_val, 'Version ' || new_semantic_version || ' created'),
+        (change_type = 'major'),
+        true,
+        user_uuid,
+        'api',
+        current_version_record.version_number
+    ) RETURNING id INTO new_version_id;
+    
+    -- Update artifact current version
+    UPDATE public.artifacts
+    SET current_version = new_version_number,
+        total_versions = new_version_number,
+        updated_at = NOW()
+    WHERE id = artifact_uuid;
+    
+    RETURN new_version_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- VERSION COMPARISON AND DIFF ENHANCEMENTS
+-- =====================================================
+
+-- Enhanced diff calculation dengan detailed analysis
+CREATE OR REPLACE FUNCTION calculate_enhanced_version_diff(
+    artifact_uuid UUID,
+    from_version INTEGER,
+    to_version INTEGER
+)
+RETURNS JSONB AS $$
+DECLARE
+    from_record RECORD;
+    to_record RECORD;
+    diff_result JSONB;
+    content_diff JSONB;
+    metrics_diff JSONB;
+BEGIN
+    -- Get version records
+    SELECT * INTO from_record
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid AND version_number = from_version;
+    
+    SELECT * INTO to_record  
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid AND version_number = to_version;
+    
+    IF from_record IS NULL OR to_record IS NULL THEN
+        RETURN jsonb_build_object('error', 'One or both versions not found');
+    END IF;
+    
+    -- Calculate content differences
+    content_diff := jsonb_build_object(
+        'size_change', COALESCE(to_record.file_size, 0) - COALESCE(from_record.file_size, 0),
+        'hash_changed', (from_record.content_hash != to_record.content_hash),
+        'structure_changed', (from_record.structured_content != to_record.structured_content)
+    );
+    
+    -- Calculate quality metrics diff if available
+    SELECT jsonb_build_object(
+        'quality_change', 
+        COALESCE(to_record.quality_metrics, '{}'::jsonb) - COALESCE(from_record.quality_metrics, '{}'::jsonb)
+    ) INTO metrics_diff;
+    
+    -- Build comprehensive diff result
+    diff_result := jsonb_build_object(
+        'from_version', from_version,
+        'to_version', to_version,
+        'from_semantic_version', from_record.version_name,
+        'to_semantic_version', to_record.version_name,
+        'time_between', to_record.created_at - from_record.created_at,
+        'content_changes', content_diff,
+        'quality_changes', metrics_diff,
+        'action_sequence', ARRAY[from_record.action, to_record.action],
+        'is_major_change', (to_record.is_major_version AND NOT from_record.is_major_version),
+        'summary_change', jsonb_build_object(
+            'from', from_record.change_summary,
+            'to', to_record.change_summary
+        ),
+        'generated_at', NOW()
+    );
+    
+    -- Store diff in version record
+    UPDATE public.artifact_versions
+    SET diff_from_previous = diff_result,
+        updated_at = NOW()
+    WHERE id = to_record.id;
+    
+    RETURN diff_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- VERSION BRANCHING AND MERGING
+-- =====================================================
+
+-- Function to create version branch
+CREATE OR REPLACE FUNCTION create_version_branch(
+    artifact_uuid UUID,
+    base_version INTEGER,
+    branch_name TEXT,
+    created_by_uuid UUID DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+    base_record RECORD;
+    branch_version_id UUID;
+    new_version_number INTEGER;
+    user_uuid UUID;
+BEGIN
+    user_uuid := COALESCE(created_by_uuid, auth.user_id());
+    
+    -- Get base version
+    SELECT * INTO base_record
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid AND version_number = base_version;
+    
+    IF base_record IS NULL THEN
+        RAISE EXCEPTION 'Base version % not found for artifact %', base_version, artifact_uuid;
+    END IF;
+    
+    -- Get next version number
+    SELECT COALESCE(MAX(version_number), 0) + 1 INTO new_version_number
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid;
+    
+    -- Create branch version
+    INSERT INTO public.artifact_versions (
+        artifact_id,
+        version_number,
+        version_name,
+        action,
+        file_path,
+        file_size,
+        content_hash,
+        structured_content,
+        change_summary,
+        created_by,
+        created_via,
+        parent_version_id,
+        is_major_version,
+        rollback_point
+    ) VALUES (
+        artifact_uuid,
+        new_version_number,
+        branch_name || '-branch',
+        'branched'::version_action,
+        base_record.file_path,
+        base_record.file_size,
+        base_record.content_hash,
+        base_record.structured_content,
+        'Branched from version ' || base_version || ' as ' || branch_name,
+        user_uuid,
+        'branching',
+        base_record.id,
+        false,
+        true
+    ) RETURNING id INTO branch_version_id;
+    
+    RETURN branch_version_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to merge version branches
+CREATE OR REPLACE FUNCTION merge_version_branches(
+    artifact_uuid UUID,
+    target_version INTEGER,
+    source_versions INTEGER[],
+    merge_strategy TEXT DEFAULT 'latest_wins',
+    created_by_uuid UUID DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+    target_record RECORD;
+    source_record RECORD;
+    merged_version_id UUID;
+    new_version_number INTEGER;
+    merged_content JSONB;
+    user_uuid UUID;
+    version_num INTEGER;
+BEGIN
+    user_uuid := COALESCE(created_by_uuid, auth.user_id());
+    
+    -- Get target version
+    SELECT * INTO target_record
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid AND version_number = target_version;
+    
+    IF target_record IS NULL THEN
+        RAISE EXCEPTION 'Target version % not found', target_version;
+    END IF;
+    
+    -- Initialize merged content dengan target
+    merged_content := target_record.structured_content;
+    
+    -- Process source versions based on strategy
+    FOREACH version_num IN ARRAY source_versions LOOP
+        SELECT * INTO source_record
+        FROM public.artifact_versions
+        WHERE artifact_id = artifact_uuid AND version_number = version_num;
+        
+        IF source_record IS NOT NULL THEN
+            CASE merge_strategy
+                WHEN 'latest_wins' THEN
+                    IF source_record.created_at > target_record.created_at THEN
+                        merged_content := source_record.structured_content;
+                    END IF;
+                WHEN 'combine_properties' THEN
+                    merged_content := merged_content || COALESCE(source_record.structured_content, '{}'::jsonb);
+                ELSE
+                    -- Default: keep target content
+                    NULL;
+            END CASE;
+        END IF;
+    END LOOP;
+    
+    -- Get next version number
+    SELECT COALESCE(MAX(version_number), 0) + 1 INTO new_version_number
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid;
+    
+    -- Create merged version
+    INSERT INTO public.artifact_versions (
+        artifact_id,
+        version_number,
+        version_name,
+        action,
+        structured_content,
+        change_summary,
+        created_by,
+        created_via,
+        parent_version_id,
+        merged_from_versions,
+        is_major_version,
+        rollback_point
+    ) VALUES (
+        artifact_uuid,
+        new_version_number,
+        'merged-v' || new_version_number,
+        'merged'::version_action,
+        merged_content,
+        'Merged versions: ' || array_to_string(source_versions, ',') || ' into ' || target_version,
+        user_uuid,
+        'merge',
+        target_record.id,
+        ARRAY[target_version] || source_versions,
+        true, -- Merges are considered major versions
+        true
+    ) RETURNING id INTO merged_version_id;
+    
+    -- Update artifact current version
+    UPDATE public.artifacts
+    SET current_version = new_version_number,
+        total_versions = new_version_number,
+        updated_at = NOW()
+    WHERE id = artifact_uuid;
+    
+    RETURN merged_version_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- VERSION ANALYTICS AND REPORTING
+-- =====================================================
+
+-- Function to get version analytics
+CREATE OR REPLACE FUNCTION get_version_analytics(artifact_uuid UUID)
+RETURNS JSONB AS $$
+DECLARE
+    analytics_result JSONB;
+    version_stats RECORD;
+    change_patterns JSONB;
+BEGIN
+    -- Get basic version statistics
+    SELECT 
+        COUNT(*) as total_versions,
+        COUNT(*) FILTER (WHERE is_major_version = true) as major_versions,
+        COUNT(*) FILTER (WHERE rollback_point = true) as rollback_points,
+        MIN(created_at) as first_version,
+        MAX(created_at) as latest_version,
+        AVG(file_size) as avg_file_size,
+        MAX(file_size) - MIN(file_size) as size_growth
+    INTO version_stats
+    FROM public.artifact_versions
+    WHERE artifact_id = artifact_uuid;
+    
+    -- Analyze change patterns
+    SELECT jsonb_object_agg(action, count) INTO change_patterns
+    FROM (
+        SELECT action, COUNT(*) as count
+        FROM public.artifact_versions
+        WHERE artifact_id = artifact_uuid
+        GROUP BY action
+    ) actions;
+    
+    analytics_result := jsonb_build_object(
+        'artifact_id', artifact_uuid,
+        'total_versions', version_stats.total_versions,
+        'major_versions', version_stats.major_versions,
+        'rollback_points', version_stats.rollback_points,
+        'version_timespan', version_stats.latest_version - version_stats.first_version,
+        'avg_file_size', version_stats.avg_file_size,
+        'size_growth', version_stats.size_growth,
+        'change_patterns', change_patterns,
+        'analysis_date', NOW()
+    );
+    
+    RETURN analytics_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get version timeline
+CREATE OR REPLACE FUNCTION get_version_timeline(
+    artifact_uuid UUID,
+    limit_count INTEGER DEFAULT 20
+)
+RETURNS TABLE(
+    version_number INTEGER,
+    version_name TEXT,
+    action version_action,
+    created_at TIMESTAMPTZ,
+    created_by_email TEXT,
+    change_summary TEXT,
+    is_major BOOLEAN,
+    file_size BIGINT,
+    time_since_previous INTERVAL
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        av.version_number,
+        av.version_name,
+        av.action,
+        av.created_at,
+        u.email as created_by_email,
+        av.change_summary,
+        av.is_major_version,
+        av.file_size,
+        av.created_at - LAG(av.created_at) OVER (ORDER BY av.version_number) as time_since_previous
+    FROM public.artifact_versions av
+    LEFT JOIN public.users u ON u.id = av.created_by
+    WHERE av.artifact_id = artifact_uuid
+    ORDER BY av.version_number DESC
+    LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- COMMENTS AND DOCUMENTATION  
+-- =====================================================
+
+COMMENT ON TYPE semantic_version IS 'Structured semantic version dengan major.minor.patch format';
+COMMENT ON FUNCTION parse_semantic_version() IS 'Parses semantic version string into components';
+COMMENT ON FUNCTION next_semantic_version() IS 'Generates next semantic version dengan bump type';
+COMMENT ON FUNCTION compare_semantic_versions() IS 'Compares two semantic versions (-1, 0, 1)';
+COMMENT ON FUNCTION create_semantic_artifact_version() IS 'Creates new version dengan automatic semantic versioning';
+COMMENT ON FUNCTION calculate_enhanced_version_diff() IS 'Enhanced diff calculation dengan detailed metrics';
+COMMENT ON FUNCTION create_version_branch() IS 'Creates version branch for parallel development';
+COMMENT ON FUNCTION merge_version_branches() IS 'Merges multiple version branches dengan strategies';
+COMMENT ON FUNCTION get_version_analytics() IS 'Returns comprehensive version analytics';
+COMMENT ON FUNCTION get_version_timeline() IS 'Returns version timeline dengan metadata';

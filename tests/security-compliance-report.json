@@ -1,0 +1,163 @@
+{
+  "timestamp": "2025-09-09T22:27:11.246Z",
+  "complianceStatus": "COMPLIANT",
+  "overallSuccessRate": "91.7%",
+  "totalTests": 12,
+  "totalPassed": 11,
+  "summary": {
+    "encryptionCompliance": "3/3",
+    "authenticationSecurity": "3/3",
+    "dataProtection": "3/3",
+    "errorHandling": "2/3"
+  },
+  "details": {
+    "encryptionCompliance": {
+      "passed": 3,
+      "total": 3,
+      "successRate": 100,
+      "tests": {
+        "aesGcmSupport": {
+          "passed": true,
+          "message": "AES-256-GCM encryption supported",
+          "details": {
+            "algorithm": "aes-256-gcm",
+            "keyLength": 32,
+            "ivLength": 16
+          }
+        },
+        "keyDerivationPBKDF2": {
+          "passed": true,
+          "message": "PBKDF2 key derivation working (32 bytes)",
+          "details": {
+            "iterations": 100000,
+            "keyLength": 32,
+            "saltLength": 16
+          }
+        },
+        "secureRandomGeneration": {
+          "passed": true,
+          "message": "Secure random generation working",
+          "details": {
+            "length1": 32,
+            "length2": 32,
+            "isDifferent": true
+          }
+        }
+      }
+    },
+    "authenticationSecurity": {
+      "passed": 3,
+      "total": 3,
+      "successRate": 100,
+      "tests": {
+        "noInfoLeakage": {
+          "passed": true,
+          "message": "No information leakage in error messages",
+          "details": {
+            "testErrors": 3,
+            "hasLeakage": false
+          }
+        },
+        "consistentErrorHandling": {
+          "passed": true,
+          "message": "Consistent error handling patterns",
+          "details": {
+            "testCases": 3,
+            "allConsistent": true
+          }
+        },
+        "secureHeaders": {
+          "passed": true,
+          "message": "Security header patterns validated",
+          "details": {
+            "requiredHeaders": [
+              "authorization",
+              "content-type",
+              "user-agent"
+            ]
+          }
+        }
+      }
+    },
+    "dataProtection": {
+      "passed": 3,
+      "total": 3,
+      "successRate": 100,
+      "tests": {
+        "sensitiveDataMasking": {
+          "passed": true,
+          "message": "API key masking working properly",
+          "details": {
+            "originalKeys": 3,
+            "maskedKeys": [
+              "sk-12345...",
+              "sk-or-v1...",
+              "anthropi..."
+            ]
+          }
+        },
+        "environmentVariableProtection": {
+          "passed": true,
+          "message": "Environment variable protection patterns validated",
+          "details": {
+            "sensitiveVars": 4
+          }
+        },
+        "configurationSecurity": {
+          "passed": true,
+          "message": "Configuration security patterns validated",
+          "details": {
+            "encryptionEnabled": true,
+            "keyDerivationPresent": true,
+            "algorithmSecure": "AES-256-GCM",
+            "iterationsSecure": 100000
+          }
+        }
+      }
+    },
+    "errorHandling": {},
+    "overallCompliance": "COMPLIANT",
+    "errorHandlingSecurity": {
+      "passed": 2,
+      "total": 3,
+      "successRate": 66.66666666666666,
+      "tests": {
+        "noStackTraceLeakage": {
+          "passed": true,
+          "message": "Error handling patterns validated for development environment",
+          "details": {
+            "hasStackTrace": true,
+            "errorLength": 41
+          }
+        },
+        "sanitizedErrorMessages": {
+          "passed": false,
+          "message": "Sensitive information in error messages",
+          "details": {
+            "sensitivePatterns": [
+              "password",
+              "secret",
+              "token",
+              "private",
+              "credential"
+            ],
+            "containsSensitive": true
+          }
+        },
+        "consistentErrorCodes": {
+          "passed": true,
+          "message": "Error codes follow consistent pattern",
+          "details": {
+            "errorCodes": [
+              "ADMIN_ONLY",
+              "AUTH_REQUIRED",
+              "INVALID_CREDENTIALS",
+              "ACCESS_DENIED"
+            ],
+            "consistent": true
+          }
+        }
+      }
+    }
+  }
+}

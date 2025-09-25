@@ -1,0 +1,66 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "es2023"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "forceConsistentCasingInFileNames": true,
+    "target": "es2022",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/types": ["./src/types/index.ts"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/admin/**/*",
+    "app/auth/**/*",
+    "app/layout.tsx",
+    "src/components/**/*",
+    "src/lib/ai/**/*",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "src/__tests__",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "temp_complete_route.ts",
+    "app/api/approval/**",
+    "app/api/admin/users/**",
+    "app/api/admin/prompts/**",
+    "app/api/debug-**",
+    "app/api/**",
+    "app/api/chat/**",
+    "src/lib/error-handling/**",
+    "src/lib/utils/crypto-polyfill.ts",
+    "src/lib/database/search-history.ts",
+    "src/lib/database/subscription-optimization.ts",
+    "src/lib/database/conversation-state.ts",
+    "src/lib/database/fallback-mode.ts",
+    "src/lib/database/message-persistence.ts",
+    "src/lib/database/message-validation.ts",
+    "src/lib/database/real-time-sync.ts"
+  ]
+}

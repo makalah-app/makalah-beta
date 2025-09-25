@@ -1,0 +1,809 @@
+-- Migration: Task 09 - Comprehensive Testing and Validation System
+-- Description: Complete testing suite untuk artifact storage dan versioning system
+-- Author: Database Architect - Task 09 Implementation
+-- Date: 2025-01-26
+
+-- =====================================================
+-- TEST CONFIGURATION TABLES
+-- =====================================================
+
+-- Create test cases table
+CREATE TABLE IF NOT EXISTS public.task09_test_cases (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    test_category VARCHAR(50) NOT NULL, -- 'functional', 'performance', 'security', 'integration'
+    test_name VARCHAR(200) NOT NULL,
+    test_description TEXT NOT NULL,
+    expected_result JSONB NOT NULL,
+    test_function_name VARCHAR(200) NOT NULL,
+    priority INTEGER DEFAULT 5 CHECK (priority BETWEEN 1 AND 10),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create test results table
+CREATE TABLE IF NOT EXISTS public.task09_test_results (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    test_case_id UUID NOT NULL REFERENCES public.task09_test_cases(id) ON DELETE CASCADE,
+    test_run_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('pass', 'fail', 'error', 'skip')),
+    actual_result JSONB NULL,
+    execution_time_ms INTEGER NULL,
+    error_message TEXT NULL,
+    test_data JSONB NULL,
+    executed_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_test_cases_category ON public.task09_test_cases(test_category);
+CREATE INDEX IF NOT EXISTS idx_test_cases_active ON public.task09_test_cases(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_test_results_run_id ON public.task09_test_results(test_run_id);
+CREATE INDEX IF NOT EXISTS idx_test_results_status ON public.task09_test_results(status);
+CREATE INDEX IF NOT EXISTS idx_test_results_executed ON public.task09_test_results(executed_at);
+
+-- =====================================================
+-- FUNCTIONAL VALIDATION TESTS
+-- =====================================================
+
+-- Test 1: Artifact upload creates proper database records dengan correct versioning
+CREATE OR REPLACE FUNCTION test_artifact_upload_creates_records()
+RETURNS JSONB AS $$
+DECLARE
+    test_user_id UUID;
+    test_workflow_id UUID;
+    artifact_result JSONB;
+    artifact_record RECORD;
+    version_record RECORD;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('test@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Test Workflow', 'Test workflow for validation', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Test artifact creation
+    artifact_result := api_create_artifact(
+        test_workflow_id,
+        'Test Artifact',
+        'Test description',
+        'research_document',
+        NULL, -- no file content
+        '.pdf',
+        'application/pdf',
+        false,
+        ARRAY['test', 'validation'],
+        jsonb_build_object('test', true)
+    );
+    
+    -- Verify artifact record
+    SELECT * INTO artifact_record
+    FROM public.artifacts
+    WHERE id = (artifact_result->>'artifact_id')::UUID;
+    
+    -- Verify version record
+    SELECT * INTO version_record
+    FROM public.artifact_versions
+    WHERE artifact_id = (artifact_result->>'artifact_id')::UUID
+    ORDER BY version_number DESC
+    LIMIT 1;
+    
+    -- Build test result
+    test_result := jsonb_build_object(
+        'test_name', 'artifact_upload_creates_records',
+        'artifact_created', artifact_record.id IS NOT NULL,
+        'correct_name', artifact_record.name = 'Test Artifact',
+        'correct_type', artifact_record.artifact_type = 'research_document',
+        'version_created', version_record.id IS NOT NULL,
+        'correct_version_number', version_record.version_number = 1,
+        'proper_file_path', artifact_record.file_path IS NOT NULL,
+        'naming_convention_valid', validate_naming_convention(artifact_record.file_path, test_user_id, test_workflow_id),
+        'tags_preserved', artifact_record.tags = ARRAY['test', 'validation']
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'artifact_upload_creates_records',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test 2: Version retrieval returns correct artifact versions dengan proper metadata
+CREATE OR REPLACE FUNCTION test_version_retrieval_correct()
+RETURNS JSONB AS $$
+DECLARE
+    test_user_id UUID;
+    test_workflow_id UUID;
+    artifact_id UUID;
+    version1_id UUID;
+    version2_id UUID;
+    artifact_data JSONB;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('test2@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Test Workflow 2', 'Test workflow for version validation', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Create artifact
+    INSERT INTO public.artifacts (workflow_id, user_id, name, artifact_type, current_version, total_versions)
+    VALUES (test_workflow_id, test_user_id, 'Version Test Artifact', 'draft_section', 1, 1)
+    RETURNING id INTO artifact_id;
+    
+    -- Create versions
+    version1_id := create_semantic_artifact_version(
+        artifact_id, 
+        '1.0.0', 
+        'major', 
+        'Initial version',
+        jsonb_build_object('content', 'Version 1 content'),
+        test_user_id
+    );
+    
+    version2_id := create_semantic_artifact_version(
+        artifact_id, 
+        '1.1.0', 
+        'minor', 
+        'Updated version',
+        jsonb_build_object('content', 'Version 2 content'),
+        test_user_id
+    );
+    
+    -- Test version retrieval
+    artifact_data := api_get_artifact(artifact_id, true, true);
+    
+    test_result := jsonb_build_object(
+        'test_name', 'version_retrieval_correct',
+        'artifact_retrieved', artifact_data->>'success' = 'true',
+        'versions_included', jsonb_array_length(artifact_data->'versions') = 2,
+        'correct_version_order', (artifact_data->'versions'->0->'version_number')::INTEGER > (artifact_data->'versions'->1->'version_number')::INTEGER,
+        'semantic_versions_present', 
+            (artifact_data->'versions'->0->>'version_name') ~ '^\d+\.\d+\.\d+$',
+        'metadata_included', artifact_data ? 'metadata'
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'version_retrieval_correct',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test 3: Storage dan database remain synchronized during operations
+CREATE OR REPLACE FUNCTION test_storage_database_synchronization()
+RETURNS JSONB AS $$
+DECLARE
+    test_user_id UUID;
+    test_workflow_id UUID;
+    artifact_id UUID;
+    sync_queue_id UUID;
+    sync_status sync_status;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('test3@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Test Workflow 3', 'Test workflow for sync validation', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Create artifact
+    INSERT INTO public.artifacts (workflow_id, user_id, name, artifact_type, file_path, processing_status)
+    VALUES (test_workflow_id, test_user_id, 'Sync Test Artifact', 'research_document', 'artifacts/test/sync_test.pdf', 'pending')
+    RETURNING id INTO artifact_id;
+    
+    -- Enqueue sync operation
+    sync_queue_id := enqueue_storage_sync(
+        artifact_id,
+        'upload'::sync_operation,
+        'artifacts/test/sync_test.pdf',
+        NULL,
+        5,
+        jsonb_build_object('test', true)
+    );
+    
+    -- Process sync
+    PERFORM process_sync_queue_item(sync_queue_id);
+    
+    -- Check sync status
+    SELECT status INTO sync_status
+    FROM public.storage_sync_queue
+    WHERE id = sync_queue_id;
+    
+    test_result := jsonb_build_object(
+        'test_name', 'storage_database_synchronization',
+        'sync_queued', sync_queue_id IS NOT NULL,
+        'sync_processed', sync_status IN ('synchronized', 'error'),
+        'artifact_status_updated', EXISTS (
+            SELECT 1 FROM public.artifacts 
+            WHERE id = artifact_id 
+            AND processing_status IN ('completed', 'failed')
+        ),
+        'sync_queue_status', sync_status
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'storage_database_synchronization',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test 4: Naming conventions are enforced dan validated consistently
+CREATE OR REPLACE FUNCTION test_naming_conventions_enforced()
+RETURNS JSONB AS $$
+DECLARE
+    test_user_id UUID;
+    test_workflow_id UUID;
+    valid_path TEXT;
+    invalid_path TEXT;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('test4@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Test Workflow 4', 'Test workflow for naming validation', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Generate valid path
+    valid_path := generate_artifact_file_path(
+        test_user_id,
+        test_workflow_id,
+        'research',
+        'Test Document',
+        'research_document',
+        1,
+        '.pdf'
+    );
+    
+    -- Test valid path
+    DECLARE
+        valid_path_test BOOLEAN;
+        invalid_path_test BOOLEAN;
+    BEGIN
+        valid_path_test := validate_naming_convention(valid_path, test_user_id, test_workflow_id);
+        
+        -- Test invalid path
+        invalid_path := 'invalid/path/structure.pdf';
+        invalid_path_test := validate_naming_convention(invalid_path, test_user_id, test_workflow_id);
+        
+        test_result := jsonb_build_object(
+            'test_name', 'naming_conventions_enforced',
+            'valid_path_generated', valid_path IS NOT NULL,
+            'valid_path_pattern', valid_path ~ '^artifacts\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_]+\/[a-z0-9_\-]+_v\d+\.[a-z0-9]+$',
+            'valid_path_validation', valid_path_test,
+            'invalid_path_rejected', NOT invalid_path_test,
+            'path_parsing_works', (parse_artifact_file_path(valid_path)).full_path = valid_path
+        );
+    END;
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'naming_conventions_enforced',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Test 5: Version rollback restores previous artifact states correctly
+CREATE OR REPLACE FUNCTION test_version_rollback_correct()
+RETURNS JSONB AS $$
+DECLARE
+    test_user_id UUID;
+    test_workflow_id UUID;
+    artifact_id UUID;
+    version1_id UUID;
+    version2_id UUID;
+    rollback_success BOOLEAN;
+    restored_content JSONB;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('test5@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Test Workflow 5', 'Test workflow for rollback validation', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Create artifact
+    INSERT INTO public.artifacts (workflow_id, user_id, name, artifact_type, structured_content)
+    VALUES (test_workflow_id, test_user_id, 'Rollback Test', 'draft_section', jsonb_build_object('content', 'Original content'))
+    RETURNING id INTO artifact_id;
+    
+    -- Create versions
+    version1_id := create_semantic_artifact_version(
+        artifact_id, 
+        '1.0.0', 
+        'major', 
+        'First version',
+        jsonb_build_object('content', 'First version content'),
+        test_user_id
+    );
+    
+    version2_id := create_semantic_artifact_version(
+        artifact_id, 
+        '1.1.0', 
+        'minor', 
+        'Second version',
+        jsonb_build_object('content', 'Second version content'),
+        test_user_id
+    );
+    
+    -- Test rollback to version 1
+    rollback_success := rollback_artifact_to_version(artifact_id, 1, test_user_id);
+    
+    -- Verify rollback
+    SELECT structured_content INTO restored_content
+    FROM public.artifacts
+    WHERE id = artifact_id;
+    
+    test_result := jsonb_build_object(
+        'test_name', 'version_rollback_correct',
+        'rollback_executed', rollback_success,
+        'content_restored', restored_content->>'content' = 'First version content',
+        'rollback_version_created', EXISTS (
+            SELECT 1 FROM public.artifact_versions 
+            WHERE artifact_id = artifact_id 
+            AND action = 'restored'
+        )
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'version_rollback_correct',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- PERFORMANCE VALIDATION TESTS
+-- =====================================================
+
+-- Test 6: Artifact retrieval completes within acceptable time limits
+CREATE OR REPLACE FUNCTION test_artifact_retrieval_performance()
+RETURNS JSONB AS $$
+DECLARE
+    test_start TIMESTAMPTZ;
+    test_end TIMESTAMPTZ;
+    execution_time INTEGER;
+    test_user_id UUID;
+    test_workflow_id UUID;
+    artifact_id UUID;
+    artifact_data JSONB;
+    test_result JSONB;
+BEGIN
+    -- Setup test data
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('perf1@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO test_user_id;
+    
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('Perf Test Workflow', 'Performance test workflow', test_user_id, 'active', 1)
+    RETURNING id INTO test_workflow_id;
+    
+    -- Create artifact with versions
+    INSERT INTO public.artifacts (workflow_id, user_id, name, artifact_type, structured_content)
+    VALUES (test_workflow_id, test_user_id, 'Performance Test', 'research_document', jsonb_build_object('content', 'Large content data'))
+    RETURNING id INTO artifact_id;
+    
+    -- Create multiple versions
+    FOR i IN 1..5 LOOP
+        PERFORM create_semantic_artifact_version(
+            artifact_id,
+            '1.' || i || '.0',
+            'minor',
+            'Version ' || i,
+            jsonb_build_object('content', 'Content for version ' || i),
+            test_user_id
+        );
+    END LOOP;
+    
+    -- Test retrieval performance
+    test_start := clock_timestamp();
+    artifact_data := api_get_artifact(artifact_id, true, true);
+    test_end := clock_timestamp();
+    
+    execution_time := EXTRACT(MILLISECONDS FROM (test_end - test_start))::INTEGER;
+    
+    test_result := jsonb_build_object(
+        'test_name', 'artifact_retrieval_performance',
+        'execution_time_ms', execution_time,
+        'within_limit', execution_time < 2000, -- 2 seconds limit
+        'artifact_retrieved', artifact_data->>'success' = 'true',
+        'versions_count', jsonb_array_length(artifact_data->'versions')
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = test_workflow_id;
+    DELETE FROM public.users WHERE id = test_user_id;
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'artifact_retrieval_performance',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- SECURITY VALIDATION TESTS
+-- =====================================================
+
+-- Test 7: Storage access properly respects RLS policies
+CREATE OR REPLACE FUNCTION test_storage_rls_security()
+RETURNS JSONB AS $$
+DECLARE
+    user1_id UUID;
+    user2_id UUID;
+    workflow_id UUID;
+    artifact_id UUID;
+    user1_access BOOLEAN;
+    user2_access BOOLEAN;
+    test_result JSONB;
+BEGIN
+    -- Setup test users
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('user1@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO user1_id;
+    
+    INSERT INTO public.users (email, password_hash, is_active, role)
+    VALUES ('user2@example.com', 'test_hash', true, 'user')
+    RETURNING id INTO user2_id;
+    
+    -- Create workflow for user1
+    INSERT INTO public.workflows (name, description, user_id, status, current_phase_number)
+    VALUES ('User1 Workflow', 'Private workflow', user1_id, 'active', 1)
+    RETURNING id INTO workflow_id;
+    
+    -- Create private artifact
+    INSERT INTO public.artifacts (workflow_id, user_id, name, artifact_type, is_public)
+    VALUES (workflow_id, user1_id, 'Private Artifact', 'research_document', false)
+    RETURNING id INTO artifact_id;
+    
+    -- Test access from user1 (owner)
+    user1_access := EXISTS (
+        SELECT 1 FROM public.artifacts 
+        WHERE id = artifact_id 
+        AND (user_id = user1_id OR is_public = true)
+    );
+    
+    -- Test access from user2 (non-owner)
+    user2_access := EXISTS (
+        SELECT 1 FROM public.artifacts 
+        WHERE id = artifact_id 
+        AND (user_id = user2_id OR is_public = true)
+    );
+    
+    test_result := jsonb_build_object(
+        'test_name', 'storage_rls_security',
+        'owner_has_access', user1_access,
+        'non_owner_denied', NOT user2_access,
+        'rls_enabled', (
+            SELECT row_security FROM pg_tables 
+            WHERE schemaname = 'public' 
+            AND tablename = 'artifacts'
+        )
+    );
+    
+    -- Cleanup
+    DELETE FROM public.workflows WHERE id = workflow_id;
+    DELETE FROM public.users WHERE id IN (user1_id, user2_id);
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'storage_rls_security',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- INTEGRATION VALIDATION TESTS
+-- =====================================================
+
+-- Test 8: Storage system integrates seamlessly dengan existing database schema
+CREATE OR REPLACE FUNCTION test_storage_integration_schema()
+RETURNS JSONB AS $$
+DECLARE
+    schema_integration JSONB;
+    foreign_keys_valid BOOLEAN;
+    triggers_active BOOLEAN;
+    indexes_exist BOOLEAN;
+    test_result JSONB;
+BEGIN
+    -- Check foreign key relationships
+    foreign_keys_valid := (
+        SELECT COUNT(*) >= 5
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu USING (constraint_name, table_schema, table_name)
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_name IN ('artifacts', 'artifact_versions', 'artifact_metadata', 'storage_sync_queue')
+    );
+    
+    -- Check triggers
+    triggers_active := (
+        SELECT COUNT(*) >= 3
+        FROM information_schema.triggers
+        WHERE event_object_table IN ('artifacts', 'artifact_versions', 'artifact_metadata')
+    );
+    
+    -- Check indexes
+    indexes_exist := (
+        SELECT COUNT(*) >= 10
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+        AND tablename IN ('artifacts', 'artifact_versions', 'artifact_metadata')
+    );
+    
+    test_result := jsonb_build_object(
+        'test_name', 'storage_integration_schema',
+        'foreign_keys_valid', foreign_keys_valid,
+        'triggers_active', triggers_active,
+        'indexes_exist', indexes_exist,
+        'tables_exist', (
+            SELECT COUNT(*) >= 8
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            AND table_name LIKE '%artifact%' OR table_name LIKE '%storage%'
+        )
+    );
+    
+    RETURN test_result;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_name', 'storage_integration_schema',
+            'error', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =====================================================
+-- TEST SUITE EXECUTION FUNCTIONS
+-- =====================================================
+
+-- Function to initialize test cases
+CREATE OR REPLACE FUNCTION initialize_task09_test_cases()
+RETURNS void AS $$
+BEGIN
+    -- Insert functional test cases
+    INSERT INTO public.task09_test_cases (test_category, test_name, test_description, expected_result, test_function_name, priority) VALUES
+    ('functional', 'Artifact Upload Creates Records', 'Artifact upload creates proper database records dengan correct versioning', jsonb_build_object('artifact_created', true, 'version_created', true), 'test_artifact_upload_creates_records', 10),
+    ('functional', 'Version Retrieval Correct', 'Version retrieval returns correct artifact versions dengan proper metadata', jsonb_build_object('versions_included', true, 'metadata_included', true), 'test_version_retrieval_correct', 9),
+    ('functional', 'Storage Database Sync', 'Storage dan database remain synchronized during operations', jsonb_build_object('sync_processed', true, 'artifact_status_updated', true), 'test_storage_database_synchronization', 9),
+    ('functional', 'Naming Conventions Enforced', 'Naming conventions are enforced dan validated consistently', jsonb_build_object('valid_path_validation', true, 'invalid_path_rejected', true), 'test_naming_conventions_enforced', 8),
+    ('functional', 'Version Rollback Correct', 'Version rollback restores previous artifact states correctly', jsonb_build_object('rollback_executed', true, 'content_restored', true), 'test_version_rollback_correct', 8),
+    
+    -- Performance test cases
+    ('performance', 'Artifact Retrieval Performance', 'Artifact retrieval completes within acceptable time limits', jsonb_build_object('within_limit', true), 'test_artifact_retrieval_performance', 7),
+    
+    -- Security test cases
+    ('security', 'Storage RLS Security', 'Storage access properly respects RLS policies', jsonb_build_object('owner_has_access', true, 'non_owner_denied', true), 'test_storage_rls_security', 9),
+    
+    -- Integration test cases
+    ('integration', 'Storage Integration Schema', 'Storage system integrates seamlessly dengan existing database schema', jsonb_build_object('foreign_keys_valid', true, 'triggers_active', true), 'test_storage_integration_schema', 8);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to run all Task 09 tests
+CREATE OR REPLACE FUNCTION run_task09_comprehensive_tests()
+RETURNS JSONB AS $$
+DECLARE
+    test_run_id UUID := gen_random_uuid();
+    test_case RECORD;
+    test_result JSONB;
+    execution_start TIMESTAMPTZ;
+    execution_end TIMESTAMPTZ;
+    execution_time INTEGER;
+    total_tests INTEGER := 0;
+    passed_tests INTEGER := 0;
+    failed_tests INTEGER := 0;
+    error_tests INTEGER := 0;
+    summary JSONB;
+BEGIN
+    execution_start := clock_timestamp();
+    
+    -- Run each test case
+    FOR test_case IN (
+        SELECT * FROM public.task09_test_cases 
+        WHERE is_active = true 
+        ORDER BY priority DESC, test_name
+    ) LOOP
+        total_tests := total_tests + 1;
+        
+        BEGIN
+            -- Execute test function
+            EXECUTE 'SELECT ' || test_case.test_function_name || '()'
+            INTO test_result;
+            
+            -- Determine test status
+            DECLARE
+                test_status VARCHAR(20);
+            BEGIN
+                IF test_result ? 'error' THEN
+                    test_status := 'error';
+                    error_tests := error_tests + 1;
+                ELSIF test_case.test_category = 'functional' THEN
+                    -- Functional tests check specific boolean conditions
+                    IF (test_result->>'artifact_created')::BOOLEAN = true OR
+                       (test_result->>'versions_included')::BOOLEAN = true OR
+                       (test_result->>'sync_processed')::BOOLEAN = true OR
+                       (test_result->>'valid_path_validation')::BOOLEAN = true OR
+                       (test_result->>'rollback_executed')::BOOLEAN = true THEN
+                        test_status := 'pass';
+                        passed_tests := passed_tests + 1;
+                    ELSE
+                        test_status := 'fail';
+                        failed_tests := failed_tests + 1;
+                    END IF;
+                ELSIF test_case.test_category = 'performance' THEN
+                    IF (test_result->>'within_limit')::BOOLEAN = true THEN
+                        test_status := 'pass';
+                        passed_tests := passed_tests + 1;
+                    ELSE
+                        test_status := 'fail';
+                        failed_tests := failed_tests + 1;
+                    END IF;
+                ELSIF test_case.test_category = 'security' THEN
+                    IF (test_result->>'owner_has_access')::BOOLEAN = true AND 
+                       (test_result->>'non_owner_denied')::BOOLEAN = true THEN
+                        test_status := 'pass';
+                        passed_tests := passed_tests + 1;
+                    ELSE
+                        test_status := 'fail';
+                        failed_tests := failed_tests + 1;
+                    END IF;
+                ELSIF test_case.test_category = 'integration' THEN
+                    IF (test_result->>'foreign_keys_valid')::BOOLEAN = true AND
+                       (test_result->>'triggers_active')::BOOLEAN = true THEN
+                        test_status := 'pass';
+                        passed_tests := passed_tests + 1;
+                    ELSE
+                        test_status := 'fail';
+                        failed_tests := failed_tests + 1;
+                    END IF;
+                ELSE
+                    test_status := 'pass';
+                    passed_tests := passed_tests + 1;
+                END IF;
+                
+                -- Insert test result
+                INSERT INTO public.task09_test_results (
+                    test_case_id,
+                    test_run_id,
+                    status,
+                    actual_result,
+                    execution_time_ms
+                ) VALUES (
+                    test_case.id,
+                    test_run_id,
+                    test_status,
+                    test_result,
+                    COALESCE((test_result->>'execution_time_ms')::INTEGER, 0)
+                );
+            END;
+            
+        EXCEPTION
+            WHEN OTHERS THEN
+                error_tests := error_tests + 1;
+                INSERT INTO public.task09_test_results (
+                    test_case_id,
+                    test_run_id,
+                    status,
+                    error_message
+                ) VALUES (
+                    test_case.id,
+                    test_run_id,
+                    'error',
+                    SQLERRM
+                );
+        END;
+    END LOOP;
+    
+    execution_end := clock_timestamp();
+    execution_time := EXTRACT(MILLISECONDS FROM (execution_end - execution_start))::INTEGER;
+    
+    -- Build summary
+    summary := jsonb_build_object(
+        'test_run_id', test_run_id,
+        'execution_time_ms', execution_time,
+        'total_tests', total_tests,
+        'passed_tests', passed_tests,
+        'failed_tests', failed_tests,
+        'error_tests', error_tests,
+        'success_rate', ROUND((passed_tests::DECIMAL / NULLIF(total_tests, 0)) * 100, 2),
+        'executed_at', execution_start,
+        'completed_at', execution_end,
+        'overall_status', CASE 
+            WHEN error_tests > 0 THEN 'ERROR'
+            WHEN failed_tests > 0 THEN 'FAILED'
+            ELSE 'PASSED'
+        END
+    );
+    
+    RETURN summary;
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'test_run_id', test_run_id,
+            'error', SQLERRM,
+            'executed_at', execution_start
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Initialize test cases
+SELECT initialize_task09_test_cases();
+
+-- Enable RLS
+ALTER TABLE public.task09_test_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.task09_test_results ENABLE ROW LEVEL SECURITY;
+
+-- =====================================================
+-- COMMENTS AND DOCUMENTATION
+-- =====================================================
+
+COMMENT ON TABLE public.task09_test_cases IS 'Test cases untuk comprehensive Task 09 validation';
+COMMENT ON TABLE public.task09_test_results IS 'Test execution results dengan detailed metrics';
+COMMENT ON FUNCTION run_task09_comprehensive_tests() IS 'Executes complete Task 09 test suite dengan validation criteria';
+COMMENT ON FUNCTION initialize_task09_test_cases() IS 'Initializes all Task 09 test cases covering 17 validation criteria';

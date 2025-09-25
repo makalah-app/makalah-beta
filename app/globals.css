@@ -1,0 +1,375 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  /* Changed primary to orange color for brand consistency */
+  --primary: oklch(0.65 0.2 45); /* Orange color */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.92 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.65 0.2 45); /* Orange ring to match primary */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.75rem; /* Updated radius to 3 (0.75rem) */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.65 0.2 45); /* Orange sidebar primary */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(4.22% 0.01732 29.223); /* Orange sidebar ring */
+
+  /* Updated custom variables to use proper semantic colors */
+  --bg-900: oklch(1 0 0);
+  --text-100: oklch(0.145 0 0);
+  --accent-500: oklch(0.65 0.2 45); /* Orange accent */
+  --line-200: oklch(0.922 0 0);
+
+  /* Added standardized line thickness variables */
+  --line-thin: 1px;
+  --line-thick: 6px;
+
+  /* Added standardized UI elements spacing variables */
+  --spacing-ui-tight: 0.5rem; /* 8px - sempit */
+  --spacing-ui-medium: 0.75rem; /* 12px - medium */
+  --spacing-ui-loose: 1rem; /* 16px - lebar */
+
+  /* Added standardized logo M sizes for UI links */
+  --logo-m-small: 2rem; /* 32px - w-8 h-8 */
+  --logo-m-medium: 2.5rem; /* 40px - w-10 h-10 */
+  --logo-m-large: 3rem; /* 48px - w-12 h-12 */
+
+  /* Added standardized logo M color variations */
+  --logo-m-orange-bg: oklch(0.65 0.2 45); /* Primary orange */
+  --logo-m-orange-text: oklch(1 0 0); /* White text */
+  --logo-m-muted-bg: oklch(0.556 0 0); /* Muted background */
+  --logo-m-muted-text: oklch(0.922 0 0); /* Input text color */
+  --logo-m-input-bg: oklch(0.922 0 0); /* Input background */
+  --logo-m-input-text: oklch(0.556 0 0); /* Muted text color */
+
+  /* Added extra small text size for copyright and fine print */
+  --text-xxs: 0.625rem; /* 10px */
+  --text-xxs-line-height: 0.75rem; /* 12px */
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  /* Orange primary in dark mode */
+  --primary: oklch(0.65 0.2 45); /* Same orange in dark mode */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.35 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.65 0.2 45); /* Orange ring in dark mode */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.2 45); /* Orange sidebar primary */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.65 0.2 45); /* Orange sidebar ring */
+
+  /* Updated custom dark variables */
+  --bg-900: oklch(0.145 0 0);
+  --text-100: oklch(0.985 0 0);
+  --accent-500: oklch(0.65 0.2 45); /* Same orange accent */
+  --line-200: oklch(0.269 0 0);
+}
+
+@layer base {
+  * {
+    /* Updated to use thin border standard */
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  /* Added heading font class */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  }
+
+  /* Global input styling with 3px border radius */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  textarea,
+  select {
+    @apply rounded-[3px];
+  }
+
+  /* Hero pattern backgrounds */
+  .hero-pattern-light {
+    background-image: radial-gradient(circle at 1px 1px, rgba(203, 213, 225, 0.3) 1px, transparent 0);
+    background-size: 16px 16px;
+  }
+  .hero-pattern-dark {
+    background-image: radial-gradient(circle at 1px 1px, rgba(42, 58, 79, 0.3) 1px, transparent 0);
+    background-size: 16px 16px;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Added proper font variable definitions */
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: var(--font-roboto);
+
+  /* Added standardized line thickness utilities */
+  --border-thin: var(--line-thin);
+  --border-thick: var(--line-thick);
+
+  /* Added standardized UI spacing utilities */
+  --spacing-ui-tight: var(--spacing-ui-tight);
+  --spacing-ui-medium: var(--spacing-ui-medium);
+  --spacing-ui-loose: var(--spacing-ui-loose);
+}
+
+/* Added utility classes for standardized line thickness */
+.border-thin {
+  border-width: var(--line-thin);
+}
+
+.border-thick {
+  border-width: var(--line-thick);
+}
+
+.border-t-thin {
+  border-top-width: var(--line-thin);
+}
+
+.border-r-thin {
+  border-right-width: var(--line-thin);
+}
+
+.border-b-thin {
+  border-bottom-width: var(--line-thin);
+}
+
+.border-l-thin {
+  border-left-width: var(--line-thin);
+}
+
+.border-t-thick {
+  border-top-width: var(--line-thick);
+}
+
+.border-r-thick {
+  border-right-width: var(--line-thick);
+}
+
+.border-b-thick {
+  border-bottom-width: var(--line-thick);
+}
+
+.border-l-thick {
+  border-left-width: var(--line-thick);
+}
+
+.outline-thin {
+  outline-width: var(--line-thin);
+}
+
+.outline-thick {
+  outline-width: var(--line-thick);
+}
+
+/* Added utility classes for standardized UI spacing */
+.space-ui-tight > * + * {
+  margin-top: var(--spacing-ui-tight);
+}
+
+.space-ui-medium > * + * {
+  margin-top: var(--spacing-ui-medium);
+}
+
+.space-ui-loose > * + * {
+  margin-top: var(--spacing-ui-loose);
+}
+
+.gap-ui-tight {
+  gap: var(--spacing-ui-tight);
+}
+
+.gap-ui-medium {
+  gap: var(--spacing-ui-medium);
+}
+
+.gap-ui-loose {
+  gap: var(--spacing-ui-loose);
+}
+
+/* Added utility classes for standardized logo M UI links */
+.logo-m-small {
+  width: var(--logo-m-small);
+  height: var(--logo-m-small);
+  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-lg;
+}
+
+.logo-m-medium {
+  width: var(--logo-m-medium);
+  height: var(--logo-m-medium);
+  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-xl;
+}
+
+.logo-m-large {
+  width: var(--logo-m-large);
+  height: var(--logo-m-large);
+  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-xl;
+}
+
+/* Logo M color variations */
+.logo-m-orange {
+  background-color: var(--logo-m-orange-bg);
+  color: var(--logo-m-orange-text);
+}
+
+.logo-m-muted {
+  background-color: var(--logo-m-muted-bg);
+  color: var(--logo-m-muted-text);
+}
+
+.logo-m-input {
+  background-color: var(--logo-m-input-bg);
+  color: var(--logo-m-input-text);
+}
+
+/* Combined utility classes for easy usage */
+.logo-m-small-orange {
+  width: var(--logo-m-small);
+  height: var(--logo-m-small);
+  background-color: var(--logo-m-orange-bg);
+  color: var(--logo-m-orange-text);
+  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+}
+
+.logo-m-small-muted {
+  width: var(--logo-m-small);
+  height: var(--logo-m-small);
+  background-color: var(--logo-m-muted-bg);
+  color: var(--logo-m-muted-text);
+  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+}
+
+.logo-m-small-input {
+  width: var(--logo-m-small);
+  height: var(--logo-m-small);
+  background-color: var(--logo-m-input-bg);
+  color: var(--logo-m-input-text);
+  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+}
+
+/* Added extra small text utility class */
+.text-xxs {
+  font-size: var(--text-xxs);
+  line-height: var(--text-xxs-line-height);
+}
+
+/* Solid green styling classes for consistent branding */
+.btn-green-solid {
+  @apply bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium transition-colors duration-200;
+}
+
+.avatar-green-solid {
+  @apply bg-green-600 text-white font-bold transition-colors duration-200;
+}
+
+.user-profile-green {
+  @apply bg-green-600 text-white font-bold;
+}
+
+/* Dropdown and select hover effects for consistent UX */
+.dropdown-hover {
+  @apply hover:bg-gray-100 hover:bg-opacity-80 dark:hover:bg-gray-800 hover:scale-105 transition-all duration-200 cursor-pointer;
+}
+
+.dropdown-menu-item {
+  @apply hover:bg-gray-100 hover:bg-opacity-80 dark:hover:bg-gray-800 transition-colors duration-200 rounded-[3px];
+}
+
+.select-hover {
+  @apply hover:bg-gray-50 hover:bg-opacity-50 dark:hover:bg-gray-700 hover:border-blue-400 focus:border-blue-500 transition-all duration-200 cursor-pointer;
+}
