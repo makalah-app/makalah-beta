@@ -325,21 +325,15 @@ function ChatPageContent() {
               </div>
 
               {/* New Chat Button */}
-              <SidebarGroup>
-                <SidebarMenu>
-                  <SidebarMenuItem className="border-b border-border p-0 m-0">
-                    <div className="flex items-center justify-center h-14 w-full">
-                      <button
-                        onClick={handleNewChat}
-                        className="flex items-center gap-2 text-sm bg-transparent hover:bg-sidebar-accent rounded-md px-3 py-2 w-full h-10 justify-start transition-colors"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        <span>Percakapan Baru</span>
-                      </button>
-                    </div>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroup>
+              <div className="pb-2 border-b border-border">
+                <button
+                  onClick={handleNewChat}
+                  className="flex items-center gap-2 text-base md:text-sm bg-transparent hover:bg-sidebar-accent rounded-[3px] px-4 py-1 w-full h-9 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Percakapan Baru</span>
+                </button>
+              </div>
 
               {/* Conversation Groups */}
               {Object.entries(conversationGroups).map(([groupName, groupConversations]) => {
