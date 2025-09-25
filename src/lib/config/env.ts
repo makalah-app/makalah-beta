@@ -44,7 +44,7 @@ const envSchema = z.object({
   
   // Academic Workflow Configuration
   ACADEMIC_PHASES_ENABLED: z.coerce.boolean().default(true),
-  APPROVAL_GATES_ENABLED: z.coerce.boolean().default(false),
+  APPROVAL_GATES_ENABLED: z.coerce.boolean().default(true),
   WORKFLOW_TIMEOUT: z.coerce.number().int().positive().default(300000),
   
   // Redis Upstash Configuration

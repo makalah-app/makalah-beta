@@ -373,12 +373,3 @@
 .select-hover {
   @apply hover:bg-gray-50 hover:bg-opacity-50 dark:hover:bg-gray-700 hover:border-blue-400 focus:border-blue-500 transition-all duration-200 cursor-pointer;
 }
-
-/* Global Layout System */
-.global-layout {
-  @apply flex flex-col min-h-screen;
-}
-
-.global-main {
-  @apply flex-1 min-h-0; /* min-h-0 important for flex child to shrink properly */
-}

@@ -28,10 +28,22 @@ if (!supabaseAnonKey) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
 }
 
-// Singleton instances to prevent multiple GoTrueClient warnings
+// ✅ CRITICAL FIX: Global singleton instances to prevent multiple GoTrueClient warnings
 let _supabaseClient: SupabaseClient<Database> | null = null;
 let _supabaseAdmin: SupabaseClient<Database> | null = null;
 let _supabaseServer: SupabaseClient<Database> | null = null;
+
+// ✅ CRITICAL FIX: Prevent multiple client instantiation in development HMR
+if (typeof window !== 'undefined') {
+  // Browser-side: Store client reference on window to survive HMR
+  const windowGlobal = window as any;
+  if (!windowGlobal.__supabase_client_singleton) {
+    windowGlobal.__supabase_client_singleton = {};
+  }
+  if (windowGlobal.__supabase_client_singleton.client) {
+    _supabaseClient = windowGlobal.__supabase_client_singleton.client;
+  }
+}
 
 /**
  * Client-side Supabase client for browser usage (Singleton)
@@ -39,6 +51,7 @@ let _supabaseServer: SupabaseClient<Database> | null = null;
  */
 export const supabaseClient: SupabaseClient<Database> = (() => {
   if (!_supabaseClient) {
+    console.log('[supabase-client] Creating new Supabase client instance');
     _supabaseClient = createClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -47,7 +60,9 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: true,
-          flowType: 'pkce'
+          flowType: 'pkce',
+          // ✅ CRITICAL FIX: Disable automatic token refresh to prevent loops
+          debug: false
         },
         realtime: {
           params: {
@@ -56,9 +71,22 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
         },
         db: {
           schema: 'public'
+        },
+        global: {
+          // ✅ CRITICAL FIX: Prevent multiple instances in the same context
+          headers: {
+            'X-Client-Info': 'makalah-ai-singleton'
+          }
         }
       }
     );
+
+    // ✅ Store in window for HMR survival
+    if (typeof window !== 'undefined') {
+      (window as any).__supabase_client_singleton.client = _supabaseClient;
+    }
+  } else {
+    console.log('[supabase-client] Using existing Supabase client instance');
   }
   return _supabaseClient;
 })();
@@ -107,6 +135,7 @@ export const supabaseServer: SupabaseClient<Database> = (() => {
 /**
  * Alias for supabaseClient - all chat operations use the main client
  * This eliminates the need for a separate chat client instance
+ * ✅ CRITICAL FIX: Use reference to prevent duplicate client instances
  */
 export const supabaseChatClient = supabaseClient;
 

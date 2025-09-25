@@ -270,7 +270,7 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts, state.fontSize, toggleHighContrast, toggleReducedMotion, setFontSize]);
+  }, [shortcuts, state.fontSize]);
 
   // Focus trap management
   useEffect(() => {
@@ -312,17 +312,17 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
   const toggleHighContrast = useCallback(() => {
     setState(prev => ({ ...prev, highContrastMode: !prev.highContrastMode }));
     announce(state.highContrastMode ? 'High contrast disabled' : 'High contrast enabled');
-  }, [announce, state.highContrastMode]);
+  }, [state.highContrastMode]);
 
   const toggleReducedMotion = useCallback(() => {
     setState(prev => ({ ...prev, reducedMotion: !prev.reducedMotion }));
     announce(state.reducedMotion ? 'Animations enabled' : 'Animations reduced');
-  }, [announce, state.reducedMotion]);
+  }, [state.reducedMotion]);
 
   const setFontSize = useCallback((size: AccessibilityState['fontSize']) => {
     setState(prev => ({ ...prev, fontSize: size }));
     announce(`Font size changed to ${size}`);
-  }, [announce]);
+  }, []);
 
   // Navigation
   const enableSkipToContent = useCallback(() => {
@@ -379,7 +379,7 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
   const toggleSound = useCallback(() => {
     setState(prev => ({ ...prev, soundEnabled: !prev.soundEnabled, audioFeedback: !prev.soundEnabled }));
     announce(state.soundEnabled ? 'Sound disabled' : 'Sound enabled');
-  }, [announce, state.soundEnabled]);
+  }, [state.soundEnabled]);
 
   const playFeedback = useCallback((type: 'success' | 'error' | 'warning' | 'info') => {
     if (!state.soundEnabled || !state.audioFeedback) return;

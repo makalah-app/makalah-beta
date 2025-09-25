@@ -78,21 +78,6 @@ export const ChatErrorIntegration: React.FC<ChatErrorIntegrationProps> = ({
   const recoveryCallbacks = useRef<Map<string, () => void>>(new Map());
   const errorCount = useRef<Map<string, number>>(new Map());
 
-  const removeNotification = useCallback((notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  }, []);
-
-  const addNotification = useCallback((notification: typeof notifications[0]) => {
-    setNotifications(prev => [...prev, notification]);
-    
-    // Auto-remove low severity notifications
-    if (notification.severity === 'low') {
-      setTimeout(() => {
-        removeNotification(notification.id);
-      }, 5000);
-    }
-  }, [removeNotification]);
-
   // Subscribe to error manager events
   useEffect(() => {
     const unsubscribe = errorManager.subscribe((managedError) => {
@@ -117,6 +102,21 @@ export const ChatErrorIntegration: React.FC<ChatErrorIntegrationProps> = ({
 
     return unsubscribe;
   }, [addNotification, chatId, enableErrorNotifications]);
+
+  const addNotification = useCallback((notification: typeof notifications[0]) => {
+    setNotifications(prev => [...prev, notification]);
+    
+    // Auto-remove low severity notifications
+    if (notification.severity === 'low') {
+      setTimeout(() => {
+        removeNotification(notification.id);
+      }, 5000);
+    }
+  }, [removeNotification]);
+
+  const removeNotification = useCallback((notificationId: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  }, []);
 
   const handleError = useCallback((
     error: Error,

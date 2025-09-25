@@ -431,7 +431,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     } finally {
       isPersistingRef.current = false;
     }
-  }, [chatId, messages, user?.id]);
+  }, [chatId, user?.id]); // ✅ CRITICAL FIX: Removed messages dependency to prevent infinite persistence loops
 
   // ❌ REMOVED: Complex message reloading function - 39 lines of rigid state management
   // Including artifact counting, phase updating, and elaborate error handling
@@ -444,9 +444,16 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     }
   };
 
+  // ✅ CRITICAL FIX: Auto-scroll with proper dependency management
+  const messagesLengthRef = useRef(messages.length);
+
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only scroll if message count actually changed (prevents excessive scrolling)
+    if (messages.length !== messagesLengthRef.current) {
+      messagesLengthRef.current = messages.length;
+      scrollToBottom();
+    }
+  }, [messages.length]); // ✅ FIXED: Depend on length only, not full messages array
 
   // ❌ REMOVED: Complex phase tracking logic - 22 lines of rigid state management
   // Including phase start index tracking and discussion count per phase
@@ -482,9 +489,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     }
   }, [chatId, searchParams, debugMode]);
 
-  // Load initial messages from database when chatId changes
+  // ✅ FIXED: Load initial messages with stable dependencies - PREVENT SETMESSAGES LOOP
   useEffect(() => {
     console.log(`[ChatContainer] useEffect triggered with chatId: ${chatId}`);
+
     const loadInitialMessages = async () => {
       // Only proceed if we have a chatId
       if (!chatId) {
@@ -499,7 +507,8 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       }
 
       // Only load if we haven't loaded for this chatId yet
-      if (hasLoadedRef.current || isLoadingInitialMessages) {
+      // ✅ FIXED: Check refs instead of state to avoid circular dependency
+      if (hasLoadedRef.current) {
         return;
       }
 
@@ -507,34 +516,39 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
       hasLoadedRef.current = true; // Mark as loading attempted
       setIsLoadingInitialMessages(true);
 
-      // ❌ REMOVED: Complex retry mechanism - 47 lines of rigid race condition handling
-      // Including exponential backoff, recursive retries, and elaborate error handling
-      // Natural LLM conversation uses simple loading without complex retry logic
-
       try {
         // Simple message loading without retry complexity
-        const messages = await loadChat(chatId, supabaseChatClient as any);
+        const loadedChatMessages = await loadChat(chatId, supabaseChatClient as any);
 
-      if (messages.length > 0) {
-        console.log(`[ChatContainer] ✅ Loaded ${messages.length} messages from database`);
-        setLoadedMessages(messages as AcademicUIMessage[]);
-        setMessages(messages as AcademicUIMessage[]);
-        lastPersistedCountRef.current = messages.length;
-      } else {
-        console.log(`[ChatContainer] No messages found for chat ${chatId} - starting fresh`);
-        setMessages([]);
-        lastPersistedCountRef.current = 0;
-      }
+        if (loadedChatMessages.length > 0) {
+          console.log(`[ChatContainer] ✅ Loaded ${loadedChatMessages.length} messages from database`);
+          setLoadedMessages(loadedChatMessages as AcademicUIMessage[]);
+          // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop that causes infinite re-renders
+          setTimeout(() => {
+            setMessages(loadedChatMessages as AcademicUIMessage[]);
+          }, 0);
+          lastPersistedCountRef.current = loadedChatMessages.length;
+        } else {
+          console.log(`[ChatContainer] No messages found for chat ${chatId} - starting fresh`);
+          // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop
+          setTimeout(() => {
+            setMessages([]);
+          }, 0);
+          lastPersistedCountRef.current = 0;
+        }
       } catch (error) {
         console.error(`[ChatContainer] Failed to load initial messages:`, error);
-        // Continue with empty chat
+        // Continue with empty chat - also async to prevent loops
+        setTimeout(() => {
+          setMessages([]);
+        }, 0);
       } finally {
         setIsLoadingInitialMessages(false);
       }
     };
 
     loadInitialMessages();
-  }, [chatId, isLoadingInitialMessages, setMessages]);
+  }, [chatId, setMessages]); // ✅ FIXED: Include setMessages to ensure stable reference
 
   // Approval handlers removed - using native OpenAI web search
 
@@ -658,6 +672,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
                     addToolResult={addToolResult}
                     sendMessage={sendMessage}
                     citations={citations}
+                    allMessages={messages}
                   />
                 ))}
               </div>

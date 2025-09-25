@@ -6,7 +6,7 @@
  */
 
 import { getSecretsManager, type SecretsManager } from './secrets-manager';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../database/supabase-client';
 
 interface ProviderConfig {
   name: string;
@@ -84,12 +84,9 @@ export class ApiKeyRotationManager {
   constructor() {
     this.secretsManager = getSecretsManager();
 
-    // Initialize Supabase for notifications
+    // Use singleton Supabase admin client to prevent multiple instances
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      this.supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
+      this.supabase = supabaseAdmin;
     }
   }
 

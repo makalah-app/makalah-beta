@@ -825,7 +825,7 @@ export function createDebouncedErrorHandler(
   };
 }
 
-const errorUtils = {
+export default {
   classifyError,
   generateRecoverySuggestions,
   collectDiagnostics,
@@ -834,5 +834,3 @@ const errorUtils = {
   formatErrorForUser,
   createDebouncedErrorHandler,
 };
-
-export default errorUtils;

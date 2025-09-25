@@ -67,7 +67,7 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <head>
         <title>Makalah AI - Academic Paper Writing Assistant</title>
-        <meta name="description" content="AI-powered academic paper writing platform dengan dukungan riset terstruktur dan kolaborasi manusia" />
+        <meta name="description" content="AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates" />
         <meta name="keywords" content="AI, academic writing, research, Makalah, Indonesia, academic assistant" />
         <link rel="icon" href="/favicon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -43,10 +43,8 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Export for legacy support
-const streamHelpers = {
+export default {
   generateId,
   formatDuration,
   debounce,
 };
-
-export default streamHelpers;

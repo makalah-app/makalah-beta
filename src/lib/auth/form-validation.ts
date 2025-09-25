@@ -552,7 +552,7 @@ export function validatePasswordResetForm(formData: PasswordResetFormData, confi
   };
 }
 
-const formValidation = {
+export default {
   validateEmail,
   validatePassword,
   validatePasswordConfirmation,
@@ -566,5 +566,3 @@ const formValidation = {
   sanitizeInput,
   calculatePasswordStrength
 };
-
-export default formValidation;

@@ -237,10 +237,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </Button>
             </PromptInputTools>
 
-            {/* Submit Button - Outline Style to Match PlusIcon */}
+            {/* Submit Button - Standardized Style */}
             <PromptInputSubmit
-              variant="ghost"
-              className="rounded-[5px] text-muted-foreground hover:text-foreground hover:bg-accent h-9 w-9 focus:outline-none focus:ring-0 border-0"
+              className="rounded-[5px] bg-accent-500 hover:bg-accent-400 text-white"
               status={status}
               disabled={disabled || status !== 'ready'}
             />

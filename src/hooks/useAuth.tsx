@@ -15,7 +15,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
 
@@ -110,39 +110,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const permissionManager = PermissionManager.getInstance();
 
-  // Initialize authentication from storage
-  useEffect(() => {
-    let mounted = true;
-    
-    async function initialize() {
-      if (!mounted) return;
-      
-      console.log('[useAuth] Initializing authentication...');
-      try {
-        // Call initializeAuth directly without dependency
-        await initializeAuth();
-        console.log('[useAuth] ✅ Authentication initialization complete');
-      } catch (error) {
-        console.error('[useAuth] ❌ Authentication initialization failed:', error);
-        // Set loading false on error
-        if (mounted) {
-          setAuthState(prev => ({ ...prev, isLoading: false }));
-        }
-      }
-    }
-    
-    initialize();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []); // Empty dependency to avoid cycle
+  // Prevent multiple initialization attempts
+  const initializingRef = React.useRef(false);
 
   /**
    * Initialize authentication from stored session
    */
-  const initializeAuth = async () => {
+  const initializeAuth = useCallback(async () => {
+    if (initializingRef.current) {
+      console.log('[initializeAuth] Already initializing, skipping...');
+      return;
+    }
+
     try {
+      initializingRef.current = true;
       console.log('[initializeAuth] Starting authentication initialization...');
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
@@ -159,12 +140,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: null
         });
+        initializingRef.current = false;
         return;
       }
 
       if (!session) {
         console.log('[initializeAuth] No active session found, setting isLoading: false');
         setAuthState(prev => ({ ...prev, isLoading: false }));
+        initializingRef.current = false;
         return;
       }
 
@@ -191,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: 'User profile not found'
         });
+        initializingRef.current = false;
         return;
       }
 
@@ -246,8 +230,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: null
       });
+    } finally {
+      initializingRef.current = false;
     }
-  };
+  }, []);
+
+  // Initialize authentication and set up auth state change listener
+  useEffect(() => {
+    let mounted = true;
+    let initialized = false;
+
+    async function initialize() {
+      if (!mounted || initialized) return;
+      initialized = true;
+
+      console.log('[useAuth] 🔄 INITIALIZING AUTHENTICATION...');
+      try {
+        await initializeAuth();
+        console.log('[useAuth] ✅ Authentication initialization complete');
+      } catch (error) {
+        console.error('[useAuth] ❌ Authentication initialization failed:', error);
+        if (mounted) {
+          setAuthState(prev => ({ ...prev, isLoading: false }));
+        }
+      }
+    }
+
+    // Listen for auth state changes from Supabase
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      console.log('[useAuth] Auth state change:', event, session?.user?.id);
+
+      if (event === 'SIGNED_OUT' || !session) {
+        initializingRef.current = false; // Reset flag
+        setAuthState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
+        });
+      } else if (event === 'SIGNED_IN') {
+        // ✅ CRITICAL FIX: Only handle first sign-in if not initializing
+        if (!initializingRef.current) {
+          console.log('[useAuth] New sign in detected, initializing...');
+          await initializeAuth();
+        } else {
+          console.log('[useAuth] Sign in event ignored - already initializing');
+        }
+      }
+      // ✅ CRITICAL FIX: Ignore ALL refresh events to prevent infinite loops
+      else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        console.log(`[useAuth] ${event} event ignored to prevent infinite loops`);
+      }
+    });
+
+    // Initialize once
+    initialize();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // NO DEPENDENCIES - run only once on mount
+
+  // ✅ CRITICAL FIX: Completely disable auto token refresh to prevent infinite loops
+  // Token refresh will be handled manually on API calls instead of timer-based
+  const tokenRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear any existing timeout to prevent multiple timers
+    if (tokenRefreshTimeoutRef.current) {
+      clearTimeout(tokenRefreshTimeoutRef.current);
+      tokenRefreshTimeoutRef.current = null;
+    }
+
+    // ✅ DISABLE: Auto token refresh timer - causes infinite loop
+    // Token refresh will be handled on-demand when API calls fail with 401
+    console.log('[useAuth] Auto token refresh disabled to prevent infinite loops');
+
+    return () => {
+      if (tokenRefreshTimeoutRef.current) {
+        clearTimeout(tokenRefreshTimeoutRef.current);
+        tokenRefreshTimeoutRef.current = null;
+      }
+    };
+  }, []); // ✅ CRITICAL FIX: No dependencies - run only once
+
 
   /**
    * Login user with credentials
@@ -466,6 +538,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Logout user
    */
   const logout = useCallback(async (): Promise<void> => {
+    const currentUserId = authState.user?.id;
+
     try {
       // Use Supabase auth logout
       await supabaseClient.auth.signOut();
@@ -482,8 +556,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userId');
 
     // Clear permission cache
-    if (authState.user) {
-      permissionManager.clearCache(authState.user.id);
+    if (currentUserId) {
+      permissionManager.clearCache(currentUserId);
     }
 
     // Reset state
@@ -494,7 +568,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       error: null
     });
-  }, [authState.user, permissionManager]);
+  }, [authState.user?.id]);
+
+  /**
+   * Refresh authentication token
+   */
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    if (!authState.session) return false;
+
+    return await attemptTokenRefresh(authState.session.refreshToken);
+  }, [authState.session?.refreshToken]); // ✅ CRITICAL FIX: Depend only on refreshToken value, not full session
 
   /**
    * Attempt token refresh
@@ -577,15 +660,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Refresh authentication token
-   */
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!authState.session) return false;
-    
-    return await attemptTokenRefresh(authState.session.refreshToken);
-  }, [authState.session, attemptTokenRefresh]);
-
-  /**
    * Validate session with server
    */
   const validateSession = useCallback(async (accessToken: string): Promise<boolean> => {
@@ -599,26 +673,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  /**
-   * Setup automatic token refresh
-   */
-  const setupTokenRefresh = useCallback((session: AuthSession) => {
-    const timeUntilExpiry = session.expiresAt - Date.now();
-    const refreshTime = timeUntilExpiry - (5 * 60 * 1000); // Refresh 5 minutes before expiry
-
-    if (refreshTime > 0) {
-      setTimeout(() => {
-        attemptTokenRefresh(session.refreshToken);
-      }, refreshTime);
-    }
-  }, [attemptTokenRefresh]);
-
-  // Set up token refresh timer
-  useEffect(() => {
-    if (authState.session) {
-      setupTokenRefresh(authState.session);
-    }
-  }, [authState.session, setupTokenRefresh]);
+  // ✅ REMOVED: setupTokenRefresh function - moved inline to prevent callback dependency loops
 
   /**
    * Permission checking methods
@@ -640,11 +695,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const result = permissionManager.hasPermission(permissionContext, permission as any, resourceId);
     return result.granted;
-  }, [authState.user, authState.session, permissionManager]);
+  }, [authState.user?.id, authState.user?.role, authState.session?.sessionId, permissionManager]); // ✅ CRITICAL FIX: Depend only on stable primitive values
 
   const isAdmin = useCallback((): boolean => {
     return authState.user?.role === 'admin' && hasPermission('admin.system');
-  }, [authState.user, hasPermission]);
+  }, [authState.user?.role, hasPermission]); // ✅ CRITICAL FIX: Depend only on role value, not full user object
 
   const canPerformAcademicOperations = useCallback((): boolean => {
     if (!authState.user) return false;
@@ -657,7 +712,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return permissionManager.canPerformAcademicOperations(permissionContext);
-  }, [authState.user, permissionManager]);
+  }, [authState.user?.id, authState.user?.role, authState.user?.isVerified, permissionManager]); // ✅ CRITICAL FIX: Depend only on specific user properties
 
   /**
    * Utility methods
@@ -714,7 +769,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Profile update error:', error);
       return false;
     }
-  }, [authState.user, authState.session]);
+  }, [authState.user?.id, authState.session?.sessionId]); // ✅ CRITICAL FIX: Depend only on stable user and session IDs
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     if (!authState.session) return false;
@@ -735,7 +790,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Password change error:', error);
       return false;
     }
-  }, [authState.session]);
+  }, [authState.session?.sessionId]); // ✅ CRITICAL FIX: Depend only on sessionId, not full session object
 
   /**
    * Request password reset
@@ -814,7 +869,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if expires within buffer time (reduced to 1 minute to prevent aggressive refresh)
     const bufferTime = bufferMinutes * 60 * 1000;
     return Date.now() > (authState.session.expiresAt - bufferTime);
-  }, [authState.session]);
+  }, [authState.session?.expiresAt]); // ✅ CRITICAL FIX: Depend only on expiresAt value, not full session
 
   // Context value
   const contextValue: AuthContextType = {

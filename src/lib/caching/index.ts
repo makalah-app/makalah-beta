@@ -499,11 +499,9 @@ export const cachingUtils = {
 /**
  * Default export for easy initialization
  */
-const cachingSystem = {
+export default {
   initialize: initializeCachingSystem,
   validate: validateCachingSystem,
   getStatus: getCachingSystemStatus,
   utils: cachingUtils,
 };
-
-export default cachingSystem;

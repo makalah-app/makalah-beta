@@ -147,7 +147,15 @@ export async function POST(request: NextRequest) {
             type: 'text',
             text: initialMessage
           }
-        ]
+        ],
+        createdAt,
+        metadata: {
+          userId,
+          phase,
+          workflowTemplate,
+          isInitial: true,
+          createdAt
+        }
       };
       
       // Save initial message using AI SDK compliant saveChat

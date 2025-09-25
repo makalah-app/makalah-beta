@@ -1,34 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  ChevronRight,
-  Book,
-  FileText,
-  Zap,
-  Settings,
-  Users,
-  HelpCircle,
-  Search,
-  Brain,
-  Shield,
-  Globe,
-} from 'lucide-react';
+import { ChevronRight, Book, FileText, Zap, Settings, Users, HelpCircle, Search, Brain, Shield, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 
 export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState('welcome');
@@ -69,6 +45,7 @@ export default function DocumentationPage() {
         return (
           <div className="space-y-8">
             <div>
+              <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Mulai</div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
                   <Brain className="w-5 h-5 text-primary" />
@@ -87,26 +64,26 @@ export default function DocumentationPage() {
                 untuk peneliti dan mahasiswa Indonesia yang ingin meningkatkan kualitas penulisan akademik mereka.
               </p>
 
-              <Card className="border-l-4 border-primary">
+              <Card className="border-l-4 border-l-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Fitur Utama</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2 text-muted-foreground list-disc pl-5">
+                  <ul className="space-y-2 text-muted-foreground">
                     <li>
-                      <strong>Chat dengan AI Agent</strong> - Berinteraksi langsung dengan AI untuk panduan penulisan
+                      • <strong>Chat dengan AI Agent</strong> - Berinteraksi langsung dengan AI untuk panduan penulisan
                     </li>
                     <li>
-                      <strong>Sistem Penelitian</strong> - Kelola dokumen dan file penelitian dengan mudah
+                      • <strong>Sistem Penelitian</strong> - Kelola dokumen dan file penelitian dengan mudah
                     </li>
                     <li>
-                      <strong>7 Fase Terstruktur</strong> - Proses penulisan yang sistematis dan terarah
+                      • <strong>7 Fase Terstruktur</strong> - Proses penulisan yang sistematis dan terarah
                     </li>
                     <li>
-                      <strong>Web Search Integration</strong> - Pencarian akademik yang terintegrasi dengan AI
+                      • <strong>Web Search Integration</strong> - Pencarian akademik yang terintegrasi dengan AI
                     </li>
                     <li>
-                      <strong>Kolaborasi Real-time</strong> - Bekerja sama dengan tim peneliti lainnya
+                      • <strong>Kolaborasi Real-time</strong> - Bekerja sama dengan tim peneliti lainnya
                     </li>
                   </ul>
                 </CardContent>
@@ -164,7 +141,7 @@ export default function DocumentationPage() {
             </div>
 
             <div className="space-y-6">
-              <Card className="border-l-4 border-primary">
+              <Card className="border-l-4 border-l-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Langkah 1: Mulai Chat Baru</CardTitle>
                 </CardHeader>
@@ -176,9 +153,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-secondary">
+              <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
-                  <CardTitle className="text-secondary-foreground">Langkah 2: Klarifikasi Topik</CardTitle>
+                  <CardTitle className="text-green-500">Langkah 2: Klarifikasi Topik</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -188,9 +165,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-muted">
+              <Card className="border-l-4 border-l-blue-500">
                 <CardHeader>
-                  <CardTitle className="text-foreground">Langkah 3: Ikuti 7 Fase</CardTitle>
+                  <CardTitle className="text-blue-500">Langkah 3: Ikuti 7 Fase</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -236,7 +213,7 @@ export default function DocumentationPage() {
                 <Card key={item.phase} className="hover:bg-card/70 transition-colors">
                   <CardContent className="pt-6">
                     <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 flex items-center justify-center text-primary-foreground font-semibold mr-4 bg-primary rounded-[3px]">
+                      <div className="w-8 h-8 flex items-center justify-center text-white font-semibold mr-4 bg-primary rounded-[3px]">
                         {item.phase}
                       </div>
                       <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
@@ -266,23 +243,23 @@ export default function DocumentationPage() {
             </div>
 
             <div className="space-y-8">
-              <Card className="border-l-4 border-primary">
+              <Card className="border-l-4 border-l-primary">
                 <CardHeader>
                   <CardTitle className="text-primary">Informasi yang Kami Kumpulkan</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2 text-muted-foreground list-disc pl-5">
-                    <li>Data akun pengguna (nama, email, preferensi)</li>
-                    <li>Konten makalah dan dokumen yang dibuat</li>
-                    <li>Riwayat interaksi dengan AI Agent</li>
-                    <li>Data penggunaan platform untuk peningkatan layanan</li>
+                  <ul className="space-y-2 text-muted-foreground">
+                    <li>• Data akun pengguna (nama, email, preferensi)</li>
+                    <li>• Konten makalah dan dokumen yang dibuat</li>
+                    <li>• Riwayat interaksi dengan AI Agent</li>
+                    <li>• Data penggunaan platform untuk peningkatan layanan</li>
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-secondary">
+              <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
-                  <CardTitle className="text-secondary-foreground">Penggunaan Data</CardTitle>
+                  <CardTitle className="text-green-500">Penggunaan Data</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -293,9 +270,9 @@ export default function DocumentationPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-l-4 border-muted">
+              <Card className="border-l-4 border-l-blue-500">
                 <CardHeader>
-                  <CardTitle className="text-foreground">Keamanan Data</CardTitle>
+                  <CardTitle className="text-blue-500">Keamanan Data</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -332,68 +309,67 @@ export default function DocumentationPage() {
   };
 
   return (
-    <div className="relative min-h-screen">
-      <SidebarProvider>
-        <div className="flex min-h-screen">
-          {/* Sidebar */}
-          <Sidebar
-            collapsible="none"
-            className="min-h-screen border-r border-border bg-card/50"
-          >
-            <SidebarHeader className="p-6 border-b">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari dokumentasi..."
-                  className="pl-10 bg-background/50 border-border text-foreground focus-visible:ring-0 focus-visible:border-primary"
-                />
-              </div>
-            </SidebarHeader>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Hero Pattern Background */}
+      <div
+        className="absolute inset-0 opacity-30 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
+          backgroundSize: '16px 16px',
+        }}
+      />
 
-            <SidebarContent className="p-6">
-              {/* Navigation sections */}
-              {navigationSections.map((section) => (
-                <SidebarGroup key={section.title} className="mb-8">
-                  <SidebarGroupLabel className="text-sm font-bold mb-4 tracking-wider uppercase text-muted-foreground">
-                    {section.title}
-                  </SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu className="space-y-2">
-                      {section.items.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = activeSection === item.id;
-
-                        return (
-                          <SidebarMenuItem key={item.id}>
-                            <SidebarMenuButton
-                              onClick={() => setActiveSection(item.id)}
-                              className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded-md ${
-                                isActive
-                                  ? "font-medium bg-muted/70 text-primary"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              <Icon className="w-4 h-4 mr-3" />
-                              <span>{item.label}</span>
-                              {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              ))}
-            </SidebarContent>
-          </Sidebar>
-
-          {/* Main Content */}
-          <div className="flex-1 p-8 max-w-4xl">
-            {renderContent()}
+      <div className="relative z-10 flex">
+        {/* Sidebar */}
+        <div className="w-80 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30">
+          {/* Search */}
+          <div className="mb-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari dokumentasi..."
+                className="pl-10 border-border"
+              />
+            </div>
           </div>
+
+          {/* Navigation */}
+          <nav className="space-y-8">
+            {navigationSections.map((section) => (
+              <div key={section.title}>
+                <h3 className="text-sm font-medium mb-4 tracking-wider uppercase text-muted-foreground">
+                  {section.title}
+                </h3>
+                <ul className="space-y-2">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeSection === item.id;
+                    return (
+                      <li key={item.id}>
+                        <button
+                          onClick={() => setActiveSection(item.id)}
+                          className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded-[3px] ${
+                            isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 mr-3" />
+                          {item.label}
+                          {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
-      </SidebarProvider>
+
+        {/* Main Content */}
+        <div className="flex-1 p-8 max-w-4xl">
+          {renderContent()}
+        </div>
+      </div>
     </div>
   );
 }

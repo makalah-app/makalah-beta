@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
         responseTime,
         details: detailed ? {
           note: 'Workflow engine architecture not implemented',
-          basicWorkflow: 'guided academic research chat workflow',
+          basicWorkflow: '7-phase academic methodology in chat',
           phases: 7,
         } : {
           note: 'Workflow engine not implemented',

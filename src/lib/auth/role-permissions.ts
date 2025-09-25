@@ -557,10 +557,8 @@ export function createPermissionHook(context: UserPermissionContext) {
 /**
  * Default Export
  */
-const rolePermissions = {
+export default {
   PermissionManager,
   createPermissionHook,
   ROLE_DEFINITIONS
 };
-
-export default rolePermissions;

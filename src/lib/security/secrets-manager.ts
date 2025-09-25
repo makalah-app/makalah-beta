@@ -6,7 +6,7 @@
  */
 
 import crypto from 'node:crypto';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '../database/supabase-client';
 
 // Encryption configuration
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
@@ -46,12 +46,9 @@ export class SecretsManager {
   }
 
   private initializeBackends() {
-    // Supabase for persistent storage
+    // Use singleton Supabase admin client to prevent multiple instances
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      this.supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
+      this.supabase = supabaseAdmin;
     }
 
     // Redis for caching (if available)

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import { Play, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -181,13 +180,10 @@ export default function TutorialPage() {
                   className="group cursor-pointer overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 border-border bg-card"
                 >
                   <div className="relative aspect-video overflow-hidden">
-                    <Image
+                    <img
                       src={tutorial.thumbnail || '/placeholder.svg'}
                       alt={tutorial.title}
-                      fill
-                      unoptimized
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all flex items-center justify-center">
                       <div className="w-16 h-16 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded-[3px]">
@@ -255,13 +251,10 @@ export default function TutorialPage() {
                   className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 border-border bg-card"
                 >
                   <div className="relative aspect-video overflow-hidden">
-                    <Image
+                    <img
                       src={tutorial.thumbnail || '/placeholder.svg'}
                       alt={tutorial.title}
-                      fill
-                      unoptimized
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all flex items-center justify-center">
                       <div className="w-12 h-12 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded-[3px]">

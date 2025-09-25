@@ -1,323 +1,7 @@
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project Overview
-
-This is **Makalah AI** - an enterprise-grade academic research platform powered by AI with a sophisticated 7-phase research methodology. Built with Next.js 14, AI SDK v5, and Supabase, it provides an advanced academic writing assistant for Indonesian users.
-
-## **🎯 MANDATORY DEVELOPMENT FRAMEWORK REFERENCES**
-
-### **CRITICAL REQUIREMENT - 100% COMPLIANCE MANDATORY**
-
-**ALL development work MUST strictly follow these authoritative references. NO EXCEPTIONS.**
-
-### **📚 Technical Implementation References**
-
-**1. AI SDK Implementation Authority**
-- **Primary Source**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/`
-- **Documentation**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/documentation/`
-- **MANDATORY**: All coding, modules, refactoring, and technical implementation MUST be 100% compliant with AI SDK patterns from these directories
-- **Protocol**: ALWAYS search solutions in AI SDK references FIRST before any implementation
-
-**2. Design & Visual Standards**
-- **Design Mockups**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/design/`
-- **Usage**: Complete visualization guidelines and layout standards
-- **Compliance**: All UI/UX must match established design patterns
-
-**3. AI Elements & Components**
-- **AI Elements Source**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk-elements/elements/`
-- **Scope**: Chat page components, AI interactions, and element patterns
-- **Requirement**: 100% compliance with AI SDK Elements standards
-
-### **🎨 UI Framework Integration**
-
-**ShadCN/UI Component System**
-- **Access Method**: MCP ShadCN/UI via `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/.mcp.json`
-- **Integration**: Use `mcp__shadcn__*` tools for component management
-- **Standards**: All UI elements MUST use ShadCN/UI + AI SDK Elements compliance
-
-### **🚫 STRICT PROHIBITIONS**
-
-**FORBIDDEN PRACTICES:**
-- ❌ **NO hardcoded custom styling in code**
-- ❌ **NO deviation from AI SDK v5 patterns**
-- ❌ **NO custom UI components without ShadCN/UI base**
-- ❌ **NO design implementations that bypass established mockups**
-
-### **✅ MANDATORY WORKFLOW**
-
-**For ANY technical problem:**
-1. **FIRST**: Search solution in `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/`
-2. **SECOND**: Check documentation in `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/documentation/`
-3. **THIRD**: Verify design compliance with `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/design/`
-4. **FOURTH**: Use ShadCN/UI via MCP tools for components
-5. **FINALLY**: Implement with 100% compliance to established patterns
-
-**VIOLATION OF THIS FRAMEWORK RESULTS IN:**
-- ❌ Rejected implementations
-- ❌ Mandatory refactoring requirements
-- ❌ Complete restart of development work
-
-**ADHERENCE TO THIS FRAMEWORK ENSURES:**
-- ✅ Production-ready code quality
-- ✅ Consistent user experience
-- ✅ Maintainable and scalable architecture
-- ✅ Full compatibility with AI SDK v5 ecosystem
-
----
-
-## Core Architecture
-
-### Technology Stack
-- **Frontend**: Next.js 14 App Router, React 18, TypeScript 5.4+
-- **AI Integration**: Vercel AI SDK v5 with dual-provider architecture (OpenAI primary, OpenRouter fallback)
-- **Database**: Supabase PostgreSQL with Row Level Security
-- **Styling**: TailwindCSS with custom design system and ShadCN/UI components
-- **Authentication**: Supabase Auth with JWT tokens
-
-### Key Features
-- **Dual Provider AI System**: Dynamic switching between OpenAI GPT-4o and OpenRouter providers
-- **Native Web Search**: OpenAI web search integration (no mock data)
-- **7-Phase Academic Workflow**: Structured research methodology from topic clarification to final formatting
-- **Real-time Streaming**: AI SDK v5 compliant streaming with smooth token delivery
-- **Multi-language Support**: Primary focus on Indonesian academic standards
-
-## Common Development Commands
-
-### Development Server
-```bash
-# Start development server (default port 3000)
-npm run dev
-
-# Alternative ports if needed
-PORT=3001 npm run dev
-PORT=3002 npm run dev
-```
-
-### Build & Quality Checks
-```bash
-# Type checking
-npm run type-check
-npm run type-check:watch
-
-# Linting
-npm run lint
-
-# Production build
-npm run build
-
-# Start production server
-npm run start
-
-# Run all quality checks (recommended before commits)
-npm run type-check && npm run lint && npm run build
-```
-
-### Testing
-```bash
-# Unit tests with Jest
-npm test
-
-# E2E tests with Playwright
-npx playwright install  # First time setup
-npx playwright test
-npx playwright test --ui  # Interactive mode
-
-# Specific test file
-npx playwright test tests/chat-workflow.spec.ts
-```
-
-## Architecture Deep Dive
-
-### AI System Core (`app/api/chat/route.ts`)
-The heart of the application is a sophisticated dual-provider AI system:
-
-- **Primary Provider**: Configurable via database (default: OpenAI GPT-4o with native web search)
-- **Fallback Provider**: Automatic fallback to OpenRouter when primary fails
-- **AI SDK v5 Compliance**: Uses `streamText()`, `convertToModelMessages()`, and `createUIMessageStream()`
-- **Streaming Architecture**: Real-time response streaming with `smoothStream()` for word-by-word delivery
-- **Authentication Guard**: Requires valid user ID for all operations (no anonymous fallbacks)
-
-### Dynamic Configuration System (`src/lib/ai/dynamic-config.ts`)
-- Runtime model selection based on admin settings stored in database
-- Provider health monitoring and automatic failover
-- System prompt management via database (no hardcoded prompts)
-- API key management with encrypted storage
-
-### Database Architecture
-**24+ Tables** with comprehensive Row Level Security:
-- `auth.users` - Supabase authentication
-- `user_profiles` - Extended user information
-- `conversations` - Chat sessions with metadata
-- `messages` - Individual chat messages
-- `admin_config` - System configuration
-- `workflows` - Academic workflow tracking
-
-### Message Processing Flow
-1. **Authentication**: Extract user ID from session or client headers
-2. **Message Validation**: Convert to AI SDK v5 UIMessage format
-3. **Model Selection**: Dynamic provider selection from database config
-4. **Streaming**: AI SDK v5 streaming with tool calling support
-5. **Persistence**: Async database operations (fire-and-forget pattern)
-
-### TypeScript Configuration
-- **Path Aliases**: `@/*` → `./src/*`, `@/lib/*` → `./src/lib/*`
-- **Strict Mode**: Comprehensive type checking enabled
-- **Excluded Files**: Test files and temporary components excluded from compilation
-
-## Critical Implementation Patterns
-
-### AI SDK v5 Compliance
-All AI interactions must use official AI SDK v5 patterns:
-```typescript
-import { streamText, convertToModelMessages, createUIMessageStream } from 'ai';
-
-// Message conversion (CRITICAL for compatibility)
-const modelMessages = convertToModelMessages(uiMessages);
-
-// Streaming setup
-const stream = createUIMessageStream({
-  execute: async ({ writer }) => {
-    const result = streamText({
-      model: dynamicConfig.primaryModel,
-      messages: modelMessages,
-      tools: webSearchTools,
-    });
-
-    writer.merge(result.toUIMessageStream());
-  }
-});
-```
-
-### Database Operations Protocol
-**CRITICAL**: Native MCP Supabase tools are broken due to crypto errors. Always use crypto-patched scripts:
-
-```bash
-# NEVER use these (broken):
-# mcp__supabase__execute_sql
-# mcp__supabase__apply_migration
-
-# ALWAYS use crypto-patched scripts:
-node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM auth.users"
-node scripts/mcp-with-crypto.mjs "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
-```
-
-### Error Handling Patterns
-- **Streaming Error Recovery**: Graceful degradation with fallback providers
-- **Authentication Guards**: No anonymous operations allowed
-- **Database Resilience**: Fire-and-forget async patterns prevent blocking AI responses
-
-## Component Architecture
-
-### Core Chat Components
-- **ChatContainer** (`src/components/chat/ChatContainer.tsx`): Main chat interface with streaming
-- **MessageDisplay** (`src/components/chat/MessageDisplay.tsx`): Markdown rendering with syntax highlighting
-- **StreamingHandler**: Real-time message streaming management
-
-### Admin Dashboard
-- **ProviderSelector** (`src/components/admin/ProviderSelector.tsx`): Dynamic AI provider configuration
-- **System Configuration**: Real-time model parameter tuning via database
-
-### UI Components
-- **ShadCN/UI Integration**: Use `npx shadcn@latest add [component]` to add new components
-- **Design System**: 3px border radius standard, semantic color tokens
-- **Responsive Design**: Mobile-first with TailwindCSS breakpoints
-
-## Development Guidelines
-
-### Code Standards
-- **TypeScript Strict**: All code must pass type checking
-- **No Hardcoded Values**: Use database configuration for all AI settings
-- **Async Patterns**: Database operations should be fire-and-forget to avoid blocking streams
-- **Error Boundaries**: Comprehensive error handling without disrupting user experience
-
-### Testing Requirements
-- **Unit Tests**: Jest with React Testing Library
-- **Integration Tests**: API route testing with Supabase
-- **E2E Tests**: Playwright for complete user workflows
-- **Quality Gates**: All tests must pass before deployment
-
-### Security Considerations
-- **Authentication Required**: No anonymous operations
-- **Row Level Security**: All database queries enforce user isolation
-- **API Key Management**: Encrypted storage of provider credentials
-- **Input Validation**: Zod schemas for all API inputs
-
-## Environment Configuration
-
-### Required Environment Variables
-```bash
-# Primary AI Provider
-OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxx
-PRIMARY_MODEL=gpt-4o
-
-# Fallback Provider
-OPENROUTER_API_KEY=sk-or-xxxxxxxxxxxxxxxxxxxxx
-FALLBACK_MODEL=google/gemini-2.5-flash
-
-# Database
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
-```
-
-### Development Setup
-1. **Dependencies**: `npm install`
-2. **Environment**: Copy `.env.example` to `.env.local`
-3. **Database**: Ensure Supabase project is configured
-4. **MCP Scripts**: Verify crypto-patched scripts work: `node scripts/mcp-with-crypto.mjs "SELECT 1"`
-
-## Deployment Considerations
-
-### Production Readiness
-- **Build Validation**: `npm run build` must succeed
-- **Type Safety**: `npm run type-check` must pass
-- **Linting**: `npm run lint` must pass clean
-- **Environment Variables**: All production API keys configured
-- **Database Migrations**: Supabase schema up to date
-
-### Performance Optimization
-- **Streaming Architecture**: Word-by-word token delivery with 35ms delay
-- **Caching Strategy**: Next.js static generation where appropriate
-- **Database Indexes**: Optimized queries for chat history
-- **Error Recovery**: Graceful fallback between AI providers
-
-## Troubleshooting Common Issues
-
-### MCP Database Errors
-```bash
-# Error: crypto is not defined
-# Solution: Use crypto-patched script
-node scripts/mcp-with-crypto.mjs "YOUR_SQL_QUERY"
-```
-
-### AI SDK v5 Message Conversion Errors
-```typescript
-// Always use convertToModelMessages for proper tool part handling
-const modelMessages = convertToModelMessages(uiMessages);
-```
-
-### Streaming Connection Issues
-- Check network connectivity
-- Verify API keys are valid
-- Ensure proper CORS headers in Next.js config
-- Monitor provider health endpoints
-
-### Authentication Problems
-- Verify Supabase configuration
-- Check JWT token validity
-- Ensure RLS policies are active
-- Validate user session extraction
-
-## Key Files to Understand
-
-- **`app/api/chat/route.ts`**: Core AI chat API with dual providers and streaming
-- **`src/lib/ai/dynamic-config.ts`**: Dynamic model configuration system
-- **`src/lib/database/supabase-server-auth.ts`**: Authentication and session management
-- **`app/layout.tsx`**: Root layout with providers and theme system
-- **`next.config.js`**: Next.js configuration with webpack optimizations
-- **`tailwind.config.ts`**: Design system configuration
 
 ## Behavioral Guidelines
 
@@ -344,7 +28,234 @@ JANGAN PERNAH KLAIM SUKSES TAPI NYATANYA BERBOHONG. JANGAN PERNAH OVER CONFIDENC
 - JANGAN MELEWATKAN PROSES YANG BELUM SELESAI, JANGAN MEREMEHKAN APAPUN
 - LEBIH BAIK BERPROSES LEBIH LAMA DARIPADA MEMBUAT KESIMPULAN YANG TIDAK ADA BUKTINYA
 
----
+## Project Overview
+
+This is a **Makalah AI** academic paper writing platform with a sophisticated AI-powered 7-phase research methodology. The repository contains:
+
+- **Makalah AI Application**: Main development working directory (`makalahApp/`) - Next.js application
+- **AI SDK Documentation**: Comprehensive documentation for Vercel AI SDK v5 (`aisdk/` and `documentation/`)
+- **Knowledge Base**: Academic paper writing platform design documents (`knowledge_base/`)
+- **Context Templates**: AI prompting templates and task structures (`__context__/`)
+
+## Recent Development Status (September 2025)
+
+**Current Implementation Status**:
+- **Design System**: Complete homepage, auth, chat, FAQ, and tutorial pages with semantic design tokens
+- **ShadCN/UI Integration**: Button, Card, Badge, Accordion components with 3px border radius standard
+- **Theme System**: Dark/light mode dengan proper color schemes
+- **Navigation**: All core routes implemented and linked properly
+
+## Architecture Overview
+
+### Core Technologies
+- **Frontend**: Next.js 14 with App Router, React 18, TypeScript
+- **Backend**: Next.js API Routes with streaming support
+- **Database**: Supabase PostgreSQL with Row Level Security (24 tables, enterprise-grade schema)
+- **Authentication**: Supabase Auth with JWT, social auth, magic links
+- **AI Integration**: Vercel AI SDK v5 with streaming, multi-provider support (OpenAI primary, OpenRouter fallback)
+- **Styling**: TailwindCSS with custom design system
+- **State Management**: React Context + Server Components pattern
+
+### AI System Architecture
+- **Multi-Provider Setup**: Dynamic provider switching (OpenAI GPT-4o + OpenRouter Gemini 2.5 Flash)
+- **7-Phase Academic Workflow**: Research Analysis → Outline Generation → Content Drafting → Citation Integration → Structure Refinement → Quality Review → Final Formatting
+- **Human-in-the-Loop**: Approval gates with intelligent phase transitions
+- **Native Web Search**: OpenAI web search with academic source prioritization (.edu, .ac.id)
+- **Streaming Architecture**: AI SDK v5 compliant streaming with SSE
+
+## Common Commands
+
+All commands should be run from the `makalahApp/` directory:
+
+```bash
+cd makalahApp/
+```
+
+### Development Commands
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+
+# Type checking
+npm run type-check
+
+# Type checking with watch mode
+npm run type-check:watch
+
+# Linting
+npm run lint
+
+# Run all quality checks before commit
+npm run type-check && npm run lint && npm run build
+```
+
+### Development Server Ports
+```bash
+# Default development
+npm run dev              # Port 3000
+
+# Alternative ports (when needed)
+PORT=3001 npm run dev    # Port 3001
+PORT=3002 npm run dev    # Port 3002
+```
+
+### Database Operations
+
+**⚠️ CRITICAL**: Native MCP Supabase tools are broken due to crypto errors. Always use crypto-patched scripts:
+
+```bash
+# SQL execution (from project root)
+cd /Users/eriksupit/Desktop/makalah
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM auth.users"
+
+# Alternative method
+node scripts/mcp-handshake.js sql "SELECT * FROM user_profiles LIMIT 5"
+```
+
+## Working Directory
+
+**Primary development location**: `makalahApp/`
+
+All active development occurs in the `makalahApp/` directory. This contains the complete Next.js application implementing the Makalah AI platform.
+
+### Key File Structure
+```
+makalahApp/
+├── app/                  # Next.js App Router
+│   ├── api/              # API routes
+│   │   ├── chat/         # Main chat API with streaming
+│   │   ├── admin/        # Admin configuration APIs
+│   │   └── auth/         # Authentication endpoints
+│   ├── admin/            # Admin dashboard pages
+│   ├── auth/             # Authentication pages
+│   └── chat/             # Main chat interface
+├── src/
+│   ├── components/       # React components
+│   │   ├── chat/         # Chat interface components
+│   │   ├── admin/        # Admin dashboard components
+│   │   └── ui/           # Reusable UI components
+│   ├── lib/              # Core business logic
+│   │   ├── ai/           # AI system configuration
+│   │   ├── database/     # Database operations
+│   │   └── utils/        # Utility functions
+│   └── types/            # TypeScript definitions
+└── public/               # Static assets
+```
+
+## Key Implementation Details
+
+### AI System Core Components
+
+**Main Chat API**: `app/api/chat/route.ts`
+- Dual-provider system (OpenAI + OpenRouter) with automatic fallback
+- AI SDK v5 compliant streaming with `streamText()` and `convertToModelMessages()`
+- Native OpenAI web search integration (no custom tools needed)
+- 7-phase academic workflow with intelligent phase transitions
+- Human-in-the-loop approval gates with approval/revision handling
+
+**AI Configuration System**: `src/lib/ai/config/ai-config.ts`
+- Comprehensive configuration management for all AI services
+- Environment-specific settings (development/staging/production)
+- Provider settings, guardrails, workflow configuration
+- Type-safe configuration with validation
+
+**Dynamic Configuration**: `src/lib/ai/dynamic-config.ts`
+- Runtime model selection based on admin settings
+- API key management with database storage
+- Provider fallback logic
+
+### Database Architecture
+
+**Schema**: 24 enterprise-grade tables with comprehensive RLS policies
+- `auth.users` - Supabase authentication
+- `user_profiles` - Extended user information
+- `conversations` - Chat sessions with metadata
+- `messages` - Individual chat messages
+- `artifacts` - Generated academic content
+- `admin_config` - System configuration
+
+**Authentication**: Server-side session extraction with fallback to client-provided user IDs
+- JWT tokens with httpOnly cookies
+- Row Level Security for data isolation
+- Real-time chat history with universal user support
+
+### Chat System Components
+
+**ChatContainer**: `src/components/chat/ChatContainer.tsx`
+- Main chat interface with streaming message display
+- Workflow progress tracking and phase indicators
+- Artifact rendering and approval gate handling
+- Real-time history updates
+
+**Message Display**: `src/components/chat/MessageDisplay.tsx`
+- Markdown rendering with syntax highlighting
+- Citation display and academic source formatting
+- Streaming text updates with AI SDK integration
+
+### Task Execution Guidelines
+
+**MANDATORY Primary Source**: `/Users/eriksupit/Desktop/makalah/documentation`
+- All AI SDK implementations MUST reference official documentation from this path exclusively
+- NO external browsing atau alternative sources without explicit validation
+- Complete compliance dengan AI SDK v5 patterns verified dalam source code analysis
+
+**Specialized Agents Available**: `/Users/eriksupit/Desktop/makalah/.claude/agents`
+
+## Development Best Practices
+
+### Critical File Protection
+- **`app/api/chat/route.ts`**: Contains core chat API with dual-provider AI system, streaming support, and academic workflow integration
+- **`src/lib/ai/config/ai-config.ts`**: Central AI configuration management - handle with care
+- **`src/components/chat/ChatContainer.tsx`**: Main chat interface - preserves streaming state
+- **Streaming Components**: Never modify AI SDK v5 streaming patterns without verification
+- **Database Integration**: Always use fire-and-forget async patterns for database operations
+
+### Key Development Patterns
+- **AI SDK v5 Compliance**: All AI integrations use `streamText()` and `convertToModelMessages()`
+- **Dual Provider System**: OpenAI primary, OpenRouter fallback with automatic switching
+- **Component Architecture**: React Server Components + Client Components hybrid
+- **Database Operations**: Supabase with RLS, async fire-and-forget patterns for chat history
+
+### TypeScript Configuration
+- Path aliases configured: `@/*` → `./src/*`, `@/lib/*` → `./src/lib/*`, etc.
+- Strict mode enabled with comprehensive type checking
+- Excluded test files and temporary components from compilation
+
+### Authentication Flow
+1. Server-side session extraction via `getUserIdWithSystemFallback()`
+2. Fallback to client-provided user ID with UUID validation
+3. Authentication guard - no operations without valid user ID
+4. Real-time chat history updates with RLS-based data isolation
+
+### Error Handling
+- Comprehensive error boundaries in `src/components/error-handling/`
+- Streaming error recovery with graceful degradation
+- Database error isolation prevents disruption to AI functionality
+
+### Testing Strategy
+- Integration tests: `src/__tests__/integration/`
+- Unit tests: `src/__tests__/unit/`
+- Playwright E2E tests: Test chat functionality, auth flow, admin panel
+- Critical workflow validation before production deployment
+
+### Test Execution
+```bash
+# Playwright E2E tests
+npx playwright test
+
+# Run specific test
+npx playwright test tests/crypto-compatibility.test.ts
+
+# Manual testing - development server
+npm run dev
+# Navigate to localhost:3000 for manual testing
+```
 
 ## **🚨 MANDATORY MCP SUPABASE OPERATIONS PROTOCOL**
 
@@ -568,13 +479,3 @@ npx shadcn@latest add accordion
 # Components follow 3px border radius standard
 # All styling uses semantic design tokens (bg-background, text-foreground, etc.)
 ```
----
-
-**MANDATORY Primary Source**: `/Users/eriksupit/Desktop/makalah/documentation`
-- All AI SDK implementations MUST reference official documentation from this path exclusively
-- NO external browsing atau alternative sources without explicit validation
-- Complete compliance dengan AI SDK v5 patterns verified dalam source code analysis
-
----
-
-This repository implements a production-ready academic AI platform with sophisticated error handling, dual provider architecture, and real-time streaming capabilities. Always prioritize user experience, data security, and system reliability when making changes.

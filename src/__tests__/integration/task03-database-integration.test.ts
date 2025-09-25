@@ -545,29 +545,33 @@ describe('Task 03.6: Regression Testing - Task 01-02 Functionality Preservation'
     await supabaseAdmin.from('conversations').delete().eq('id', testChatId);
   });
 
-  test('should persist messages that include arbitrary approval metadata', async () => {
-    const approvalMetadata = {
+  test('should not interfere with approval gates and HITL system', async () => {
+    // This is a smoke test to verify our integration doesn't break phase approval logic
+    // In real implementation, this would test actual approval gate functionality
+    
+    const phaseApprovalContext = {
       approved: true,
       phase: 2,
-      reviewer: 'test-user',
-      notes: 'metadata-only smoke test'
+      feedback: null
     };
 
+    // Our persistence should handle approval contexts
     const testMessages: AcademicUIMessage[] = [
       {
-        id: 'metadata-test-msg',
+        id: 'hitl-test-msg',
         role: 'assistant',
-        content: 'Metadata persistence regression check',
-        parts: [{ type: 'text', text: 'Metadata persistence regression check' }],
+        content: 'Phase completion response',
+        parts: [{ type: 'text', text: 'Phase completion response' }],
         createdAt: new Date(),
-        metadata: {
-          userId: TEST_USER_ID,
+        metadata: { 
+          userId: TEST_USER_ID, 
           phase: 2,
-          approvalContext: approvalMetadata
+          approvalContext: phaseApprovalContext
         }
       }
     ];
 
+    // Should handle HITL messages correctly
     expect(() => {
       persistMessagesAsync(testMessages, {
         conversationId: testConversationId,

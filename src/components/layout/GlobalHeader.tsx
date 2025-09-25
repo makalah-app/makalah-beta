@@ -117,7 +117,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
 
   return (
     <header className={cn(
-      'flex items-center justify-between px-6 py-4 border-b border-border bg-background z-50 relative',
+      'flex items-center justify-between px-6 py-4 border-b border-border bg-background',
       className
     )}>
       {/* Brand Section */}
