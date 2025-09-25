@@ -307,8 +307,8 @@ function ChatPageContent() {
               <SidebarGroup>
                 <SidebarMenu>
                   <SidebarMenuItem className="border-b border-border py-2">
-                    <SidebarMenuButton onClick={handleNewChat}>
-                      <MessageSquare className="w-4 h-4 text-sm" />
+                    <SidebarMenuButton onClick={handleNewChat} className="text-sm">
+                      <MessageSquare className="w-4 h-4" />
                       <span>Percakapan Baru</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -321,7 +321,7 @@ function ChatPageContent() {
 
                 return (
                   <SidebarGroup key={groupName}>
-                    <SidebarGroupLabel className="text-sm font-medium tracking-wider uppercase text-muted-foreground">
+                    <SidebarGroupLabel className="text-sm font-medium tracking-wider text-muted-foreground">
                       {groupName}
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
