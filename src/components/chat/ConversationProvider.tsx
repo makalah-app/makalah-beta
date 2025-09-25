@@ -84,6 +84,28 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
   // =====================================================================================
 
   /**
+   * Load user conversations list
+   */
+  const loadUserConversations = useCallback(async (): Promise<void> => {
+    try {
+      setLoadingConversations(true);
+
+      console.log(`[ConversationProvider] Loading conversations for user ${userId}`);
+
+      const userConversations = await getUserConversations(userId);
+      setConversations(userConversations);
+
+      console.log(`[ConversationProvider] Loaded ${userConversations.length} conversations`);
+
+    } catch (error) {
+      console.error('[ConversationProvider] Load conversations error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load conversations');
+    } finally {
+      setLoadingConversations(false);
+    }
+  }, [userId]);
+
+  /**
    * Create new conversation
    */
   const createNewConversation = useCallback(async (): Promise<string> => {
@@ -92,16 +114,16 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       setError(undefined);
 
       console.log(`[ConversationProvider] Creating new conversation for user ${userId}`);
-      
+
       const conversationId = await createChat(userId, 'New Academic Chat');
-      
+
       console.log(`[ConversationProvider] Created conversation ${conversationId}`);
-      
+
       // Refresh conversation list
       await loadUserConversations();
-      
+
       return conversationId;
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create conversation';
       setError(errorMessage);
@@ -148,29 +170,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
   }, []);
 
   /**
-   * Load user conversations list
-   */
-  const loadUserConversations = useCallback(async (): Promise<void> => {
-    try {
-      setLoadingConversations(true);
-      
-      console.log(`[ConversationProvider] Loading conversations for user ${userId}`);
-      
-      const userConversations = await getUserConversations(userId);
-      
-      setConversations(userConversations);
-      
-      console.log(`[ConversationProvider] Loaded ${userConversations.length} conversations`);
-      
-    } catch (error) {
-      console.error('[ConversationProvider] Load conversations error:', error);
-      setConversations([]); // Fallback to empty array
-    } finally {
-      setLoadingConversations(false);
-    }
-  }, [userId]);
-
-  /**
    * Switch to different conversation
    */
   const switchConversation = useCallback(async (conversationId: string): Promise<void> => {
@@ -186,23 +185,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       throw error;
     }
   }, [currentConversationId, loadConversation]);
-
-  /**
-   * Delete conversation (placeholder - implement based on requirements)
-   */
-  const deleteConversation = useCallback(async (conversationId: string): Promise<void> => {
-    try {
-      console.log(`[ConversationProvider] Delete conversation ${conversationId} (not implemented)`);
-      
-      // TODO: Implement conversation deletion
-      // For now, we'll archive it
-      await archiveConversation(conversationId);
-      
-    } catch (error) {
-      console.error('[ConversationProvider] Delete conversation error:', error);
-      throw error;
-    }
-  }, [archiveConversation]);
 
   /**
    * Archive conversation
@@ -228,6 +210,23 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       throw error;
     }
   }, [currentConversationId, loadUserConversations]);
+
+  /**
+   * Delete conversation (placeholder - implement based on requirements)
+   */
+  const deleteConversation = useCallback(async (conversationId: string): Promise<void> => {
+    try {
+      console.log(`[ConversationProvider] Delete conversation ${conversationId} (not implemented)`);
+      
+      // TODO: Implement conversation deletion
+      // For now, we'll archive it
+      await archiveConversation(conversationId);
+      
+    } catch (error) {
+      console.error('[ConversationProvider] Delete conversation error:', error);
+      throw error;
+    }
+  }, [archiveConversation]);
 
   /**
    * Refresh conversation data

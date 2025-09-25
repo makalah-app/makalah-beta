@@ -303,7 +303,7 @@ export interface ApprovalRecord {
  */
 export interface AcademicSSEEvent {
   type: 'start' | 'text-delta' | 'text-end' | 'tool-call' | 'tool-result' 
-       | 'approval-request' | 'phase-transition' | 'error' | 'done' | 'ping';
+       | 'phase-transition' | 'error' | 'done' | 'ping';
   id?: string;
   data: any;
   timestamp: number;

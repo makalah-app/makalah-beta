@@ -411,7 +411,7 @@ export const useErrorNotifications = () => {
   };
 
   const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
+    setNotifications(prev => prev.filter(notif => notif?.id !== id));
   };
 
   const clearAllNotifications = () => {
@@ -457,9 +457,9 @@ export const ErrorNotificationContainer: React.FC<{
         pointerEvents: 'none',
       }}
     >
-      {visibleNotifications.map((notification, index) => (
+      {visibleNotifications.filter(Boolean).map((notification, index) => (
         <div
-          key={notification.id}
+          key={notification?.id || `notification-${index}`}
           style={{
             marginBottom: '8px',
             pointerEvents: 'auto',
@@ -467,11 +467,11 @@ export const ErrorNotificationContainer: React.FC<{
         >
           <ErrorNotification
             error={notification}
-            onRetry={() => onRetry?.(notification.id)}
-            onDismiss={() => onDismiss?.(notification.id)}
-            onAction={(actionType) => onAction?.(notification.id, actionType)}
+            onRetry={() => onRetry?.(notification?.id || '')}
+            onDismiss={() => onDismiss?.(notification?.id || '')}
+            onAction={(actionType) => onAction?.(notification?.id || '', actionType)}
             position={position}
-            autoDismiss={notification.severity === 'low' ? 5 : 0}
+            autoDismiss={notification?.severity === 'low' ? 5 : 0}
           />
         </div>
       ))}

@@ -498,7 +498,7 @@ export const ErrorRecoveryModal: React.FC<ErrorRecoveryModalProps> = ({
               Recovery Steps
             </h3>
             
-            <div style={{ space: '12px' }}>
+            <div style={{ margin: '12px 0' }}>
               {recoverySteps.map((step, index) => (
                 <div
                   key={step.id}

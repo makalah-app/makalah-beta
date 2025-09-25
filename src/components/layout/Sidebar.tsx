@@ -375,7 +375,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div>
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name || user.email || 'User'} />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={user.avatar} alt={user.name || user.email || 'User'} />
+                  </>
                 ) : (
                   ((user.name || user.fullName || user.email?.split('@')[0] || 'U') + '').split(' ').map(n => n && n[0] ? n[0] : 'U').join('').toUpperCase()
                 )}

@@ -1,10 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Book, FileText, Zap, Settings, Users, HelpCircle, Search, Brain, Shield, Globe } from 'lucide-react';
+import {
+  ChevronRight,
+  Book,
+  FileText,
+  Zap,
+  Settings,
+  Users,
+  HelpCircle,
+  Search,
+  Brain,
+  Shield,
+  Globe,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 
 export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState('welcome');
@@ -309,7 +333,7 @@ export default function DocumentationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="relative">
       {/* Hero Pattern Background */}
       <div
         className="absolute inset-0 opacity-30 pointer-events-none"
@@ -319,57 +343,67 @@ export default function DocumentationPage() {
         }}
       />
 
-      <div className="relative z-10 flex">
-        {/* Sidebar */}
-        <div className="w-80 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30">
-          {/* Search */}
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari dokumentasi..."
-                className="pl-10 border-border"
-              />
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="space-y-8">
-            {navigationSections.map((section) => (
-              <div key={section.title}>
-                <h3 className="text-sm font-medium mb-4 tracking-wider uppercase text-muted-foreground">
-                  {section.title}
-                </h3>
-                <ul className="space-y-2">
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeSection === item.id;
-                    return (
-                      <li key={item.id}>
-                        <button
-                          onClick={() => setActiveSection(item.id)}
-                          className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded-[3px] ${
-                            isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4 mr-3" />
-                          {item.label}
-                          {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+      <SidebarProvider>
+        <div className="flex relative z-10 min-h-screen">
+          {/* Sidebar */}
+          <Sidebar
+            collapsible="none"
+            className="min-h-screen border-r border-border bg-card/50"
+          >
+            <SidebarHeader className="p-6 border-b">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari dokumentasi..."
+                  className="pl-10 bg-background/50 border-border text-foreground focus-visible:ring-0 focus-visible:border-primary"
+                />
               </div>
-            ))}
-          </nav>
-        </div>
+            </SidebarHeader>
 
-        {/* Main Content */}
-        <div className="flex-1 p-8 max-w-4xl">
-          {renderContent()}
+            <SidebarContent className="p-6">
+              {/* Navigation sections */}
+              {navigationSections.map((section) => (
+                <SidebarGroup key={section.title} className="mb-8">
+                  <SidebarGroupLabel className="text-sm font-bold mb-4 tracking-wider uppercase text-muted-foreground">
+                    {section.title}
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu className="space-y-2">
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeSection === item.id;
+
+                        return (
+                          <SidebarMenuItem key={item.id}>
+                            <SidebarMenuButton
+                              onClick={() => setActiveSection(item.id)}
+                              className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded-md ${
+                                isActive
+                                  ? "font-medium bg-muted/70 text-primary"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4 mr-3" />
+                              <span>{item.label}</span>
+                              {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              ))}
+            </SidebarContent>
+          </Sidebar>
+
+          {/* Main Content */}
+          <div className="flex-1 p-8 max-w-4xl">
+            {renderContent()}
+          </div>
         </div>
-      </div>
+      </SidebarProvider>
     </div>
   );
 }

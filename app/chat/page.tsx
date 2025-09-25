@@ -2,27 +2,23 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { MessageSquare, Settings, LogOut, ChevronDown, Shield } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
 import { generateUUID } from '../../src/lib/utils/uuid-generator';
 import { AuthProvider, useAuth } from '../../src/hooks/useAuth';
 import RoleBasedRoute from '../../src/components/auth/AuthRoutes';
 import { useChatHistory } from '../../src/hooks/useChatHistory';
+import { AppSidebar } from '../../src/components/layout/AppSidebar';
 
 // ShadCN UI Components
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
 } from '../../src/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../src/components/ui/dropdown-menu';
 import { Button } from '../../src/components/ui/button';
@@ -112,7 +108,7 @@ function ChatPageContent() {
 
   const handleUserMenuAction = async (action: string) => {
     console.log('User menu action:', action);
-    
+
     if (action === 'logout') {
       try {
         console.log('[ChatPage] Logging out user...');
@@ -127,6 +123,9 @@ function ChatPageContent() {
     } else if (action === 'settings') {
       console.log('[ChatPage] Navigating to settings...');
       router.push('/settings');
+    } else if (action === 'admin') {
+      console.log('[ChatPage] Navigating to admin dashboard...');
+      router.push('/admin');
     } else {
       console.log('[ChatPage] Unknown user menu action:', action);
     }
@@ -186,108 +185,134 @@ function ChatPageContent() {
     router.push(url);
   };
 
+  // Sidebar header component
+  const sidebarHeader = (
+    <div className="flex items-center gap-3">
+      <a href="/" className="flex items-center text-decoration-none cursor-pointer">
+        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center text-sm font-semibold">
+          M
+        </div>
+      </a>
+    </div>
+  );
+
+  // Sidebar content component
+  const sidebarContent = (
+    <>
+      <SidebarGroup>
+        <SidebarMenu>
+          <SidebarMenuItem className="border-b border-border py-2">
+            <SidebarMenuButton onClick={handleNewChat}>
+              <MessageSquare className="w-4 h-4" />
+              <span>New chat</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+
+      <SidebarGroup>
+        <SidebarGroupLabel>Riwayat</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {conversations.slice(0, 10).map((conversation) => (
+              <SidebarMenuItem key={conversation.id}>
+                <SidebarMenuButton onClick={() => handleConversationClick(conversation.id)}>
+                  <span className="truncate">
+                    {conversation.title || 'New Conversation'}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+            {conversations.length === 0 && !historyLoading && (
+              <SidebarMenuItem>
+                <SidebarMenuButton disabled>
+                  <span className="text-muted-foreground text-sm">No conversations yet</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </>
+  );
+
+  // Sidebar footer component
+  const sidebarFooter = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="group w-full flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <div
+            className="w-8 h-8 avatar-green-solid rounded-[3px] flex items-center justify-center text-sm font-medium"
+            aria-hidden="true"
+          >
+            {getUserInitials()}
+          </div>
+          <div className="flex-1 text-left">
+            <span className="block text-sm font-medium text-foreground">
+              {user?.fullName || user?.email?.split('@')[0] || 'User'}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {user?.role || 'Member'}
+            </span>
+          </div>
+          <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" className="w-52 p-2">
+        {user?.role === 'admin' && (
+          <DropdownMenuItem
+            onSelect={() => handleUserMenuAction('admin')}
+            className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Dashboard</span>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onSelect={() => handleUserMenuAction('settings')}
+          className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground"
+        >
+          <Settings className="w-4 h-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => handleUserMenuAction('logout')}
+          className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-red-50 focus:text-destructive data-[highlighted]:bg-red-50 data-[highlighted]:text-destructive"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  // Main content component
+  const mainContent = (
+    <ChatContainer
+      key={currentChatId}
+      chatId={currentChatId}
+      debugMode={false}
+      onError={(error) => {
+        console.error('Chat error:', error);
+      }}
+    />
+  );
+
   return (
     <ThemeProvider>
-      <SidebarProvider>
-        <div className="flex h-screen w-full bg-background">
-          <Sidebar className="border-r border-border">
-            <SidebarHeader className="p-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <a href="/" className="flex items-center text-decoration-none cursor-pointer">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center text-sm font-semibold">
-                    M
-                  </div>
-                </a>
-              </div>
-            </SidebarHeader>
-
-            <SidebarContent>
-              <SidebarGroup>
-                <SidebarMenu>
-                  <SidebarMenuItem className="border-b border-border py-2">
-                    <SidebarMenuButton onClick={handleNewChat}>
-                      <MessageSquare className="w-4 h-4" />
-                      <span>New chat</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroup>
-
-              <SidebarGroup>
-                <SidebarGroupLabel>Riwayat</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {conversations.slice(0, 10).map((conversation) => (
-                      <SidebarMenuItem key={conversation.id}>
-                        <SidebarMenuButton onClick={() => handleConversationClick(conversation.id)}>
-                          <span className="truncate">
-                            {conversation.title || 'New Conversation'}
-                          </span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                    {conversations.length === 0 && !historyLoading && (
-                      <SidebarMenuItem>
-                        <SidebarMenuButton disabled>
-                          <span className="text-muted-foreground text-sm">No conversations yet</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </SidebarContent>
-
-            <SidebarFooter className="p-4 border-t border-border">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuButton className="w-full justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="avatar-green-solid text-white text-sm font-semibold">
-                              {getUserInitials()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="text-left">
-                            <span className="block text-sm font-medium text-foreground">
-                              {user?.fullName || user?.email || 'User'}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
-                      </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="start" className="w-56">
-                      <DropdownMenuItem onClick={() => handleUserMenuAction('settings')}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUserMenuAction('logout')}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Log out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarFooter>
-          </Sidebar>
-
-          <main className="flex-1 flex flex-col">
-            {/* Natural LLM Intelligence Interface - No Rigid Workflow Controls */}
-            <ChatContainer
-              key={currentChatId}
-              chatId={currentChatId}
-              debugMode={false}
-              onError={(error) => {
-                console.error('Chat error:', error);
-              }}
-            />
-          </main>
-        </div>
-      </SidebarProvider>
+      <AppSidebar
+        width="w-64"
+        header={sidebarHeader}
+        footer={sidebarFooter}
+        mainContent={mainContent}
+        showTrigger={false}
+        defaultOpen={true}
+        collapsible={true}
+      >
+        {sidebarContent}
+      </AppSidebar>
     </ThemeProvider>
   );
 }

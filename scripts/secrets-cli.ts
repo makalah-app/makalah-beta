@@ -10,7 +10,7 @@ import { program } from 'commander';
 import { getSecretsManager, storeApiKey, getApiKey, rotateApiKey } from '../src/lib/security/secrets-manager';
 import { getRotationManager, checkAllRotations } from '../src/lib/security/api-key-rotation';
 import { validateEnvironment } from '../src/lib/config/env-validation';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 // Colors for console output
 const colors = {

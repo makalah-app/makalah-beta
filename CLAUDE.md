@@ -6,6 +6,67 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is **Makalah AI** - an enterprise-grade academic research platform powered by AI with a sophisticated 7-phase research methodology. Built with Next.js 14, AI SDK v5, and Supabase, it provides an advanced academic writing assistant for Indonesian users.
 
+## **🎯 MANDATORY DEVELOPMENT FRAMEWORK REFERENCES**
+
+### **CRITICAL REQUIREMENT - 100% COMPLIANCE MANDATORY**
+
+**ALL development work MUST strictly follow these authoritative references. NO EXCEPTIONS.**
+
+### **📚 Technical Implementation References**
+
+**1. AI SDK Implementation Authority**
+- **Primary Source**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/`
+- **Documentation**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/documentation/`
+- **MANDATORY**: All coding, modules, refactoring, and technical implementation MUST be 100% compliant with AI SDK patterns from these directories
+- **Protocol**: ALWAYS search solutions in AI SDK references FIRST before any implementation
+
+**2. Design & Visual Standards**
+- **Design Mockups**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/design/`
+- **Usage**: Complete visualization guidelines and layout standards
+- **Compliance**: All UI/UX must match established design patterns
+
+**3. AI Elements & Components**
+- **AI Elements Source**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk-elements/elements/`
+- **Scope**: Chat page components, AI interactions, and element patterns
+- **Requirement**: 100% compliance with AI SDK Elements standards
+
+### **🎨 UI Framework Integration**
+
+**ShadCN/UI Component System**
+- **Access Method**: MCP ShadCN/UI via `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/.mcp.json`
+- **Integration**: Use `mcp__shadcn__*` tools for component management
+- **Standards**: All UI elements MUST use ShadCN/UI + AI SDK Elements compliance
+
+### **🚫 STRICT PROHIBITIONS**
+
+**FORBIDDEN PRACTICES:**
+- ❌ **NO hardcoded custom styling in code**
+- ❌ **NO deviation from AI SDK v5 patterns**
+- ❌ **NO custom UI components without ShadCN/UI base**
+- ❌ **NO design implementations that bypass established mockups**
+
+### **✅ MANDATORY WORKFLOW**
+
+**For ANY technical problem:**
+1. **FIRST**: Search solution in `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/`
+2. **SECOND**: Check documentation in `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/aisdk/documentation/`
+3. **THIRD**: Verify design compliance with `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/design/`
+4. **FOURTH**: Use ShadCN/UI via MCP tools for components
+5. **FINALLY**: Implement with 100% compliance to established patterns
+
+**VIOLATION OF THIS FRAMEWORK RESULTS IN:**
+- ❌ Rejected implementations
+- ❌ Mandatory refactoring requirements
+- ❌ Complete restart of development work
+
+**ADHERENCE TO THIS FRAMEWORK ENSURES:**
+- ✅ Production-ready code quality
+- ✅ Consistent user experience
+- ✅ Maintainable and scalable architecture
+- ✅ Full compatibility with AI SDK v5 ecosystem
+
+---
+
 ## Core Architecture
 
 ### Technology Stack
@@ -282,5 +343,238 @@ JANGAN PERNAH KLAIM SUKSES TAPI NYATANYA BERBOHONG. JANGAN PERNAH OVER CONFIDENC
 - JANGAN BERBOHONG, JANGAN SYCOPHANCY, JANGAN MANIPULASI
 - JANGAN MELEWATKAN PROSES YANG BELUM SELESAI, JANGAN MEREMEHKAN APAPUN
 - LEBIH BAIK BERPROSES LEBIH LAMA DARIPADA MEMBUAT KESIMPULAN YANG TIDAK ADA BUKTINYA
+
+---
+
+## **🚨 MANDATORY MCP SUPABASE OPERATIONS PROTOCOL**
+
+### **CRITICAL REQUIREMENT - NO EXCEPTIONS**
+
+**ALL Supabase SQL operations MUST use crypto-patched scripts. Native MCP tools BROKEN dengan crypto errors.**
+
+### **MANDATORY COMMANDS FOR DATABASE OPERATIONS**
+
+**❌ NEVER USE (BROKEN - crypto undefined error):**
+```
+mcp__supabase__execute_sql
+mcp__supabase__apply_migration
+```
+
+**✅ ALWAYS USE (WORKING - crypto polyfill included):**
+```bash
+# SQL execution with crypto polyfill
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM users"
+node scripts/mcp-with-crypto.mjs "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+node scripts/mcp-with-crypto.mjs "SELECT id, email FROM auth.users LIMIT 5"
+
+# Fallback script (alternative)
+node scripts/mcp-handshake.js sql "SELECT COUNT(*) FROM users"
+```
+
+### **TROUBLESHOOTING MCP CRYPTO ERRORS**
+
+**If encountering "crypto is not defined" error:**
+
+1. **STOP using native MCP tools immediately**
+2. **SWITCH to crypto-patched scripts:**
+   ```bash
+   node scripts/mcp-with-crypto.mjs "YOUR_SQL_QUERY"
+   ```
+3. **Verify crypto polyfill injection in output:**
+   ```
+   🔧 Injecting crypto polyfill...
+   ✅ Crypto polyfill injected successfully
+   ```
+
+### **DEVELOPMENT WORKFLOW REQUIREMENTS**
+
+**For database verification tasks:**
+```bash
+# User count check
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM auth.users"
+
+# Table structure inspection  
+node scripts/mcp-with-crypto.mjs "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users'"
+
+# Data validation
+node scripts/mcp-with-crypto.mjs "SELECT id, email, created_at FROM auth.users ORDER BY created_at DESC LIMIT 10"
+
+# Schema overview
+node scripts/mcp-with-crypto.mjs "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+```
+
+### **SUCCESS INDICATORS**
+
+**Working execution shows:**
+```
+🔧 Injecting crypto polyfill...
+✅ Crypto polyfill injected successfully  
+🔌 Connecting to MCP server with crypto support...
+🏃 Executing SQL with crypto polyfill: [QUERY]
+📊 Result: [DATA]
+✅ MCP SQL execution with crypto polyfill successful!
+```
+
+**❌ FAILURE PATTERN TO AVOID:**
+```
+{"error":{"name":"ReferenceError","message":"crypto is not defined"}}
+```
+
+### **MANDATORY COMPLIANCE**
+
+**VIOLATION OF THIS PROTOCOL RESULTS IN:**
+- ❌ Wasted development time dengan crypto errors
+- ❌ Broken database verification workflows  
+- ❌ Failed SQL operations dan blocked progress
+
+**ADHERENCE TO THIS PROTOCOL ENSURES:**
+- ✅ Reliable database operations
+- ✅ Consistent development workflow
+- ✅ No crypto-related interruptions
+- ✅ Immediate SQL execution success
+
+**THIS IS NON-NEGOTIABLE. ALWAYS USE CRYPTO-PATCHED SCRIPTS FOR MCP SUPABASE OPERATIONS.**
+
+### **COMPREHENSIVE TROUBLESHOOTING GUIDE**
+
+**📋 Common Error Patterns & Solutions:**
+
+**1. Crypto Undefined Error**
+```
+Error: {"error":{"name":"ReferenceError","message":"crypto is not defined"}}
+```
+**Solution**: IMMEDIATELY stop using native MCP tools, switch to:
+```bash
+node scripts/mcp-with-crypto.mjs "YOUR_SQL_QUERY"
+```
+
+**2. Script Not Found**
+```
+Error: Cannot find module 'scripts/mcp-with-crypto.mjs'
+```
+**Solution**: Ensure working directory adalah project root:
+```bash
+cd /Users/eriksupit/Desktop/makalah
+node scripts/mcp-with-crypto.mjs "SELECT 1"
+```
+
+**3. Permission Denied**
+```
+Error: permission denied for table users
+```
+**Solution**: Use proper table names:
+```bash
+# CORRECT - auth schema
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM auth.users"
+
+# CORRECT - public schema
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM user_profiles"
+```
+
+**4. MCP Server Connection Failed**
+```
+Error: Failed to connect to MCP server
+```
+**Solution**: Verify configuration:
+```bash
+# Check .mcp.json exists dan valid
+cat .mcp.json | jq .
+
+# Test basic connectivity
+node scripts/mcp-handshake.js list-tools
+```
+
+**5. SQL Syntax Errors**
+```
+Error: 42703: column "role" does not exist
+```
+**Solution**: Check table structure first:
+```bash
+node scripts/mcp-with-crypto.mjs "SELECT column_name FROM information_schema.columns WHERE table_name = 'user_profiles'"
+```
+
+**📊 VERIFICATION COMMANDS**
+
+**Quick health check:**
+```bash
+# 1. Verify crypto polyfill working
+node scripts/crypto-environment-patch.mjs
+
+# 2. Test basic SQL execution
+node scripts/mcp-with-crypto.mjs "SELECT 1 as test"
+
+# 3. Check user count
+node scripts/mcp-with-crypto.mjs "SELECT COUNT(*) FROM auth.users"
+
+# 4. Verify table access
+node scripts/mcp-with-crypto.mjs "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 5"
+```
+
+**If ALL commands fail:**
+1. Check Node.js version: `node --version` (requires >= 18.x)
+2. Verify project directory: `pwd` should be `/Users/eriksupit/Desktop/makalah`
+3. Check file permissions: `ls -la scripts/mcp-with-crypto.mjs`
+4. Test MCP configuration: `node scripts/mcp-handshake.js list-tools`
+
+**📝 DOCUMENTATION REFERENCES**
+
+- **Detailed Guide**: `scripts/README-MCP-CRYPTO.md`
+- **Script Source**: `scripts/mcp-with-crypto.mjs`
+- **Environment Patch**: `scripts/crypto-environment-patch.mjs`
+- **Configuration**: `.mcp.json`
+
+**🔄 EMERGENCY RECOVERY**
+
+**If crypto-patched scripts corrupted atau missing:**
+```bash
+# Recreate environment patch
+node -e "
+import crypto from 'crypto';
+const api = {
+  getRandomValues: (arr) => { const b = crypto.randomBytes(arr.length); for(let i=0; i<arr.length; i++) arr[i] = b[i]; return arr; },
+  randomUUID: () => crypto.randomUUID()
+};
+global.crypto = api;
+console.log('Manual crypto polyfill injected');
+"
+
+# Use fallback MCP script
+node scripts/mcp-handshake.js sql "SELECT COUNT(*) FROM auth.users"
+```
+
+## Authentication & Testing
+
+### **Authentication Credentials** 🔐
+```
+Admin:  makalah.app@gmail.com / M4k4l4h2025
+User 1: 1200pixels@gmail.com / M4k4l4h2025
+User 2: posteriot@gmail.com / M4k4l4h2025
+```
+
+### **System Configuration**
+- **System Prompt Management**: Database Supabase (access via `/admin` → "system prompt")
+- **Fallback Configuration**: Hardcoded di `app/admin/page.tsx`
+- **Admin Interface**: Frontend `/admin` interface for system management
+
+## ShadCN UI Components
+
+### Adding New Components
+```bash
+# Add individual components
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add accordion
+
+# Components follow 3px border radius standard
+# All styling uses semantic design tokens (bg-background, text-foreground, etc.)
+```
+---
+
+**MANDATORY Primary Source**: `/Users/eriksupit/Desktop/makalah/documentation`
+- All AI SDK implementations MUST reference official documentation from this path exclusively
+- NO external browsing atau alternative sources without explicit validation
+- Complete compliance dengan AI SDK v5 patterns verified dalam source code analysis
+
+---
 
 This repository implements a production-ready academic AI platform with sophisticated error handling, dual provider architecture, and real-time streaming capabilities. Always prioritize user experience, data security, and system reliability when making changes.

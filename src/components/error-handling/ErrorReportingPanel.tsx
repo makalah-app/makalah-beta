@@ -545,6 +545,7 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
                 </label>
                 {screenshot ? (
                   <div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={screenshot} 
                       alt="Error screenshot" 

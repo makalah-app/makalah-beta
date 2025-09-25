@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "npm run type-check",
     "type-check": "tsc --noEmit -p tsconfig.app.json",
     "type-check:watch": "tsc --noEmit --watch",
     "secrets": "npx tsx scripts/secrets-cli.ts",

@@ -323,7 +323,7 @@ NODE_ENV=development
 
 # Academic Workflow Configuration
 ACADEMIC_PHASES_ENABLED=true
-APPROVAL_GATES_ENABLED=true
+APPROVAL_GATES_ENABLED=false
 WORKFLOW_TIMEOUT=300000
 
 # Performance Configuration
@@ -517,7 +517,7 @@ streaming/
 ├── sse-handler.ts            # Server-Sent Events handler
 ├── academic-events.ts        # Academic workflow events
 ├── workflow-manager.ts       # Workflow orchestration
-└── approval-gates.ts         # Legacy HITL helpers (archived in current build)
+└── (legacy approval gate helpers removed in current build)
 ```
 
 #### **Database Layer**

@@ -138,13 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []); // Empty dependency to avoid cycle
 
-  // Set up token refresh timer
-  useEffect(() => {
-    if (authState.session) {
-      setupTokenRefresh(authState.session);
-    }
-  }, [authState.session]);
-
   /**
    * Initialize authentication from stored session
    */
@@ -501,16 +494,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       error: null
     });
-  }, []);
-
-  /**
-   * Refresh authentication token
-   */
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!authState.session) return false;
-    
-    return await attemptTokenRefresh(authState.session.refreshToken);
-  }, [authState.session]);
+  }, [authState.user, permissionManager]);
 
   /**
    * Attempt token refresh
@@ -593,6 +577,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
+   * Refresh authentication token
+   */
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    if (!authState.session) return false;
+    
+    return await attemptTokenRefresh(authState.session.refreshToken);
+  }, [authState.session, attemptTokenRefresh]);
+
+  /**
    * Validate session with server
    */
   const validateSession = useCallback(async (accessToken: string): Promise<boolean> => {
@@ -619,6 +612,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }, refreshTime);
     }
   }, [attemptTokenRefresh]);
+
+  // Set up token refresh timer
+  useEffect(() => {
+    if (authState.session) {
+      setupTokenRefresh(authState.session);
+    }
+  }, [authState.session, setupTokenRefresh]);
 
   /**
    * Permission checking methods

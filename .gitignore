@@ -177,3 +177,6 @@ docker-compose.override.yml
 
 # Temporary development files
 start-dev.sh
+
+# Reference Files & AI Context
+__references__

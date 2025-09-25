@@ -5,7 +5,7 @@
  * Supports multiple backends: Database (Supabase), Redis, and local encryption
  */
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 // Encryption configuration

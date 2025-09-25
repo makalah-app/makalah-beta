@@ -99,6 +99,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <div key={index} className="mt-2">
                 {part.mediaType?.startsWith('image/') ? (
                   <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={part.url}
                       alt={part.filename || 'Uploaded image'}
