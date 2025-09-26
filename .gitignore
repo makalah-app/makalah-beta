@@ -210,6 +210,15 @@ playwright-report/
 test-results/
 test-utils/
 playwright.config.ts
+tests/
+src/__tests__/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.ts
+*.spec.js
+*-test-report.json
+*-testing.js
 
 # Supabase Local Development
 supabase/
