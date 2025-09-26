@@ -191,6 +191,7 @@ SECURITY_SETUP.md
 CHAT_PERSISTENCE_FIX.md
 CLAUDE.md
 crypto-fix.js
+README.technical.md
 
 # Testing Files
 playwright-report/
