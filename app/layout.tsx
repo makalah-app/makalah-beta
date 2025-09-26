@@ -1,14 +1,8 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
-import { Inter, Roboto, JetBrains_Mono } from 'next/font/google';
-import { ThemeProvider } from '../src/components/theme/ThemeProvider';
-import { AuthProvider } from '../src/hooks/useAuth';
-import { GlobalHeader } from '../src/components/layout/GlobalHeader';
-import { Footer } from '../src/components/layout/Footer';
 import './globals.css';
+import { Inter, Roboto, JetBrains_Mono } from 'next/font/google';
+import type { ReactNode } from 'react';
+import AppProviders from './providers';
 
-// Font configurations sesuai design reference
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
@@ -28,63 +22,27 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 });
 
-function LayoutContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isChatPage = pathname === '/chat';
-  const isAuthPage = pathname.startsWith('/auth');
-
-  if (isChatPage) {
-    // Chat page gets no header/footer - pure content
-    return children;
-  }
-
-  if (isAuthPage) {
-    // Auth pages get no header/footer - pure content
-    return children;
-  }
-
-  // Other pages get global header and footer
-  return (
-    <div className="global-layout">
-      <GlobalHeader
-        className="global-header"
-        showNavigation={!isAuthPage}
-      />
-      <main className="global-main">
-        {children}
-      </main>
-      <Footer className="global-footer" />
-    </div>
-  );
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="id" className="dark" suppressHydrationWarning>
       <head>
         <title>Makalah AI - Academic Paper Writing Assistant</title>
-        <meta name="description" content="AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates" />
-        <meta name="keywords" content="AI, academic writing, research, Makalah, Indonesia, academic assistant" />
+        <meta
+          name="description"
+          content="AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates"
+        />
+        <meta
+          name="keywords"
+          content="AI, academic writing, research, Makalah, Indonesia, academic assistant"
+        />
         <link rel="icon" href="/favicon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${inter.variable} ${roboto.variable} ${jetbrainsMono.variable} font-sans`} suppressHydrationWarning>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem={true}
-            disableTransitionOnChange={false}
-          >
-            <LayoutContent>
-              {children}
-            </LayoutContent>
-          </ThemeProvider>
-        </AuthProvider>
+      <body
+        className={`${inter.variable} ${roboto.variable} ${jetbrainsMono.variable} font-sans`}
+        suppressHydrationWarning
+      >
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
