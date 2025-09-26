@@ -11,7 +11,7 @@
  * - Maintains chat history, user menu, new chat functions
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
@@ -93,6 +93,64 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
   // Get chat history from database
   const { conversations, loading, error, refetch } = useChatHistory();
 
+  // Listen for chat persistence and smart title events
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Check for our custom events
+      if (event.data?.type === 'chat-persisted' ||
+          event.data?.type === 'smart-title-generated') {
+        console.log(`[MakalahSidebar] Received ${event.data.type} event, refreshing list...`);
+
+        // Small delay to ensure database write completes
+        setTimeout(() => {
+          refetch();
+        }, 500);
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('message', handleMessage);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [refetch]);
+
+  // Group conversations by date - SAME LOGIC as chat/page.tsx
+  const groupConversationsByDate = (conversations: ConversationItem[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const thisWeek = new Date(today);
+    thisWeek.setDate(thisWeek.getDate() - 7);
+
+    const groups = {
+      'Hari Ini': [] as ConversationItem[],
+      'Kemarin': [] as ConversationItem[],
+      'Minggu Ini': [] as ConversationItem[],
+      'Lebih Lama': [] as ConversationItem[],
+    };
+
+    conversations.forEach((conversation) => {
+      const lastActivity = new Date(conversation.lastActivity);
+      if (lastActivity >= today) {
+        groups['Hari Ini'].push(conversation);
+      } else if (lastActivity >= yesterday) {
+        groups['Kemarin'].push(conversation);
+      } else if (lastActivity >= thisWeek) {
+        groups['Minggu Ini'].push(conversation);
+      } else {
+        groups['Lebih Lama'].push(conversation);
+      }
+    });
+
+    return groups;
+  };
+
+  const conversationGroups = groupConversationsByDate(conversations);
+
   // Handle conversation click - BASIC NAVIGATION
   const handleConversationClick = (conversation: ConversationItem) => {
     console.log('[MakalahSidebar] Loading conversation:', conversation.id);
@@ -170,57 +228,82 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Chat History */}
-        <SidebarGroup className="flex-1">
-          <SidebarGroupLabel>Chat History</SidebarGroupLabel>
-          <SidebarGroupContent className="overflow-y-auto">
-            <SidebarMenu>
-              {loading && (
-                <SidebarMenuItem>
-                  <div className="px-3 py-2 text-text-300 text-sm">
-                    Loading conversations...
-                  </div>
-                </SidebarMenuItem>
-              )}
+        {/* Chat History with Categorization */}
+        <div className="flex-1 overflow-hidden">
+          {loading && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="px-3 py-2 text-text-300 text-sm">
+                  Loading conversations...
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
 
-              {error && (
-                <SidebarMenuItem>
-                  <div className="px-3 py-2 text-red-400 text-sm">
-                    Error loading conversations
-                  </div>
-                </SidebarMenuItem>
-              )}
+          {error && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="px-3 py-2 text-red-400 text-sm">
+                  Error loading conversations
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
 
-              {conversations.map((conversation) => (
-                <SidebarMenuItem key={conversation.id}>
-                  <SidebarMenuButton
-                    onClick={() => handleConversationClick(conversation)}
-                    className="group w-full justify-between hover:bg-bg-800 text-text-200 hover:text-text-100"
-                  >
-                    <div className="flex flex-col items-start min-w-0 flex-1">
-                      <span className="text-sm font-medium truncate">
-                        {conversation.title || 'Untitled'}
-                      </span>
-                      <span className="text-xs text-text-300 truncate">
-                        {new Date(conversation.updated_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </SidebarMenuButton>
+          {/* Render Grouped Conversations */}
+          <div className="overflow-y-auto">
+            {Object.entries(conversationGroups).map(([groupName, groupConversations]) => {
+              if (groupConversations.length === 0) return null;
 
-                  <SidebarMenuAction
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteTarget(conversation.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
-                  >
-                    <span>🗑️</span>
-                  </SidebarMenuAction>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              return (
+                <SidebarGroup key={groupName}>
+                  <SidebarGroupLabel className="text-sm font-medium text-text-300">
+                    {groupName}
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {groupConversations.map((conversation) => (
+                        <SidebarMenuItem key={conversation.id}>
+                          <SidebarMenuButton
+                            onClick={() => handleConversationClick(conversation)}
+                            className="group w-full justify-between hover:bg-bg-800 text-text-200 hover:text-text-100"
+                          >
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <span className="text-sm font-medium truncate">
+                                {conversation.title || 'Untitled'}
+                              </span>
+                            </div>
+                          </SidebarMenuButton>
+
+                          <SidebarMenuAction
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(conversation.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400"
+                          >
+                            <span>🗑️</span>
+                          </SidebarMenuAction>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              );
+            })}
+          </div>
+
+          {/* Empty State */}
+          {conversations.length === 0 && !loading && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="px-3 py-2 text-text-300 text-sm">
+                  No conversations yet
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
+        </div>
       </SidebarContent>
 
       {/* Footer Section */}

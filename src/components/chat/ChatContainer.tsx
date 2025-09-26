@@ -108,6 +108,25 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const lastPersistedCountRef = useRef<number>(0);
   const isPersistingRef = useRef<boolean>(false);
 
+  // ✅ CRITICAL FIX: Enhanced user ID extraction with multiple fallbacks
+  const getUserId = useCallback((): string => {
+    // 1. Try authenticated user ID
+    if (user?.id) {
+      return user.id;
+    }
+
+    // 2. Try localStorage fallback (for client-side persistence)
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId && storedUserId !== 'undefined' && storedUserId !== 'null') {
+        return storedUserId;
+      }
+    }
+
+    // 3. Fallback to SYSTEM_USER_UUID as last resort
+    return SYSTEM_USER_UUID;
+  }, [user?.id]);
+
   // Citations state from native-openai web search
   // citations disabled for now
   const [citations] = useState<Array<{ title?: string; url: string; snippet?: string }>>([]);
@@ -122,7 +141,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
         'X-Chat-Mode': 'academic-workflow',
         'X-Debug-Mode': debugMode ? 'true' : 'false',
         'X-Chat-Id': chatId || '', // Pass chatId for persistence coordination
-        'X-User-Id': user?.id || '', // Force user identity for persistence
+        'X-User-Id': getUserId(), // Enhanced user ID extraction with fallbacks
       },
     }),
     messages: loadedMessages,
@@ -324,6 +343,9 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     console.log('[ChatContainer] sendMessage type:', typeof chatHookResult.sendMessage);
   }
 
+  // Log initial status immediately
+  console.log('[ChatContainer] Initial useChat status:', chatHookResult.status);
+
   // Destructure values dari useChat hook including addToolResult for HITL
   const {
     messages,
@@ -339,27 +361,41 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   const previousStatusRef = useRef(status);
 
   const persistChatHistory = useCallback(async () => {
+    console.log('[ChatContainer] persistChatHistory called', {
+      chatId,
+      messagesLength: messages.length,
+      hasAssistant: messages.some(message => message.role === 'assistant'),
+      lastPersistedCount: lastPersistedCountRef.current,
+      isPersisting: isPersistingRef.current
+    });
+
     if (!chatId) {
+      console.log('[ChatContainer] persistChatHistory: No chatId, skipping');
       return;
     }
 
     if (messages.length === 0) {
+      console.log('[ChatContainer] persistChatHistory: No messages, skipping');
       return;
     }
 
     if (!messages.some(message => message.role === 'assistant')) {
+      console.log('[ChatContainer] persistChatHistory: No assistant message yet, skipping');
       return;
     }
 
     if (messages.length === lastPersistedCountRef.current) {
+      console.log('[ChatContainer] persistChatHistory: Already persisted this count, skipping');
       return;
     }
 
     if (isPersistingRef.current) {
+      console.log('[ChatContainer] persistChatHistory: Already persisting, skipping');
       return;
     }
 
-    const effectiveUserId = user?.id || SYSTEM_USER_UUID;
+    console.log('[ChatContainer] persistChatHistory: Starting persist...');
+    const effectiveUserId = getUserId(); // Use consistent user ID extraction
     const timestamp = new Date().toISOString();
 
     const payloadMessages = messages.map((message, index) => {
@@ -393,28 +429,77 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
 
     isPersistingRef.current = true;
 
-    try {
-      const response = await fetch('/api/chat/sync', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': effectiveUserId,
-        },
-        body: JSON.stringify({
-          conversationId: chatId,
-          messages: payloadMessages,
-          forceSync: true,
-        }),
-      });
+    // Add timeout protection & retry logic
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    let retryCount = 0;
+    const maxRetries = 2;
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        throw new Error(`Chat sync failed (${response.status}): ${errorText}`);
+    const attemptSync = async (): Promise<boolean> => {
+      try {
+        const response = await fetch('/api/chat/sync', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': effectiveUserId,
+          },
+          body: JSON.stringify({
+            conversationId: chatId,
+            messages: payloadMessages,
+            forceSync: true,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          throw new Error(`Chat sync failed (${response.status}): ${errorText}`);
+        }
+
+        clearTimeout(timeout);
+        console.log('[ChatContainer] persistChatHistory: Sync successful!');
+        return true;
+      } catch (error: any) {
+        clearTimeout(timeout);
+
+        if (error.name === 'AbortError') {
+          console.warn(`[ChatContainer] Chat sync timeout (attempt ${retryCount + 1}/${maxRetries + 1})`);
+          return false;
+        }
+
+        console.error(`[ChatContainer] Chat sync error (attempt ${retryCount + 1}):`, error);
+        return false;
       }
+    };
 
+    // Try sync with retry logic
+    let syncSuccess = await attemptSync();
+
+    // Retry if failed (but not for abort errors)
+    while (!syncSuccess && retryCount < maxRetries) {
+      retryCount++;
+      console.log(`[ChatContainer] Retrying chat sync (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+
+      syncSuccess = await attemptSync();
+    }
+
+    if (syncSuccess) {
       lastPersistedCountRef.current = messages.length;
 
+      // Send success signal for UI updates
       if (typeof window !== 'undefined') {
+        // Notify about successful persistence
+        window.postMessage({
+          type: 'chat-persisted',
+          chatId,
+          messageCount: messages.length,
+          timestamp: new Date().toISOString()
+        }, '*');
+
+        // Also try legacy refresh method
         const refreshHistory = (window as any).refreshChatHistory;
         if (typeof refreshHistory === 'function') {
           setTimeout(() => {
@@ -423,15 +508,17 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
             } catch (refreshError) {
               console.warn('[ChatContainer] refreshChatHistory failed:', refreshError);
             }
-          }, 200);
+          }, 500);
         }
       }
-    } catch (persistError) {
-      console.error('[ChatContainer] chat persistence failed:', persistError);
-    } finally {
-      isPersistingRef.current = false;
+    } else {
+      console.error(`[ChatContainer] ❌ Chat persistence failed after ${maxRetries + 1} attempts`);
+      // DO NOT REFRESH PAGE - just log error
+      // User can continue chatting, we'll try to save on next message
     }
-  }, [chatId, user?.id]); // ✅ CRITICAL FIX: Removed messages dependency to prevent infinite persistence loops
+
+    isPersistingRef.current = false;
+  }, [chatId, user?.id, messages, getUserId]); // ✅ FIX: Added messages and getUserId to capture latest values
 
   // ❌ REMOVED: Complex message reloading function - 39 lines of rigid state management
   // Including artifact counting, phase updating, and elaborate error handling
@@ -567,9 +654,17 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
   };
 
   useEffect(() => {
+    console.log('[ChatContainer] Status change detected:', {
+      previousStatus: previousStatusRef.current,
+      currentStatus: status,
+      willPersist: previousStatusRef.current === 'streaming' && status === 'ready'
+    });
+
     if (previousStatusRef.current === 'streaming' && status === 'ready') {
+      console.log('[ChatContainer] ✅ Status changed from streaming to ready - CALLING persistChatHistory');
       persistChatHistory();
     }
+
     previousStatusRef.current = status;
   }, [status, persistChatHistory]);
 

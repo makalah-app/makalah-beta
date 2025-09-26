@@ -103,6 +103,12 @@ async function updateConversationMetadata(
   const latestMessage = messages[messages.length - 1];
   const currentPhase = extractPhaseFromMessages(messages);
 
+  // Ensure we always work with a plain object to avoid spread errors when metadata is null
+  const baseMetadata =
+    conversation && typeof conversation.metadata === 'object' && conversation.metadata !== null
+      ? conversation.metadata
+      : {};
+
   const { count: dbMessageCount, error: countError } = await (supabaseAdmin as any)
     .from('chat_messages')
     .select('message_id', { head: true, count: 'exact' })
@@ -122,9 +128,9 @@ async function updateConversationMetadata(
       current_phase: currentPhase,
       updated_at: new Date().toISOString(),
       metadata: {
-        ...conversation.metadata,
+        ...baseMetadata,
         last_message_at: new Date().toISOString(),
-        last_message_role: latestMessage.role,
+        last_message_role: latestMessage?.role || baseMetadata.last_message_role || null,
         total_tokens: calculateTotalTokens(messages),
       }
     })
@@ -175,6 +181,16 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
                 }
               })
               .eq('id', chatId);
+
+            // Send notification to UI about smart title generation
+            if (typeof window !== 'undefined') {
+              window.postMessage({
+                type: 'smart-title-generated',
+                chatId,
+                title: smartTitle,
+                timestamp: new Date().toISOString()
+              }, '*');
+            }
           }
         } catch (error) {
           console.warn(`[saveChat] Background title generation failed for ${chatId}:`, error);
@@ -225,7 +241,9 @@ export async function saveChat({
     const conversation = await ensureConversationExists(chatId, userId, messages);
 
     if (!conversation) {
-      throw new Error(`Failed to create or retrieve conversation for chatId: ${chatId}`);
+      const detailedError = `❌ CRITICAL: Failed to create or retrieve conversation for chatId: ${chatId}, userId: ${userId}. This indicates a database constraint violation or connection issue.`;
+      console.error(`[saveChat] ${detailedError}`);
+      throw new Error(detailedError);
     }
 
     // Step 2: Transform and persist messages (parallel operations where safe)
@@ -244,7 +262,22 @@ export async function saveChat({
 
   } catch (error) {
     const saveTime = Date.now() - startTime;
-    console.error(`[saveChat] Database save failed for chat ${chatId} after ${saveTime}ms:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[saveChat] 💥 Database save failed for chat ${chatId} after ${saveTime}ms:`, error);
+
+    // 🔍 ENHANCED ERROR CLASSIFICATION for better UI feedback
+    const isConstraintError = errorMessage.includes('foreign key constraint') || errorMessage.includes('violates foreign key');
+    const isConnectionError = errorMessage.includes('connection') || errorMessage.includes('timeout');
+    const isAuthError = errorMessage.includes('auth') || errorMessage.includes('permission');
+
+    let userFriendlyMessage = 'Gagal menyimpan percakapan';
+    if (isConstraintError) {
+      userFriendlyMessage = 'Error database: User tidak valid atau tidak terdaftar';
+    } else if (isConnectionError) {
+      userFriendlyMessage = 'Error koneksi database - coba lagi dalam beberapa saat';
+    } else if (isAuthError) {
+      userFriendlyMessage = 'Error autentikasi - silakan login ulang';
+    }
 
     // DATABASE FALLBACK: Try fallback mode if database operation fails
     try {
@@ -256,8 +289,13 @@ export async function saveChat({
 
       console.log(`[saveChat] ✅ Successfully saved to fallback for chat ${chatId}`);
     } catch (fallbackError) {
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
       console.error(`[saveChat] ❌ Both database and fallback failed for chat ${chatId}:`, fallbackError);
-      throw new Error(`Chat save failed: Database (${error instanceof Error ? error.message : String(error)}) and Fallback (${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)})`);
+
+      // 🔥 SURFACE DETAILED ERROR TO UI for proper user feedback
+      const combinedError = new Error(`${userFriendlyMessage}\n\nDetail: Database (${errorMessage}) dan Fallback (${fallbackMessage})`);
+      combinedError.name = 'ChatPersistenceError';
+      throw combinedError;
     }
   }
 }
@@ -580,6 +618,16 @@ async function ensureConversationExists(
             .eq('id', chatId);
 
           console.log(`[ensureConversationExists] ✅ Smart title updated for ${chatId}: "${smartTitle}"`);
+
+          // Send notification to UI about smart title generation
+          if (typeof window !== 'undefined') {
+            window.postMessage({
+              type: 'smart-title-generated',
+              chatId,
+              title: smartTitle,
+              timestamp: new Date().toISOString()
+            }, '*');
+          }
         }
       } catch (titleError) {
         console.warn(`[ensureConversationExists] ⚠️ Smart title generation failed for ${chatId}:`, titleError);
@@ -611,8 +659,9 @@ async function ensureConversationExists(
         return existingAfterDup;
       }
     }
-    console.error('[ensureConversationExists] Error creating conversation:', error);
-    return null;
+    const detailedError = `❌ CRITICAL DATABASE ERROR: Failed to create conversation ${chatId} for user ${userId}. Error: ${error.message || error}. Code: ${(error as any)?.code || 'unknown'}`;
+    console.error(`[ensureConversationExists] ${detailedError}`, error);
+    throw new Error(detailedError); // 🔥 THROW instead of returning null to surface error to UI
   }
   
   return newConversation;
