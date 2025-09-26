@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
@@ -54,9 +54,11 @@ function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, logout, isLoading } = useAuth();
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Stable user ID reference to prevent infinite loops
+  const userIdRef = useRef<string | null>(null);
 
   // Helper function untuk truncate judul - CLEAN & SIMPLE
   const truncateTitle = (title: string, maxLength: number = 28): string => {
@@ -64,11 +66,103 @@ function ChatPageContent() {
     return title.slice(0, maxLength - 3) + '...';
   };
 
-  // Get active conversation ID from URL
-  const getActiveConversationId = (): string | null => {
+  // ✅ PURE COMPUTATION: Calculate chatId without side effects
+  // useMemo MUST be pure - no sessionStorage writes, no URL updates
+  const currentChatId = useMemo(() => {
+    // Priority order: conversationId > urlChatId > sessionChatId > newId
     const conversationId = searchParams.get('conversationId');
-    if (conversationId) return conversationId;
-    return currentChatId || null;
+    if (conversationId) {
+      console.log(`[ChatPage] Using conversation ID: ${conversationId}`);
+      return conversationId;
+    }
+
+    const urlChatId = searchParams.get('chatId');
+    if (urlChatId) {
+      console.log(`[ChatPage] Using URL chatId: ${urlChatId}`);
+      return urlChatId;
+    }
+
+    // Read-only check - no writes in useMemo
+    try {
+      const sessionChatId = sessionStorage.getItem('currentChatId');
+      if (sessionChatId) {
+        console.log(`[ChatPage] Using session chatId: ${sessionChatId}`);
+        return sessionChatId;
+      }
+    } catch {}
+
+    // Generate new ID but don't save yet - pure calculation
+    const newChatId = generateUUID();
+    console.log(`[ChatPage] Generated new chatId: ${newChatId}`);
+    return newChatId;
+  }, [searchParams]); // Only stable dependency
+
+  // ✅ SIDE EFFECT: Sync chatId to sessionStorage
+  useEffect(() => {
+    if (!currentChatId) return;
+
+    try {
+      // Only update if different to prevent unnecessary writes
+      const storedChatId = sessionStorage.getItem('currentChatId');
+      if (storedChatId !== currentChatId) {
+        console.log(`[ChatPage] Syncing chatId to sessionStorage: ${currentChatId}`);
+        sessionStorage.setItem('currentChatId', currentChatId);
+      }
+
+      // Set current user as owner
+      const currentUserId = userIdRef.current || '';
+      const storedOwner = sessionStorage.getItem('currentChatOwner');
+      if (storedOwner !== currentUserId) {
+        sessionStorage.setItem('currentChatOwner', currentUserId);
+      }
+    } catch (error) {
+      console.warn('[ChatPage] SessionStorage sync failed:', error);
+    }
+  }, [currentChatId]); // Only depend on chatId change
+
+  // ✅ SIDE EFFECT: Handle cross-user state cleanup
+  useEffect(() => {
+    if (!user?.id) return;
+
+    try {
+      const storedOwner = sessionStorage.getItem('currentChatOwner');
+      const currentUserId = user.id;
+
+      // Clear chat state if user changed (cross-user leakage)
+      if (storedOwner && storedOwner !== currentUserId) {
+        console.log(`[ChatPage] Clearing state for user change: ${storedOwner} → ${currentUserId}`);
+        sessionStorage.removeItem('currentChatId');
+        sessionStorage.setItem('currentChatOwner', currentUserId);
+      }
+    } catch (error) {
+      console.warn('[ChatPage] User state cleanup failed:', error);
+    }
+  }, [user?.id]); // Only when user changes
+
+  // ✅ SIDE EFFECT: Sync chatId to URL when needed
+  useEffect(() => {
+    if (!currentChatId) return;
+
+    try {
+      const urlChatId = searchParams.get('chatId');
+      const conversationId = searchParams.get('conversationId');
+
+      // Only update URL if we're not in conversation mode and chatId is different
+      if (!conversationId && urlChatId !== currentChatId) {
+        console.log(`[ChatPage] Syncing URL with chatId: ${currentChatId}`);
+
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('chatId', currentChatId);
+        window.history.replaceState(null, '', newUrl.toString());
+      }
+    } catch (error) {
+      console.warn('[ChatPage] URL sync failed:', error);
+    }
+  }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
+
+  // Get active conversation ID from URL - simplified (AFTER currentChatId is defined)
+  const getActiveConversationId = (): string | null => {
+    return searchParams.get('conversationId') || currentChatId || null;
   };
 
   // Filter conversations based on search query
@@ -112,74 +206,32 @@ function ChatPageContent() {
   const conversationGroups = groupConversationsByDate(filteredConversations);
   const activeConversationId = getActiveConversationId();
 
-  // ✅ CRITICAL FIX: Initialize chat ID with stable dependencies - REMOVE currentChatId from deps to prevent loop
+  // ✅ BROWSER STATE CLEANUP: ensure owner flag exists without clearing chatId
   useEffect(() => {
-    const initializeChatId = () => {
-      // Reset cross-user leakage: if stored owner != current user, reset chatId
-      try {
-        const storedOwner = sessionStorage.getItem('currentChatOwner');
-        const currentUserId = (user as any)?.id || null;
-        if (currentUserId && storedOwner !== currentUserId) {
-          sessionStorage.removeItem('currentChatId');
-        }
-      } catch {}
+    try {
+      const currentOwner = sessionStorage.getItem('currentChatOwner');
+      const currentChatId = sessionStorage.getItem('currentChatId');
+      const ownerCandidate = user?.id || userIdRef.current;
 
-      // 1. Try to get conversationId from URL (for loading existing conversations)
-      const conversationId = searchParams.get('conversationId');
-      if (conversationId && conversationId !== currentChatId) {
-        console.log(`[ChatPage] Loading existing conversation: ${conversationId}`);
-        setCurrentChatId(conversationId);
-        return;
+      if (currentChatId && !currentOwner && ownerCandidate) {
+        sessionStorage.setItem('currentChatOwner', ownerCandidate);
+        console.log('[ChatPage] Restored missing chat owner flag');
       }
 
-      // 2. Try to get chatId from URL params (for new chats)
-      const urlChatId = searchParams.get('chatId');
-      if (urlChatId && urlChatId !== currentChatId) {
-        console.log(`[ChatPage] Using chatId from URL: ${urlChatId}`);
-        setCurrentChatId(urlChatId);
-        return;
-      }
+      console.log('[ChatPage] Browser state cleanup completed');
+    } catch (error) {
+      console.warn('[ChatPage] SessionStorage cleanup failed:', error);
+    }
+  }, [user?.id]);
 
-      // 3. Try to get chatId from sessionStorage
-      const sessionChatId = sessionStorage.getItem('currentChatId');
-      if (sessionChatId && sessionChatId !== currentChatId) {
-        console.log(`[ChatPage] Using chatId from session: ${sessionChatId}`);
-        setCurrentChatId(sessionChatId);
-        // Update URL to reflect current chat
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('chatId', sessionChatId);
-        window.history.replaceState(null, '', newUrl.toString());
-        // Ensure owner is set to current user
-        try {
-          const currentUserId = (user as any)?.id || '';
-          sessionStorage.setItem('currentChatOwner', currentUserId);
-        } catch {}
-        return;
-      }
+  // Track user ID changes with stable reference
+  useEffect(() => {
+    userIdRef.current = user?.id || null;
+  }, [user?.id]);
 
-      // 4. Generate new chatId for new session (only if no current ID)
-      if (!currentChatId) {
-        const newChatId = generateUUID();
-        console.log(`[ChatPage] Generated new chatId: ${newChatId}`);
-        setCurrentChatId(newChatId);
-
-        // Save to sessionStorage and update URL
-        sessionStorage.setItem('currentChatId', newChatId);
-        try {
-          const currentUserId = (user as any)?.id || '';
-          sessionStorage.setItem('currentChatOwner', currentUserId);
-        } catch {}
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('chatId', newChatId);
-        window.history.replaceState(null, '', newUrl.toString());
-      }
-    };
-
-    initializeChatId();
-  }, [searchParams, user?.id]); // ✅ CRITICAL FIX: Removed currentChatId to break infinite dependency loop
 
   // Show loading screen while authentication is being processed
-  if (isLoading) {
+  if (isLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -196,36 +248,27 @@ function ChatPageContent() {
   const handleNewChat = () => {
     console.log('[ChatPage] Creating new chat session...');
 
-    // 1. Clear existing session completely
+    // 1. Clear existing session
     sessionStorage.removeItem('currentChatId');
     sessionStorage.removeItem('currentChatOwner');
 
-    // 2. Force unmount first (critical for clean reset)
-    setCurrentChatId(undefined);
-
-    // 3. Generate new ID
+    // 2. Generate new ID and navigate (no setTimeout needed)
     const newChatId = generateUUID();
     console.log(`[ChatPage] Generated new chatId: ${newChatId}`);
 
-    // 4. Set new chat after micro-delay (ensures unmount completes)
-    setTimeout(() => {
-      setCurrentChatId(newChatId);
-      sessionStorage.setItem('currentChatId', newChatId);
+    // 3. Navigate to new chat URL - let useMemo handle the rest
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('conversationId');
+    newUrl.searchParams.set('chatId', newChatId);
+    window.history.pushState(null, '', newUrl.toString());
 
-      // Update URL
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('conversationId'); // Clear old conversation
-      newUrl.searchParams.set('chatId', newChatId);
-      window.history.pushState(null, '', newUrl.toString());
+    console.log('[ChatPage] ✅ New chat session created successfully');
 
-      console.log('[ChatPage] ✅ New chat session created successfully');
-
-      // Refresh history if available
-      if ((window as any).refreshHistoryList) {
-        console.log('[ChatPage] Refreshing chat history list...');
-        (window as any).refreshHistoryList();
-      }
-    }, 50); // 50ms delay - enough for React to process unmount
+    // Refresh history if available
+    if ((window as any).refreshHistoryList) {
+      console.log('[ChatPage] Refreshing chat history list...');
+      (window as any).refreshHistoryList();
+    }
   };
 
   // Handle delete conversation dengan confirmation
@@ -429,7 +472,7 @@ function ChatPageContent() {
 
             {/* Natural LLM Intelligence Interface - No Rigid Workflow Controls */}
             <ChatContainer
-              key={currentChatId}
+              key={currentChatId || 'default-chat'}
               chatId={currentChatId}
               debugMode={false}
               onError={(error) => {

@@ -33,6 +33,8 @@ let _supabaseClient: SupabaseClient<Database> | null = null;
 let _supabaseAdmin: SupabaseClient<Database> | null = null;
 let _supabaseServer: SupabaseClient<Database> | null = null;
 
+const isBrowser = typeof window !== 'undefined';
+
 // ✅ CRITICAL FIX: Prevent multiple client instantiation in development HMR
 if (typeof window !== 'undefined') {
   // Browser-side: Store client reference on window to survive HMR
@@ -97,6 +99,10 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
  * Only use in server-side contexts where RLS bypass is required
  */
 export const supabaseAdmin: SupabaseClient<Database> = (() => {
+  if (isBrowser) {
+    return null as unknown as SupabaseClient<Database>;
+  }
+
   if (!_supabaseAdmin) {
     _supabaseAdmin = createClient(
       supabaseUrl,
@@ -117,6 +123,10 @@ export const supabaseAdmin: SupabaseClient<Database> = (() => {
  * Use this for most server-side operations where RLS should be enforced
  */
 export const supabaseServer: SupabaseClient<Database> = (() => {
+  if (isBrowser) {
+    return null as unknown as SupabaseClient<Database>;
+  }
+
   if (!_supabaseServer) {
     _supabaseServer = createClient(
       supabaseUrl,

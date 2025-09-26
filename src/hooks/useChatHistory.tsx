@@ -36,6 +36,10 @@ export function useChatHistory(): UseChatHistoryReturn {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
 
+  // ✅ PERFORMANCE: Add AbortController untuk request deduplication
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastFetchParamsRef = useRef<string>('');
+
   // ✅ FIXED: Stable fetch function using useRef to break circular dependencies
   const fetchConversationsRef = useRef<() => Promise<void>>();
 
@@ -45,6 +49,19 @@ export function useChatHistory(): UseChatHistoryReturn {
       setLoading(false);
       return;
     }
+
+    // ✅ PREVENT DUPLICATE REQUESTS: Check if same params already being fetched
+    const fetchParams = `${user.id}-${currentOffset}-${isLoadMore}`;
+    if (fetchParams === lastFetchParamsRef.current) {
+      console.log('[useChatHistory] Duplicate request prevented:', fetchParams);
+      return;
+    }
+
+    // ✅ REQUEST DEDUPLICATION: Cancel previous request only when params change
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    lastFetchParamsRef.current = fetchParams;
 
     if (isLoadMore) {
       setLoadingMore(true);
@@ -57,12 +74,16 @@ export function useChatHistory(): UseChatHistoryReturn {
     try {
       console.log(`[useChatHistory] Fetching conversations for user: ${user.id}, offset: ${currentOffset}`);
 
+      // Create new AbortController for this request
+      abortControllerRef.current = new AbortController();
+
       const limit = 20;
       const response = await fetch(`/api/chat/history?userId=${user.id}&limit=${limit}&offset=${currentOffset}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) {
@@ -85,9 +106,17 @@ export function useChatHistory(): UseChatHistoryReturn {
       setHasMore(conversationList.length === limit);
       setOffset(currentOffset + limit);
     } catch (err) {
+      // ✅ HANDLE ABORTED REQUESTS: Don't treat aborted requests as errors
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('[useChatHistory] Request aborted:', err.message);
+        return;
+      }
       console.error('[useChatHistory] Error fetching conversations:', err);
       setError(err instanceof Error ? err.message : 'Failed to load chat history');
     } finally {
+      // Clear fetch params on completion
+      lastFetchParamsRef.current = '';
+      abortControllerRef.current = null;
       setLoading(false);
       setLoadingMore(false);
     }
