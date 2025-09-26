@@ -213,6 +213,9 @@ playwright.config.ts
 tests/
 src/__tests__/
 __tests__/
+src/components/testing/
+src/lib/ai/qa/prompt-testing.ts
+src/lib/caching/*-test*.ts
 *.test.js
 *.test.ts
 *.spec.ts

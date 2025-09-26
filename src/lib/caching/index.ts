@@ -123,43 +123,7 @@ export {
   type MonitoringConfig,
 };
 
-// Testing & Validation
-import {
-  redisTestingManager,
-  testUtils,
-  RedisTestingManager,
-  type TestResult,
-  type TestSuiteResult,
-  type TestStatus,
-  type BenchmarkResult,
-} from './redis-testing';
-
-export {
-  redisTestingManager,
-  testUtils,
-  RedisTestingManager,
-  type TestResult,
-  type TestSuiteResult,
-  type TestStatus,
-  type BenchmarkResult,
-};
-
-// Integration Testing
-import {
-  integrationTestManager,
-  integrationUtils,
-  IntegrationTestManager,
-  MockDatabase,
-  type DatabaseSchema,
-} from './integration-tests';
-
-export {
-  integrationTestManager,
-  integrationUtils,
-  IntegrationTestManager,
-  MockDatabase,
-  type DatabaseSchema,
-};
+// Testing & Validation - REMOVED: Testing utilities moved to development environment
 
 /**
  * Initialize the complete caching system
@@ -266,91 +230,7 @@ export async function initializeCachingSystem(): Promise<{
   }
 }
 
-/**
- * Run comprehensive system validation
- */
-export async function validateCachingSystem(): Promise<{
-  success: boolean;
-  message: string;
-  results: {
-    redis: TestSuiteResult;
-    integration: TestSuiteResult;
-  };
-}> {
-  try {
-    console.log('🔍 Running comprehensive caching system validation...');
-    
-    // Run Redis validation tests
-    console.log('📋 Running Redis validation tests...');
-    const redisResults = await redisTestingManager.runValidationSuite();
-    
-    // Run integration tests
-    console.log('🔗 Running integration tests...');
-    const integrationResults = await integrationTestManager.runIntegrationTests();
-    
-    const totalPassed = redisResults.passed + integrationResults.passed;
-    const totalTests = redisResults.totalTests + integrationResults.totalTests;
-    const success = redisResults.summary.status !== 'fail' && integrationResults.summary.status !== 'fail';
-    
-    const message = success
-      ? `✅ Validation completed successfully (${totalPassed}/${totalTests} tests passed)`
-      : `❌ Validation completed with issues (${totalPassed}/${totalTests} tests passed)`;
-    
-    console.log(message);
-    
-    return {
-      success,
-      message,
-      results: {
-        redis: redisResults,
-        integration: integrationResults,
-      },
-    };
-    
-  } catch (error) {
-    const errorMessage = `❌ System validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    console.error(errorMessage);
-    
-    return {
-      success: false,
-      message: errorMessage,
-      results: {
-        redis: {
-          suiteName: 'Redis Validation (Failed)',
-          totalTests: 0,
-          passed: 0,
-          failed: 1,
-          warnings: 0,
-          skipped: 0,
-          totalDuration: 0,
-          results: [],
-          summary: {
-            status: 'fail',
-            message: 'Validation suite failed to run',
-            criticalIssues: [errorMessage],
-            recommendations: ['Check system configuration and dependencies'],
-          },
-        },
-        integration: {
-          suiteName: 'Integration Tests (Failed)',
-          totalTests: 0,
-          passed: 0,
-          failed: 1,
-          warnings: 0,
-          skipped: 0,
-          totalDuration: 0,
-          results: [],
-          summary: {
-            status: 'fail',
-            message: 'Integration tests failed to run',
-            criticalIssues: [errorMessage],
-            recommendations: ['Check database connectivity and Redis configuration'],
-          },
-        },
-      },
-    };
-  }
-}
+// Validation functions - REMOVED: Testing utilities moved to development environment
 
 /**
  * Get comprehensive system status
@@ -419,7 +299,6 @@ export async function getCachingSystemStatus(): Promise<{
 export const cachingUtils = {
   // Initialization
   initialize: initializeCachingSystem,
-  validate: validateCachingSystem,
   getStatus: getCachingSystemStatus,
 
   // Session operations
@@ -486,14 +365,7 @@ export const cachingUtils = {
     analyze: invalidationUtils.analyze,
   },
 
-  // Testing operations
-  testing: {
-    runValidation: testUtils.runValidation,
-    runBenchmarks: testUtils.runBenchmarks,
-    testScenario: testUtils.testScenario,
-    runIntegrationTests: integrationUtils.runTests,
-    testIntegrationScenario: integrationUtils.testScenario,
-  },
+  // Testing operations - REMOVED: Testing utilities moved to development environment
 };
 
 /**
@@ -501,7 +373,6 @@ export const cachingUtils = {
  */
 export default {
   initialize: initializeCachingSystem,
-  validate: validateCachingSystem,
   getStatus: getCachingSystemStatus,
   utils: cachingUtils,
 };
