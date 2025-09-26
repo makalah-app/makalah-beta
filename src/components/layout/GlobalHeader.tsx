@@ -14,10 +14,9 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronDown, Settings, LogOut, Shield } from "lucide-react";
 import { Button } from "../ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { Switch } from "../ui/switch";
+import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../theme/ThemeProvider';
 import { cn } from '../../lib/utils';
@@ -69,32 +68,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     }
   };
 
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user || !user.name) return 'U';
-    const names = user.name.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase();
-    }
-    return names[0][0].toUpperCase();
-  };
-
-  // Get user's first name for display
-  const getUserDisplayName = () => {
-    if (!user || !user.name) return 'User';
-    return user.name.split(' ')[0]; // First word only
-  };
-
-  // Get user role for display
-  const getUserRole = () => {
-    if (!user || !user.role) return 'Pengguna';
-    const roleMap: Record<string, string> = {
-      'admin': 'Admin',
-      'researcher': 'Peneliti',
-      'student': 'Mahasiswa'
-    };
-    return roleMap[user.role] || 'Pengguna';
-  };
 
 
   // Don't render theme toggle until mounted
@@ -109,11 +82,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   ];
 
   const navItems = customNavItems || defaultNavItems;
-  const userMenuColorTokens: React.CSSProperties & Record<string, string> = {
-    '--user-menu-surface-hover': 'color-mix(in oklch, var(--primary) 14%, var(--card))',
-    '--user-menu-item-hover': 'color-mix(in oklch, var(--primary) 18%, var(--background))',
-    '--user-menu-item-danger': 'color-mix(in oklch, var(--destructive) 18%, var(--background))'
-  };
 
   return (
     <header className={cn(
@@ -163,54 +131,11 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           {isLoading ? (
             <span className="text-sm text-muted-foreground mr-4">Loading...</span>
           ) : isAuthenticated && user && showUserProfile ? (
-            <div style={userMenuColorTokens}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="group mr-4 flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <div
-                      className="w-8 h-8 avatar-green-solid rounded-[3px] flex items-center justify-center text-sm"
-                      aria-hidden="true"
-                    >
-                      {getUserInitials()}
-                    </div>
-                    <div className="text-left">
-                      <span className="block text-sm font-medium text-foreground">{getUserDisplayName()}</span>
-                      <span className="block text-xs text-muted-foreground">{getUserRole()}</span>
-                    </div>
-                    <ChevronDown className="w-4 h-4 ml-2 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 p-2">
-                  {user?.role === 'admin' && (
-                    <DropdownMenuItem
-                      onSelect={() => router.push('/admin')}
-                      className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-[var(--user-menu-item-hover)] focus:text-foreground data-[highlighted]:bg-[var(--user-menu-item-hover)] data-[highlighted]:text-foreground"
-                    >
-                      <Shield className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onSelect={() => router.push('/settings')}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-[var(--user-menu-item-hover)] focus:text-foreground data-[highlighted]:bg-[var(--user-menu-item-hover)] data-[highlighted]:text-foreground"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => {
-                      void handleLogout();
-                    }}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-[var(--user-menu-item-danger)] focus:text-destructive data-[highlighted]:bg-[var(--user-menu-item-danger)] data-[highlighted]:text-destructive"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <UserDropdown
+              user={user}
+              variant="header"
+              onLogout={handleLogout}
+            />
           ) : (
             <Button
               onClick={handleLogin}

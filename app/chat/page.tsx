@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MessageSquare, Settings, LogOut, ChevronDown, Trash2, Search, MessageCircle, ChevronRight } from 'lucide-react';
+import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
 import { generateUUID } from '../../src/lib/utils/uuid-generator';
@@ -26,8 +26,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '../../src/components/ui/sidebar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../src/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '../../src/components/ui/avatar';
+import { UserDropdown } from '../../src/components/ui/user-dropdown';
 import { Input } from '../../src/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../src/components/ui/tooltip';
 
@@ -191,27 +190,6 @@ function ChatPageContent() {
     );
   }
 
-  const handleUserMenuAction = async (action: string) => {
-    console.log('User menu action:', action);
-    
-    if (action === 'logout') {
-      try {
-        console.log('[ChatPage] Logging out user...');
-        await logout();
-        console.log('[ChatPage] ✅ Logout successful, redirecting to auth page');
-        router.push('/auth');
-      } catch (error) {
-        console.error('[ChatPage] ❌ Logout error:', error);
-        // Still redirect to auth page even if logout fails
-        router.push('/auth');
-      }
-    } else if (action === 'settings') {
-      console.log('[ChatPage] Navigating to settings...');
-      router.push('/settings');
-    } else {
-      console.log('[ChatPage] Unknown user menu action:', action);
-    }
-  };
 
 
   // Handle New Chat - Create fresh session with new chatId
@@ -279,14 +257,6 @@ function ChatPageContent() {
   };
 
   // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!user || !user.fullName) return 'U';
-    const names = user.fullName.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase();
-    }
-    return names[0][0].toUpperCase();
-  };
 
   // Handle conversation click
   const handleConversationClick = (conversationId: string) => {
@@ -442,39 +412,14 @@ function ChatPageContent() {
             </SidebarContent>
 
             <SidebarFooter className="p-4 border-t border-border">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuButton className="w-full justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="avatar-green-solid text-white text-sm font-semibold">
-                              {getUserInitials()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="text-left">
-                            <span className="block text-sm font-medium text-foreground">
-                              {user?.fullName || user?.email || 'User'}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
-                      </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="start" className="w-56">
-                      <DropdownMenuItem onClick={() => handleUserMenuAction('settings')}>
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUserMenuAction('logout')}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Log out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              </SidebarMenu>
+              <UserDropdown
+                user={user}
+                variant="sidebar"
+                onLogout={async () => {
+                  await logout();
+                  router.push('/auth');
+                }}
+              />
             </SidebarFooter>
           </Sidebar>
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,6 +110,7 @@ export default function ForgotPasswordPage() {
                       onChange={handleInputChange}
                       placeholder="nama@email.com"
                       className="pl-10"
+                      disabled={loading}
                       required
                     />
                   </div>
@@ -127,7 +128,14 @@ export default function ForgotPasswordPage() {
                   size="lg"
                   disabled={loading}
                 >
-                  {loading ? 'Mengirim...' : 'Kirim Link Reset'}
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Mengirim...</span>
+                    </div>
+                  ) : (
+                    <span>Kirim Link Reset</span>
+                  )}
                 </Button>
               </form>
             ) : (

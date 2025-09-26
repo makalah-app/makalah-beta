@@ -16,6 +16,9 @@
 'use client';
 
 import React, { ReactNode, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
 import { useAuth, usePermissions } from '../../hooks/useAuth';
 import { UserRole, Permission } from '../../lib/auth/role-permissions';
 
@@ -96,9 +99,9 @@ export default function AdminAccess({
   // Loading state
   if (isLoading || accessChecking) {
     return (
-      <div className={`admin-access-loading ${className}`}>
-        <div className="loading-container">
-          <div className="loading-spinner">⏳</div>
+      <div className={`flex justify-center items-center min-h-[200px] ${className}`}>
+        <div className="text-center">
+          <div className="text-3xl mb-4">⏳</div>
           <p>Memverifikasi akses admin...</p>
         </div>
       </div>
@@ -108,7 +111,7 @@ export default function AdminAccess({
   // Access granted
   if (accessGranted) {
     return (
-      <div className={`admin-access-granted ${className}`}>
+      <div className={className}>
         {children}
       </div>
     );
@@ -148,7 +151,7 @@ export function AdminAccessCheck({
   }
 
   return (
-    <div className={`admin-access-denied-inline ${className}`}>
+    <div className={`p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive ${className}`}>
       {fallbackMessage || `Akses ke fitur ini memerlukan permission: ${requiredPermission}`}
     </div>
   );
@@ -157,6 +160,7 @@ export function AdminAccessCheck({
 /**
  * Admin Access Denied Component
  * Shows when user doesn't have admin access
+ * Styled consistently with auth page using ShadCN components
  */
 function AdminAccessDenied({
   user,
@@ -169,111 +173,33 @@ function AdminAccessDenied({
   showUpgradeSuggestion: boolean;
   className: string;
 }) {
-  const getAccessDeniedMessage = () => {
-    if (!user) {
-      return {
-        title: 'Akses Tidak Diotorisasi',
-        message: 'Anda harus login untuk mengakses area admin.',
-        action: 'Silakan login dengan akun admin yang valid.',
-        icon: '🔒'
-      };
-    }
-
-    if (user.role !== 'admin') {
-      return {
-        title: 'Akses Admin Diperlukan',
-        message: `Akun Anda (${user.role}) tidak memiliki akses ke area admin.`,
-        action: showUpgradeSuggestion 
-          ? 'Hubungi administrator sistem untuk upgrade akun ke admin.'
-          : 'Akses ini hanya untuk administrator sistem.',
-        icon: '⛔'
-      };
-    }
-
-    return {
-      title: 'Permission Tidak Mencukupi',
-      message: `Akun admin Anda tidak memiliki permission yang diperlukan.`,
-      action: `Permission yang dibutuhkan: ${requiredPermissions.join(', ')}`,
-      icon: '🚫'
-    };
-  };
-
-  const accessInfo = getAccessDeniedMessage();
-
   return (
-    <div className={`admin-access-denied ${className}`}>
-      <div className="access-denied-container">
-        <div className="access-denied-icon">
-          {accessInfo.icon}
-        </div>
-        
-        <div className="access-denied-content">
-          <h3 className="access-denied-title">
-            {accessInfo.title}
-          </h3>
-          
-          <p className="access-denied-message">
-            {accessInfo.message}
-          </p>
-          
-          <p className="access-denied-action">
-            {accessInfo.action}
-          </p>
+    <div className={`min-h-screen bg-background ${className}`}>
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-6 py-12">
+        <div className="w-full max-w-md">
+          <Card className="p-8 border-border bg-card shadow-lg">
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
+                  <div className="logo-m-small">
+                    M
+                  </div>
+                </Link>
+              </div>
 
+              <h1 className="text-xl font-medium mb-2 text-foreground font-heading">
+                Akses Tidak Diotorisasi
+              </h1>
 
-          {/* Action buttons */}
-          <div className="access-denied-actions">
-            {!user && (
-              <a href="/auth" className="action-button primary">
-                Login
-              </a>
-            )}
-            
-            {user && user.role !== 'admin' && (
-              <a href="/contact" className="action-button secondary">
-                Hubungi Admin
-              </a>
-            )}
-            
-            <a href="/chat" className="action-button secondary">
-              Chat
-            </a>
-          </div>
-        </div>
-      </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Anda harus login dengan akun admin yang valid untuk mengakses area admin.
+              </p>
 
-      {/* Admin features overview */}
-      <div className="admin-features-overview">
-        <h4>Fitur Admin yang Tersedia</h4>
-        <div className="features-grid">
-          <div className="feature-item">
-            <span className="feature-icon">👥</span>
-            <div>
-              <h5>Manajemen User</h5>
-              <p>Kelola akun user, role, dan permission</p>
+              <Button asChild className="w-full" size="lg">
+                <Link href="/auth">Login</Link>
+              </Button>
             </div>
-          </div>
-          <div className="feature-item">
-            <span className="feature-icon">⚙️</span>
-            <div>
-              <h5>Konfigurasi Sistem</h5>
-              <p>Setting aplikasi dan parameter AI</p>
-            </div>
-          </div>
-          <div className="feature-item">
-            <span className="feature-icon">📊</span>
-            <div>
-              <h5>Analytics & Monitoring</h5>
-              <p>Dashboard usage dan performance</p>
-            </div>
-          </div>
-          <div className="feature-item">
-            <span className="feature-icon">📝</span>
-            <div>
-              <h5>Content Management</h5>
-              <p>Kelola konten dan template sistem</p>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
@@ -296,21 +222,23 @@ export function AdminPanel({
   className?: string;
 }) {
   return (
-    <AdminAccess 
+    <AdminAccess
       requiredPermissions={requiredPermissions}
-      className={`admin-panel ${className}`}
+      className={className}
     >
-      <div className="admin-panel-container">
-        <div className="admin-panel-header">
-          <h1 className="admin-panel-title">{title}</h1>
-          <div className="admin-panel-breadcrumb">
-            <a href="/admin">Admin</a>
-            <span className="breadcrumb-separator">›</span>
+      <div className="min-h-screen bg-background">
+        <div className="bg-card border-b border-border px-8 py-6">
+          <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link href="/admin" className="text-primary hover:underline">
+              Admin
+            </Link>
+            <span className="font-medium">›</span>
             <span>{title}</span>
           </div>
         </div>
-        
-        <div className="admin-panel-content">
+
+        <div className="p-8">
           {children}
         </div>
       </div>
@@ -318,253 +246,3 @@ export function AdminPanel({
   );
 }
 
-// CSS-in-JS styles (you can move these to a separate CSS file)
-const styles = `
-.admin-access-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-}
-
-.loading-container {
-  text-align: center;
-}
-
-.loading-spinner {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.admin-access-denied {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
-}
-
-.access-denied-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 2rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.access-denied-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.access-denied-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #dc2626;
-  margin-bottom: 1rem;
-}
-
-.access-denied-message {
-  font-size: 1rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.access-denied-action {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 1.5rem;
-}
-
-
-.access-denied-actions {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.action-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
-
-.action-button.primary {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.action-button.primary:hover {
-  background-color: #2563eb;
-}
-
-.action-button.secondary {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-.action-button.secondary:hover {
-  background-color: #e5e7eb;
-}
-
-.admin-features-overview {
-  background-color: #f9fafb;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-}
-
-html.dark .admin-features-overview {
-  background-color: #1f2937;
-}
-
-.admin-features-overview h4 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  text-align: center;
-  color: #1a1a1a;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: white;
-  border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
-}
-
-html.dark .feature-item {
-  background-color: #374151;
-  border: 1px solid #4b5563;
-}
-
-.feature-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.feature-item h5 {
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  color: #1a1a1a;
-}
-
-.feature-item p {
-  font-size: 0.8rem;
-  color: #6b7280;
-  margin: 0;
-}
-
-.admin-access-denied-inline {
-  padding: 0.5rem;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  color: #dc2626;
-}
-
-.admin-panel-container {
-  min-height: 100vh;
-  background-color: #f9fafb;
-}
-
-html.dark .admin-panel-container {
-  background-color: #111827;
-}
-
-.admin-panel-header {
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1.5rem 2rem;
-}
-
-html.dark .admin-panel-header {
-  background-color: #1f2937;
-  border-bottom: 1px solid #374151;
-}
-
-.admin-panel-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
-}
-
-.admin-panel-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.admin-panel-breadcrumb a {
-  color: #3b82f6;
-  text-decoration: none;
-}
-
-.admin-panel-breadcrumb a:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb-separator {
-  font-weight: 500;
-}
-
-.admin-panel-content {
-  padding: 2rem;
-}
-
-@media (max-width: 640px) {
-  .admin-access-denied {
-    margin: 1rem;
-    padding: 1rem;
-  }
-  
-  .access-denied-container {
-    padding: 1.5rem;
-  }
-  
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .access-denied-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .admin-panel-header {
-    padding: 1rem;
-  }
-  
-  .admin-panel-content {
-    padding: 1rem;
-  }
-}
-`;
-
-// Inject styles (in a real app, you'd put this in a CSS file)
-if (typeof document !== 'undefined' && !document.querySelector('#admin-access-styles')) {
-  const styleSheet = document.createElement('style');
-  styleSheet.id = 'admin-access-styles';
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
-}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -58,11 +59,13 @@ export default function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
       if (isRegisterMode) {
         if (formData.password !== formData.confirmPassword) {
           alert('Password tidak cocok');
+          setIsSubmitting(false);
           return;
         }
         await register({
@@ -74,6 +77,7 @@ export default function AuthPage() {
         // Redirect to login after successful registration
         setIsRegisterMode(false);
         setFormData({ email: formData.email, password: '', fullName: '', confirmPassword: '' });
+        setIsSubmitting(false);
       } else {
         await login({
           email: formData.email,
@@ -96,9 +100,11 @@ export default function AuthPage() {
           // Default behavior: redirect to chat
           router.push('/chat');
         }
+        // Don't set isSubmitting(false) for login success - let redirect handle it
       }
     } catch (error) {
       console.error('Auth error:', error);
+      setIsSubmitting(false);
     }
   };
 
@@ -107,6 +113,7 @@ export default function AuthPage() {
     setFormData({ email: '', password: '', fullName: '', confirmPassword: '' });
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setIsSubmitting(false);
   };
 
   if (!mounted) {
@@ -146,6 +153,7 @@ export default function AuthPage() {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     placeholder="Masukkan nama lengkap"
+                    disabled={isSubmitting || isLoading}
                     required
                   />
                 </div>
@@ -165,6 +173,7 @@ export default function AuthPage() {
                     onChange={handleInputChange}
                     placeholder="nama@email.com"
                     className="pl-10"
+                    disabled={isSubmitting || isLoading}
                     required
                   />
                 </div>
@@ -184,6 +193,7 @@ export default function AuthPage() {
                     onChange={handleInputChange}
                     placeholder="Masukkan password"
                     className="pl-10 pr-10"
+                    disabled={isSubmitting || isLoading}
                     required
                   />
                   <Button
@@ -192,6 +202,7 @@ export default function AuthPage() {
                     size="icon"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                    disabled={isSubmitting || isLoading}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -213,6 +224,7 @@ export default function AuthPage() {
                       onChange={handleInputChange}
                       placeholder="Konfirmasi password"
                       className="pl-10 pr-10"
+                      disabled={isSubmitting || isLoading}
                       required
                     />
                     <Button
@@ -221,6 +233,7 @@ export default function AuthPage() {
                       size="icon"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                      disabled={isSubmitting || isLoading}
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
@@ -235,6 +248,7 @@ export default function AuthPage() {
                       id="remember"
                       checked={rememberMe}
                       onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                      disabled={isSubmitting || isLoading}
                     />
                     <Label htmlFor="remember" className="text-muted-foreground cursor-pointer">
                       Ingat saya
@@ -259,9 +273,16 @@ export default function AuthPage() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={isLoading}
+                disabled={isSubmitting || isLoading}
               >
-                {isLoading ? 'Loading...' : (isRegisterMode ? 'Daftar' : 'Masuk')}
+                {(isSubmitting || isLoading) ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{isRegisterMode ? 'Mendaftar...' : 'Memverifikasi...'}</span>
+                  </div>
+                ) : (
+                  <span>{isRegisterMode ? 'Daftar' : 'Masuk'}</span>
+                )}
               </Button>
             </form>
 
@@ -272,6 +293,7 @@ export default function AuthPage() {
                   variant="link"
                   onClick={toggleMode}
                   className="h-auto p-0 font-medium"
+                  disabled={isSubmitting || isLoading}
                 >
                   {isRegisterMode ? 'Masuk sekarang' : 'Daftar sekarang'}
                 </Button>
