@@ -74,7 +74,7 @@ interface ChatContainerProps {
   onError?: (error: Error) => void;
 }
 
-export const ChatContainer: React.FC<ChatContainerProps> = ({
+const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   initialMessages = [],
   chatId,
   debugMode = true,
@@ -343,8 +343,10 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     console.log('[ChatContainer] sendMessage type:', typeof chatHookResult.sendMessage);
   }
 
-  // Log initial status immediately
-  console.log('[ChatContainer] Initial useChat status:', chatHookResult.status);
+  // Log initial status only in debug mode
+  if (debugMode) {
+    console.log('[ChatContainer] Initial useChat status:', chatHookResult.status);
+  }
 
   // Destructure values dari useChat hook including addToolResult for HITL
   const {
@@ -518,7 +520,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     }
 
     isPersistingRef.current = false;
-  }, [chatId, user?.id, messages, getUserId]); // ✅ FIX: Added messages and getUserId to capture latest values
+  }, [chatId, user?.id, getUserId, messages]); // ✅ FIX: Include messages to prevent stale closure
 
   // ❌ REMOVED: Complex message reloading function - 39 lines of rigid state management
   // Including artifact counting, phase updating, and elaborate error handling
@@ -635,7 +637,7 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     };
 
     loadInitialMessages();
-  }, [chatId, setMessages]); // ✅ FIXED: Include setMessages to ensure stable reference
+  }, [chatId]); // ✅ FIXED: Removed setMessages to prevent infinite re-renders
 
   // Approval handlers removed - using native OpenAI web search
 
@@ -816,5 +818,22 @@ export const ChatContainer: React.FC<ChatContainerProps> = ({
     </div>
   );
 };
+
+// ✅ REACT PERFORMANCE: Wrap dengan React.memo untuk prevent unnecessary re-renders
+// Custom comparison function untuk deep comparison of chatId
+export const ChatContainer = React.memo(ChatContainerComponent, (prevProps, nextProps) => {
+  // Compare all relevant props to prevent stale prop issues
+  return (
+    prevProps.chatId === nextProps.chatId &&
+    prevProps.debugMode === nextProps.debugMode &&
+    prevProps.testMode === nextProps.testMode &&
+    prevProps.className === nextProps.className &&
+    prevProps.onError === nextProps.onError &&
+    prevProps.onMessageStream === nextProps.onMessageStream &&
+    JSON.stringify(prevProps.initialMessages) === JSON.stringify(nextProps.initialMessages)
+  );
+});
+
+ChatContainer.displayName = 'ChatContainer';
 
 export default ChatContainer;
