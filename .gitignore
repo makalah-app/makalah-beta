@@ -178,6 +178,18 @@ docker-compose.override.yml
 # Temporary development files
 start-dev.sh
 
+# Development scripts
+scripts/fix-*.mjs
+scripts/fix-*.js
+scripts/restore-*.mjs
+scripts/final-*.mjs
+scripts/remove-*.mjs
+scripts/*-test.js
+scripts/*-debug.js
+scripts/secrets-cli.ts
+# Keep production scripts:
+# scripts/mcp-with-crypto.mjs (MCP workaround)
+
 # Reference Files & AI Context
 __references__
 
