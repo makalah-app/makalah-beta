@@ -226,3 +226,4 @@ src/lib/caching/*-test*.ts
 # Supabase Local Development
 supabase/
 .supabase/
+tsconfig.app.tsbuildinfo
