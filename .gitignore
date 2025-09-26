@@ -185,6 +185,7 @@ __references__
 .mcp.json
 .codex/
 agents.md
+AGENTS.md
 onboarding.md
 SECURITY_SETUP.md
 CHAT_PERSISTENCE_FIX.md
