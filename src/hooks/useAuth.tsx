@@ -19,6 +19,29 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
 
+// Small helper to avoid indefinite waits on 3rd-party SDK calls
+async function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T | Promise<T>): Promise<T> {
+  return await new Promise<T>((resolve) => {
+    let settled = false;
+    const id = setTimeout(async () => {
+      if (settled) return;
+      settled = true;
+      resolve(await onTimeout());
+    }, ms);
+    promise.then((res) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(id);
+      resolve(res);
+    }).catch(async () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(id);
+      resolve(await onTimeout());
+    });
+  });
+}
+
 // Authentication Types
 export interface User {
   id: string;
@@ -129,7 +152,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // First, try to get current session from Supabase
       console.log('[initializeAuth] Getting session from Supabase...');
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      const sessionResult = await withTimeout(
+        supabaseClient.auth.getSession(),
+        2500,
+        async () => ({ data: { session: null }, error: null } as any)
+      );
+      const { data: { session }, error } = sessionResult as any;
 
       if (error) {
         console.error('[initializeAuth] Error getting Supabase session:', error);
@@ -154,16 +182,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[initializeAuth] Session found, fetching user profile...');
 
       // Get user profile from database (join users with user_profiles)
-      const { data: userProfile, error: profileError } = await (supabaseClient as any)
-        .from('users')
-        .select(`
-          id, email, role, email_verified_at, created_at, last_login_at,
-          user_profiles!inner(
-            display_name, first_name, last_name, institution, avatar_url
-          )
-        `)
-        .eq('id', session.user.id)
-        .single();
+      const profileResult = await withTimeout(
+        (supabaseClient as any)
+          .from('users')
+          .select(`
+            id, email, role, email_verified_at, created_at, last_login_at,
+            user_profiles!inner(
+              display_name, first_name, last_name, institution, avatar_url
+            )
+          `)
+          .eq('id', session.user.id)
+          .single(),
+        3000,
+        async () => ({ data: null, error: { message: 'profile timeout' } } as any)
+      );
+      const { data: userProfile, error: profileError } = profileResult as any;
 
       if (profileError || !userProfile) {
         console.error('[initializeAuth] Failed to fetch user profile:', profileError);
@@ -329,10 +362,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Use Supabase auth for real authentication
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password
-      });
+      const signInResult = await withTimeout(
+        supabaseClient.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password
+        }),
+        3000,
+        async () => ({ data: { user: null, session: null }, error: { message: 'Login timeout' } } as any)
+      );
+      const { data, error } = signInResult as any;
 
       if (error) {
         throw new Error(error.message);
@@ -343,16 +381,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Get user profile from database (join users with user_profiles)
-      const { data: userProfile, error: profileError } = await (supabaseClient as any)
-        .from('users')
-        .select(`
-          id, email, role, email_verified_at, created_at, last_login_at,
-          user_profiles!inner(
-            display_name, first_name, last_name, institution, avatar_url
-          )
-        `)
-        .eq('id', data.user.id)
-        .single();
+      const profileResult = await withTimeout(
+        (supabaseClient as any)
+          .from('users')
+          .select(`
+            id, email, role, email_verified_at, created_at, last_login_at,
+            user_profiles!inner(
+              display_name, first_name, last_name, institution, avatar_url
+            )
+          `)
+          .eq('id', data.user.id)
+          .single(),
+        3000,
+        async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
+      );
+      const { data: userProfile, error: profileError } = profileResult as any;
 
 
       // Map Supabase user to our User interface (fallback to auth metadata if profile missing)

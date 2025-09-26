@@ -7,6 +7,7 @@
 'use client';
 
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
@@ -45,6 +46,7 @@ export default function RoleBasedRoute({
   className = ''
 }: RoleBasedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
   // ✅ REMOVED: Debug logging to prevent console spam
   const normalizedAllowedRoles = useMemo(
@@ -80,7 +82,11 @@ export default function RoleBasedRoute({
         if (redirectTo) {
           const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
           console.log('[RoleBasedRoute] Redirecting to auth:', `${redirectTo}?returnUrl=${returnUrl}`);
-          window.location.href = `${redirectTo}?returnUrl=${returnUrl}`;
+          try {
+            router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
+          } catch {
+            window.location.href = `${redirectTo}?returnUrl=${returnUrl}`;
+          }
           return; // Early return to prevent state update after redirect
         }
 
@@ -160,6 +166,28 @@ export default function RoleBasedRoute({
     user?.id, // ✅ Primitive value - stable
     user?.role // ✅ Primitive value - stable
   ]);
+
+  // ✅ SAFETY NET: If auth loading is stuck, force a safe fallback/redirect
+  useEffect(() => {
+    if (!isLoading) return;
+    const timeout = setTimeout(() => {
+      if (requiresAuth && !isAuthenticated) {
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        if (redirectTo) {
+          try {
+            router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
+          } catch {
+            window.location.href = `${redirectTo}?returnUrl=${returnUrl}`;
+          }
+        } else {
+          setAccessState({ granted: false, loading: false, reason: 'Authentication required' });
+        }
+      } else {
+        setAccessState({ granted: true, loading: false });
+      }
+    }, 2500);
+    return () => clearTimeout(timeout);
+  }, [isLoading, requiresAuth, isAuthenticated, redirectTo, router]);
 
   if (accessState.loading) {
     if (loadingComponent) {
