@@ -17,13 +17,11 @@
 import React, { useEffect, useState } from 'react';
 import { Loader } from '../ai-elements/loader';
 import { Progress } from '../ui/progress';
-import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { cn } from '@/lib/utils';
 
 interface StreamingHandlerProps {
   status: 'ready' | 'submitted' | 'streaming' | 'error';
-  onStop?: () => void;
   className?: string;
   showProgress?: boolean;
   estimatedDuration?: number;
@@ -39,7 +37,6 @@ interface StreamingState {
 
 export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
   status,
-  onStop,
   className = '',
   showProgress = true,
   estimatedDuration = 30000, // 30 seconds default
@@ -120,17 +117,7 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
             </div>
           </div>
 
-          {/* Stop Button */}
-          {onStop && (
-            <Button
-              onClick={onStop}
-              variant="outline"
-              size="sm"
-              className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900"
-            >
-              ⏹️ Stop
-            </Button>
-          )}
+          {/* Stop handled via ChatInput toolbar - indicator only */}
         </div>
 
         {/* Progress Bar */}

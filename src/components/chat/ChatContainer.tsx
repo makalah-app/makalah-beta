@@ -31,7 +31,6 @@ import { StreamingHandler } from './StreamingHandler';
 // ApprovalGatesContainer removed - using native OpenAI web search
 import { LoadingIndicator } from '../ui/LoadingIndicator';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
-import { Button } from '../ui/button';
 // Database persistence imports
 import { loadChat } from '../../lib/database/chat-store';
 import { supabaseChatClient } from '../../lib/database/supabase-client';
@@ -715,6 +714,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               status={status}
               placeholder="Enter message..."
               testMode={testMode}
+              onStop={handleStopStreaming}
             />
           </div>
         </div>
@@ -724,20 +724,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           {/* Messages Area - Scrollable */}
           <div className="flex-1 overflow-y-auto">
             <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
-              {/* Streaming Controls */}
-              {(status === 'streaming' || status === 'submitted') && (
-                <div className="mb-4 flex justify-end">
-                  <Button
-                    onClick={handleStopStreaming}
-                    variant="destructive"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    ⏹️ Stop
-                  </Button>
-                </div>
-              )}
-
               {/* Enhanced Error Display */}
               {(error || errorState) && (
                 <div className="mb-4">
@@ -779,7 +765,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                 <div className="mt-4">
                   <StreamingHandler
                     status={status}
-                    onStop={handleStopStreaming}
                   />
                 </div>
               )}
@@ -805,6 +790,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                 status={status}
                 placeholder="Enter message..."
                 testMode={testMode}
+                onStop={handleStopStreaming}
               />
             </div>
           </div>

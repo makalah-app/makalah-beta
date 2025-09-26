@@ -25,7 +25,7 @@ import {
   type PromptInputProps,
 } from '../ai-elements/prompt-input';
 import { Button } from '../ui/button';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, SquareIcon } from 'lucide-react';
 
 // Define message structure for AI SDK compatibility
 export interface PromptInputMessage {
@@ -42,6 +42,7 @@ interface ChatInputProps {
   // Testing features
   testMode?: boolean;
   onTestScenario?: (scenario: string) => void;
+  onStop?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -52,11 +53,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   className = '',
   testMode = false,
   onTestScenario,
+  onStop,
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [text, setText] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canStop = status === 'submitted' || status === 'streaming';
+  const isSubmitDisabled = disabled || status !== 'ready' || !text.trim();
 
   // Handle form submission dengan AI Elements pattern
   const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
@@ -237,12 +241,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </PromptInputButton>
           </PromptInputTools>
 
-          {/* Submit Button - AI SDK Elements Standard */}
-          <PromptInputSubmit
-            variant="ghost"
-            status={status}
-            disabled={disabled || status !== 'ready' || !text.trim()}
-          />
+          {canStop ? (
+            <PromptInputButton
+              variant="ghost"
+              disabled={!onStop}
+              onClick={() => {
+                if (onStop) {
+                  onStop();
+                }
+              }}
+              aria-label="Stop streaming"
+              className="text-muted-foreground hover:text-white hover:bg-white/10 dark:hover:bg-white/10"
+            >
+              <SquareIcon className="h-8 w-8" />
+            </PromptInputButton>
+          ) : (
+            <PromptInputSubmit
+              variant="ghost"
+              status={status}
+              disabled={isSubmitDisabled}
+            />
+          )}
         </PromptInputToolbar>
       </PromptInput>
 
