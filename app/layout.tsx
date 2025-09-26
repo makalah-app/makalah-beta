@@ -64,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" className="dark" suppressHydrationWarning>
       <head>
         <title>Makalah AI - Academic Paper Writing Assistant</title>
         <meta name="description" content="AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates" />

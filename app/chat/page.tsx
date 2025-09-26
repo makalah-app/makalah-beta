@@ -309,7 +309,12 @@ function ChatPageContent() {
   };
 
   return (
-    <ThemeProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem={true}
+      disableTransitionOnChange={false}
+    >
       <SidebarProvider>
         <div className="flex h-screen w-full bg-background">
           <Sidebar className="border-r border-border bg-card/30">
