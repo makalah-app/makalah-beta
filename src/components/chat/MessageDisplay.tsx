@@ -14,7 +14,7 @@
  * - Preserves academic metadata dan debug information
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AcademicUIMessage } from './ChatContainer';
 import { SystemMessage } from './SystemMessage';
 // AI Elements Message components
@@ -28,9 +28,12 @@ import {
   getToolName
 } from 'ai';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
-import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RefreshCw, Copy, Clock, Edit, X, SendIcon } from 'lucide-react';
+import { RefreshCw, Copy, Edit } from 'lucide-react';
+// New reusable components
+import { MessageEditor } from './MessageEditor';
+import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
+import { ToolResult } from './ToolResult';
 
 interface MessageDisplayProps {
   message: AcademicUIMessage;
@@ -136,50 +139,18 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {/* User Message */}
       {isUser && (
         <Message from="user">
-          <MessageContent className={isEditing ? "!max-w-none" : ""} style={isEditing ? { maxWidth: '100%', minWidth: '100%' } : {}}>
-            {/* 📝 EDIT MODE: Conditional rendering based on edit state */}
+          <MessageContent className={isEditing ? "!max-w-none" : "message-content-user"}>
+            {/* 📝 EDIT MODE: Clean component-based approach */}
             {isEditing ? (
-              <div ref={isUser && editAreaRef ? editAreaRef : undefined}>
-                <textarea
-                  value={editingText}
-                  onChange={(e) => onEditingTextChange?.(e.target.value)}
-                  onInput={(e) => {
-                    const target = e.currentTarget;
-                    target.style.height = 'auto';
-                    target.style.height = target.scrollHeight + 'px';
-                  }}
-                  className="w-full bg-transparent border-0 outline-none resize-none text-foreground p-0 min-h-[1.5rem]"
-                  style={{
-                    height: 'auto',
-                    minHeight: '1.5rem'
-                  }}
-                  autoFocus
-                  placeholder="Edit your message..."
-                />
-                <div className="mt-2 flex gap-2 justify-end">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
-                    onClick={onCancelEdit}
-                    aria-label="Cancel edit"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
-                    onClick={() => onSaveEdit?.(message.id, editingText)}
-                    aria-label="Save and regenerate"
-                  >
-                    <SendIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              <MessageEditor
+                ref={editAreaRef}
+                value={editingText}
+                onChange={onEditingTextChange || (() => {})}
+                onSave={() => onSaveEdit?.(message.id, editingText)}
+                onCancel={onCancelEdit || (() => {})}
+              />
             ) : (
-              <div style={{ width: 'fit-content', maxWidth: '100%' }}>
-                {/* Normal Display Mode */}
+              <>
                 {/* Text Content from parts (Markdown parsed) */}
                 {textParts.map((part, index) => (
                   <MarkdownRenderer key={index} content={part.text || ''} />
@@ -213,21 +184,16 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </div>
                 ))}
 
-                {/* 📝 EDIT BUTTON: Show edit button for user messages when not in edit mode - INSIDE MessageContent */}
-                {!isEditing && (
-                  <div className="mt-2 flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
-                      onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
-                      aria-label="Edit message"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+                {/* Edit Action */}
+                <MessageActions>
+                  <MessageAction
+                    icon={Edit}
+                    onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
+                    tooltip="Edit message"
+                    label="Edit message"
+                  />
+                </MessageActions>
+              </>
             )}
           </MessageContent>
 
@@ -300,25 +266,15 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   return null;
                 }
 
-                // ✅ Display tool execution results
+                // ✅ Display tool execution results using clean component
                 if (part.state === 'output-available' && toolCallId) {
                   return (
-                    <Card key={`tool-result-${toolCallId}`} className="mt-3">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-2 text-sm">
-                          <span className="text-lg">🔧</span>
-                          <span>{toolName}</span>
-                          <span className="ml-auto text-xs text-green-600 dark:text-green-400">✅ Completed</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-sm">
-                        <pre className="whitespace-pre-wrap">
-                          {typeof (part as any).result === 'string'
-                            ? (part as any).result
-                            : JSON.stringify((part as any).result, null, 2)}
-                        </pre>
-                      </CardContent>
-                    </Card>
+                    <ToolResult
+                      key={`tool-result-${toolCallId}`}
+                      toolName={toolName}
+                      result={(part as any).result}
+                      status="success"
+                    />
                   );
                 }
               }
@@ -355,44 +311,30 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               </Card>
             )}
 
-            {/* Message Actions */}
-            <div className="mt-3 flex justify-end items-center gap-2">
-              {/* Timestamp di sebelah kiri dari buttons */}
-              {message.metadata?.timestamp && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {new Date(message.metadata.timestamp).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                  })}
-                </span>
-              )}
-
-              {/* Action buttons */}
-              <Button
+            {/* Assistant Actions with timestamp */}
+            <AssistantActions
+              timestamp={message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }) : undefined}
+            >
+              <MessageAction
+                icon={RefreshCw}
                 onClick={onRegenerate}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
-                aria-label="Regenerate response"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
+                tooltip="Regenerate response"
+                label="Regenerate response"
+              />
+              <MessageAction
+                icon={Copy}
                 onClick={() => {
                   const textContent = textParts.map(part => part.text).join('\n');
                   navigator.clipboard.writeText(textContent);
                 }}
-                aria-label="Copy message"
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
+                tooltip="Copy message"
+                label="Copy message"
+              />
+            </AssistantActions>
 
             {/* Enhanced Metadata Display */}
             {message.metadata && (message.metadata.tokens || message.metadata.model) && (
