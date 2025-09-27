@@ -30,6 +30,7 @@ import {
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { RefreshCw, Copy } from 'lucide-react';
 
 interface MessageDisplayProps {
   message: AcademicUIMessage;
@@ -279,26 +280,28 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             )}
 
             {/* Message Actions */}
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex justify-end gap-2">
               <Button
                 onClick={onRegenerate}
-                variant="outline"
-                size="sm"
-                className="text-xs"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
+                aria-label="Regenerate response"
               >
-                🔄 Regenerate
+                <RefreshCw className="h-4 w-4" />
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
-                className="text-xs"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
                 onClick={() => {
                   const textContent = textParts.map(part => part.text).join('\n');
                   navigator.clipboard.writeText(textContent);
                 }}
+                aria-label="Copy message"
               >
-                📋 Copy
+                <Copy className="h-4 w-4" />
               </Button>
             </div>
 

@@ -51,8 +51,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {...props}
               className={cn(
                 inline
-                  ? "px-1 py-0.5 bg-muted rounded text-sm"
-                  : "block p-2 bg-muted rounded text-sm overflow-x-auto",
+                  ? "px-1 py-0.5 bg-muted rounded-[3px] text-sm"
+                  : "block p-2 bg-muted rounded-[3px] text-sm overflow-x-auto",
                 props.className
               )}
             />
@@ -61,7 +61,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           pre: ({ node, ...props }) => (
             <pre
               {...props}
-              className={cn("bg-muted rounded p-3 overflow-x-auto", props.className)}
+              className={cn("bg-muted rounded-[3px] p-3 overflow-x-auto", props.className)}
             />
           ),
         }}
