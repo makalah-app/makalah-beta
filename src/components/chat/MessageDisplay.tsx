@@ -189,8 +189,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   <MessageAction
                     icon={Edit}
                     onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
-                    tooltip="Edit message"
-                    label="Edit message"
+                    tooltip="Edit percakapan"
+                    label="Edit Percakapan"
                   />
                 </MessageActions>
               </>
@@ -322,8 +322,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <MessageAction
                 icon={RefreshCw}
                 onClick={onRegenerate}
-                tooltip="Regenerate response"
-                label="Regenerate response"
+                tooltip="Regenerasi respons"
+                label="Regenerasi respons"
               />
               <MessageAction
                 icon={Copy}
@@ -331,8 +331,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   const textContent = textParts.map(part => part.text).join('\n');
                   navigator.clipboard.writeText(textContent);
                 }}
-                tooltip="Copy message"
-                label="Copy message"
+                tooltip="Salin percakapan"
+                label="Salin percakapan"
               />
             </AssistantActions>
 

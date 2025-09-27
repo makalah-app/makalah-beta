@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 
 interface LoadingIndicatorProps {
   message?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   type?: 'spinner' | 'dots' | 'pulse';
   className?: string;
   showMessage?: boolean;
@@ -35,6 +35,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
 }) => {
   const getLoaderSize = () => {
     switch (size) {
+      case 'xs':
+        return 12;
       case 'sm':
         return 16;
       case 'lg':
@@ -46,6 +48,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
 
   const getSizeClasses = () => {
     switch (size) {
+      case 'xs':
+        return 'text-xs';
       case 'sm':
         return 'text-sm';
       case 'lg':
@@ -55,37 +59,63 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
     }
   };
 
+  const getDotSize = () => {
+    switch (size) {
+      case 'xs':
+        return 'size-1';
+      case 'sm':
+        return 'size-1.5';
+      case 'lg':
+        return 'size-3';
+      default:
+        return 'size-2';
+    }
+  };
+
   const renderDots = () => (
     <div className="dots flex space-x-1">
       <div
         className={cn(
           'rounded-full bg-primary animate-bounce',
-          size === 'sm' ? 'size-1.5' : size === 'lg' ? 'size-3' : 'size-2'
+          getDotSize()
         )}
         style={{ animationDelay: '0ms' }}
       />
       <div
         className={cn(
           'rounded-full bg-primary animate-bounce',
-          size === 'sm' ? 'size-1.5' : size === 'lg' ? 'size-3' : 'size-2'
+          getDotSize()
         )}
         style={{ animationDelay: '150ms' }}
       />
       <div
         className={cn(
           'rounded-full bg-primary animate-bounce',
-          size === 'sm' ? 'size-1.5' : size === 'lg' ? 'size-3' : 'size-2'
+          getDotSize()
         )}
         style={{ animationDelay: '300ms' }}
       />
     </div>
   );
 
+  const getPulseSize = () => {
+    switch (size) {
+      case 'xs':
+        return 'size-3';
+      case 'sm':
+        return 'size-4';
+      case 'lg':
+        return 'size-8';
+      default:
+        return 'size-6';
+    }
+  };
+
   const renderPulse = () => (
     <div
       className={cn(
         'rounded-full bg-primary animate-pulse',
-        size === 'sm' ? 'size-4' : size === 'lg' ? 'size-8' : 'size-6'
+        getPulseSize()
       )}
     />
   );

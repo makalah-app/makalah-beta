@@ -237,6 +237,13 @@ const config: Config = {
   			'user-message': {
   				DEFAULT: 'var(--user-message-bg)',
   				border: 'var(--user-message-border)'
+  			},
+  			chart: {
+  				'1': 'var(--chart-1)',
+  				'2': 'var(--chart-2)',
+  				'3': 'var(--chart-3)',
+  				'4': 'var(--chart-4)',
+  				'5': 'var(--chart-5)'
   			}
   		},
   		borderRadius: {
@@ -246,10 +253,21 @@ const config: Config = {
   		},
   		fontFamily: {
   			sans: [
-  				'var(--font-sans)'
+  				'var(--font-sans)',
+  				'Inter',
+  				'system-ui',
+  				'sans-serif'
+  			],
+  			heading: [
+  				'var(--font-heading)',
+  				'Roboto',
+  				'system-ui',
+  				'sans-serif'
   			],
   			mono: [
-  				'var(--font-mono)'
+  				'var(--font-mono)',
+  				'JetBrains Mono',
+  				'monospace'
   			]
   		}
   	}

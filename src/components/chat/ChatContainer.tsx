@@ -877,6 +877,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                 <div className="mt-4">
                   <LoadingIndicator
                     message="Loading..."
+                    size="xs"
                   />
                 </div>
               )}
@@ -891,7 +892,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                 sendMessage={sendMessage}
                 disabled={status !== 'ready'}
                 status={status}
-                placeholder="Enter message..."
+                placeholder="Kirim percakapan..."
                 testMode={testMode}
                 onStop={handleStopStreaming}
               />

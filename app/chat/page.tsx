@@ -378,14 +378,14 @@ function ChatPageContent() {
                                       <SidebarMenuButton
                                         onClick={() => handleConversationClick(conversation.id)}
                                         className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
-                                          isActive ? 'bg-muted/70 text-primary font-medium' : 'text-muted-foreground'
+                                          isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
                                         }`}
                                       >
                                         <MessageCircle className="w-4 h-4" />
                                         <span className="truncate">
                                           {truncateTitle(fullTitle, 39)}
                                         </span>
-                                        {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                                        {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
                                       </SidebarMenuButton>
                                     </TooltipTrigger>
                                     {shouldShowTooltip && (

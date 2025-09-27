@@ -72,7 +72,7 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
   }
 
   return (
-    <div className={`inline-flex items-center gap-2 text-sm text-foreground ${className}`}>
+    <div className={`inline-flex items-center gap-2 text-xs text-muted-foreground ${className}`}>
       {/* Bouncing Dots Animation - Same as ChatInput status indicator */}
       <div className="flex gap-1">
         <div className="size-1 animate-bounce rounded-full bg-primary"></div>
@@ -82,7 +82,7 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
 
       {/* Status Text - Consistent with ChatInput */}
       <span>
-        {status === 'submitted' ? 'Memproses permintaan...' : 'AI sedang merespons...'}
+        {status === 'submitted' ? 'Memproses permintaan...' : 'Agen sedang merespons...'}
       </span>
 
       {/* Progress Percentage - Subtle styling */}
