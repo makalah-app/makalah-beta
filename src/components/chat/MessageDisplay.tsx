@@ -119,10 +119,6 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {/* User Message */}
       {isUser && (
         <Message from="user">
-          <MessageAvatar
-            src="/images/user-avatar.png"
-            name="User"
-          />
           <MessageContent>
             {/* Text Content from parts (Markdown parsed) */}
             {textParts.map((part, index) => (
@@ -176,10 +172,6 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {/* AI Assistant Message */}
       {isAssistant && (
         <Message from="assistant">
-          <MessageAvatar
-            src="/images/ai-avatar.png"
-            name="AI"
-          />
           <MessageContent>
             {/* Text Content from parts (Markdown parsed) */}
             {textParts.map((part, index) => (
