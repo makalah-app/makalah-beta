@@ -22,7 +22,6 @@ import {
   PromptInputTools,
   PromptInputButton,
   PromptInputSubmit,
-  type PromptInputProps,
 } from '../ai-elements/prompt-input';
 import { Button } from '../ui/button';
 import { PlusIcon, SquareIcon } from 'lucide-react';
@@ -222,8 +221,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       <PromptInput onSubmit={handleSubmit}>
         {/* Textarea Input - AI SDK Elements Style */}
         <PromptInputTextarea
-          placeholder={disabled ? 'Tunggu...' : placeholder}
-          disabled={disabled}
+          placeholder={
+            status === 'submitted' ? 'Mengirim pesan...' :
+            disabled ? 'Tunggu...' :
+            placeholder
+          }
+          disabled={disabled || status === 'submitted'}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -265,27 +268,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </PromptInputToolbar>
       </PromptInput>
 
-      {/* Status Message */}
-      {(status === 'submitted' || status === 'streaming') && (
-        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-          {status === 'submitted' && (
-            <>
-              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-              <span>Mengirim pesan...</span>
-            </>
-          )}
-          {status === 'streaming' && (
-            <>
-              <div className="flex gap-1">
-                <div className="size-1 animate-bounce rounded-full bg-primary"></div>
-                <div className="size-1 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0.1s' }}></div>
-                <div className="size-1 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0.2s' }}></div>
-              </div>
-              <span>AI sedang merespons...</span>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 };
