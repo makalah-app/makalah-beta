@@ -101,6 +101,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const hasLoadedRef = useRef<boolean>(false); // Track if loading has been attempted
   const lastChatIdRef = useRef<string | undefined>(undefined); // Track chatId changes
   const isExistingConversation = useRef<boolean>(false); // Track if conversation should have messages
+  const editAreaRef = useRef<HTMLDivElement>(null); // Track edit area for click outside detection
   const reactId = useId();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -129,6 +130,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   // Citations state from native-openai web search
   // citations disabled for now
   const [citations] = useState<Array<{ title?: string; url: string; snippet?: string }>>([]);
+
+  // 📝 EDIT MESSAGE STATE: Enhanced edit functionality
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
 
   // AI SDK useChat integration with native OpenAI web search
   const chatHookResult = useChat<AcademicUIMessage>({
@@ -654,6 +659,88 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     stop();
   };
 
+  // 📝 EDIT MESSAGE HANDLERS: Enhanced edit functionality
+  const handleStartEdit = useCallback((messageId: string, currentText: string) => {
+    setEditingMessageId(messageId);
+    setEditingText(currentText);
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessageId(null);
+    setEditingText('');
+  }, []);
+
+  const handleEditingTextChange = useCallback((text: string) => {
+    setEditingText(text);
+  }, []);
+
+  const handleSaveEdit = useCallback(async (messageId: string, newContent: string) => {
+    // Validation
+    if (!newContent.trim()) {
+      alert('Message cannot be empty');
+      return;
+    }
+
+    // Find message index
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+
+    if (messageIndex !== -1) {
+      // Update message dan remove all messages after it
+      setMessages(currentMessages => {
+        const updatedMessages = currentMessages.slice(0, messageIndex + 1);
+        updatedMessages[messageIndex] = {
+          ...updatedMessages[messageIndex],
+          parts: [{ type: 'text', text: newContent }]
+        };
+        return updatedMessages;
+      });
+
+      // Clear edit mode
+      setEditingMessageId(null);
+      setEditingText('');
+
+      // Trigger new AI response
+      setTimeout(() => {
+        sendMessage(newContent);
+      }, 100); // Small delay to ensure state is updated
+    }
+  }, [messages, setMessages, sendMessage]);
+
+  // 📝 ESCAPE KEY HANDLER: Handle escape key to cancel edit mode
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && editingMessageId) {
+        handleCancelEdit();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [editingMessageId, handleCancelEdit]);
+
+  // 📝 CLICK OUTSIDE HANDLER: Handle click outside edit area to cancel edit mode
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Check if editing mode is active
+      if (!editingMessageId) return;
+
+      // Check if click is outside edit area
+      if (editAreaRef.current && !editAreaRef.current.contains(e.target as Node)) {
+        handleCancelEdit();
+      }
+    };
+
+    // Add listener when editing
+    if (editingMessageId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingMessageId, handleCancelEdit]);
+
   useEffect(() => {
     console.log('[ChatContainer] Status change detected:', {
       previousStatus: previousStatusRef.current,
@@ -771,6 +858,14 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                         sendMessage={sendMessage}
                         citations={citations}
                         allMessages={messages}
+                        // 📝 EDIT MESSAGE PROPS: Enhanced edit functionality
+                        isEditing={editingMessageId === message.id}
+                        editingText={editingMessageId === message.id ? editingText : ''}
+                        onStartEdit={handleStartEdit}
+                        onSaveEdit={handleSaveEdit}
+                        onCancelEdit={handleCancelEdit}
+                        onEditingTextChange={handleEditingTextChange}
+                        editAreaRef={editAreaRef}
                       />
                     </div>
                   );

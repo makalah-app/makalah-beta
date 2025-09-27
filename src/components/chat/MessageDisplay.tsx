@@ -14,7 +14,7 @@
  * - Preserves academic metadata dan debug information
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AcademicUIMessage } from './ChatContainer';
 import { SystemMessage } from './SystemMessage';
 // AI Elements Message components
@@ -30,7 +30,7 @@ import {
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RefreshCw, Copy, Clock } from 'lucide-react';
+import { RefreshCw, Copy, Clock, Edit, X, SendIcon } from 'lucide-react';
 
 interface MessageDisplayProps {
   message: AcademicUIMessage;
@@ -43,6 +43,14 @@ interface MessageDisplayProps {
   citations?: Array<{ title?: string; url: string; snippet?: string }>;
   // 🔧 Add global messages context for approval gate logic
   allMessages?: AcademicUIMessage[];
+  // 📝 EDIT MESSAGE PROPS: Enhanced edit functionality
+  isEditing?: boolean;
+  editingText?: string;
+  onStartEdit?: (messageId: string, text: string) => void;
+  onSaveEdit?: (messageId: string, text: string) => void;
+  onCancelEdit?: () => void;
+  onEditingTextChange?: (text: string) => void;
+  editAreaRef?: React.RefObject<HTMLDivElement>;
   // ❌ REMOVED: Artifact-related display options - no longer needed for natural LLM flow
   // Natural conversation doesn't need rigid artifact separation or display modes
 }
@@ -53,6 +61,14 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   debugMode = false,
   citations = [],
   allMessages = [],
+  // 📝 EDIT MESSAGE PROPS: Enhanced edit functionality
+  isEditing = false,
+  editingText = '',
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onEditingTextChange,
+  editAreaRef,
 }) => {
   // ❌ REMOVED: Unused state variables - no longer needed for natural LLM flow
   // - revisionFeedback, setRevisionFeedback: Revision state management
@@ -120,39 +136,99 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {/* User Message */}
       {isUser && (
         <Message from="user">
-          <MessageContent>
-            {/* Text Content from parts (Markdown parsed) */}
-            {textParts.map((part, index) => (
-              <MarkdownRenderer key={index} content={part.text || ''} />
-            ))}
+          <MessageContent className={isEditing ? "!max-w-none" : ""} style={isEditing ? { maxWidth: '100%', minWidth: '100%' } : {}}>
+            {/* 📝 EDIT MODE: Conditional rendering based on edit state */}
+            {isEditing ? (
+              <div ref={isUser && editAreaRef ? editAreaRef : undefined}>
+                <textarea
+                  value={editingText}
+                  onChange={(e) => onEditingTextChange?.(e.target.value)}
+                  onInput={(e) => {
+                    const target = e.currentTarget;
+                    target.style.height = 'auto';
+                    target.style.height = target.scrollHeight + 'px';
+                  }}
+                  className="w-full bg-transparent border-0 outline-none resize-none text-foreground p-0 min-h-[1.5rem]"
+                  style={{
+                    height: 'auto',
+                    minHeight: '1.5rem'
+                  }}
+                  autoFocus
+                  placeholder="Edit your message..."
+                />
+                <div className="mt-2 flex gap-2 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
+                    onClick={onCancelEdit}
+                    aria-label="Cancel edit"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
+                    onClick={() => onSaveEdit?.(message.id, editingText)}
+                    aria-label="Save and regenerate"
+                  >
+                    <SendIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ width: 'fit-content', maxWidth: '100%' }}>
+                {/* Normal Display Mode */}
+                {/* Text Content from parts (Markdown parsed) */}
+                {textParts.map((part, index) => (
+                  <MarkdownRenderer key={index} content={part.text || ''} />
+                ))}
 
-            {/* File Attachments */}
-            {fileParts.map((part, index) => (
-              <div key={index} className="mt-2">
-                {part.mediaType?.startsWith('image/') ? (
-                  <div className="relative">
-                    <img
-                      src={part.url}
-                      alt={part.filename || 'Uploaded image'}
-                      className="max-w-xs rounded-lg border"
-                    />
-                    {part.filename && (
-                      <div className="mt-1 text-xs text-muted-foreground">{part.filename}</div>
+                {/* File Attachments */}
+                {fileParts.map((part, index) => (
+                  <div key={index} className="mt-2">
+                    {part.mediaType?.startsWith('image/') ? (
+                      <div className="relative">
+                        <img
+                          src={part.url}
+                          alt={part.filename || 'Uploaded image'}
+                          className="max-w-xs rounded-lg border"
+                        />
+                        {part.filename && (
+                          <div className="mt-1 text-xs text-muted-foreground">{part.filename}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <Card className="max-w-xs">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">📎 File Attachment</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-1">
+                          <div className="text-sm font-medium">{part.filename}</div>
+                          <div className="text-xs text-muted-foreground">{part.mediaType}</div>
+                        </CardContent>
+                      </Card>
                     )}
                   </div>
-                ) : (
-                  <Card className="max-w-xs">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">📎 File Attachment</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-1">
-                      <div className="text-sm font-medium">{part.filename}</div>
-                      <div className="text-xs text-muted-foreground">{part.mediaType}</div>
-                    </CardContent>
-                  </Card>
+                ))}
+
+                {/* 📝 EDIT BUTTON: Show edit button for user messages when not in edit mode - INSIDE MessageContent */}
+                {!isEditing && (
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/10"
+                      onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
+                      aria-label="Edit message"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
-            ))}
+            )}
           </MessageContent>
 
           {/* Debug Info */}
