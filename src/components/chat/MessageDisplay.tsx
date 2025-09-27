@@ -30,7 +30,7 @@ import {
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RefreshCw, Copy } from 'lucide-react';
+import { RefreshCw, Copy, Clock } from 'lucide-react';
 
 interface MessageDisplayProps {
   message: AcademicUIMessage;
@@ -280,7 +280,20 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             )}
 
             {/* Message Actions */}
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="mt-3 flex justify-end items-center gap-2">
+              {/* Timestamp di sebelah kiri dari buttons */}
+              {message.metadata?.timestamp && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {new Date(message.metadata.timestamp).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })}
+                </span>
+              )}
+
+              {/* Action buttons */}
               <Button
                 onClick={onRegenerate}
                 variant="ghost"
@@ -306,13 +319,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             </div>
 
             {/* Enhanced Metadata Display */}
-            {message.metadata && (
+            {message.metadata && (message.metadata.tokens || message.metadata.model) && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {message.metadata.timestamp && (
-                  <span className="flex items-center gap-1">
-                    ⏰ {new Date(message.metadata.timestamp).toLocaleTimeString()}
-                  </span>
-                )}
                 {message.metadata.tokens && (
                   <span className="flex items-center gap-1">
                     🔢 {message.metadata.tokens} tokens
