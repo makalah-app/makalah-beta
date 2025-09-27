@@ -1,55 +1,43 @@
 'use client';
 
 /**
- * StreamingHandler - Component untuk handling real-time AI responses dan streaming states
+ * StreamingHandler - Minimalist component untuk streaming state indication
  *
- * MIGRATED TO AI ELEMENTS:
- * - Uses AI Elements Loader untuk consistent loading animation
- * - Uses shadcn/ui Progress untuk streaming progress visualization
- * - Preserves real-time UI updates dan proper state management
+ * REDESIGNED FOR STATUS INDICATOR CONSISTENCY:
+ * - Uses bouncing dots animation sama seperti ChatInput status indicator
+ * - Clean minimal design tanpa background atau border
+ * - Minimal state management untuk progress tracking
  *
  * DESIGN COMPLIANCE:
- * - AI Elements styling dengan shadcn/ui base components
- * - Modern progress indicators dengan smooth animations
- * - Academic context streaming patterns preserved
+ * - Bouncing dots animation dengan consistent styling
+ * - Simple Tailwind utility classes
+ * - Clean horizontal layout above messages
  */
 
 import React, { useEffect, useState } from 'react';
-import { Loader } from '../ai-elements/loader';
-import { Progress } from '../ui/progress';
-import { Card, CardContent } from '../ui/card';
-import { cn } from '@/lib/utils';
 
 interface StreamingHandlerProps {
   status: 'ready' | 'submitted' | 'streaming' | 'error';
   className?: string;
-  showProgress?: boolean;
   estimatedDuration?: number;
 }
 
 interface StreamingState {
   startTime: number;
-  elapsedTime: number;
   estimatedProgress: number;
-  messageBuffer: string[];
-  eventCount: number;
 }
 
 export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
   status,
   className = '',
-  showProgress = true,
   estimatedDuration = 30000, // 30 seconds default
 }) => {
   const [streamingState, setStreamingState] = useState<StreamingState>({
     startTime: Date.now(),
-    elapsedTime: 0,
     estimatedProgress: 0,
-    messageBuffer: [],
-    eventCount: 0,
   });
 
-  // Update elapsed time dan progress
+  // Update progress tracking
   useEffect(() => {
     if (status !== 'streaming' && status !== 'submitted') return;
 
@@ -62,7 +50,6 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
 
       setStreamingState(prev => ({
         ...prev,
-        elapsedTime: elapsed,
         estimatedProgress: progress,
       }));
     }, 100);
@@ -75,10 +62,7 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
     if (status === 'ready' || status === 'error') {
       setStreamingState({
         startTime: 0,
-        elapsedTime: 0,
         estimatedProgress: 0,
-        messageBuffer: [],
-        eventCount: 0,
       });
     }
   }, [status]);
@@ -88,53 +72,24 @@ export const StreamingHandler: React.FC<StreamingHandlerProps> = ({
   }
 
   return (
-    <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-      <CardContent className="p-4">
-        {/* Main Streaming Indicator */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Animated Icon */}
-            <div className="flex-shrink-0">
-              {status === 'submitted' ? (
-                <Loader size={20} />
-              ) : (
-                <div className="flex gap-1">
-                  <div className="size-2 animate-bounce rounded-full bg-blue-500" style={{ animationDelay: '0ms' }} />
-                  <div className="size-2 animate-bounce rounded-full bg-blue-500" style={{ animationDelay: '150ms' }} />
-                  <div className="size-2 animate-bounce rounded-full bg-blue-500" style={{ animationDelay: '300ms' }} />
-                </div>
-              )}
-            </div>
+    <div className={`inline-flex items-center gap-2 text-sm text-foreground ${className}`}>
+      {/* Bouncing Dots Animation - Same as ChatInput status indicator */}
+      <div className="flex gap-1">
+        <div className="size-1 animate-bounce rounded-full bg-primary"></div>
+        <div className="size-1 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0.1s' }}></div>
+        <div className="size-1 animate-bounce rounded-full bg-primary" style={{ animationDelay: '0.2s' }}></div>
+      </div>
 
-            {/* Status Text */}
-            <div className="flex-1">
-              <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {status === 'submitted' ? 'Memproses permintaan...' : 'Menulis respons...'}
-              </div>
-              <div className="text-xs text-blue-600 dark:text-blue-400">
-                {Math.round(streamingState.elapsedTime / 1000)}s
-              </div>
-            </div>
-          </div>
+      {/* Status Text - Consistent with ChatInput */}
+      <span>
+        {status === 'submitted' ? 'Memproses permintaan...' : 'AI sedang merespons...'}
+      </span>
 
-          {/* Stop handled via ChatInput toolbar - indicator only */}
-        </div>
-
-        {/* Progress Bar */}
-        {showProgress && status === 'streaming' && (
-          <div className="mt-3 space-y-2">
-            <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400">
-              <span>Progress</span>
-              <span>{Math.round(streamingState.estimatedProgress)}%</span>
-            </div>
-            <Progress
-              value={streamingState.estimatedProgress}
-              className="h-2"
-            />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Progress Percentage - Subtle styling */}
+      {status === 'streaming' && (
+        <span className="text-muted-foreground text-xs">{Math.round(streamingState.estimatedProgress)}%</span>
+      )}
+    </div>
   );
 };
 

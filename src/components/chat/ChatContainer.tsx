@@ -746,28 +746,36 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
               {/* Messages */}
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <MessageDisplay
-                    key={message.id}
-                    message={message}
-                    onRegenerate={() => handleRegenerateMessage()}
-                    debugMode={debugMode}
-                    addToolResult={addToolResult}
-                    sendMessage={sendMessage}
-                    citations={citations}
-                    allMessages={messages}
-                  />
-                ))}
-              </div>
+                {messages.map((message, index) => {
+                  const isLastMessage = index === messages.length - 1;
+                  const isAssistantMessage = message.role === 'assistant';
+                  const isStreaming = (status === 'streaming' || status === 'submitted');
 
-              {/* Streaming Indicator */}
-              {status === 'streaming' && (
-                <div className="mt-4">
-                  <StreamingHandler
-                    status={status}
-                  />
-                </div>
-              )}
+                  // Show StreamingHandler before the last assistant message when streaming
+                  const showStreamingHandlerBefore = isLastMessage && isAssistantMessage && isStreaming;
+
+                  return (
+                    <div key={message.id}>
+                      {showStreamingHandlerBefore && (
+                        <div className="mb-2">
+                          <StreamingHandler
+                            status={status}
+                          />
+                        </div>
+                      )}
+                      <MessageDisplay
+                        message={message}
+                        onRegenerate={() => handleRegenerateMessage()}
+                        debugMode={debugMode}
+                        addToolResult={addToolResult}
+                        sendMessage={sendMessage}
+                        citations={citations}
+                        allMessages={messages}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Loading State */}
               {status === 'submitted' && (
