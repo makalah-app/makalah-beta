@@ -11,7 +11,7 @@
  * - Authentication state management dengan useAuth
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -19,6 +19,13 @@ import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
+import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "../ui/sheet";
+import { Menu } from 'lucide-react';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -37,6 +44,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const router = useRouter();
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -61,15 +69,16 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   };
 
   // Default navigation items
-  const defaultNavItems = [
-    { label: 'Dokumentasi', href: '/documentation' },
-    { label: 'Tutorial', href: '/tutorial' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Harga', href: '/pricing' },
-    { label: 'Tentang', href: '/about' }
-  ];
+  const navItems: MainMenuItem[] = useMemo(
+    () => customNavItems ?? MAIN_MENU_ITEMS,
+    [customNavItems]
+  );
 
-  const navItems = customNavItems || defaultNavItems;
+  const showChatLink = isAuthenticated && Boolean(user);
+
+  const handleMobileMenuSelect = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className={cn(
@@ -96,36 +105,61 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
 
       {/* Navigation and Controls - Hidden on Chat Page */}
       {!isChatPage && (
-        <div className="flex items-center gap-4">
-          {/* Navigation Menu */}
+        <div className="flex items-center gap-2 md:gap-4">
           {showNavigation && (
-            <div className="hidden md:flex items-center space-x-8 text-sm font-medium tracking-wide mr-8">
-              {/* Chat Menu - Only visible when user is logged in */}
-              {isAuthenticated && user && (
-                <Link
-                  href="/chat"
-                  className="transition-colors duration-200 text-muted-foreground hover:text-primary"
-                >
-                  Chat
-                </Link>
-              )}
+            <>
+              <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide mr-6">
+                {showChatLink && (
+                  <NavLink href="/chat" label="Chat" isActive={pathname === '/chat'} />
+                )}
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    isActive={pathname === item.href}
+                  />
+                ))}
+              </nav>
 
-              {/* Dynamic Navigation Items */}
-              {navItems.map((item, index) => (
-                <Link
-                  key={index}
-                  href={item.href}
-                  className="transition-colors duration-200 text-muted-foreground hover:text-primary"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label="Buka menu utama"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="flex flex-col gap-6 p-6">
+                  <div className="flex flex-col gap-4 text-sm font-medium">
+                    {showChatLink && (
+                      <MobileNavItem
+                        href="/chat"
+                        label="Chat"
+                        isActive={pathname === '/chat'}
+                        onSelect={handleMobileMenuSelect}
+                      />
+                    )}
+                    {navItems.map((item) => (
+                      <MobileNavItem
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        isActive={pathname === item.href}
+                        onSelect={handleMobileMenuSelect}
+                      />
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </>
           )}
 
-          {/* Authentication State */}
           {isLoading ? (
-            <span className="text-sm text-muted-foreground mr-4">Loading...</span>
+            <span className="text-sm text-muted-foreground mr-2 md:mr-4">Loading...</span>
           ) : isAuthenticated && user && showUserProfile ? (
             <UserDropdown
               user={user}
@@ -135,16 +169,52 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           ) : (
             <Button
               onClick={handleLogin}
-              className="mr-4 btn-green-solid"
+              className="btn-green-solid"
             >
               Masuk
             </Button>
           )}
-
         </div>
       )}
     </header>
   );
 };
+
+interface NavLinkProps {
+  href: string;
+  label: string;
+  isActive: boolean;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ href, label, isActive }) => (
+  <Link
+    href={href}
+    className={cn(
+      'transition-colors duration-200 text-muted-foreground hover:text-primary',
+      isActive && 'text-primary'
+    )}
+    aria-current={isActive ? 'page' : undefined}
+  >
+    {label}
+  </Link>
+);
+
+interface MobileNavItemProps extends NavLinkProps {
+  onSelect: () => void;
+}
+
+const MobileNavItem: React.FC<MobileNavItemProps> = ({ href, label, isActive, onSelect }) => (
+  <Link
+    href={href}
+    onClick={onSelect}
+    className={cn(
+      'flex items-center justify-between rounded-[3px] px-3 py-2 text-base transition-colors duration-200',
+      isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:bg-accent/60 hover:text-primary'
+    )}
+    aria-current={isActive ? 'page' : undefined}
+  >
+    <span>{label}</span>
+  </Link>
+);
 
 export default GlobalHeader;

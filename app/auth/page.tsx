@@ -23,7 +23,7 @@ interface FormData {
 export default function AuthPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { login, register, isLoading, error } = useAuth();
+  const { login, register, isLoading, error, resendVerificationEmail } = useAuth();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,6 +32,9 @@ export default function AuthPage() {
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [showResendOption, setShowResendOption] = useState(false);
+  const [resendEmail, setResendEmail] = useState<string>('');
+  const [resendMessage, setResendMessage] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -78,6 +81,8 @@ export default function AuthPage() {
         });
         // Show success message and redirect to login
         setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');
+        setShowResendOption(true);
+        setResendEmail(formData.email);
         setIsRegisterMode(false);
         setFormData({ email: formData.email, password: '', fullName: '', confirmPassword: '' });
         setIsSubmitting(false);
@@ -108,9 +113,32 @@ export default function AuthPage() {
         }
         // Don't set isSubmitting(false) for login success - let redirect handle it
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
+
+      // Check if error is due to unverified email
+      if (!isRegisterMode && error?.message?.toLowerCase().includes('email not confirmed')) {
+        setShowResendOption(true);
+        setResendEmail(formData.email);
+      }
+
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!resendEmail) return;
+
+    setResendMessage('Mengirim ulang email verifikasi...');
+    const success = await resendVerificationEmail(resendEmail);
+
+    if (success) {
+      setResendMessage('Email verifikasi telah dikirim ulang. Silakan cek inbox Anda.');
+      setTimeout(() => {
+        setResendMessage('');
+      }, 5000);
+    } else {
+      setResendMessage('Gagal mengirim ulang email. Silakan coba lagi.');
     }
   };
 
@@ -121,6 +149,9 @@ export default function AuthPage() {
     setShowConfirmPassword(false);
     setIsSubmitting(false);
     setSuccessMessage(''); // Clear success message when switching modes
+    setShowResendOption(false);
+    setResendEmail('');
+    setResendMessage('');
   };
 
   if (!mounted) {
@@ -154,11 +185,28 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !isRegisterMode && (
-              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-[3px]">
-                <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-[3px]">
+                <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2 mb-2">
                   <span>✅</span>
                   <span>{successMessage}</span>
                 </p>
+                {showResendOption && (
+                  <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                    <p className="text-xs text-green-700 dark:text-green-300 mb-2">
+                      Email tidak sampai? Cek folder spam atau kirim ulang.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendEmail}
+                      disabled={isLoading || !!resendMessage}
+                      className="text-xs"
+                    >
+                      {resendMessage || 'Kirim Ulang Email Verifikasi'}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -286,8 +334,27 @@ export default function AuthPage() {
               )}
 
               {error && (
-                <div className="text-sm text-destructive text-center">
-                  {error}
+                <div className="space-y-2">
+                  <div className="text-sm text-destructive text-center">
+                    {error}
+                  </div>
+                  {showResendOption && !successMessage && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-[3px]">
+                      <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
+                        Email belum terverifikasi. Cek inbox atau kirim ulang.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleResendEmail}
+                        disabled={isLoading || !!resendMessage}
+                        className="text-xs w-full"
+                      >
+                        {resendMessage || 'Kirim Ulang Email Verifikasi'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 

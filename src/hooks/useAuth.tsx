@@ -93,16 +93,19 @@ export interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   refreshToken: () => Promise<boolean>;
   isTokenExpired: (bufferMinutes?: number) => boolean;
-  
+
   // Password Reset Methods
   requestPasswordReset: (email: string) => Promise<boolean>;
   resetPassword: (newPassword: string) => Promise<boolean>;
-  
+
+  // Email Verification
+  resendVerificationEmail: (email: string) => Promise<boolean>;
+
   // Permission Methods
   hasPermission: (permission: string, resourceId?: string) => boolean;
   isAdmin: () => boolean;
   canPerformAcademicOperations: () => boolean;
-  
+
   // Utility Methods
   clearError: () => void;
   updateProfile: (updates: Partial<User>) => Promise<boolean>;
@@ -906,6 +909,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
+   * Resend verification email
+   */
+  const resendVerificationEmail = useCallback(async (email: string): Promise<boolean> => {
+    try {
+      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      const { error } = await supabaseClient.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`
+        }
+      });
+
+      if (error) {
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error.message
+        }));
+        return false;
+      }
+
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+      return true;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend verification email';
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
+      }));
+      return false;
+    }
+  }, []);
+
+  /**
    * Check if current session token is expired or will expire soon
    */
   const isTokenExpired = useCallback((bufferMinutes: number = 1): boolean => {
@@ -926,6 +967,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isTokenExpired,
     requestPasswordReset,
     resetPassword,
+    resendVerificationEmail,
     hasPermission,
     isAdmin,
     canPerformAcademicOperations,
