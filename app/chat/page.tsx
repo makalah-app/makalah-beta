@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+  useLayoutEffect,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
@@ -9,6 +16,7 @@ import { generateUUID } from '../../src/lib/utils/uuid-generator';
 import { useAuth } from '../../src/hooks/useAuth';
 import RoleBasedRoute from '../../src/components/auth/AuthRoutes';
 import { useChatHistory } from '../../src/hooks/useChatHistory';
+import type { ConversationItem } from '../../src/hooks/useChatHistory';
 
 // ShadCN UI Components
 import {
@@ -50,6 +58,107 @@ function MobileHeader() {
   );
 }
 
+const useIsTextTruncated = (
+  ref: React.RefObject<HTMLElement>,
+  deps: React.DependencyList = []
+) => {
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const update = () => {
+      const el = ref.current;
+      if (!el) return;
+      const horizontalOverflow = el.scrollWidth - el.clientWidth > 1;
+      const verticalOverflow = el.scrollHeight - el.clientHeight > 1;
+      setIsTruncated(horizontalOverflow || verticalOverflow);
+    };
+
+    update();
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(update);
+      resizeObserver.observe(node);
+    }
+
+    window.addEventListener('resize', update);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [ref, ...deps]);
+
+  return isTruncated;
+};
+
+interface ConversationHistoryItemProps {
+  conversation: ConversationItem;
+  isActive: boolean;
+  truncatedTitle: string;
+  fullTitle: string;
+  onSelect: (conversationId: string) => void;
+  onDelete: (conversationId: string) => void;
+}
+
+const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
+  conversation,
+  isActive,
+  truncatedTitle,
+  fullTitle,
+  onSelect,
+  onDelete,
+}) => {
+  const titleRef = useRef<HTMLSpanElement>(null);
+  // Always show tooltip for consistent UX
+  const shouldShowTooltip = true;
+
+  return (
+    <SidebarMenuItem>
+      <div className="flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip delayDuration={500}>
+            <TooltipTrigger asChild>
+              <SidebarMenuButton
+                onClick={() => onSelect(conversation.id)}
+                className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
+                  isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span ref={titleRef} className="truncate">
+                  {truncatedTitle}
+                </span>
+                {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
+              </SidebarMenuButton>
+            </TooltipTrigger>
+            {shouldShowTooltip && (
+              <TooltipContent
+                side="top"
+                align="center"
+                sideOffset={1}
+                className="pointer-events-none max-w-xs rounded-[3px] bg-green-600 text-white shadow-lg translate-x-24"
+              >
+                <p className="text-xs">{fullTitle}</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+        <button
+          onClick={() => onDelete(conversation.id)}
+          className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
+          aria-label="Delete conversation"
+        >
+          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+        </button>
+      </div>
+    </SidebarMenuItem>
+  );
+};
+
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,23 +175,16 @@ function ChatPageContent() {
     return title.slice(0, maxLength - 3) + '...';
   };
 
-  // ✅ PURE COMPUTATION: Calculate chatId without side effects
-  // useMemo MUST be pure - no sessionStorage writes, no URL updates
+  // ✅ SIMPLE COMPUTATION: Calculate chatId without over-engineering
   const currentChatId = useMemo(() => {
-    // Priority order: conversationId > urlChatId > sessionChatId > newId
-    const conversationId = searchParams.get('conversationId');
-    if (conversationId) {
-      console.log(`[ChatPage] Using conversation ID: ${conversationId}`);
-      return conversationId;
-    }
-
-    const urlChatId = searchParams.get('chatId');
+    // Check both parameters for backward compatibility - simple approach
+    const urlChatId = searchParams.get('chatId') || searchParams.get('conversationId');
     if (urlChatId) {
       console.log(`[ChatPage] Using URL chatId: ${urlChatId}`);
       return urlChatId;
     }
 
-    // Read-only check - no writes in useMemo
+    // Session fallback
     try {
       const sessionChatId = sessionStorage.getItem('currentChatId');
       if (sessionChatId) {
@@ -91,11 +193,11 @@ function ChatPageContent() {
       }
     } catch {}
 
-    // Generate new ID but don't save yet - pure calculation
+    // Generate new
     const newChatId = generateUUID();
     console.log(`[ChatPage] Generated new chatId: ${newChatId}`);
     return newChatId;
-  }, [searchParams]); // Only stable dependency
+  }, [searchParams]);
 
   // ✅ SIDE EFFECT: Sync chatId to sessionStorage
   useEffect(() => {
@@ -145,14 +247,14 @@ function ChatPageContent() {
 
     try {
       const urlChatId = searchParams.get('chatId');
-      const conversationId = searchParams.get('conversationId');
 
-      // Only update URL if we're not in conversation mode and chatId is different
-      if (!conversationId && urlChatId !== currentChatId) {
+      // Only update URL if chatId is different (no special conversationId handling)
+      if (urlChatId !== currentChatId) {
         console.log(`[ChatPage] Syncing URL with chatId: ${currentChatId}`);
 
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('chatId', currentChatId);
+        newUrl.searchParams.delete('conversationId'); // Clean up old parameter
         window.history.replaceState(null, '', newUrl.toString());
       }
     } catch (error) {
@@ -160,9 +262,9 @@ function ChatPageContent() {
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
 
-  // Get active conversation ID from URL - simplified (AFTER currentChatId is defined)
+  // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)
   const getActiveConversationId = (): string | null => {
-    return searchParams.get('conversationId') || currentChatId || null;
+    return currentChatId || null;
   };
 
   // Filter conversations based on search query
@@ -301,10 +403,10 @@ function ChatPageContent() {
 
   // Get user initials for avatar
 
-  // Handle conversation click
+  // Handle conversation click - UNIFIED PARAMETER SYSTEM
   const handleConversationClick = (conversationId: string) => {
     console.log('[ChatPage] Loading conversation:', conversationId);
-    const url = `/chat?conversationId=${conversationId}`;
+    const url = `/chat?chatId=${conversationId}`;
     router.push(url);
   };
 
@@ -367,43 +469,18 @@ function ChatPageContent() {
                         {groupConversations.map((conversation) => {
                           const isActive = activeConversationId === conversation.id;
                           const fullTitle = conversation.title || 'New Conversation';
-                          const shouldShowTooltip = fullTitle.length > 39;
+                          const truncated = truncateTitle(fullTitle, 39);
 
                           return (
-                            <SidebarMenuItem key={conversation.id}>
-                              <div className="flex items-center gap-1">
-                                <TooltipProvider>
-                                  <Tooltip delayDuration={500}>
-                                    <TooltipTrigger asChild>
-                                      <SidebarMenuButton
-                                        onClick={() => handleConversationClick(conversation.id)}
-                                        className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
-                                          isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
-                                        }`}
-                                      >
-                                        <MessageCircle className="w-4 h-4" />
-                                        <span className="truncate">
-                                          {truncateTitle(fullTitle, 39)}
-                                        </span>
-                                        {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
-                                      </SidebarMenuButton>
-                                    </TooltipTrigger>
-                                    {shouldShowTooltip && (
-                                      <TooltipContent side="right" className="max-w-xs rounded-[3px] bg-green-600 text-white">
-                                        <p className="text-xs">{fullTitle}</p>
-                                      </TooltipContent>
-                                    )}
-                                  </Tooltip>
-                                </TooltipProvider>
-                                <button
-                                  onClick={() => handleDeleteConversation(conversation.id)}
-                                  className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
-                                  aria-label="Delete conversation"
-                                >
-                                  <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                                </button>
-                              </div>
-                            </SidebarMenuItem>
+                            <ConversationHistoryItem
+                              key={conversation.id}
+                              conversation={conversation}
+                              isActive={isActive}
+                              fullTitle={fullTitle}
+                              truncatedTitle={truncated}
+                              onSelect={handleConversationClick}
+                              onDelete={handleDeleteConversation}
+                            />
                           );
                         })}
                       </SidebarMenu>

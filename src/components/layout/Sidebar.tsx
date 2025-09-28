@@ -76,11 +76,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { conversations, loading, error, refetch } = useChatHistory();
 
 
-  // Handle conversation click - BASIC NAVIGATION
+  // Handle conversation click - UNIFIED PARAMETER SYSTEM
   const handleConversationClick = (conversation: ConversationItem) => {
     console.log('[Sidebar] Loading conversation:', conversation.id);
-    // Navigate to chat page with conversation ID
-    const url = `/chat?conversationId=${conversation.id}`;
+    // Navigate to chat page with UNIFIED chatId parameter (no more conversationId)
+    const url = `/chat?chatId=${conversation.id}`;
     if (onNavigate) {
       onNavigate(url);
     } else {
