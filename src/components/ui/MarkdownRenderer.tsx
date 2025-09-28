@@ -96,20 +96,29 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           p: ({ node, ...props }) => (
             <p
               {...props}
-              className={cn("mb-4 text-foreground leading-relaxed w-full", props.className)}
+              className={cn(
+                "mb-4 last:mb-0 text-foreground leading-relaxed w-full",
+                props.className
+              )}
             />
           ),
           // Lists dengan proper formatting
           ul: ({ node, ...props }) => (
             <ul
               {...props}
-              className={cn("list-disc pl-6 mb-4 space-y-2 text-foreground", props.className)}
+              className={cn(
+                "list-disc pl-6 mb-4 last:mb-0 space-y-2 text-foreground",
+                props.className
+              )}
             />
           ),
           ol: ({ node, ...props }) => (
             <ol
               {...props}
-              className={cn("list-decimal pl-6 mb-4 space-y-2 text-foreground", props.className)}
+              className={cn(
+                "list-decimal pl-6 mb-4 last:mb-0 space-y-2 text-foreground",
+                props.className
+              )}
             />
           ),
           li: ({ node, ...props }) => (
@@ -141,4 +150,3 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 };
 
 export default MarkdownRenderer;
-

@@ -31,7 +31,7 @@ export interface MessageActionsProps extends React.HTMLAttributes<HTMLDivElement
 
 export const MessageActions = ({ className, children, ...props }: MessageActionsProps) => (
   <div
-    className={cn('flex items-center justify-end gap-1 -mt-3', className)}
+    className={cn('flex items-center justify-end gap-1 mt-1', className)}
     {...props}
   >
     {children}
