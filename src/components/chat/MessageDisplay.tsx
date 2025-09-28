@@ -311,22 +311,26 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                       const formattedDate = `${date.getDate()}, ${date.toLocaleDateString('id-ID', { month: 'long' })}, ${date.getFullYear()}`;
 
                       return (
-                        <div key={index} className="text-xs text-muted-foreground">
-                          <span>• {source.title || 'Untitled'}</span>
-                          <span> - </span>
-                          {source.url ? (
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {hostname}
-                            </a>
-                          ) : (
-                            <span>{hostname}</span>
-                          )}
-                          <span>, {formattedDate}</span>
+                        <div key={index} className="text-xs text-muted-foreground mb-2 last:mb-0">
+                          {/* Title line dengan bullet */}
+                          <div>• {source.title || 'Untitled'}</div>
+
+                          {/* Source info line dengan indent */}
+                          <div className="ml-3 mt-0.5">
+                            {source.url ? (
+                              <a
+                                href={source.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                {hostname}
+                              </a>
+                            ) : (
+                              <span>{hostname}</span>
+                            )}
+                            <span>, {formattedDate}</span>
+                          </div>
                         </div>
                       );
                     });
