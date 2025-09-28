@@ -380,22 +380,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Login failed - no user or session returned');
       }
 
-      // Get user profile from database (join users with user_profiles)
-      const profileResult = await withTimeout(
-        (supabaseClient as any)
-          .from('users')
-          .select(`
-            id, email, role, email_verified_at, created_at, last_login_at,
-            user_profiles!inner(
-              display_name, first_name, last_name, institution, avatar_url
-            )
-          `)
-          .eq('id', data.user.id)
-          .single(),
-        3000,
-        async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
-      );
-      const { data: userProfile, error: profileError } = profileResult as any;
+      // Try to get user profile - but if users table doesn't exist, use auth.users data
+      let userProfile = null;
+      let profileError = null;
+
+      try {
+        // First try user_profiles directly (skip users table which may not be properly set up)
+        const profileResult = await withTimeout(
+          (supabaseClient as any)
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single(),
+          3000,
+          async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
+        );
+
+        if (profileResult.data) {
+          // Construct userProfile object from user_profiles data
+          userProfile = {
+            id: data.user.id,
+            email: data.user.email,
+            role: data.user.user_metadata?.role || 'student',
+            email_verified_at: data.user.email_confirmed_at,
+            created_at: data.user.created_at,
+            last_login_at: new Date().toISOString(),
+            user_profiles: [profileResult.data]
+          };
+        }
+        profileError = profileResult.error;
+      } catch (err) {
+        profileError = err;
+      }
 
 
       // Map Supabase user to our User interface (fallback to auth metadata if profile missing)
@@ -423,7 +439,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isVerified: !!userProfile.email_verified_at,
         createdAt: userProfile.created_at,
         lastLogin: new Date().toISOString(),
-        avatarUrl: userProfile.user_profiles?.[0]?.avatar_url || userProfile.avatar_url || undefined
+        avatarUrl: userProfile.user_profiles?.[0]?.avatar_url || undefined
       } : {
         // Fallback to auth user_metadata if profile doesn't exist
         id: data.user.id,
@@ -518,31 +534,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Registration failed - no user returned');
       }
 
-      // Create user profile in our database (users table first, then user_profiles)
-      const { error: userError } = await (supabaseClient as any)
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: data.email,
-          role: data.role,
-          email_verified_at: null, // Will be set when email is verified
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as any);
-
-      if (userError) {
-        console.error('Failed to create user:', userError);
-        throw new Error('Registration failed - user creation error');
-      }
-
-      // Create user profile in user_profiles table
+      // Skip the users table entirely - Supabase auth is the source of truth
+      // Only create user_profiles entry for additional profile information
       const nameParts = data.fullName.trim().split(' ');
       const firstName = nameParts[0] || data.fullName;
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
+      // Create user profile in user_profiles table
       const { error: profileError } = await (supabaseClient as any)
         .from('user_profiles')
-        .insert({
+        .upsert({
           user_id: authData.user.id,
           first_name: firstName,
           last_name: lastName,
@@ -550,11 +551,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           institution: data.institution || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        } as any);
+        } as any, { onConflict: 'user_id' });
 
       if (profileError) {
-        console.error('Failed to create user profile:', profileError);
-        throw new Error('Registration failed - profile creation error');
+        console.warn('Failed to create user profile:', profileError);
+        // Don't throw error since auth registration was successful
+        // User can still use the app with just auth.users entry
       }
 
       // Registration successful - user needs to verify email

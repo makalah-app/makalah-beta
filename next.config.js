@@ -36,12 +36,14 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
-        crypto: require.resolve('crypto-browserify'), // Use crypto-browserify polyfill
+        // Temporarily disable crypto polyfill to fix build
+        // crypto: require.resolve('crypto-browserify'),
+        crypto: false,
         buffer: require.resolve('buffer'),
         stream: require.resolve('stream-browserify'),
         util: require.resolve('util'),
       };
-      
+
       // Provide Buffer polyfill for client-side
       config.plugins.push(
         new webpack.ProvidePlugin({

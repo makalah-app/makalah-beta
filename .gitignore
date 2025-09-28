@@ -227,3 +227,27 @@ src/lib/caching/*-test*.ts
 supabase/
 .supabase/
 tsconfig.app.tsbuildinfo
+
+# Other
+VERCEL_FIX_INSTRUCTIONS.md
+vercel-env-setup.txt
+setup-vercel-env.sh
+show-env-values.sh
+quick-vercel-setup.sh
+playwright.config.ts
+ENV_VALUES_FOR_VERCEL.txt
+.vercel
+UPDATED_VERCEL_ENV_VARS.txt
+URGENT_ADD_TO_VERCEL.txt
+VERCEL_FIX_INSTRUCTIONS.md
+vercel-env-setup.txt
+extract-env-values.sh
+ENV_VALUES_FOR_VERCEL.txt
+copy-paste-vercel-env.txt
+ALL_VERCEL_ENV_VARS.txt
+add-env-vars.sh
+quick-vercel-setup.sh
+setup-vercel-env.sh
+show-env-values.sh
+playwright.config.ts
+onboarding.md
