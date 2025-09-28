@@ -29,7 +29,7 @@ import {
 } from 'ai';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RefreshCw, Copy, Edit } from 'lucide-react';
+import { RefreshCw, Copy, Edit, BookOpen } from 'lucide-react';
 // New reusable components
 import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
@@ -285,7 +285,10 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             {sourceParts.length > 0 && (
               <Card className="mt-3">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">📚 Sources</CardTitle>
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span>Rujukan</span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {(() => {
@@ -316,7 +319,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                               href={source.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-muted-foreground hover:underline"
+                              className="text-primary hover:underline"
                             >
                               {hostname}
                             </a>
