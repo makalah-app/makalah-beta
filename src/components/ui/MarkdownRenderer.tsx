@@ -4,6 +4,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
+import { LinkWithPreview } from "./LinkWithPreview";
 
 interface MarkdownRendererProps {
   content: string;
@@ -43,17 +44,48 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         remarkPlugins={[remarkGfm]}
         components={{
           // Enhanced link component untuk security dan UX
-          a: ({ node, ...props }) => (
-            <a
-              {...props}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                "text-primary hover:text-primary/80 underline transition-colors",
-                props.className
-              )}
-            />
-          ),
+          a: ({ node, href, children, ...props }) => {
+            // Extract link text and check if it's a source link
+            const linkText = children?.toString() || '';
+            const isSourceLink =
+              linkText.includes('.com') ||
+              linkText.includes('.org') ||
+              linkText.includes('.net') ||
+              linkText.match(/^\(.*\)$/) || // Text in parentheses
+              href?.includes('reuters') ||
+              href?.includes('bloomberg') ||
+              href?.includes('cnbc');
+
+            // Use LinkWithPreview for source links
+            if (isSourceLink && href) {
+              // Clean link text (remove parentheses if present)
+              const cleanText = linkText.replace(/[()]/g, '');
+              return (
+                <LinkWithPreview
+                  href={href}
+                  className={props.className}
+                >
+                  {cleanText}
+                </LinkWithPreview>
+              );
+            }
+
+            // Default link rendering for non-source links
+            return (
+              <a
+                {...props}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "text-primary hover:text-primary/80 underline transition-colors",
+                  props.className
+                )}
+              >
+                {children}
+              </a>
+            );
+          },
           // Enhanced code block styling
           code: ({ node, inline, ...props }) => (
             <code
