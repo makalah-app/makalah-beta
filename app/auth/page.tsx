@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -130,9 +131,14 @@ export default function AuthPage() {
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <div className="logo-m-small">
-                    M
-                  </div>
+                  <Image
+                    src="/logo/makalah_logo_500x500.png"
+                    alt="Makalah AI - Academic Paper Writing Assistant"
+                    width={48}
+                    height={48}
+                    className="rounded-[3px]"
+                    priority
+                  />
                 </Link>
               </div>
               <h1 className="text-xl font-medium mb-2 text-foreground font-heading">

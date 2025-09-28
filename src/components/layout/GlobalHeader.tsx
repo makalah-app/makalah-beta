@@ -14,6 +14,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { UserDropdown } from "../ui/user-dropdown";
@@ -91,9 +92,14 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       {/* Brand Section */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-lg" aria-hidden="true">
-            M
-          </div>
+          <Image
+            src="/logo/makalah_logo_500x500.png"
+            alt="Makalah AI - Academic Paper Writing Assistant"
+            width={40}
+            height={40}
+            className="rounded-[3px]"
+            priority
+          />
           <div className="text-xl font-medium text-foreground">Makalah AI</div>
         </Link>
       </div>

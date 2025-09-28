@@ -218,7 +218,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       />
 
       {/* AI Elements PromptInput - Clean Standard Implementation */}
-      <PromptInput onSubmit={handleSubmit}>
+      <PromptInput
+        onSubmit={handleSubmit}
+        className="bg-[var(--chat-input)]"
+      >
         {/* Textarea Input - AI SDK Elements Style */}
         <PromptInputTextarea
           placeholder={

@@ -43,7 +43,11 @@ export const metadata: Metadata = {
     'AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates',
   keywords: ['AI', 'academic writing', 'research', 'Makalah', 'Indonesia', 'academic assistant'],
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
 };
 

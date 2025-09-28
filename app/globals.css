@@ -73,6 +73,7 @@
   /* User message exclusive styles */
   --user-message-bg: oklch(94.309% 0.00011 271.152); /* Same as input color for light mode */
   --user-message-border: oklch(0.922 0 0 / 0.2); /* Ultra thin border with 20% opacity */
+  --chat-input: oklch(0.97 0 0); /* Lebih terang untuk area input chat di light mode */
 }
 
 .dark {
@@ -119,6 +120,7 @@
   /* User message exclusive styles */
   --user-message-bg: oklch(0.269 0 0); /* Same as sidebar-accent for dark mode */
   --user-message-border: oklch(0.269 0 0 / 0.3); /* Slightly more visible in dark mode */
+  --chat-input: oklch(0.205 0 0); /* Samakan dengan kartu rujukan saat mode gelap */
 }
 
 @layer base {

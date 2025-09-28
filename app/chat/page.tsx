@@ -9,6 +9,7 @@ import React, {
   useLayoutEffect,
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
@@ -446,9 +447,14 @@ function ChatPageContent() {
             <SidebarHeader className="p-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <a href="/" className="flex items-center text-decoration-none cursor-pointer">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center text-sm font-semibold">
-                    M
-                  </div>
+                  <Image
+                    src="/logo/makalah_logo_500x500.png"
+                    alt="Makalah AI - Academic Paper Writing Assistant"
+                    width={32}
+                    height={32}
+                    className="rounded-[3px]"
+                    priority
+                  />
                 </a>
               </div>
             </SidebarHeader>
