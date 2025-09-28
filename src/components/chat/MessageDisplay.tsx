@@ -271,7 +271,6 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   return (
                     <ToolResult
                       key={`tool-result-${toolCallId}`}
-                      toolName={toolName}
                       result={(part as any).result}
                       status="success"
                     />

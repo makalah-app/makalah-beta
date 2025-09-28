@@ -1,78 +1,127 @@
 'use client';
 
 /**
- * ToolResult - Clean component for displaying tool execution results
+ * ToolResult - StreamingHandler-style component untuk tool execution results
+ *
+ * REDESIGNED FOR STREAMING INDICATOR CONSISTENCY:
+ * - Uses same styling dan animation seperti StreamingHandler
+ * - Bouncing dots animation untuk pending status
+ * - Auto-hide behavior after completion (like StreamingHandler)
+ * - Minimal clean design tanpa Card wrapper
  *
  * DESIGN COMPLIANCE:
- * - Uses semantic design tokens for status colors
- * - Consistent card styling with proper spacing
- * - Responsive design for mobile viewports
- * - Proper accessibility with status indicators
+ * - Consistent dengan StreamingHandler styling
+ * - Bouncing dots animation untuk visual continuity
+ * - Auto-hide setelah success (2.5 detik delay)
+ * - Simple Tailwind utility classes
  */
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ToolResultProps {
-  toolName: string;
   result: any;
   status?: 'success' | 'error' | 'pending';
   className?: string;
 }
 
 export const ToolResult = ({
-  toolName,
   result,
   status = 'success',
   className
 }: ToolResultProps) => {
+  const [shouldHide, setShouldHide] = useState(false);
+
   const statusConfig = {
     success: {
-      icon: '✅',
-      text: 'Completed',
-      variant: 'default' as const,
-      className: 'text-green-600 dark:text-green-400'
+      text: 'Pencarian selesai',
+      percentage: 100,
+      showBouncing: false
     },
     error: {
-      icon: '❌',
-      text: 'Failed',
-      variant: 'destructive' as const,
-      className: 'text-red-600 dark:text-red-400'
+      text: 'Pencarian gagal',
+      percentage: 0,
+      showBouncing: false
     },
     pending: {
-      icon: '⏳',
-      text: 'Running',
-      variant: 'secondary' as const,
-      className: 'text-yellow-600 dark:text-yellow-400'
+      text: 'Sedang mencari...',
+      percentage: 75,
+      showBouncing: true
     }
   };
 
   const config = statusConfig[status];
 
+  // Auto-hide behavior - similar to StreamingHandler
+  useEffect(() => {
+    if (status === 'success') {
+      // Hide after 2.5 seconds for success status
+      const timer = setTimeout(() => {
+        setShouldHide(true);
+      }, 2500);
+
+      return () => clearTimeout(timer);
+    } else if (status === 'error') {
+      // Hide after 4 seconds for error status (longer to read error)
+      const timer = setTimeout(() => {
+        setShouldHide(true);
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }
+    // Pending status doesn't auto-hide
+  }, [status]);
+
+  // Hide component like StreamingHandler does
+  if (shouldHide) {
+    return null;
+  }
+
   return (
-    <Card className={cn('mt-3', className)}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <span className="text-lg">🔧</span>
-          <span className="font-medium">{toolName}</span>
-          <Badge
-            variant={config.variant}
-            className={cn('ml-auto text-xs', config.className)}
-          >
-            <span className="mr-1">{config.icon}</span>
-            {config.text}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm">
-        <pre className="whitespace-pre-wrap overflow-x-auto">
-          {typeof result === 'string'
-            ? result
-            : JSON.stringify(result, null, 2)}
-        </pre>
-      </CardContent>
-    </Card>
+    <div className={cn('mt-3', className)}>
+      {/* Single Line: StreamingHandler-style indicator */}
+      <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+        {/* Bouncing/Static Dots - Same as StreamingHandler */}
+        <div className="flex gap-1">
+          <div
+            className={cn(
+              "size-1 rounded-full bg-primary",
+              config.showBouncing && "animate-bounce"
+            )}
+          />
+          <div
+            className={cn(
+              "size-1 rounded-full bg-primary",
+              config.showBouncing && "animate-bounce"
+            )}
+            style={config.showBouncing ? { animationDelay: '0.1s' } : undefined}
+          />
+          <div
+            className={cn(
+              "size-1 rounded-full bg-primary",
+              config.showBouncing && "animate-bounce"
+            )}
+            style={config.showBouncing ? { animationDelay: '0.2s' } : undefined}
+          />
+        </div>
+
+        {/* Status Text */}
+        <span>{config.text}</span>
+
+        {/* Progress Percentage */}
+        <span className="text-muted-foreground text-xs">{config.percentage}%</span>
+      </div>
+
+      {/* Result content - minimal styling (hidden for cleaner look) */}
+      {result && false && (
+        <div className="pl-6 mt-2">
+          <pre className="text-xs text-muted-foreground whitespace-pre-wrap overflow-x-auto">
+            {typeof result === 'string'
+              ? result
+              : JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
   );
 };
