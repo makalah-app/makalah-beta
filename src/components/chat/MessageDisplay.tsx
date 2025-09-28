@@ -216,12 +216,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {isAssistant && (
         <Message from="assistant">
           <MessageContent>
-            {/* Text Content from parts (Markdown parsed) */}
-            {textParts.map((part, index) => (
-              <MarkdownRenderer key={index} content={part.text || ''} />
-            ))}
-
-            {/* ✅ AI SDK v5 HITL Tool UI Parts Rendering */}
+            {/* ✅ AI SDK v5 HITL Tool UI Parts Rendering - MOVED BEFORE text content */}
             {message.parts?.map((part, index) => {
               // ✅ Handle tool UI parts using AI SDK v5 patterns
               if (part && isToolUIPart(part)) {
@@ -280,6 +275,11 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
               return null;
             }).filter(Boolean)}
+
+            {/* Text Content from parts (Markdown parsed) - MOVED AFTER tool UI parts */}
+            {textParts.map((part, index) => (
+              <MarkdownRenderer key={index} content={part.text || ''} />
+            ))}
 
             {/* Source References - using standard source-url parts */}
             {sourceParts.length > 0 && (
