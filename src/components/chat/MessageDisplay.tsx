@@ -134,8 +134,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   const sourceParts = messageParts.filter(part => part.type === 'source-url') as SourcePart[];
   const toolResultParts = messageParts.filter(part => part.type === 'tool-result');
 
-  // Move all React hooks before any conditional returns
-  // Fix: Remove conditional logic from inside hooks to satisfy Vercel's stricter ESLint
+  // CRITICAL: All React hooks MUST be declared before ANY conditional returns
+  // This fixes React Hook Rules violations detected by Vercel's stricter ESLint
   const uniqueSourceParts = React.useMemo(() => {
     // Always process, return empty array for system messages later
     if (sourceParts.length === 0) return [] as SourcePart[];
@@ -274,7 +274,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // Natural LLM intelligence generates content without duplication issues
   // No need for rigid artifact detection and content filtering
 
-  // Handle system message after all hooks are called
+  // CRITICAL: All conditional returns MUST come AFTER hooks declarations
+  // This is the proper place for early returns after all hooks are defined
   if (isSystem) {
     return (
       <SystemMessage
