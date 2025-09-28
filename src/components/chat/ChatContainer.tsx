@@ -841,7 +841,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                   return (
                     <div key={message.id}>
                       {showStreamingHandlerBefore && (
-                        <div className="mb-2">
+                        <div className="mb-0.5">
                           <StreamingHandler
                             status={status}
                           />
