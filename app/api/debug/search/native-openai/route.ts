@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SearchProviderManager } from '@/lib/ai/tools/search/search-providers';
 
+// Force dynamic rendering for debug endpoints
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
