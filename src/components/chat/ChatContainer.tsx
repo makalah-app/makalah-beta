@@ -701,7 +701,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
       // Trigger new AI response
       setTimeout(() => {
-        sendMessage(newContent);
+        sendMessage({ text: newContent });
       }, 100); // Small delay to ensure state is updated
     }
   }, [messages, setMessages, sendMessage]);
