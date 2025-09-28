@@ -37,6 +37,7 @@ import {
 import { UserDropdown } from '../../src/components/ui/user-dropdown';
 import { Input } from '../../src/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../src/components/ui/tooltip';
+import { DeleteConversationDialog } from '../../src/components/chat/DeleteConversationDialog';
 
 function MobileHeader() {
   const { openMobile } = useSidebar();
@@ -165,6 +166,11 @@ function ChatPageContent() {
   const { user, logout, isLoading } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<ConversationItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Stable user ID reference to prevent infinite loops
   const userIdRef = useRef<string | null>(null);
@@ -374,11 +380,22 @@ function ChatPageContent() {
   };
 
   // Handle delete conversation dengan confirmation
-  const handleDeleteConversation = async (conversationId: string) => {
-    if (!confirm('Hapus percakapan ini?')) return;
+  const handleDeleteConversation = (conversationId: string) => {
+    const conversation = conversations.find(conv => conv.id === conversationId);
+    if (conversation) {
+      setConversationToDelete(conversation);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  // Handle actual delete after confirmation
+  const handleConfirmDelete = async () => {
+    if (!conversationToDelete) return;
+
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+      const response = await fetch(`/api/chat/conversations/${conversationToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'X-User-Id': user?.id || '',
@@ -392,12 +409,18 @@ function ChatPageContent() {
         }
 
         // Jika current chat yang di-delete, create new chat
-        if (currentChatId === conversationId) {
+        if (currentChatId === conversationToDelete.id) {
           handleNewChat();
         }
+
+        // Close dialog and reset state
+        setDeleteDialogOpen(false);
+        setConversationToDelete(null);
       }
     } catch (error) {
       console.error('[ChatPage] Failed to delete conversation:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -564,6 +587,15 @@ function ChatPageContent() {
           </main>
         </div>
       </SidebarProvider>
+
+      {/* Delete Conversation Confirmation Dialog */}
+      <DeleteConversationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        conversationTitle={conversationToDelete?.title || undefined}
+      />
     </ThemeProvider>
   );
 }
