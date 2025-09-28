@@ -157,7 +157,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       console.error('[EventHandler] Error processing SSE event:', error);
       emit({
         type: 'error',
-        data: { message: 'Failed to process SSE event', error: error.message },
+        data: { message: 'Failed to process SSE event', error: (error as any)?.message },
         source: 'event-handler',
       });
     }

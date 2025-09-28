@@ -148,7 +148,6 @@ export async function POST(request: NextRequest) {
             text: initialMessage
           }
         ],
-        createdAt,
         metadata: {
           userId,
           phase,

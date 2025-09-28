@@ -143,12 +143,12 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
         lastError = error instanceof Error ? error : new Error('Unknown error');
         
         // Handle network errors
-        if (error instanceof TypeError || error.name === 'AbortError') {
+        if (error instanceof TypeError || (error as any)?.name === 'AbortError') {
           setIsOnline(false);
         }
         
         // Don't retry on client errors (4xx)
-        if (error.message.includes('HTTP 4')) {
+        if ((error as any)?.message?.includes('HTTP 4')) {
           break;
         }
         

@@ -101,7 +101,7 @@ export const ChatErrorIntegration: React.FC<ChatErrorIntegrationProps> = ({
     });
 
     return unsubscribe;
-  }, [addNotification, chatId, enableErrorNotifications]);
+  }, [chatId, enableErrorNotifications]);
 
   const addNotification = useCallback((notification: typeof notifications[0]) => {
     setNotifications(prev => [...prev, notification]);
@@ -112,7 +112,7 @@ export const ChatErrorIntegration: React.FC<ChatErrorIntegrationProps> = ({
         removeNotification(notification.id);
       }, 5000);
     }
-  }, [removeNotification]);
+  }, []);
 
   const removeNotification = useCallback((notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));

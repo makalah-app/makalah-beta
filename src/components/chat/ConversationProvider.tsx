@@ -110,7 +110,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [loadUserConversations, userId]);
+  }, [userId]);
 
   /**
    * Load conversation messages (AI SDK compliant)
@@ -202,7 +202,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       console.error('[ConversationProvider] Delete conversation error:', error);
       throw error;
     }
-  }, [archiveConversation]);
+  }, []);
 
   /**
    * Archive conversation

@@ -469,7 +469,7 @@ export class CitationValidator {
         0: fullMatch,
         1: citationText,
         index: offset
-      } as RegExpExecArray, citationId++, content);
+      } as unknown as RegExpExecArray, citationId++, content);
       if (citation) citations.push(citation);
       return fullMatch;
     });

@@ -8,12 +8,10 @@
  * without modifying core streaming patterns or protected route functionality
  */
 
-import { 
-  wrapLanguageModel, 
-  LanguageModel, 
-  LanguageModelMiddleware,
-  LanguageModelRequest,
-  LanguageModelResponse 
+import {
+  wrapLanguageModel,
+  LanguageModel,
+  LanguageModelMiddleware
 } from 'ai';
 import { supabaseAdmin } from '../../database/supabase-client';
 import { z } from 'zod';
@@ -67,7 +65,7 @@ export function createAcademicDocumentMiddleware(
   return {
     transformParams: async ({ params }) => {
       // Extract file references from messages for document context enhancement
-      const documentsToProcess = await extractDocumentReferences(params.messages);
+      const documentsToProcess = await extractDocumentReferences((params as any).messages || []);
       
       if (documentsToProcess.length === 0) {
         return params; // No documents to process, return original params
@@ -87,7 +85,7 @@ export function createAcademicDocumentMiddleware(
 
       // Enhance system message with document context
       const enhancedSystemMessage = enhanceSystemMessageWithDocuments(
-        params.system || '',
+        (params as any).system || '',
         validContexts,
         config
       );
@@ -96,20 +94,7 @@ export function createAcademicDocumentMiddleware(
         ...params,
         system: enhancedSystemMessage,
       };
-    },
-
-    transformResponse: async ({ response }) => {
-      // Transform response to include document processing metadata
-      return {
-        ...response,
-        // Add document processing metadata to response
-        metadata: {
-          ...response.metadata,
-          documentProcessingEnabled: true,
-          documentsProcessed: response.metadata?.documentsProcessed || 0,
-        },
-      };
-    },
+    }
   };
 }
 
@@ -118,7 +103,7 @@ export function createAcademicDocumentMiddleware(
  * Finds file references in messages that need document processing
  */
 async function extractDocumentReferences(
-  messages: LanguageModelRequest['messages']
+  messages: any[]
 ): Promise<string[]> {
   const documentIds: string[] = [];
 
@@ -127,7 +112,7 @@ async function extractDocumentReferences(
       // Look for file_id patterns in message content
       const fileIdMatches = message.content.match(/file_id:\s*([a-f0-9-]+)/gi);
       if (fileIdMatches) {
-        documentIds.push(...fileIdMatches.map(match => match.split(':')[1].trim()));
+        documentIds.push(...fileIdMatches.map((match: string) => match.split(':')[1].trim()));
       }
     }
 
@@ -167,13 +152,13 @@ async function processDocumentForContext(
 
     // Get document content from storage if needed
     let documentContent = '';
-    if (fileRecord.processing_results?.content) {
-      documentContent = fileRecord.processing_results.content;
+    if ((fileRecord as any).processing_results?.content) {
+      documentContent = (fileRecord as any).processing_results.content;
     } else {
       // Try to get content from storage
       const { data: fileData } = await supabaseAdmin.storage
         .from('academic-files')
-        .download(fileRecord.storage_path);
+        .download((fileRecord as any).storage_path);
 
       if (fileData) {
         documentContent = await fileData.text();
@@ -193,12 +178,12 @@ async function processDocumentForContext(
 
     return {
       document_id: documentId,
-      document_type: fileRecord.academic_content?.document_type as DocumentContext['document_type'] || 'other',
+      document_type: (fileRecord as any).academic_content?.document_type as DocumentContext['document_type'] || 'other',
       content: truncatedContent,
       metadata: {
-        title: fileRecord.academic_content?.title,
-        author: fileRecord.academic_content?.author,
-        subject_area: fileRecord.academic_content?.subject_area,
+        title: (fileRecord as any).academic_content?.title,
+        author: (fileRecord as any).academic_content?.author,
+        subject_area: (fileRecord as any).academic_content?.subject_area,
       },
       processing_results: processingResults,
     };
@@ -300,7 +285,7 @@ function enhanceSystemMessageWithDocuments(
 - Citations: ${processing.citations_found || 0}
 - Has Abstract: ${processing.has_abstract ? 'Yes' : 'No'}
 - Has References: ${processing.has_references ? 'Yes' : 'No'}
-${processing.extracted_keywords ? `- Keywords: ${processing.extracted_keywords.join(', ')}` : ''}
+${(processing as any).extracted_keywords ? `- Keywords: ${(processing as any).extracted_keywords.join(', ')}` : ''}
 `;
   }).join('\n');
 
@@ -333,7 +318,7 @@ ${academicContext}
 export function createCitationExtractionMiddleware(): LanguageModelMiddleware {
   return {
     transformParams: async ({ params }) => {
-      const enhancedSystem = `${params.system || ''}
+      const enhancedSystem = `${(params as any).system || ''}
 
 🔍 **CITATION ANALYSIS MODE ACTIVATED**:
 When analyzing documents or generating responses:
@@ -367,7 +352,7 @@ export function wrapModelWithDocumentProcessing(
   config: DocumentProcessingConfig = {}
 ): LanguageModel {
   return wrapLanguageModel({
-    model,
+    model: model as any,
     middleware: createAcademicDocumentMiddleware(config),
   });
 }
@@ -378,7 +363,7 @@ export function wrapModelWithDocumentProcessing(
  */
 export function wrapModelWithCitationAnalysis(model: LanguageModel): LanguageModel {
   return wrapLanguageModel({
-    model,
+    model: model as any,
     middleware: [
       createAcademicDocumentMiddleware({ enableCitationAnalysis: true }),
       createCitationExtractionMiddleware(),
@@ -387,6 +372,3 @@ export function wrapModelWithCitationAnalysis(model: LanguageModel): LanguageMod
 }
 
 // Export middleware and utility functions
-export {
-  type DocumentProcessingConfig,
-};

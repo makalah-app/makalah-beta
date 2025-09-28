@@ -554,17 +554,25 @@ export function createSourceVerificationMiddleware(
         const modifiedParams = injectVerificationContext(params, verificationContext);
         
         const result = await doGenerate();
-        
+
+        // Helper function to extract text from AI SDK v5 content array
+        const extractTextFromContent = (content: any[]): string => {
+          return content
+            .filter(part => part.type === 'text')
+            .map(part => part.text)
+            .join('');
+        };
+
+        // AI SDK v5 compatibility: extract text from content array
+        const generatedText = extractTextFromContent(result.content || []);
+
         // Post-generation: Validate citations in response
-        const citationValidation = await validateGeneratedCitations(result.text, verificationResults);
-        
+        const citationValidation = await validateGeneratedCitations(generatedText, verificationResults);
+
         return {
           ...result,
-          experimental: {
-            ...result.experimental,
-            sourceVerification: verificationResults,
-            citationValidation
-          }
+          sourceVerification: verificationResults,
+          citationValidation
         };
       }
       
@@ -583,11 +591,7 @@ export function createSourceVerificationMiddleware(
         
         return {
           stream: stream.pipeThrough(createCitationValidationTransform(verificationResults)),
-          ...rest,
-          experimental: {
-            ...rest.experimental,
-            sourceVerification: verificationResults
-          }
+          ...rest
         };
       }
       

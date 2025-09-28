@@ -975,8 +975,8 @@ function AdminDashboardContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container flex justify-center py-10">
-        <div className="w-full max-w-5xl space-y-6">
+      <div className="py-10">
+        <div className="w-full max-w-5xl mx-auto space-y-6">
           <Card className="border-border">
           <CardHeader className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-4">

@@ -411,7 +411,7 @@ export const useErrorNotifications = () => {
   };
 
   const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
+    setNotifications(prev => prev.filter(notif => notif?.id !== id));
   };
 
   const clearAllNotifications = () => {
@@ -457,7 +457,7 @@ export const ErrorNotificationContainer: React.FC<{
         pointerEvents: 'none',
       }}
     >
-      {visibleNotifications.map((notification, index) => (
+      {visibleNotifications.map((notification, index) => notification && (
         <div
           key={notification.id}
           style={{

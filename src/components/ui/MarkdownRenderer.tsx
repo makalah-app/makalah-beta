@@ -154,7 +154,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             );
           },
           // Enhanced code block styling
-          code: ({ node, inline, ...props }) => (
+          code: ({ node, ...props }: any) => {
+            const inline = !('children' in props && Array.isArray(props.children) && props.children.some((child: any) => typeof child === 'string' && child.includes('\n')));
+            return (
             <code
               {...props}
               className={cn(
@@ -164,7 +166,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 props.className
               )}
             />
-          ),
+            );
+          },
           // Enhanced pre wrapper untuk code blocks
           pre: ({ node, ...props }) => (
             <pre

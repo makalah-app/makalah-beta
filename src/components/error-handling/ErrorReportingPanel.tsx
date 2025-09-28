@@ -154,18 +154,17 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
         },
         error: {
           ...error,
-          stack: enablePrivacyMode ? '[REDACTED FOR PRIVACY]' : error.stack,
+          stack: enablePrivacyMode ? '[REDACTED FOR PRIVACY]' : error?.stack,
         },
         url: window.location.href,
         referrer: document.referrer,
-        timestamp: Date.now(),
       };
 
       // Collect storage quota if available
       if ('storage' in navigator && 'estimate' in navigator.storage) {
         try {
           const estimate = await navigator.storage.estimate();
-          diagnosticData.storage.quota = {
+          (diagnosticData.storage as any).quota = {
             usage: estimate.usage || 0,
             quota: estimate.quota || 0,
           };
@@ -595,7 +594,7 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
                 Privacy Settings
               </h4>
               
-              <div style={{ space: '12px' }}>
+              <div style={{ gap: '12px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
                     type="checkbox"

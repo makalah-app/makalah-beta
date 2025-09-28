@@ -26,7 +26,7 @@ export class FileUploadError extends AISDKError {
       originalError?: Error;
     }
   ) {
-    super({ message, cause: options?.originalError });
+    super({ name: 'FileUploadError', message, cause: options?.originalError });
     this.cause = options?.cause;
     this.retryable = options?.retryable ?? false;
     this.statusCode = options?.statusCode;
@@ -48,7 +48,7 @@ export class FileProcessingError extends AISDKError {
       originalError?: Error;
     }
   ) {
-    super({ message, cause: options?.originalError });
+    super({ name: 'FileUploadError', message, cause: options?.originalError });
     this.processingStage = processingStage;
     this.fileId = options?.fileId;
     this.retryable = options?.retryable ?? true;
@@ -70,7 +70,7 @@ export class FileValidationError extends AISDKError {
       originalError?: Error;
     }
   ) {
-    super({ message, cause: options?.originalError });
+    super({ name: 'FileUploadError', message, cause: options?.originalError });
     this.validationRule = validationRule;
     this.allowedValues = options?.allowedValues;
     this.actualValue = options?.actualValue;
@@ -92,7 +92,7 @@ export class FileStorageError extends AISDKError {
       originalError?: Error;
     }
   ) {
-    super({ message, cause: options?.originalError });
+    super({ name: 'FileUploadError', message, cause: options?.originalError });
     this.operation = operation;
     this.storagePath = options?.storagePath;
     this.retryable = options?.retryable ?? true;

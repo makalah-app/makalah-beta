@@ -130,7 +130,7 @@ export function useChatHistory(): UseChatHistoryReturn {
   // ✅ FIXED: Initial fetch with stable dependencies only
   useEffect(() => {
     if (isAuthenticated && user?.id && fetchConversationsRef.current) {
-      fetchConversationsRef.current(0, false);
+      fetchConversationsRef.current();
     }
   }, [user?.id, isAuthenticated]); // Only depend on actual data, not function
 
@@ -139,14 +139,14 @@ export function useChatHistory(): UseChatHistoryReturn {
     if (fetchConversationsRef.current) {
       setOffset(0);
       setHasMore(true);
-      await fetchConversationsRef.current(0, false);
+      await fetchConversationsRef.current();
     }
   }, []); // No dependencies = stable function
 
   // Load more conversations
   const loadMore = useCallback(async () => {
     if (fetchConversationsRef.current && hasMore && !loadingMore) {
-      await fetchConversationsRef.current(offset, true);
+      await fetchConversationsRef.current();
     }
   }, [offset, hasMore, loadingMore]);
 

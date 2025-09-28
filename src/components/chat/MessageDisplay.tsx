@@ -112,38 +112,31 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // Natural LLM intelligence handles approval context without rigid detection functions
 
   // ❌ REMOVED: MIN_DISCUSSION_EXCHANGES constant - no longer needed for natural LLM flow
-  
+
   // Extract approval metadata dari message
   // ❌ REMOVED: approvalMetadata extraction - natural LLM doesn't need approval metadata
-  // Render different message types based on role
-  if (message.role === 'system') {
-    return (
-      <SystemMessage
-        message={message}
-        debugMode={debugMode}
-      />
-    );
-  }
 
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
+  const isSystem = message.role === 'system';
 
   // DEFENSIVE PROGRAMMING: Handle message format variations
   // Some messages have 'content' directly, some have 'parts'
   const messageParts = message.parts || [];
-  
+
   // ❌ REMOVED: requiresApproval and phaseInfo - natural LLM doesn't need approval tracking
   // Natural conversation flow handles phase progression without rigid config
   // ❌ REMOVED: messageContent extraction - use parts-based rendering only for AI SDK v5 compliance
-  
+
   // Extract different types of parts using standard AI SDK types
   let textParts = messageParts.filter(part => part.type === 'text');
   const fileParts = messageParts.filter(part => part.type === 'file');
-  const sourceParts = messageParts.filter((part): part is SourcePart => part.type === 'source-url');
+  const sourceParts = messageParts.filter(part => part.type === 'source-url') as SourcePart[];
   const toolResultParts = messageParts.filter(part => part.type === 'tool-result');
 
+  // Move all React hooks before any conditional returns
   const uniqueSourceParts = React.useMemo(() => {
-    if (sourceParts.length === 0) return [] as SourcePart[];
+    if (isSystem || sourceParts.length === 0) return [] as SourcePart[];
 
     const seen = new Set<string>();
     const unique: SourcePart[] = [];
@@ -157,10 +150,10 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     }
 
     return unique;
-  }, [sourceParts]);
+  }, [isSystem, sourceParts]);
 
   const citationHostMap = React.useMemo(() => {
-    if (uniqueSourceParts.length === 0) {
+    if (isSystem || uniqueSourceParts.length === 0) {
       return {} as Record<string, { index: number }>;
     }
 
@@ -202,12 +195,12 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     });
 
     return map;
-  }, [uniqueSourceParts]);
+  }, [isSystem, uniqueSourceParts]);
 
   const shouldAnnotateCitations = isAssistant && uniqueSourceParts.length > 0;
 
   const citationTargets = React.useMemo(() => {
-    if (!shouldAnnotateCitations) {
+    if (isSystem || !shouldAnnotateCitations) {
       return {} as Record<number, string | undefined>;
     }
 
@@ -218,11 +211,11 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     });
 
     return targets;
-  }, [shouldAnnotateCitations, uniqueSourceParts]);
+  }, [isSystem, shouldAnnotateCitations, uniqueSourceParts]);
 
   const annotateTextWithCitations = React.useCallback(
     (text: string): string => {
-      if (!shouldAnnotateCitations || !text?.trim()) {
+      if (isSystem || !shouldAnnotateCitations || !text?.trim()) {
         return text;
       }
 
@@ -277,7 +270,17 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // ❌ REMOVED: Enhanced content duplication filter with artifact checking - 25 lines
   // Natural LLM intelligence generates content without duplication issues
   // No need for rigid artifact detection and content filtering
-  
+
+  // Handle system message after all hooks are called
+  if (isSystem) {
+    return (
+      <SystemMessage
+        message={message}
+        debugMode={debugMode}
+      />
+    );
+  }
+
   // ❌ REMOVED: Debug logging with artifact filtering - 21 lines of rigid artifact tracking
   // Natural LLM flow doesn't need complex debug logging for artifacts
   if (debugMode) {

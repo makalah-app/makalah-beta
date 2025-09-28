@@ -897,39 +897,45 @@ export function createHallucinationDetectionMiddleware(
 ): LanguageModelV2Middleware {
   const detectionService = new HallucinationDetectionService(config, knowledgeBase);
 
+  // Helper function to extract text from AI SDK v5 content array
+  const extractTextFromContent = (content: any[]): string => {
+    return content
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('');
+  };
+
   return {
     wrapGenerate: async ({ doGenerate, params }) => {
       const result = await doGenerate();
-      
-      if (result.text) {
-        const detectionResult = await detectionService.detectHallucinations(result.text);
-        
+
+      // AI SDK v5 compatibility: extract text from content array
+      const generatedText = extractTextFromContent(result.content || []);
+
+      if (generatedText) {
+        const detectionResult = await detectionService.detectHallucinations(generatedText);
+
         // Handle detected hallucinations
         if (detectionResult.isHallucinated && config.hallucinationResponse?.action === 'block') {
           throw new Error('Potential hallucination detected, response blocked');
         }
-        
+
         if (detectionResult.isHallucinated && config.hallucinationResponse?.action === 'warn') {
           const warningText = formatHallucinationWarning(detectionResult);
+
+          // Add warning to content array with proper typing
+          const updatedContent = [
+            ...result.content,
+            { type: 'text' as const, text: `\n\n<!-- HALLUCINATION WARNING -->\n${warningText}` }
+          ];
+
           return {
             ...result,
-            text: result.text + `\n\n<!-- HALLUCINATION WARNING -->\n${warningText}`,
-            experimental: {
-              ...result.experimental,
-              hallucinationDetection: detectionResult
-            }
+            content: updatedContent
           };
         }
-        
-        return {
-          ...result,
-          experimental: {
-            ...result.experimental,
-            hallucinationDetection: detectionResult
-          }
-        };
       }
-      
+
       return result;
     },
 

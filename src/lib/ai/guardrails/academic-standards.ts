@@ -8,7 +8,7 @@
  * /Users/eriksupit/Desktop/makalah/documentation/docs/03-ai-sdk-core/40-middleware.mdx
  */
 
-import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
+import type { LanguageModelV2Middleware, LanguageModelV2Content } from '@ai-sdk/provider';
 
 export interface AcademicStandardsConfig {
   /** Writing style requirements */
@@ -893,31 +893,48 @@ export function createAcademicStandardsMiddleware(
 ): LanguageModelV2Middleware {
   const standardsService = new AcademicStandardsService(config);
 
+  // Helper function to extract text from AI SDK v5 content array
+  const extractTextFromContent = (content: any[]): string => {
+    return content
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('');
+  };
+
   return {
     wrapGenerate: async ({ doGenerate, params }) => {
       const result = await doGenerate();
-      
-      if (result.text) {
-        const evaluation = await standardsService.evaluateText(result.text);
-        
+
+      // Extract text from AI SDK v5 content structure
+      const generatedText = extractTextFromContent(result.content || []);
+
+      if (generatedText) {
+        const evaluation = await standardsService.evaluateText(generatedText);
+
         // If standards are not met, provide feedback
         if (evaluation.status === 'needs_improvement' || evaluation.status === 'unacceptable') {
           const improvementGuidance = formatImprovementGuidance(evaluation);
-          
+
+          // Update content array with feedback
+          const feedbackContent: LanguageModelV2Content = {
+            type: 'text',
+            text: `\n\n<!-- ACADEMIC STANDARDS FEEDBACK -->\n${improvementGuidance}`
+          };
+
+          const updatedContent = [...result.content, feedbackContent];
+
           return {
             ...result,
-            text: result.text + `\n\n<!-- ACADEMIC STANDARDS FEEDBACK -->\n${improvementGuidance}`,
+            content: updatedContent,
             experimental: {
-              ...result.experimental,
               academicStandardsEvaluation: evaluation
             }
           };
         }
-        
+
         return {
           ...result,
           experimental: {
-            ...result.experimental,
             academicStandardsEvaluation: evaluation
           }
         };
