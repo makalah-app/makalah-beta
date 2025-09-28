@@ -244,6 +244,41 @@
   --spacing-ui-loose: var(--spacing-ui-loose);
 }
 
+@layer utilities {
+  .logo-spinner-frame {
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500 ease-in-out;
+    will-change: opacity;
+  }
+
+  @keyframes logo-fade-primary {
+    0%, 45% { opacity: 1; }
+    55%, 100% { opacity: 0; }
+  }
+
+  @keyframes logo-fade-secondary {
+    0%, 45% { opacity: 0; }
+    55%, 100% { opacity: 1; }
+  }
+
+  @keyframes logo-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.95; }
+    50% { transform: scale(1.05); opacity: 1; }
+  }
+
+  .animate-logo-primary {
+    animation: logo-fade-primary 1.2s ease-in-out infinite;
+    opacity: 1;
+  }
+
+  .animate-logo-secondary {
+    animation: logo-fade-secondary 1.2s ease-in-out infinite;
+  }
+
+  .animate-logo-pulse {
+    animation: logo-pulse 1.8s ease-in-out infinite;
+  }
+}
+
 /* Added utility classes for standardized line thickness */
 .border-thin {
   border-width: var(--line-thin);
