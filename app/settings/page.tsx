@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 
-type ThemeChoice = 'light' | 'dark' | 'system';
+type ThemeChoice = 'light' | 'dark';
 type StatusMessage = { type: 'success' | 'error'; text: string };
 
 type ProfileFormState = {
@@ -35,7 +35,7 @@ type PasswordFormState = {
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, updateProfile, changePassword, logout } = useAuth();
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     next: false,
     confirm: false
   });
-  const [selectedTheme, setSelectedTheme] = useState<ThemeChoice>('system');
+  const [selectedTheme, setSelectedTheme] = useState<ThemeChoice>('dark');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -78,7 +78,7 @@ export default function SettingsPage() {
     if (theme === 'light' || theme === 'dark') {
       setSelectedTheme(theme);
     } else {
-      setSelectedTheme('system');
+      setSelectedTheme('dark');
     }
   }, [theme]);
 
@@ -102,14 +102,8 @@ export default function SettingsPage() {
     return 'Akses Dasar';
   }, [user]);
 
-  const effectiveTheme = useMemo<ThemeChoice>(() => {
-    if (selectedTheme === 'system') {
-      return (resolvedTheme ?? 'light') as ThemeChoice;
-    }
-    return selectedTheme;
-  }, [selectedTheme, resolvedTheme]);
-
-  const isDarkMode = effectiveTheme === 'dark';
+  const isDarkMode = selectedTheme === 'dark';
+  const activeThemeLabel = isDarkMode ? 'gelap' : 'terang';
 
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -492,7 +486,6 @@ export default function SettingsPage() {
                     <SelectContent>
                       <SelectItem value="light">Tema Terang</SelectItem>
                       <SelectItem value="dark">Tema Gelap</SelectItem>
-                      <SelectItem value="system">Ikuti Sistem</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -504,7 +497,7 @@ export default function SettingsPage() {
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-foreground">Tema aktif</span>
                       <span className="text-xs text-muted-foreground">
-                        {resolvedTheme ? `Sedang memakai mode ${resolvedTheme}.` : 'Sedang mengikuti sistem.'}
+                        {`Sedang memakai mode ${activeThemeLabel}.`}
                       </span>
                     </div>
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />

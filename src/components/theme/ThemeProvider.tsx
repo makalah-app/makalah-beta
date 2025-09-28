@@ -10,7 +10,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   attribute = "class",
   defaultTheme = "dark",
-  enableSystem = true,
+  enableSystem = false,
   disableTransitionOnChange = true,
   ...props
 }) => (
@@ -30,7 +30,7 @@ export const useTheme = () => {
   const { theme, resolvedTheme, setTheme, ...rest } = nextTheme;
 
   const toggleTheme = React.useCallback(() => {
-    const effectiveTheme = (resolvedTheme ?? theme) || "light";
+    const effectiveTheme = (resolvedTheme ?? theme) || "dark";
     setTheme(effectiveTheme === "light" ? "dark" : "light");
   }, [resolvedTheme, theme, setTheme]);
 

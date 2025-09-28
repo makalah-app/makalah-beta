@@ -34,8 +34,8 @@ export function AppProviders({ children }: ProvidersProps) {
     <AuthProvider>
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="dark"
+        enableSystem={false}
         disableTransitionOnChange={false}
       >
         <LayoutShell>{children}</LayoutShell>

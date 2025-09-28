@@ -11,15 +11,13 @@
  * - Authentication state management dengan useAuth
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
 import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../theme/ThemeProvider';
 import { cn } from '../../lib/utils';
 
 interface GlobalHeaderProps {
@@ -39,13 +37,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const router = useRouter();
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const { theme, resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -68,11 +59,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       router.push('/auth');
     }
   };
-
-
-
-  // Don't render theme toggle until mounted
-  const isDark = mounted ? (resolvedTheme ?? theme ?? 'light') === 'dark' : false;
 
   // Default navigation items
   const defaultNavItems = [
@@ -154,20 +140,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             </Button>
           )}
 
-          {/* Modern Theme Toggle */}
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={mounted ? isDark : false}
-              onCheckedChange={(checked) => {
-                if (!mounted) return;
-                const newTheme = checked ? 'dark' : 'light';
-                setTheme(newTheme);
-              }}
-              disabled={!mounted}
-              className={cn(!mounted && 'opacity-50 cursor-not-allowed')}
-              aria-label={mounted ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : 'Loading theme toggle'}
-            />
-          </div>
         </div>
       )}
     </header>
