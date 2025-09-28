@@ -311,7 +311,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                       const formattedDate = `${date.getDate()}, ${date.toLocaleDateString('id-ID', { month: 'long' })}, ${date.getFullYear()}`;
 
                       return (
-                        <div key={index} className="text-sm text-muted-foreground">
+                        <div key={index} className="text-xs text-muted-foreground">
                           <span>{source.title || 'Untitled'}</span>
                           <span> - </span>
                           {source.url ? (
