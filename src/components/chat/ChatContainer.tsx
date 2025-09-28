@@ -685,13 +685,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     const messageIndex = messages.findIndex(m => m.id === messageId);
 
     if (messageIndex !== -1) {
-      // Update message dan remove all messages after it
+      // Remove the edited message and all messages after it
       setMessages(currentMessages => {
-        const updatedMessages = currentMessages.slice(0, messageIndex + 1);
-        updatedMessages[messageIndex] = {
-          ...updatedMessages[messageIndex],
-          parts: [{ type: 'text', text: newContent }]
-        };
+        // Cut messages up to BEFORE the edited message (exclude the edited message)
+        const updatedMessages = currentMessages.slice(0, messageIndex);
         return updatedMessages;
       });
 
