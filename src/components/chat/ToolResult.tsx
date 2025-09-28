@@ -78,7 +78,7 @@ export const ToolResult = ({
   }
 
   return (
-    <div className={cn('mt-3', className)}>
+    <div className={cn('mt-1', className)}>
       {/* Single Line: StreamingHandler-style indicator */}
       <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
         {/* Bouncing/Static Dots - Same as StreamingHandler */}
