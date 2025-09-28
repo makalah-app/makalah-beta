@@ -31,6 +31,7 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -75,7 +76,8 @@ export default function AuthPage() {
           fullName: formData.fullName || '',
           role: 'student', // Default role untuk registrasi umum
         });
-        // Redirect to login after successful registration
+        // Show success message and redirect to login
+        setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');
         setIsRegisterMode(false);
         setFormData({ email: formData.email, password: '', fullName: '', confirmPassword: '' });
         setIsSubmitting(false);
@@ -85,6 +87,9 @@ export default function AuthPage() {
           password: formData.password,
           rememberMe,
         });
+
+        // Clear success message on successful login
+        setSuccessMessage('');
 
         // Get redirect URL from search params
         const redirectTo = searchParams.get('redirectTo');
@@ -115,6 +120,7 @@ export default function AuthPage() {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setIsSubmitting(false);
+    setSuccessMessage(''); // Clear success message when switching modes
   };
 
   if (!mounted) {
@@ -145,6 +151,16 @@ export default function AuthPage() {
                 {isRegisterMode ? 'Daftar Akun Baru' : 'Masuk ke Akun'}
               </h1>
             </div>
+
+            {/* Success Message */}
+            {successMessage && !isRegisterMode && (
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-[3px]">
+                <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
+                  <span>✅</span>
+                  <span>{successMessage}</span>
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-ui-loose">
               {isRegisterMode && (
