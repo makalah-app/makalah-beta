@@ -9,7 +9,7 @@
  */
 
 import type { LanguageModelV2Middleware } from '@ai-sdk/provider';
-import type { AcademicPhase } from '../integration/phase-persona-mapping';
+import type { AcademicPhase } from '../types';
 
 export interface AcademicValidationConfig {
   /** Enable comprehensive academic validation */
@@ -1868,7 +1868,7 @@ export class AcademicValidationService {
     const suggestions: string[] = [];
     const commonIssues = this.identifyCommonIssues(validations);
     
-    commonIssues.forEach(issue => {
+    commonIssues.forEach((issue: any) => {
       suggestions.push(`Focus on improving ${issue.category.replace('_', ' ')} (appears in ${issue.count} validations)`);
     });
     
@@ -1891,16 +1891,20 @@ export function createAcademicValidationMiddleware(
   return {
     wrapGenerate: async ({ doGenerate, params }) => {
       const result = await doGenerate();
-      
-      if (result.text && config.enableValidation !== false) {
+
+      // Extract text from AI SDK v5 content array
+      const resultText = (result as any).content?.find((c: any) => c.type === 'text')?.text || '';
+      const providerMetadata = (params as any).providerMetadata;
+
+      if (resultText && config.enableValidation !== false) {
         // Perform validation on generated content
-        const validationResult = await validationService.validateContent(result.text, {
-          documentType: params.providerMetadata?.documentType as string,
-          academicDomain: params.providerMetadata?.academicDomain as string,
-          targetAudience: params.providerMetadata?.targetAudience as string,
-          validationLevel: params.providerMetadata?.validationLevel as 'basic' | 'intermediate' | 'advanced' | 'expert',
-          phase: params.providerMetadata?.phase as AcademicPhase,
-          userId: params.providerMetadata?.userId as string
+        const validationResult = await validationService.validateContent(resultText, {
+          documentType: providerMetadata?.documentType as string,
+          academicDomain: providerMetadata?.academicDomain as string,
+          targetAudience: providerMetadata?.targetAudience as string,
+          validationLevel: providerMetadata?.validationLevel as 'basic' | 'intermediate' | 'advanced' | 'expert',
+          phase: providerMetadata?.phase as AcademicPhase,
+          userId: providerMetadata?.userId as string
         });
 
         // Include validation warnings/errors in response if quality is low
@@ -1920,21 +1924,21 @@ export function createAcademicValidationMiddleware(
 
           return {
             ...result,
-            text: result.text + `\n\n<!-- ACADEMIC VALIDATION FEEDBACK -->\n${validationSummary}`,
+            text: resultText + `\n\n<!-- ACADEMIC VALIDATION FEEDBACK -->\n${validationSummary}`,
             experimental: {
-              ...result.experimental,
+              ...(result as any).experimental,
               academicValidation: validationResult
             }
-          };
+          } as any;
         }
 
         return {
           ...result,
           experimental: {
-            ...result.experimental,
+            ...(result as any).experimental,
             academicValidation: validationResult
           }
-        };
+        } as any;
       }
       
       return result;

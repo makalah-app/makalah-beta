@@ -135,8 +135,10 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   const toolResultParts = messageParts.filter(part => part.type === 'tool-result');
 
   // Move all React hooks before any conditional returns
+  // Fix: Remove conditional logic from inside hooks to satisfy Vercel's stricter ESLint
   const uniqueSourceParts = React.useMemo(() => {
-    if (isSystem || sourceParts.length === 0) return [] as SourcePart[];
+    // Always process, return empty array for system messages later
+    if (sourceParts.length === 0) return [] as SourcePart[];
 
     const seen = new Set<string>();
     const unique: SourcePart[] = [];
@@ -150,10 +152,11 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     }
 
     return unique;
-  }, [isSystem, sourceParts]);
+  }, [sourceParts]);
 
   const citationHostMap = React.useMemo(() => {
-    if (isSystem || uniqueSourceParts.length === 0) {
+    // Always process, return empty object if no sources
+    if (uniqueSourceParts.length === 0) {
       return {} as Record<string, { index: number }>;
     }
 
@@ -195,27 +198,27 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     });
 
     return map;
-  }, [isSystem, uniqueSourceParts]);
+  }, [uniqueSourceParts]);
 
-  const shouldAnnotateCitations = isAssistant && uniqueSourceParts.length > 0;
+  // Fix: Calculate this after hooks, not as part of hook dependency
+  const shouldAnnotateCitations = !isSystem && isAssistant && uniqueSourceParts.length > 0;
 
   const citationTargets = React.useMemo(() => {
-    if (isSystem || !shouldAnnotateCitations) {
-      return {} as Record<number, string | undefined>;
-    }
-
+    // Always process, return empty object if no sources
     const targets: Record<number, string | undefined> = {};
+
     uniqueSourceParts.forEach((source, idx) => {
       const index = idx + 1;
       targets[index] = source.url;
     });
 
     return targets;
-  }, [isSystem, shouldAnnotateCitations, uniqueSourceParts]);
+  }, [uniqueSourceParts]);
 
   const annotateTextWithCitations = React.useCallback(
     (text: string): string => {
-      if (isSystem || !shouldAnnotateCitations || !text?.trim()) {
+      // Check conditions inside the function, not in hook dependencies
+      if (!text?.trim() || isSystem || !shouldAnnotateCitations) {
         return text;
       }
 
@@ -262,7 +265,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
       return updated;
     },
-    [shouldAnnotateCitations, citationHostMap]
+    [isSystem, shouldAnnotateCitations, citationHostMap]
   );
   // ❌ REMOVED: toolResultCallIds useMemo - no longer needed for natural LLM flow
   // ❌ REMOVED: dataParts filtering - no longer rendering artifacts in natural conversation
@@ -445,14 +448,14 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                 <MarkdownRenderer
                   key={index}
                   content={processedContent}
-                  citationMap={shouldAnnotateCitations ? citationHostMap : undefined}
-                  citationTargets={shouldAnnotateCitations ? citationTargets : undefined}
+                  citationMap={shouldAnnotateCitations && !isSystem ? citationHostMap : undefined}
+                  citationTargets={shouldAnnotateCitations && !isSystem ? citationTargets : undefined}
                 />
               );
             })}
 
             {/* Source References - using standard source-url parts */}
-            {uniqueSourceParts.length > 0 && (
+            {!isSystem && uniqueSourceParts.length > 0 && (
               <Card className="mt-3">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs flex items-center gap-1.5">

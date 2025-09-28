@@ -656,8 +656,8 @@ export class PromptTunerService {
     config: any = {},
     performanceData?: PromptMetrics[]
   ): Promise<PromptTemplate> {
-    const tunedPrompt = { ...prompt };
-    
+    const tunedPrompt = { ...prompt } as any;
+
     if (!tunedPrompt.parameters) {
       tunedPrompt.parameters = {};
     }
@@ -735,8 +735,8 @@ export class PromptTunerService {
     }
 
     // Compare parameters
-    const originalParams = original.parameters || {};
-    const modifiedParams = modified.parameters || {};
+    const originalParams = (original as any).parameters || {};
+    const modifiedParams = (modified as any).parameters || {};
     
     Object.keys({ ...originalParams, ...modifiedParams }).forEach(key => {
       if (originalParams[key] !== modifiedParams[key]) {
@@ -1128,14 +1128,14 @@ export function createPromptTuningMiddleware(
         responseTime: endTime - startTime,
         tokenUsage: result.usage?.totalTokens || 0,
         costPerRequest: (result.usage?.totalTokens || 0) * 0.00001, // Rough estimate
-        successRate: result.text ? 1 : 0,
+        successRate: (result as any).content?.length > 0 ? 1 : 0,
         userSatisfaction: 0.8,
         taskCompletion: 1,
         errorRate: 0
       };
 
       // Record metrics for optimization
-      const promptId = params.providerMetadata?.promptId as string;
+      const promptId = (params as any).providerMetadata?.promptId as string;
       if (promptId) {
         await tuner.recordPerformance(promptId, metrics);
       }
@@ -1143,10 +1143,10 @@ export function createPromptTuningMiddleware(
       return {
         ...result,
         experimental: {
-          ...result.experimental,
+          ...(result as any).experimental,
           promptMetrics: metrics
         }
-      };
+      } as any;
     }
   };
 }

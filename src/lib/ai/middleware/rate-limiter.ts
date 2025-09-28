@@ -48,6 +48,7 @@ export class AIRateLimiter {
   constructor(config?: Partial<RateLimitConfig>) {
     this.config = {
       ...RATE_LIMIT_CONFIG,
+      enabled: true, // Default to enabled
       ...config,
     };
   }

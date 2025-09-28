@@ -1192,15 +1192,15 @@ export function createTokenOptimizationMiddleware(
           return {
             ...params,
             prompt: optimization.optimized.prompt,
-            maxTokens: optimization.optimized.parameters?.maxTokens || params.maxTokens,
+            maxOutputTokens: optimization.optimized.parameters?.maxTokens || (params as any).maxOutputTokens,
             providerMetadata: {
-              ...params.providerMetadata,
+              ...(params as any).providerMetadata,
               tokenOptimization: optimization
             }
-          };
+          } as any;
         }
       }
-      
+
       return params;
     },
 
@@ -1209,22 +1209,25 @@ export function createTokenOptimizationMiddleware(
       const result = await doGenerate();
       const endTime = Date.now();
 
-      // Calculate usage metrics
+      // Calculate usage metrics - AI SDK v5 compatible
+      const usage = result.usage as any;
+      const resultText = (result as any).content?.find((c: any) => c.type === 'text')?.text || '';
+
       const metrics: TokenUsageMetrics = {
-        inputTokens: result.usage?.promptTokens || 0,
-        outputTokens: result.usage?.completionTokens || 0,
-        totalTokens: result.usage?.totalTokens || 0,
-        inputCost: optimizer['estimateCost'](result.usage?.promptTokens || 0, false),
-        outputCost: optimizer['estimateCost'](result.usage?.completionTokens || 0, true),
-        totalCost: optimizer['estimateCost'](result.usage?.promptTokens || 0, false) + 
-                  optimizer['estimateCost'](result.usage?.completionTokens || 0, true),
-        tokensPerWord: result.text ? (result.usage?.totalTokens || 0) / result.text.split(/\s+/).length : 0,
-        costPerWord: result.text ? 
-          (optimizer['estimateCost'](result.usage?.totalTokens || 0, false)) / result.text.split(/\s+/).length : 0,
+        inputTokens: usage?.promptTokens || 0,
+        outputTokens: usage?.completionTokens || 0,
+        totalTokens: usage?.totalTokens || 0,
+        inputCost: optimizer['estimateCost'](usage?.promptTokens || 0, false),
+        outputCost: optimizer['estimateCost'](usage?.completionTokens || 0, true),
+        totalCost: optimizer['estimateCost'](usage?.promptTokens || 0, false) +
+                  optimizer['estimateCost'](usage?.completionTokens || 0, true),
+        tokensPerWord: resultText ? (usage?.totalTokens || 0) / resultText.split(/\s+/).length : 0,
+        costPerWord: resultText ?
+          (optimizer['estimateCost'](usage?.totalTokens || 0, false)) / resultText.split(/\s+/).length : 0,
         efficiencyScore: 0.75, // Would calculate based on actual efficiency
-        promptTokens: result.usage?.promptTokens || 0,
-        completionTokens: result.usage?.completionTokens || 0,
-        contextUtilization: params.maxTokens ? (result.usage?.totalTokens || 0) / params.maxTokens : 0
+        promptTokens: usage?.promptTokens || 0,
+        completionTokens: usage?.completionTokens || 0,
+        contextUtilization: (params as any).maxOutputTokens ? (usage?.totalTokens || 0) / (params as any).maxOutputTokens : 0
       };
 
       // Track usage
@@ -1234,10 +1237,10 @@ export function createTokenOptimizationMiddleware(
       return {
         ...result,
         experimental: {
-          ...result.experimental,
+          ...(result as any).experimental,
           tokenMetrics: metrics
         }
-      };
+      } as any;
     }
   };
 }

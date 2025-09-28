@@ -1350,9 +1350,9 @@ export function createPerformanceMetricsMiddleware(
         // Record performance metrics
         const context: MetricContext = {
           requestId: `req_${Date.now()}`,
-          userId: params.providerMetadata?.userId as string,
-          phase: params.providerMetadata?.phase as string,
-          model: params.providerMetadata?.model as string
+          userId: (params as any).providerMetadata?.userId || 'anonymous',
+          phase: (params as any).providerMetadata?.phase || 'unknown',
+          model: (params as any).model || 'unknown'
         };
 
         // Record various metrics
@@ -1386,7 +1386,7 @@ export function createPerformanceMetricsMiddleware(
         return {
           ...result,
           experimental: {
-            ...result.experimental,
+            ...(result as any).experimental,
             performanceMetrics: {
               responseTime,
               tokenUsage,
@@ -1394,7 +1394,7 @@ export function createPerformanceMetricsMiddleware(
               timestamp: new Date()
             }
           }
-        };
+        } as any;
         
       } catch (error) {
         errorOccurred = true;

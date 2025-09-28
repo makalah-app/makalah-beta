@@ -1211,9 +1211,12 @@ export function createResponseAnalysisMiddleware(
     wrapGenerate: async ({ doGenerate, params }) => {
       const result = await doGenerate();
       
-      if (result.text && config.enableRealTimeAnalysis) {
-        const analysis = await analyzer.analyzeResponse(result.text, {
-          prompt: params.prompt
+      // Extract text from AI SDK v5 content array
+      const resultText = (result as any).content?.find((c: any) => c.type === 'text')?.text || '';
+
+      if (resultText && config.enableRealTimeAnalysis) {
+        const analysis = await analyzer.analyzeResponse(resultText, {
+          prompt: (params as any).prompt
         });
 
         // Handle quality thresholds
@@ -1230,22 +1233,22 @@ export function createResponseAnalysisMiddleware(
             
             return {
               ...result,
-              text: result.text + `\n\n<!-- QUALITY IMPROVEMENT SUGGESTIONS -->\n${suggestions}`,
+              text: resultText + `\n\n<!-- QUALITY IMPROVEMENT SUGGESTIONS -->\n${suggestions}`,
               experimental: {
-                ...result.experimental,
+                ...(result as any).experimental,
                 responseAnalysis: analysis
               }
-            };
+            } as any;
           }
         }
 
         return {
           ...result,
           experimental: {
-            ...result.experimental,
+            ...(result as any).experimental,
             responseAnalysis: analysis
           }
-        };
+        } as any;
       }
       
       return result;
