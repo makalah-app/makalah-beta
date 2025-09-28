@@ -5,10 +5,13 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { LinkWithPreview } from "./LinkWithPreview";
+import { CitationMarker } from "./CitationMarker";
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  citationMap?: Record<string, { index: number }>;
+  citationTargets?: Record<number, string | undefined>;
 }
 
 /**
@@ -25,10 +28,74 @@ interface MarkdownRendererProps {
  * - Proper link safety dengan target="_blank" + rel="noopener noreferrer"
  * - Academic content optimized dengan GFM support
  */
+
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
-  className = ""
+  className = "",
+  citationMap,
+  citationTargets,
 }) => {
+  const hasCitationMap = citationMap && Object.keys(citationMap).length > 0;
+  let paragraphCounter = 0;
+
+  const transformTextWithCitations = (text: string, keySeed: string): React.ReactNode[] => {
+    if (!hasCitationMap) return [text];
+    if (!text.includes('{{citation:')) return [text];
+
+    const nodes: React.ReactNode[] = [];
+    const regex = /\{\{citation:(\d+)\}\}/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      const start = match.index;
+      const end = regex.lastIndex;
+
+      if (start > lastIndex) {
+        nodes.push(text.slice(lastIndex, start));
+      }
+
+      const index = Number.parseInt(match[1], 10);
+      const href = citationTargets?.[index];
+
+      nodes.push(
+        <CitationMarker
+          key={`citation-${keySeed}-${index}-${start}`}
+          index={index}
+          href={href}
+        />
+      );
+
+      lastIndex = end;
+    }
+
+    if (lastIndex < text.length) {
+      nodes.push(text.slice(lastIndex));
+    }
+
+    return nodes.length ? nodes : [text];
+  };
+
+  const transformParagraphChildren = (children: React.ReactNode[], keySeed: number) => {
+    if (!hasCitationMap) {
+      return children;
+    }
+
+    return React.Children.toArray(children).reduce<React.ReactNode[]>(
+      (acc, child, childIndex) => {
+        if (typeof child === "string") {
+          acc.push(
+            ...transformTextWithCitations(child, `${keySeed}-${childIndex}`)
+          );
+        } else {
+          acc.push(child);
+        }
+        return acc;
+      },
+      []
+    );
+  };
+
   return (
     <div className={cn(
       "prose prose-sm prose-gray dark:prose-invert max-w-none w-full",
@@ -125,15 +192,29 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             />
           ),
           // Paragraphs dengan spacing
-          p: ({ node, ...props }) => (
-            <p
-              {...props}
-              className={cn(
-                "mb-4 last:mb-0 text-foreground leading-relaxed w-full",
-                props.className
-              )}
-            />
-          ),
+          p: ({ node, ...props }) => {
+            const { className: paragraphClassName, children, ...rest } = props as {
+              className?: string;
+              children?: React.ReactNode;
+            };
+            const keySeed = paragraphCounter++;
+            const processedChildren = transformParagraphChildren(
+              React.Children.toArray(children ?? []),
+              keySeed
+            );
+
+            return (
+              <p
+                {...rest}
+                className={cn(
+                  "mb-4 last:mb-0 text-foreground leading-relaxed w-full",
+                  paragraphClassName
+                )}
+              >
+                {processedChildren}
+              </p>
+            );
+          },
           // Lists dengan proper formatting
           ul: ({ node, ...props }) => (
             <ul

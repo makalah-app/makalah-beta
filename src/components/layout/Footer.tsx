@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { cn } from '../../lib/utils';
 
 interface FooterProps {
@@ -34,11 +35,14 @@ export const Footer: React.FC<FooterProps> = ({
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between">
           {/* Brand Section */}
-          <div className="flex items-center space-x-3">
-            <div className="logo-m-small-muted">
-              M
-            </div>
-            <span className="font-small text-muted-foreground font-heading">Makalah AI</span>
+          <div className="flex items-center">
+            <Image
+              src="/logo/makalah_logo_500x500_grey.png"
+              alt="Makalah AI"
+              width={32}
+              height={32}
+              className="opacity-60"
+            />
           </div>
 
           {/* Copyright */}

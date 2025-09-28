@@ -100,7 +100,10 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             className="rounded-[3px]"
             priority
           />
-          <div className="text-xl font-medium text-foreground">Makalah AI</div>
+          <div className="flex flex-col">
+            <div className="text-xl font-medium text-foreground">Makalah AI</div>
+            <div className="text-xs font-light text-muted-foreground mt-0.5">Versi Beta 0.1</div>
+          </div>
         </Link>
       </div>
 

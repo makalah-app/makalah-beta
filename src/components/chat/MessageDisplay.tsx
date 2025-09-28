@@ -35,6 +35,31 @@ import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
 import { ToolResult } from './ToolResult';
 
+type SourcePart = {
+  type: 'source-url';
+  url?: string;
+  title?: string;
+  snippet?: string;
+  metadata?: {
+    provider?: {
+      name?: string;
+    };
+  };
+};
+
+const normalizeCitationKey = (value: string | undefined) => {
+  if (!value) return '';
+
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/+$/, '')
+    .replace(/[.,;:!?]+$/, '')
+    .replace(/\s+/g, '');
+};
+
 interface MessageDisplayProps {
   message: AcademicUIMessage;
   onRegenerate?: () => void;
@@ -114,8 +139,138 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // Extract different types of parts using standard AI SDK types
   let textParts = messageParts.filter(part => part.type === 'text');
   const fileParts = messageParts.filter(part => part.type === 'file');
-  const sourceParts = messageParts.filter(part => part.type === 'source-url');
+  const sourceParts = messageParts.filter((part): part is SourcePart => part.type === 'source-url');
   const toolResultParts = messageParts.filter(part => part.type === 'tool-result');
+
+  const uniqueSourceParts = React.useMemo(() => {
+    if (sourceParts.length === 0) return [] as SourcePart[];
+
+    const seen = new Set<string>();
+    const unique: SourcePart[] = [];
+
+    for (const source of sourceParts) {
+      const key = source.url ? normalizeCitationKey(source.url) : undefined;
+      if (!key) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(source);
+    }
+
+    return unique;
+  }, [sourceParts]);
+
+  const citationHostMap = React.useMemo(() => {
+    if (uniqueSourceParts.length === 0) {
+      return {} as Record<string, { index: number }>;
+    }
+
+    const map: Record<string, { index: number }> = {};
+
+    uniqueSourceParts.forEach((source, idx) => {
+      const index = idx + 1;
+      const candidates = new Set<string>();
+
+      if (source.url) {
+        candidates.add(source.url);
+        try {
+          const url = new URL(source.url);
+          candidates.add(url.hostname);
+          if (url.hostname.startsWith('www.')) {
+            candidates.add(url.hostname.replace(/^www\./, ''));
+          }
+        } catch (error) {
+          // ignore invalid URL formats
+        }
+      }
+
+      if (source.title) {
+        candidates.add(source.title);
+      }
+
+      const providerName = source.metadata?.provider?.name;
+      if (providerName) {
+        candidates.add(providerName);
+      }
+
+      candidates.forEach(candidate => {
+        const normalized = normalizeCitationKey(candidate);
+        if (!normalized) return;
+        if (!map[normalized]) {
+          map[normalized] = { index };
+        }
+      });
+    });
+
+    return map;
+  }, [uniqueSourceParts]);
+
+  const shouldAnnotateCitations = isAssistant && uniqueSourceParts.length > 0;
+
+  const citationTargets = React.useMemo(() => {
+    if (!shouldAnnotateCitations) {
+      return {} as Record<number, string | undefined>;
+    }
+
+    const targets: Record<number, string | undefined> = {};
+    uniqueSourceParts.forEach((source, idx) => {
+      const index = idx + 1;
+      targets[index] = source.url;
+    });
+
+    return targets;
+  }, [shouldAnnotateCitations, uniqueSourceParts]);
+
+  const annotateTextWithCitations = React.useCallback(
+    (text: string): string => {
+      if (!shouldAnnotateCitations || !text?.trim()) {
+        return text;
+      }
+
+      const linkPattern = /\s*\((\[[^\]]+\]\([^\)]+\))\)/g;
+      const markdownLinkRegex = /\[([^\]]+)\]\(([^\)]+)\)/;
+
+      const replaceWithPlaceholder = (
+        match: string,
+        inner: string
+      ) => {
+        const leadingSpace = match.match(/^\s*/)?.[0] ?? '';
+
+        const candidates = new Set<string>();
+
+        const linkMatch = markdownLinkRegex.exec(inner);
+        if (linkMatch) {
+          const [, label, href] = linkMatch;
+          candidates.add(label);
+          candidates.add(href);
+        } else {
+          candidates.add(inner);
+        }
+
+        for (const candidate of candidates) {
+          const normalized = normalizeCitationKey(candidate);
+          if (!normalized) continue;
+          const citationInfo = citationHostMap[normalized];
+          if (citationInfo) {
+            return `${leadingSpace}{{citation:${citationInfo.index}}}`;
+          }
+        }
+
+        return match;
+      };
+
+      let updated = text.replace(linkPattern, replaceWithPlaceholder);
+
+      updated = updated.replace(/\s*\(([^)]+)\)/g, (match, inner) => {
+        if (inner.includes('{{citation:')) {
+          return match;
+        }
+        return replaceWithPlaceholder(match, inner);
+      });
+
+      return updated;
+    },
+    [shouldAnnotateCitations, citationHostMap]
+  );
   // ❌ REMOVED: toolResultCallIds useMemo - no longer needed for natural LLM flow
   // ❌ REMOVED: dataParts filtering - no longer rendering artifacts in natural conversation
 
@@ -153,7 +308,10 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <>
                 {/* Text Content from parts (Markdown parsed) */}
                 {textParts.map((part, index) => (
-                  <MarkdownRenderer key={index} content={part.text || ''} />
+                  <MarkdownRenderer
+                    key={index}
+                    content={part.text || ''}
+                  />
                 ))}
 
                 {/* File Attachments */}
@@ -277,12 +435,21 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             }).filter(Boolean)}
 
             {/* Text Content from parts (Markdown parsed) - MOVED AFTER tool UI parts */}
-            {textParts.map((part, index) => (
-              <MarkdownRenderer key={index} content={part.text || ''} />
-            ))}
+            {textParts.map((part, index) => {
+              const processedContent = annotateTextWithCitations(part.text || '');
+
+              return (
+                <MarkdownRenderer
+                  key={index}
+                  content={processedContent}
+                  citationMap={shouldAnnotateCitations ? citationHostMap : undefined}
+                  citationTargets={shouldAnnotateCitations ? citationTargets : undefined}
+                />
+              );
+            })}
 
             {/* Source References - using standard source-url parts */}
-            {sourceParts.length > 0 && (
+            {uniqueSourceParts.length > 0 && (
               <Card className="mt-3">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs flex items-center gap-1.5">
@@ -291,50 +458,43 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {(() => {
-                    // Deduplicate sources based on URL
-                    const uniqueSourceParts = sourceParts.filter((source, index, self) =>
-                      index === self.findIndex(s => s.url === source.url)
-                    );
+                  {uniqueSourceParts.map((source, index) => {
+                    // Extract hostname safely
+                    let hostname = 'Source';
+                    try {
+                      hostname = source.url ? new URL(source.url).hostname : 'Source';
+                    } catch (error) {
+                      console.warn('Invalid URL in source:', source.url);
+                    }
 
-                    return uniqueSourceParts.map((source, index) => {
-                      // Extract hostname safely
-                      let hostname = 'Source';
-                      try {
-                        hostname = source.url ? new URL(source.url).hostname : 'Source';
-                      } catch (error) {
-                        console.warn('Invalid URL in source:', source.url);
-                      }
+                    // Format current date in Indonesian
+                    const date = new Date();
+                    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('id-ID', { month: 'long' })} ${date.getFullYear()}`;
 
-                      // Format current date in Indonesian
-                      const date = new Date();
-                      const formattedDate = `${date.getDate()}, ${date.toLocaleDateString('id-ID', { month: 'long' })}, ${date.getFullYear()}`;
+                    return (
+                      <div key={index} className="text-xs text-muted-foreground mb-2 last:mb-0">
+                        {/* Title line dengan bullet */}
+                        <div>• {source.title || 'Untitled'}</div>
 
-                      return (
-                        <div key={index} className="text-xs text-muted-foreground mb-2 last:mb-0">
-                          {/* Title line dengan bullet */}
-                          <div>• {source.title || 'Untitled'}</div>
-
-                          {/* Source info line dengan indent */}
-                          <div className="ml-3 mt-0.5">
-                            {source.url ? (
-                              <a
-                                href={source.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                {hostname}
-                              </a>
-                            ) : (
-                              <span>{hostname}</span>
-                            )}
-                            <span>, {formattedDate}</span>
-                          </div>
+                        {/* Source info line dengan indent */}
+                        <div className="ml-3 mt-0.5">
+                          {source.url ? (
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              {hostname}
+                            </a>
+                          ) : (
+                            <span>{hostname}</span>
+                          )}
+                          <span>, {formattedDate}</span>
                         </div>
-                      );
-                    });
-                  })()}
+                      </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             )}

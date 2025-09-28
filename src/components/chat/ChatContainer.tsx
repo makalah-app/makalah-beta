@@ -19,8 +19,7 @@ import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { useChat } from '@ai-sdk/react';
 import {
   UIMessage,
-  DefaultChatTransport,
-  lastAssistantMessageIsCompleteWithToolCalls
+  DefaultChatTransport
 } from 'ai';
 // ❌ REMOVED: Unused tool UI imports - no longer needed after cleanup
 // - isToolUIPart: Used in removed gate-closed signal handling

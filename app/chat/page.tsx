@@ -446,7 +446,7 @@ function ChatPageContent() {
           <Sidebar className="border-r border-border bg-card/30">
             <SidebarHeader className="p-4 border-b border-border">
               <div className="flex items-center gap-3">
-                <a href="/" className="flex items-center text-decoration-none cursor-pointer">
+                <a href="/" className="flex items-center gap-2 text-decoration-none cursor-pointer">
                   <Image
                     src="/logo/makalah_logo_500x500.png"
                     alt="Makalah AI - Academic Paper Writing Assistant"
@@ -455,6 +455,10 @@ function ChatPageContent() {
                     className="rounded-[3px]"
                     priority
                   />
+                  <div className="flex flex-col">
+                    <div className="text-sm font-medium text-foreground">Makalah AI</div>
+                    <div className="text-xs font-light text-muted-foreground">Versi Beta 0.1</div>
+                  </div>
                 </a>
               </div>
             </SidebarHeader>
