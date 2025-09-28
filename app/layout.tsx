@@ -3,15 +3,16 @@ import { Inter, Roboto, JetBrains_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import LogoLoadingSpinner from '@/components/ui/LogoLoadingSpinner';
 
 const AppProviders = dynamic(() => import('./providers-client'), {
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">Loading application...</p>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <LogoLoadingSpinner />
+          <p className="text-sm text-muted-foreground">Bersiap masuk aplikasi...</p>
         </div>
       </div>
     </div>
