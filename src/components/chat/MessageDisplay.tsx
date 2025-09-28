@@ -288,24 +288,46 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   <CardTitle className="text-sm">📚 Sources</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {sourceParts.map((source, index) => (
-                    <div key={index} className="text-sm">
-                      {source.url ? (
-                        <a
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                        >
-                          {source.title || new URL(source.url).hostname}
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {source.title || `Document ${index + 1}`}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {(() => {
+                    // Deduplicate sources based on URL
+                    const uniqueSourceParts = sourceParts.filter((source, index, self) =>
+                      index === self.findIndex(s => s.url === source.url)
+                    );
+
+                    return uniqueSourceParts.map((source, index) => {
+                      // Extract hostname safely
+                      let hostname = 'Source';
+                      try {
+                        hostname = source.url ? new URL(source.url).hostname : 'Source';
+                      } catch (error) {
+                        console.warn('Invalid URL in source:', source.url);
+                      }
+
+                      // Format current date in Indonesian
+                      const date = new Date();
+                      const formattedDate = `${date.getDate()}, ${date.toLocaleDateString('id-ID', { month: 'long' })}, ${date.getFullYear()}`;
+
+                      return (
+                        <div key={index} className="text-sm text-muted-foreground">
+                          <span>{source.title || 'Untitled'}</span>
+                          <span> - </span>
+                          {source.url ? (
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-muted-foreground hover:underline"
+                            >
+                              {hostname}
+                            </a>
+                          ) : (
+                            <span>{hostname}</span>
+                          )}
+                          <span>, {formattedDate}</span>
+                        </div>
+                      );
+                    });
+                  })()}
                 </CardContent>
               </Card>
             )}
