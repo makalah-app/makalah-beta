@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from "../src/components/ui/button";
 import { Card } from "../src/components/ui/card";
 import { Badge } from "../src/components/ui/badge";
-import { CheckCircle, Brain } from "lucide-react";
+import { pricingTiers } from "../src/constants/pricing";
+import { cn } from "../src/lib/utils";
+import { BadgeCheck, CheckCircle, Brain } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -197,6 +199,75 @@ export default function HomePage() {
                 melalui 7 fase terstruktur dengan panduan AI yang cerdas.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="px-6 py-20 border-t border-border bg-background">
+        <div className="max-w-5xl mx-auto space-y-12">
+          <div className="text-center space-y-4">
+            <h3 className="text-3xl md:text-4xl font-semibold font-heading">
+              Tak Perlu Bayar Mahal Untuk Karya Yang Masuk Akal
+            </h3>
+            <p className="text-base md:text-lg text-muted-foreground">
+              Pilih paket yang sesuai kebutuhan penulisan Anda. Mulai gratis, lanjutkan saat siap menyelesaikan makalah
+              penuh, atau aktifkan langganan tetap ketika produksi karya berjalan rutin.
+            </p>
+            <Link
+              href="/pricing"
+              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Lihat detail paket lengkap
+            </Link>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {pricingTiers.map((tier) => (
+              <Card
+                key={tier.name}
+                className={cn(
+                  'flex h-full flex-col gap-6 border border-border bg-card p-8 shadow-lg transition-colors',
+                  tier.featured ? 'border-primary' : 'hover:bg-card/80',
+                  tier.name === 'Gratis' && 'border-2 border-orange-500'
+                )}
+              >
+                <div className="space-y-4 text-left">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-2xl font-semibold text-foreground font-heading">{tier.name}</h4>
+                    {tier.badge ? (
+                      <Badge variant={tier.featured ? 'default' : 'secondary'}>{tier.badge}</Badge>
+                    ) : null}
+                  </div>
+                  <div>
+                    <span className="text-3xl font-semibold text-foreground">{tier.priceLabel}</span>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
+                  </div>
+                  <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                    {tier.description.map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <BadgeCheck className="mt-0.5 h-5 w-5 text-green-600" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-auto">
+                  {tier.cta.disabled ? (
+                    <Button
+                      className="w-full bg-muted-foreground text-background hover:bg-muted-foreground disabled:opacity-100 disabled:pointer-events-none"
+                      disabled
+                    >
+                      {tier.cta.label}
+                    </Button>
+                  ) : (
+                    <Button className="w-full btn-green-solid" asChild>
+                      <Link href={tier.cta.href ?? '/auth?tab=register'}>{tier.cta.label}</Link>
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

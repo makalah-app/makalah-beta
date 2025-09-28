@@ -65,6 +65,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     { label: 'Dokumentasi', href: '/documentation' },
     { label: 'Tutorial', href: '/tutorial' },
     { label: 'Blog', href: '/blog' },
+    { label: 'Harga', href: '/pricing' },
     { label: 'Tentang', href: '/about' }
   ];
 
