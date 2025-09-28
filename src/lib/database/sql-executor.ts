@@ -24,17 +24,17 @@ export async function executeSql(query: string): Promise<SqlResult> {
     }
     
     // For other operations, use RPC if available
-    const { data, error } = await supabase.rpc('execute_sql', {
+    const { data, error } = await supabase.rpc('execute_sql' as any, {
       query: query
-    })
+    } as any)
     
     if (error) {
       throw new Error(error.message)
     }
     
     return {
-      data: data || [],
-      rowCount: Array.isArray(data) ? data.length : 0
+      data: (data as any) || [],
+      rowCount: Array.isArray(data as any) ? (data as any).length : 0
     }
     
   } catch (error) {

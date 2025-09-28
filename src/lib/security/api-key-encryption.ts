@@ -128,7 +128,7 @@ export class ApiKeyManager {
         );
         
         const encrypted = await crypto.subtle.encrypt(
-          { name: 'AES-GCM', iv: iv },
+          { name: 'AES-GCM', iv: iv as BufferSource },
           cryptoKey,
           new TextEncoder().encode(plainKey)
         );

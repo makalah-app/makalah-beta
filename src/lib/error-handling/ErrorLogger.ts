@@ -79,6 +79,7 @@ interface LoggerConfig {
   includeStackTrace: boolean;
   enableSampling: boolean;
   samplingRate: number; // 0-1
+  environment?: string;
 }
 
 /**
@@ -562,7 +563,7 @@ export class ErrorLogger {
     context?: Partial<LogContext>,
     error?: LogEntry['error']
   ): string[] {
-    const tags = [level, category];
+    const tags: string[] = [level as string, category as string];
     
     if (context?.component) tags.push(`component:${context.component}`);
     if (context?.userId) tags.push(`user:${context.userId}`);
