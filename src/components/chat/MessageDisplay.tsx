@@ -312,7 +312,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
                       return (
                         <div key={index} className="text-xs text-muted-foreground">
-                          <span>{source.title || 'Untitled'}</span>
+                          <span>• {source.title || 'Untitled'}</span>
                           <span> - </span>
                           {source.url ? (
                             <a
