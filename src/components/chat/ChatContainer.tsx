@@ -763,11 +763,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         <div className="flex min-h-full items-center justify-center p-4 md:p-6">
           <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2">
-                Makalah AI Assistant
+              <h2 className="text-xl md:text-5xl font-thin text-foreground mb-2">
+                Mau bikin paper apa?
               </h2>
               <p className="text-sm md:text-base text-muted-foreground">
-                Mulai percakapan akademik dengan AI assistant untuk penulisan paper
+                Ayo diskusi dari elaborasi ide hingga paper utuh!
+                <br />
+                Gunakan gaya percakapan alami, tak perlu prompt rumit
               </p>
             </div>
 
@@ -794,7 +796,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               sendMessage={sendMessage}
               disabled={status !== 'ready'}
               status={status}
-              placeholder="Enter message..."
+              placeholder="Ketik obrolan..."
               testMode={testMode}
               onStop={handleStopStreaming}
             />
