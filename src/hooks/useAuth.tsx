@@ -100,6 +100,32 @@ function captureComponentStack(): { stack: string; source: string } {
     }
   }
 
+  // Special handling for AuthProvider detection
+  if (source === 'react-dom.development.js' || source.includes('react-dom')) {
+    // Look for AuthProvider or providers-client context in stack
+    if (stack.includes('AuthProvider') || stack.includes('providers-client')) {
+      source = 'providers-client.tsx';
+    } else if (stack.includes('layout.tsx')) {
+      source = 'layout.tsx';
+    } else {
+      // Try to find actual component in stack trace
+      const lines = stack.split('\n');
+      for (const line of lines) {
+        if (line.includes('app/') || line.includes('src/')) {
+          const appMatch = line.match(/app\/([^/\s]+\.tsx)/);
+          const srcMatch = line.match(/src\/([^/\s]+\.tsx)/);
+          if (appMatch) {
+            source = appMatch[1];
+            break;
+          } else if (srcMatch) {
+            source = srcMatch[1];
+            break;
+          }
+        }
+      }
+    }
+  }
+
   return { stack, source };
 }
 
@@ -585,8 +611,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileFetchAttemptsRef.current.delete(session.user.id);
       }
 
+      debugLog(instanceId, 'log', '✅ INITIALIZATION AUTH FUNCTION COMPLETE');
+
     } catch (error) {
-      console.error('Auth initialization error:', error);
+      debugLog(instanceId, 'error', 'Auth initialization error:', error);
       setAuthState({
         user: null,
         session: null,
@@ -596,6 +624,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } finally {
       initializingRef.current = false;
+      debugLog(instanceId, 'log', '🏁 INITIALIZATION AUTH FUNCTION FINISHED');
     }
   }, []);
 
@@ -622,9 +651,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         await initializeAuth(session);
-        debugLog(instanceId, 'log', '✅ AUTHENTICATION INITIALIZATION COMPLETE');
+        debugLog(instanceId, 'log', '✅ MAIN AUTHENTICATION INITIALIZATION COMPLETE');
       } catch (error) {
-        debugLog(instanceId, 'error', '❌ AUTHENTICATION INITIALIZATION FAILED:', error);
+        debugLog(instanceId, 'error', '❌ MAIN AUTHENTICATION INITIALIZATION FAILED:', error);
         if (mounted) {
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
