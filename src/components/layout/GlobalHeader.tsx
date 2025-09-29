@@ -17,6 +17,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
+import { UserAvatar } from "../ui/user-avatar";
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
@@ -26,6 +27,7 @@ import {
   SheetTrigger,
 } from "../ui/sheet";
 import { Menu } from 'lucide-react';
+import { getUserDisplayName, getUserInitials, getUserRole } from '@/lib/utils/user-helpers';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -107,56 +109,107 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       {!isChatPage && (
         <div className="flex items-center gap-2 md:gap-4">
           {showNavigation && (
-            <>
-              <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide mr-6">
-                {showChatLink && (
-                  <NavLink href="/chat" label="Chat" isActive={pathname === '/chat'} />
+            <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide mr-6">
+              {showChatLink && (
+                <NavLink href="/chat" label="Chat" isActive={pathname === '/chat'} />
+              )}
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  isActive={pathname === item.href}
+                />
+              ))}
+            </nav>
+          )}
+
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn('md:hidden text-muted-foreground hover:text-primary', !showNavigation && 'ml-2')}
+                aria-label="Buka menu utama"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="flex w-56 flex-col gap-5 p-6 pt-16"
+            >
+              <div className="flex flex-col gap-5">
+                {!isLoading && !isAuthenticated && (
+                  <Button
+                    className="btn-green-solid w-full justify-center"
+                    onClick={() => {
+                      handleMobileMenuSelect();
+                      handleLogin();
+                    }}
+                  >
+                    Masuk
+                  </Button>
                 )}
-                {navItems.map((item) => (
-                  <NavLink
+
+                {!isLoading && isAuthenticated && user && (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2">
+                      <UserAvatar initials={getUserInitials(user)} size="md" />
+                      <div className="text-left">
+                        <span className="block text-sm font-medium text-foreground">
+                          {getUserDisplayName(user)}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {getUserRole(user)}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        handleMobileMenuSelect();
+                        router.push('/settings');
+                      }}
+                    >
+                      Pengaturan
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-destructive hover:text-destructive"
+                      onClick={async () => {
+                        handleMobileMenuSelect();
+                        await handleLogout();
+                      }}
+                    >
+                      Keluar
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 text-sm font-medium">
+                  {showChatLink && (
+                    <MobileNavItem
+                      href="/chat"
+                      label="Chat"
+                      isActive={pathname === '/chat'}
+                    onSelect={handleMobileMenuSelect}
+                  />
+                )}
+                {showNavigation && navItems.map((item) => (
+                  <MobileNavItem
                     key={item.href}
                     href={item.href}
                     label={item.label}
                     isActive={pathname === item.href}
+                    onSelect={handleMobileMenuSelect}
                   />
                 ))}
-              </nav>
-
-              <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="md:hidden"
-                    aria-label="Buka menu utama"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="flex flex-col gap-6 p-6">
-                  <div className="flex flex-col gap-4 text-sm font-medium">
-                    {showChatLink && (
-                      <MobileNavItem
-                        href="/chat"
-                        label="Chat"
-                        isActive={pathname === '/chat'}
-                        onSelect={handleMobileMenuSelect}
-                      />
-                    )}
-                    {navItems.map((item) => (
-                      <MobileNavItem
-                        key={item.href}
-                        href={item.href}
-                        label={item.label}
-                        isActive={pathname === item.href}
-                        onSelect={handleMobileMenuSelect}
-                      />
-                    ))}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </>
-          )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
 
           {isLoading ? (
             <span className="text-sm text-muted-foreground mr-2 md:mr-4">Loading...</span>
@@ -165,11 +218,12 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               user={user}
               variant="header"
               onLogout={handleLogout}
+              className="hidden md:block"
             />
           ) : (
             <Button
               onClick={handleLogin}
-              className="btn-green-solid"
+              className="btn-green-solid hidden md:inline-flex"
             >
               Masuk
             </Button>

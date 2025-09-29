@@ -251,3 +251,4 @@ setup-vercel-env.sh
 show-env-values.sh
 playwright.config.ts
 onboarding.md
+SUPABASE_EMAIL_SETUP.md
