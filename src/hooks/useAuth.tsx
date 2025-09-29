@@ -57,15 +57,46 @@ function captureComponentStack(): { stack: string; source: string } {
 
   for (let i = 0; i < stackLines.length; i++) {
     const line = stackLines[i];
-    if (line.includes('.tsx') || line.includes('.jsx')) {
+
+    // Multiple pattern matching for better source detection
+    if (line.includes('.tsx') || line.includes('.jsx') || line.includes('.js')) {
       // Skip internal useAuth calls
       if (!line.includes('useAuth.tsx') && !line.includes('AuthProvider')) {
-        const match = line.match(/\/([^/]+\.(tsx|jsx)):/);
-        if (match) {
-          source = match[1];
-          break;
+
+        // Try multiple regex patterns for different stack trace formats
+        const patterns = [
+          /\/([^/]+\.(tsx|jsx|js)):/, // Standard format
+          /([^/\s]+\.(tsx|jsx|js)):/, // Alternative format
+          /at\s+[^(]*\(([^)]*([^/\\]+\.(tsx|jsx|js)))/, // Function call format
+          /([a-zA-Z0-9_-]+\.(tsx|jsx|js))/, // Simple filename
+        ];
+
+        for (const pattern of patterns) {
+          const match = line.match(pattern);
+          if (match) {
+            // Extract filename from the match
+            const fullPath = match[1] || match[2] || match[0];
+            const filename = fullPath.split('/').pop() || fullPath;
+            if (filename && filename !== 'useAuth.tsx') {
+              source = filename;
+              break;
+            }
+          }
         }
+
+        if (source !== 'unknown') break;
       }
+    }
+  }
+
+  // Debug logging for stack trace analysis
+  if (source === 'unknown') {
+    console.warn('[DEBUG] Stack trace analysis failed. Full stack:', stack);
+    // Try to extract any component-like pattern as fallback
+    const componentPattern = /([A-Z][a-zA-Z0-9]*\.tsx|[A-Z][a-zA-Z0-9]*\.jsx)/g;
+    const componentMatches = stack.match(componentPattern);
+    if (componentMatches && componentMatches.length > 0) {
+      source = componentMatches[0];
     }
   }
 
@@ -612,7 +643,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       debugLog(instanceId, 'log', `🔔 AUTH STATE CHANGE: ${event} | User ID: ${session?.user?.id || 'none'}`);
       updateInstanceActivity(instanceId, `auth-event-${event.toLowerCase()}`);
 
-      if (event === 'SIGNED_OUT' || !session) {
+      // ✅ CRITICAL FIX: Handle INITIAL_SESSION separately to prevent double initialization
+      if (event === 'INITIAL_SESSION') {
+        debugLog(instanceId, 'log', '🏁 INITIAL_SESSION - Ignoring to prevent double initialization');
+        // INITIAL_SESSION is handled by main initialize() function, don't duplicate
+        return;
+      }
+
+      if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
         debugLog(instanceId, 'log', '🚪 SIGNED OUT - Resetting state');
         initializingRef.current = false; // Reset flag
         setAuthState({
@@ -634,6 +672,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ✅ CRITICAL FIX: Ignore ALL refresh events to prevent infinite loops
       else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         debugLog(instanceId, 'log', `🔄 ${event} EVENT IGNORED - Preventing infinite loops`);
+      }
+      // Log unhandled events for debugging
+      else {
+        debugLog(instanceId, 'log', `🔄 UNHANDLED EVENT: ${event} - Ignoring`);
       }
     });
 
