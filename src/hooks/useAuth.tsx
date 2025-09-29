@@ -102,26 +102,58 @@ function captureComponentStack(): { stack: string; source: string } {
 
   // Special handling for AuthProvider detection
   if (source === 'react-dom.development.js' || source.includes('react-dom')) {
+    // Enhanced detection for AuthProvider vs useAuth calls
+    console.warn('[DEBUG] react-dom detected, analyzing stack:', stack);
+
     // Look for AuthProvider or providers-client context in stack
     if (stack.includes('AuthProvider') || stack.includes('providers-client')) {
       source = 'providers-client.tsx';
+      console.warn('[DEBUG] AuthProvider context found, setting source to providers-client.tsx');
     } else if (stack.includes('layout.tsx')) {
       source = 'layout.tsx';
+      console.warn('[DEBUG] layout.tsx context found');
     } else {
-      // Try to find actual component in stack trace
+      // Try to find actual component in stack trace with more patterns
       const lines = stack.split('\n');
       for (const line of lines) {
-        if (line.includes('app/') || line.includes('src/')) {
-          const appMatch = line.match(/app\/([^/\s]+\.tsx)/);
-          const srcMatch = line.match(/src\/([^/\s]+\.tsx)/);
-          if (appMatch) {
-            source = appMatch[1];
-            break;
-          } else if (srcMatch) {
-            source = srcMatch[1];
-            break;
+        // More comprehensive pattern matching
+        const patterns = [
+          /app\/([^/\s)]+\.tsx)/,
+          /src\/([^/\s)]+\.tsx)/,
+          /\/app\/([^/\s)]+\.tsx)/,
+          /\/src\/([^/\s)]+\.tsx)/,
+          /([^/\s)]+\.tsx)/
+        ];
+
+        for (const pattern of patterns) {
+          const match = line.match(pattern);
+          if (match) {
+            const fileName = match[1];
+            if (fileName &&
+                !fileName.includes('useAuth') &&
+                !fileName.includes('react-dom') &&
+                !fileName.includes('webpack') &&
+                !fileName.includes('node_modules')) {
+              source = fileName;
+              console.warn(`[DEBUG] Found component in stack: ${fileName} from line: ${line}`);
+              break;
+            }
           }
         }
+        if (source !== 'react-dom.development.js' && !source.includes('react-dom')) break;
+      }
+    }
+
+    // Final fallback - check if this is likely AuthProvider context
+    if (source === 'react-dom.development.js' || source.includes('react-dom')) {
+      // Check if we're being called from provider context by examining Error().stack depth
+      const stackDepth = stack.split('\n').length;
+      if (stackDepth > 15) { // AuthProvider typically has deeper stack
+        source = 'providers-client.tsx (inferred)';
+        console.warn('[DEBUG] Deep stack detected, likely AuthProvider - using providers-client.tsx');
+      } else {
+        source = 'unknown-react-component.tsx';
+        console.warn('[DEBUG] Shallow stack detected, likely useAuth hook from unknown component');
       }
     }
   }
