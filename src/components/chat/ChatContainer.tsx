@@ -81,6 +81,8 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 }) => {
   // const { theme } = useTheme();
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const scrollableContainerRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef<boolean>(false);
   // ❌ REMOVED: Complex workflow state management - replaced with simple local state
   // Natural LLM conversation doesn't need rigid phase tracking
   // ❌ REMOVED: Complex phase tracking refs - no longer needed for natural LLM flow
@@ -530,8 +532,11 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    if (chatAreaRef.current) {
-      chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+    if (scrollableContainerRef.current) {
+      scrollableContainerRef.current.scrollTo({
+        top: scrollableContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -540,9 +545,11 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
   useEffect(() => {
     // Only scroll if message count actually changed (prevents excessive scrolling)
-    if (messages.length !== messagesLengthRef.current) {
+    if (messages.length !== messagesLengthRef.current || shouldScrollRef.current) {
       messagesLengthRef.current = messages.length;
-      scrollToBottom();
+      shouldScrollRef.current = false;
+      // Small delay to ensure DOM is updated before scrolling
+      setTimeout(() => scrollToBottom(), 50);
     }
   }, [messages.length]); // ✅ FIXED: Depend on length only, not full messages array
 
@@ -793,7 +800,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             {/* Centered Chat Input - Responsive */}
             <ChatInput
               className="transition-all duration-300 ease-in-out"
-              sendMessage={sendMessage}
+              sendMessage={(message) => {
+                shouldScrollRef.current = true;
+                sendMessage(message);
+              }}
               disabled={status !== 'ready'}
               status={status}
               placeholder="Ketik obrolan..."
@@ -806,7 +816,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         /* WITH MESSAGES: Scrollable messages + Fixed bottom input */
         <>
           {/* Messages Area - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
             <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
               {/* Enhanced Error Display */}
               {(error || errorState) && (
@@ -886,7 +896,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
               <ChatInput
                 className="transition-all duration-200 ease-in-out"
-                sendMessage={sendMessage}
+                sendMessage={(message) => {
+                  shouldScrollRef.current = true;
+                  sendMessage(message);
+                }}
                 disabled={status !== 'ready'}
                 status={status}
                 placeholder="Kirim percakapan..."
