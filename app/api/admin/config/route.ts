@@ -117,7 +117,7 @@ const UpdateConfigRequestSchema = z.object({
   prompts: z.object({
     systemInstructions: z.object({
       content: z.string().min(1),
-      phase: z.string().default('system_instructions'),
+      phase: z.string().default('research_analysis'),  // Using first phase as placeholder
       version: z.string().optional(),
       priority: z.number().default(1)
     }).optional()
@@ -226,79 +226,109 @@ export async function GET(request: NextRequest) {
           .select('*')
           .eq('is_active', true)
           .order('created_at', { ascending: false });
-        
+
+        const fallbackModels = {
+          primary: {
+            provider: 'openai',
+            model: 'gpt-4o',
+            temperature: 0.1,
+            maxTokens: 4096,
+            isActive: true,
+          },
+          fallback: {
+            provider: 'openrouter',
+            model: 'google/gemini-2.5-flash',
+            temperature: 0.1,
+            maxTokens: 4096,
+            isActive: true,
+          },
+        } as const;
+
         if (allConfigsError) {
-          console.error('❌ Error loading model configs:', allConfigsError);
-          throw allConfigsError;
-        }
+          console.warn('⚠️ Model config query failed, using default fallback', allConfigsError);
+          response.data.models = fallbackModels;
+        } else {
+          // Dynamic provider assignment based on latest created_at timestamp
+          // The most recently created config becomes primary, older one becomes fallback
+          interface ModelConfigRow {
+            provider: string;
+            model_name: string;
+            temperature: number;
+            max_tokens: number;
+            is_active: boolean;
+            is_default?: boolean;
+            created_at: string;
+          }
 
-        // Dynamic provider assignment based on latest created_at timestamp
-        // The most recently created config becomes primary, older one becomes fallback
-        interface ModelConfigRow {
-          provider: string;
-          model_name: string;
-          temperature: number;
-          max_tokens: number;
-          is_active: boolean;
-          is_default?: boolean;
-          created_at: string;
-        }
+          let primaryData: ModelConfigRow | null = null;
+          let fallbackData: ModelConfigRow | null = null;
 
-        let primaryData: ModelConfigRow | null = null;
-        let fallbackData: ModelConfigRow | null = null;
-        
-        if (allConfigs && allConfigs.length > 0) {
-          // Sort by created_at descending to get most recent first
-          const sortedConfigs = [...(allConfigs as ModelConfigRow[])].sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-          
-          primaryData = sortedConfigs[0];  // Most recent = Primary
-          fallbackData = sortedConfigs[1] || null;  // Second most recent = Fallback
-          
-          console.log('🔄 Dynamic provider assignment:', {
-            primaryProvider: primaryData?.provider,
-            primaryModel: primaryData?.model_name,
-            primaryCreatedAt: primaryData?.created_at,
-            fallbackProvider: fallbackData?.provider,
-            fallbackModel: fallbackData?.model_name,
-            fallbackCreatedAt: fallbackData?.created_at,
-            totalConfigs: allConfigs.length
-          });
-        }
-        
-        // ✅ FIX: Transform database structure to expected frontend structure
-        response.data.models = {
-          primary: primaryData ? {
-            provider: primaryData.provider,
-            model: primaryData.model_name,     // ← Transform model_name to model
-            temperature: primaryData.temperature,
-            maxTokens: primaryData.max_tokens,
-            isActive: primaryData.is_active
-          } : null,
-          fallback: fallbackData ? {
-            provider: fallbackData.provider,
-            model: fallbackData.model_name,    // ← Transform model_name to model  
-            temperature: fallbackData.temperature,
-            maxTokens: fallbackData.max_tokens,
-            isActive: fallbackData.is_active
-          } : null
-        };
+          if (!allConfigs || allConfigs.length === 0) {
+            console.warn('⚠️ No active model configs found, using default fallback');
+            response.data.models = fallbackModels;
+          } else {
+            // Sort by created_at descending to get most recent first
+            const sortedConfigs = [...(allConfigs as ModelConfigRow[])].sort((a, b) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
 
-        console.log('✅ Model configs loaded with dynamic assignment:', {
-          primaryExists: !!primaryData,
-          fallbackExists: !!fallbackData,
-          primaryProvider: primaryData?.provider,
-          fallbackProvider: fallbackData?.provider,
-          primaryModel: primaryData?.model_name,
-          fallbackModel: fallbackData?.model_name
-        });
+            primaryData = sortedConfigs[0];  // Most recent = Primary
+            fallbackData = sortedConfigs[1] || null;  // Second most recent = Fallback
+
+            console.log('🔄 Dynamic provider assignment:', {
+              primaryProvider: primaryData?.provider,
+              primaryModel: primaryData?.model_name,
+              primaryCreatedAt: primaryData?.created_at,
+              fallbackProvider: fallbackData?.provider,
+              fallbackModel: fallbackData?.model_name,
+              fallbackCreatedAt: fallbackData?.created_at,
+              totalConfigs: allConfigs.length
+            });
+
+            if (primaryData) {
+              // ✅ Transform database structure ke format frontend
+              response.data.models = {
+                primary: {
+                  provider: primaryData.provider,
+                  model: primaryData.model_name,
+                  temperature: primaryData.temperature,
+                  maxTokens: primaryData.max_tokens,
+                  isActive: primaryData.is_active
+                },
+                fallback: fallbackData ? {
+                  provider: fallbackData.provider,
+                  model: fallbackData.model_name,
+                  temperature: fallbackData.temperature,
+                  maxTokens: fallbackData.max_tokens,
+                  isActive: fallbackData.is_active
+                } : fallbackModels.fallback
+              };
+
+              console.log('✅ Model configs loaded with dynamic assignment:', {
+                primaryExists: !!primaryData,
+                fallbackExists: !!fallbackData,
+                primaryProvider: primaryData?.provider,
+                fallbackProvider: fallbackData?.provider,
+                primaryModel: primaryData?.model_name,
+                fallbackModel: fallbackData?.model_name
+              });
+            } else {
+              console.warn('⚠️ No active primary model config found after sorting, using default fallback');
+              response.data.models = fallbackModels;
+            }
+          }
+
+          if (!response.data.models) {
+            console.warn('⚠️ No active primary model config found, using default fallback');
+            response.data.models = fallbackModels;
+          }
+        }
 
       } catch (modelError) {
         console.error('❌ Error loading model configs:', modelError);
         response.data.models = {
-          primary: { provider: 'openai', model: 'gpt-4o', error: 'Configuration load failed' },
-          fallback: { provider: 'openrouter', model: 'google/gemini-2.5-flash', error: 'Configuration load failed' }
+          primary: { provider: 'openai', model: 'gpt-4o', error: 'Configuration load failed', temperature: 0.1, maxTokens: 4096, isActive: true },
+          fallback: { provider: 'openrouter', model: 'google/gemini-2.5-flash', error: 'Configuration load failed', temperature: 0.1, maxTokens: 4096, isActive: true }
         };
       }
     }

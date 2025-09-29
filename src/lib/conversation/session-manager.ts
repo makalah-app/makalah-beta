@@ -36,8 +36,6 @@ export interface ConversationSession {
 export interface ConversationSessionState {
   phase: number;
   phaseComplete: boolean;
-  awaitingApproval: boolean;
-  approvalContext?: any;
   messageCount: number;
   lastMessageId?: string;
   workflowProgress: WorkflowProgress;
@@ -94,7 +92,6 @@ export interface PhaseTransitionRequest {
   fromPhase: number;
   toPhase: number;
   approved: boolean;
-  approvalData?: any;
   artifactIds?: string[];
 }
 
@@ -147,7 +144,6 @@ export class ConversationSessionManager {
         state: {
           phase: options.initialPhase || 1,
           phaseComplete: false,
-          awaitingApproval: false,
           messageCount: 0,
           workflowProgress: {
             totalPhases: 7,
@@ -255,8 +251,6 @@ export class ConversationSessionManager {
       
       if (!transitionRequest.approved) {
         console.log(`[SessionManager] Phase ${transitionRequest.fromPhase} transition not approved`);
-        session.state.awaitingApproval = true;
-        session.state.approvalContext = transitionRequest.approvalData;
         return false;
       }
       
@@ -273,8 +267,6 @@ export class ConversationSessionManager {
       session.currentPhase = transitionRequest.toPhase;
       session.state.phase = transitionRequest.toPhase;
       session.state.phaseComplete = false;
-      session.state.awaitingApproval = false;
-      session.state.approvalContext = undefined;
       session.phaseStartTime = Date.now();
       session.metadata.phaseChangeCount++;
       
@@ -324,8 +316,6 @@ export class ConversationSessionManager {
     if (!session) return;
     
     session.state.phaseComplete = true;
-    session.state.awaitingApproval = true;
-    session.state.approvalContext = completionData;
     session.state.workflowProgress.currentPhaseProgress = 100;
     
     console.log(`[SessionManager] Phase ${session.currentPhase} marked complete for session ${sessionId}`);
@@ -397,7 +387,6 @@ export class ConversationSessionManager {
         state: sessionState || {
           phase: conversation.current_phase || 1,
           phaseComplete: false,
-          awaitingApproval: false,
           messageCount: conversation.message_count || 0,
           workflowProgress: {
             totalPhases: 7,

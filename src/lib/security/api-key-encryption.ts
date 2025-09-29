@@ -513,11 +513,13 @@ export class ApiKeyManager {
     // Console logging for security operations
     const logLevel = success ? 'info' : 'error';
     const symbol = success ? '✅' : '❌';
-    console[logLevel](
-      `${symbol} [API-KEY-SECURITY] ${operation.toUpperCase()} - ${provider}:`,
-      success ? 'SUCCESS' : entry.error,
-      metadata ? { metadata } : ''
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console[logLevel](
+        `${symbol} [API-KEY-SECURITY] ${operation.toUpperCase()} - ${provider}:`,
+        success ? 'SUCCESS' : entry.error,
+        metadata ? { metadata } : ''
+      );
+    }
   }
 
   /**

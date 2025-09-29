@@ -53,7 +53,9 @@ if (typeof window !== 'undefined') {
  */
 export const supabaseClient: SupabaseClient<Database> = (() => {
   if (!_supabaseClient) {
-    console.log('[supabase-client] Creating new Supabase client instance');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[supabase-client] Creating new Supabase client instance');
+    }
     _supabaseClient = createClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -88,7 +90,9 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
       (window as any).__supabase_client_singleton.client = _supabaseClient;
     }
   } else {
-    console.log('[supabase-client] Using existing Supabase client instance');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[supabase-client] Using existing Supabase client instance');
+    }
   }
   return _supabaseClient;
 })();

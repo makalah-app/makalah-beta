@@ -46,8 +46,6 @@ interface APIClientContextType {
   
   // Academic workflow specific endpoints
   executePhaseTransition: (phase: number, data: any) => Promise<APIResponse>;
-  submitApprovalDecision: (approvalId: string, decision: 'approve' | 'reject', feedback?: string) => Promise<APIResponse>;
-  generateArtifact: (type: string, content: any) => Promise<APIResponse>;
   searchSources: (query: string, filters?: any) => Promise<APIResponse>;
   
   // System endpoints
@@ -286,27 +284,6 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
     });
   }, [makeRequest]);
 
-  const submitApprovalDecision = useCallback(async (
-    approvalId: string,
-    decision: 'approve' | 'reject',
-    feedback?: string
-  ): Promise<APIResponse> => {
-    return makeRequest('/workflow/approval/decision', {
-      method: 'POST',
-      body: JSON.stringify({ approvalId, decision, feedback }),
-    });
-  }, [makeRequest]);
-
-  const generateArtifact = useCallback(async (
-    type: string,
-    content: any
-  ): Promise<APIResponse> => {
-    return makeRequest('/artifacts/generate', {
-      method: 'POST',
-      body: JSON.stringify({ type, content }),
-    });
-  }, [makeRequest]);
-
   const searchSources = useCallback(async (
     query: string,
     filters: any = {}
@@ -338,8 +315,6 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
     
     // Academic workflow methods
     executePhaseTransition,
-    submitApprovalDecision,
-    generateArtifact,
     searchSources,
     
     // System methods

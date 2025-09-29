@@ -35,16 +35,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-interface ArtifactItem {
-  id: string;
-  title: string;
-  type: 'markdown' | 'outline' | 'research' | 'draft' | 'final';
-  version: number;
-  lastModified: number;
-  size?: number;
-  tags?: string[];
-}
-
 export interface MakalahSidebarProps {
   className?: string;
   isCollapsed?: boolean;
@@ -53,9 +43,6 @@ export interface MakalahSidebarProps {
   onNavigate?: (path: string) => void;
   // Chat
   onNewChat?: () => void;
-  // Artifacts
-  artifacts?: ArtifactItem[];
-  onArtifactSelect?: (artifact: ArtifactItem) => void;
   // User
   user?: {
     name: string;
@@ -78,8 +65,6 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
   currentPath = '',
   onNavigate,
   onNewChat,
-  artifacts = [],
-  onArtifactSelect,
   user,
   onUserMenuAction,
 }) => {

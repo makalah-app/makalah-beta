@@ -57,7 +57,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
 
   const handleLogin = () => {
     // Define public pages that should redirect back after login
-    const PUBLIC_PAGES = ['/', '/docs', '/tutorial', '/blog', '/about'];
+    const PUBLIC_PAGES = ['/', '/docs', '/tutorial', '/blog'];
     const currentPath = pathname;
 
     // Check if current page is a public page

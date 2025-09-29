@@ -138,8 +138,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   // Test scenario shortcuts (development only)
   const testScenarios = [
     { key: 'research', label: 'Test Research Phase' },
-    { key: 'approval', label: 'Test Approval Gate' },
-    { key: 'artifact', label: 'Test Artifact Generation' },
     { key: 'error', label: 'Test Error Handling' },
   ];
 

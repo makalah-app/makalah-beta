@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
 
+export const dynamic = 'force-dynamic'; // Prevent static generation
+
 export async function GET() {
+  // Block access in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Debug endpoint not available in production' },
+      { status: 403 }
+    );
+  }
+
   try {
-    console.log('[DEBUG-MODELS] Fetching model configs from database...');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG-MODELS] Fetching model configs from database...');
+    }
 
     const { data: models, error } = await supabaseAdmin
       .from('model_configs')
@@ -18,7 +30,9 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    console.log('[DEBUG-MODELS] Found models:', models);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG-MODELS] Found models:', models);
+    }
 
     return NextResponse.json({
       success: true,

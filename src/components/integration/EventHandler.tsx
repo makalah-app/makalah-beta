@@ -14,7 +14,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, Rea
 
 interface AcademicEvent {
   id: string;
-  type: 'phase-transition' | 'approval-required' | 'artifact-generated' | 'tool-executed' | 'error' | 'system';
+  type: 'phase-transition' | 'tool-executed' | 'error' | 'system';
   data: any;
   timestamp: number;
   phase?: number;
@@ -203,21 +203,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
         });
       });
 
-      newEventSource.addEventListener('approval-required', (event) => {
-        processSSEEvent({
-          type: 'approval-required',
-          data: JSON.parse(event.data),
-          source: 'workflow-engine',
-        });
-      });
 
-      newEventSource.addEventListener('artifact-generated', (event) => {
-        processSSEEvent({
-          type: 'artifact-generated',
-          data: JSON.parse(event.data),
-          source: 'artifact-generator',
-        });
-      });
 
       newEventSource.addEventListener('tool-executed', (event) => {
         processSSEEvent({

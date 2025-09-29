@@ -16,6 +16,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
 
@@ -138,11 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Prevent multiple initialization attempts
   const initializingRef = React.useRef(false);
+  const lastAccessTokenRef = useRef<string | null>(null);
+  const lastSessionUserIdRef = useRef<string | null>(null);
 
   /**
    * Initialize authentication from stored session
    */
-  const initializeAuth = useCallback(async () => {
+  const initializeAuth = useCallback(async (providedSession?: Session | null) => {
     if (initializingRef.current) {
       console.log('[initializeAuth] Already initializing, skipping...');
       return;
@@ -154,29 +157,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
       // First, try to get current session from Supabase
-      console.log('[initializeAuth] Getting session from Supabase...');
-      const sessionResult = await withTimeout(
-        supabaseClient.auth.getSession(),
-        2500,
-        async () => ({ data: { session: null }, error: null } as any)
-      );
-      const { data: { session }, error } = sessionResult as any;
+      let session = providedSession ?? null;
 
-      if (error) {
-        console.error('[initializeAuth] Error getting Supabase session:', error);
-        setAuthState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null
-        });
-        initializingRef.current = false;
-        return;
+      if (!session) {
+        console.log('[initializeAuth] Getting session from Supabase...');
+        const sessionResult = await withTimeout(
+          supabaseClient.auth.getSession(),
+          2500,
+          async () => ({ data: { session: null }, error: null } as any)
+        );
+        const { data: { session: fetchedSession }, error } = sessionResult as any;
+
+        if (error) {
+          console.error('[initializeAuth] Error getting Supabase session:', error);
+          setAuthState({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
+          initializingRef.current = false;
+          return;
+        }
+
+        session = fetchedSession;
       }
 
       if (!session) {
         console.log('[initializeAuth] No active session found, setting isLoading: false');
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+        initializingRef.current = false;
+        return;
+      }
+
+      if (
+        lastAccessTokenRef.current &&
+        lastAccessTokenRef.current === session.access_token &&
+        lastSessionUserIdRef.current === session.user?.id
+      ) {
+        console.log('[initializeAuth] Session already synchronized, skipping state update');
         setAuthState(prev => ({ ...prev, isLoading: false }));
         initializingRef.current = false;
         return;
@@ -195,13 +215,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             )
           `)
           .eq('id', session.user.id)
-          .single(),
+          .maybeSingle(),
         3000,
         async () => ({ data: null, error: { message: 'profile timeout' } } as any)
       );
       const { data: userProfile, error: profileError } = profileResult as any;
 
-      if (profileError || !userProfile) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('[initializeAuth] Failed to fetch user profile:', profileError);
         setAuthState({
           user: null,
@@ -214,8 +234,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Extract profile data from joined result
-      const profile = userProfile.user_profiles?.[0];
+      const profileData = userProfile?.user_profiles?.[0];
+      const profile = profileData || undefined;
       const emailName = userProfile.email?.split('@')[0] || 'User';
       const displayName = profile?.display_name ||
                          (profile?.first_name && profile?.last_name ?
@@ -239,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authSession: AuthSession = {
         accessToken: session.access_token,
         refreshToken: session.refresh_token,
-        expiresAt: new Date(session.expires_at || 0).getTime(),
+        expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
         user: user,
         sessionId: session.user?.id || 'session-' + Date.now()
       };
@@ -256,6 +276,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: null
       });
+
+      lastAccessTokenRef.current = session.access_token;
+      lastSessionUserIdRef.current = session.user?.id ?? null;
 
     } catch (error) {
       console.error('Auth initialization error:', error);
@@ -282,7 +305,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('[useAuth] 🔄 INITIALIZING AUTHENTICATION...');
       try {
-        await initializeAuth();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        await initializeAuth(session);
         console.log('[useAuth] ✅ Authentication initialization complete');
       } catch (error) {
         console.error('[useAuth] ❌ Authentication initialization failed:', error);
@@ -313,7 +337,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // ✅ CRITICAL FIX: Only handle first sign-in if not initializing
         if (!initializingRef.current) {
           console.log('[useAuth] New sign in detected, initializing...');
-          await initializeAuth();
+          await initializeAuth(session);
         } else {
           console.log('[useAuth] Sign in event ignored - already initializing');
         }
@@ -388,19 +412,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let profileError = null;
 
       try {
-        // First try user_profiles directly (skip users table which may not be properly set up)
+        // First try user_profiles directly (skip users table yang mungkin belum sinkron)
         const profileResult = await withTimeout(
           (supabaseClient as any)
             .from('user_profiles')
             .select('*')
             .eq('user_id', data.user.id)
-            .single(),
+            .maybeSingle(),
           3000,
           async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
         );
 
         if (profileResult.data) {
-          // Construct userProfile object from user_profiles data
+          // Construct userProfile object dari user_profiles data
           userProfile = {
             id: data.user.id,
             email: data.user.email,
@@ -411,9 +435,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user_profiles: [profileResult.data]
           };
         }
-        profileError = profileResult.error;
-      } catch (err) {
-        profileError = err;
+        // 406 (PGRST116) berarti belum ada baris -> aman buat fallback
+        if (profileResult.error && profileResult.error.code !== 'PGRST116') {
+          profileError = profileResult.error;
+        }
+      } catch (err: any) {
+        if (err?.code !== 'PGRST116') {
+          profileError = err;
+        }
       }
 
 
@@ -421,28 +450,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const emailName = userProfile?.email?.split('@')[0] || data.user.email?.split('@')[0] || 'User';
       const fallbackName = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User';
 
+      const profileData = userProfile?.user_profiles?.[0];
+
       const user: User = userProfile ? {
         // Extract profile data from joined result
         id: userProfile.id,
         email: userProfile.email,
         name: (() => {
-          const profile = userProfile.user_profiles?.[0];
+          const profile = profileData;
           return profile?.display_name ||
                  (profile?.first_name && profile?.last_name ?
                   `${profile.first_name} ${profile.last_name}` : emailName);
         })(),
         fullName: (() => {
-          const profile = userProfile.user_profiles?.[0];
+          const profile = profileData;
           return profile?.display_name ||
                  (profile?.first_name && profile?.last_name ?
                   `${profile.first_name} ${profile.last_name}` : undefined);
         })(),
         role: userProfile.role as UserRole,
-        institution: userProfile.user_profiles?.[0]?.institution || undefined,
+        institution: profileData?.institution || undefined,
         isVerified: !!userProfile.email_verified_at,
         createdAt: userProfile.created_at,
         lastLogin: new Date().toISOString(),
-        avatarUrl: userProfile.user_profiles?.[0]?.avatar_url || undefined
+        avatarUrl: profileData?.avatar_url || undefined
       } : {
         // Fallback to auth user_metadata if profile doesn't exist
         id: data.user.id,
@@ -461,7 +492,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const session: AuthSession = {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
-        expiresAt: new Date(data.session.expires_at || 0).getTime(),
+        expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now(),
         user: user,
         sessionId: data.session.user?.id || 'session-' + Date.now()
       };
@@ -481,6 +512,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: null
       });
+
+      lastAccessTokenRef.current = data.session.access_token;
+      lastSessionUserIdRef.current = data.session.user?.id ?? null;
 
       // Sync SSR cookies on server for RLS (set session cookies)
       try {
@@ -684,7 +718,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newSession: AuthSession = {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
-        expiresAt: new Date(data.session.expires_at || 0).getTime(),
+        expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now(),
         user: user,
         sessionId: data.session.user?.id || 'session-' + Date.now()
       };
@@ -698,6 +732,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session: newSession,
         user: user
       }));
+
+      lastAccessTokenRef.current = data.session.access_token;
+      lastSessionUserIdRef.current = data.session.user?.id ?? null;
 
       return true;
 

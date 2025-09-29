@@ -52,7 +52,6 @@ export interface AcademicMetadata {
   timestamp?: number;
   model?: string;
   tokens?: number;
-  artifacts?: string[];
   userId?: string;
   sequenceNumber?: number;
   persistedAt?: string;

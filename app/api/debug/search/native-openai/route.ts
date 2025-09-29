@@ -5,6 +5,14 @@ import { SearchProviderManager } from '@/lib/ai/tools/search/search-providers';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  // Block access in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Debug endpoint not available in production' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || 'AI research news this week';
@@ -19,10 +27,14 @@ export async function GET(request: NextRequest) {
       region: 'US',
     });
 
-    console.log(`[DEBUG] Native OpenAI search returned ${results.length} results for q="${q}"`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEBUG] Native OpenAI search returned ${results.length} results for q="${q}"`);
+    }
     return NextResponse.json({ success: true, q, results });
   } catch (error) {
-    console.error('[DEBUG] Native OpenAI search error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[DEBUG] Native OpenAI search error:', error);
+    }
     return NextResponse.json(
       { success: false, error: (error as Error).message },
       { status: 500 }

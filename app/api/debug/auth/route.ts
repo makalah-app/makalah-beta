@@ -1,7 +1,17 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/database/supabase-client';
 
+export const dynamic = 'force-dynamic'; // Prevent static generation
+
 export async function GET(request: NextRequest) {
+  // Block access in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Debug endpoint not available in production' },
+      { status: 403 }
+    );
+  }
+
   try {
     // Get Authorization header
     const authHeader = request.headers.get('authorization');

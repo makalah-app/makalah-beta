@@ -1,12 +1,11 @@
 'use client';
 
 /**
- * Sidebar - Navigation sidebar component dengan artifact list dan account menu
- * 
+ * Sidebar - Navigation sidebar component dengan account menu
+ *
  * DESIGN COMPLIANCE:
  * - Sidebar styling dan layout sesuai chat-page-styleguide.md
  * - Navigation items dengan proper icons dan hover states
- * - Artifact list dengan version tracking dan metadata
  * - Account menu integration dengan user info display
  */
 
@@ -16,16 +15,6 @@ import Link from 'next/link';
 import { useChatHistory, ConversationItem } from '../../hooks/useChatHistory';
 
 
-interface ArtifactItem {
-  id: string;
-  title: string;
-  type: 'markdown' | 'outline' | 'research' | 'draft' | 'final';
-  version: number;
-  lastModified: number;
-  size?: number;
-  tags?: string[];
-}
-
 interface SidebarProps {
   className?: string;
   isCollapsed?: boolean;
@@ -34,9 +23,6 @@ interface SidebarProps {
   onNavigate?: (path: string) => void;
   // Chat
   onNewChat?: () => void;
-  // Artifacts
-  artifacts?: ArtifactItem[];
-  onArtifactSelect?: (artifact: ArtifactItem) => void;
   // User
   user?: {
     name: string;
@@ -60,8 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentPath = '',
   onNavigate,
   onNewChat,
-  artifacts = [],
-  onArtifactSelect,
   user,
   onUserMenuAction,
 }) => {
@@ -123,18 +107,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
-  };
-
-  // Get artifact icon
-  const getArtifactIcon = (type: string): string => {
-    switch (type) {
-      case 'markdown': return '📄';
-      case 'outline': return '🗂️';
-      case 'research': return '🔍';
-      case 'draft': return '✏️';
-      case 'final': return '✅';
-      default: return '📄';
-    }
   };
 
   // Handle delete conversation
@@ -296,61 +268,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
         </div>
-
-        {/* Artifact List */}
-        {artifacts.length > 0 && (
-          <div>
-            <button
-              onClick={() => toggleSection('artifacts')}
-            >
-              <div>
-                <span>Artifacts ({artifacts.length})</span>
-                <span>
-                  {expandedSections.has('artifacts') ? '▼' : '▶'}
-                </span>
-              </div>
-            </button>
-
-            <div>
-              <div>
-                {artifacts.slice(0, 10).map((artifact) => (
-                  <button
-                    key={artifact.id}
-                    onClick={() => onArtifactSelect?.(artifact)}
-                  >
-                    <span>
-                      {getArtifactIcon(artifact.type)}
-                    </span>
-                    <div>
-                      <div>
-                        {artifact.title}
-                      </div>
-                      <div>
-                        <span>{formatTimeAgo(artifact.lastModified)}</span>
-                        <span>v{artifact.version}</span>
-                        {artifact.size && (
-                          <span>{formatFileSize(artifact.size)}</span>
-                        )}
-                      </div>
-                      {artifact.tags && artifact.tags.length > 0 && (
-                        <div>
-                          {artifact.tags.slice(0, 2).map((tag, index) => (
-                            <span key={index}>
-                              #{tag}
-                            </span>
-                          ))}
-                          {artifact.tags.length > 2 && (
-                            <span>+{artifact.tags.length - 2}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Admin Dashboard Link */}

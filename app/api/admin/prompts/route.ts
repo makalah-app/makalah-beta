@@ -134,13 +134,26 @@ async function validateAdminAccess(request: NextRequest): Promise<{ valid: boole
 function validateAcademicContent(content: string): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
 
-  // Check for 7-phase methodology keywords
+  // Check for 7-phase methodology keywords - updated to match actual system prompt
+  const phasePatterns = [
+    /phase\s*[1-7]/i,           // "Phase 1", "Phase 2", etc
+    /fase\s*[1-7]/i,            // "Fase 1", "Fase 2", etc
+    /7-phase/i,                  // "7-phase"
+    /7-fase/i,                   // "7-fase"
+    /metodologi.*7.*fase/i,      // "metodologi 7-fase"
+    /7.*phase.*methodology/i,    // "7-phase methodology"
+    /phase\s*1.*phase\s*7/si   // "Phase 1" to "Phase 7" mentioned
+  ];
+
+  // Also check for Indonesian phase keywords as fallback
   const phaseKeywords = ['klarifikasi', 'riset', 'kerangka', 'pengembangan', 'sintesis', 'review', 'finalisasi'];
-  const foundPhases = phaseKeywords.filter(keyword => 
+
+  const hasPhasePatterns = phasePatterns.some(pattern => pattern.test(content));
+  const foundKeywords = phaseKeywords.filter(keyword =>
     content.toLowerCase().includes(keyword)
   ).length;
 
-  if (foundPhases < 3) {
+  if (!hasPhasePatterns && foundKeywords < 3) {
     issues.push('Prompt tidak mengandung cukup referensi ke metodologi 7-fase');
   }
 
@@ -405,6 +418,16 @@ export async function POST(request: NextRequest) {
     if (historyError) {
       console.warn('⚠️ Failed to create version history entry:', historyError);
       // Don't fail the entire operation for history tracking
+    }
+
+    // ⚡ CRITICAL: Clear dynamic config cache after saving system prompt
+    try {
+      const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
+      clearDynamicConfigCache();
+      console.log('⚡ Dynamic config cache cleared after system prompt update');
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
+      // Don't fail the operation for cache clearing issues
     }
 
     return Response.json({

@@ -60,7 +60,7 @@ export default function HomePage() {
               disabled={isLoading}
             >
               <Brain className="w-5 h-5 mr-2" />
-              {isLoading ? 'Loading...' : 'Chat With Agent'}
+              {isLoading ? 'Loading...' : 'Diskusi dengan Agen AI'}
             </Button>
           </div>
         </div>
@@ -172,6 +172,7 @@ export default function HomePage() {
             <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
               <img
                 className="w-full h-full object-cover"
+                alt=""
               />
 
               {/* Play button overlay */}
@@ -309,13 +310,8 @@ export default function HomePage() {
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
               <ul className="space-y-4 text-xs">
                 <li>
-                  <Link href="/about" className="transition-colors hover:text-primary text-muted-foreground">
-                    Tentang Kami
-                  </Link>
-                </li>
-                <li>
                   <Link
-                    href="/about#bergabung-dengan-tim"
+                    href="#"
                     className="transition-colors hover:text-primary text-muted-foreground"
                   >
                     Karir
@@ -323,7 +319,7 @@ export default function HomePage() {
                 </li>
                 <li>
                   <Link
-                    href="/about#hubungi-kami"
+                    href="#"
                     className="transition-colors hover:text-primary text-muted-foreground"
                   >
                     Kontak

@@ -23,8 +23,6 @@ interface PersistedChatSession {
   metadata?: {
     model?: string;
     totalTokens?: number;
-    artifacts?: string[];
-    approvals?: string[];
     testMode?: boolean;
   };
 }

@@ -188,10 +188,12 @@ function AdminDashboardContent() {
     primary: { status: 'offline' },
     fallback: { status: 'offline' }
   });
-  
+
   // Health check state  
   const [healthChecking, setHealthChecking] = useState(false);
   const [lastHealthCheck, setLastHealthCheck] = useState<string | null>(null);
+
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
   
   // UI state
   const [loading, setLoading] = useState(true);
@@ -582,15 +584,36 @@ function AdminDashboardContent() {
 
   // Load configuration data sequentially to prevent rate limiting
   useEffect(() => {
-    if (session?.accessToken) {
-      loadConfigData()
-        .then(() => loadUserStats())
-        .then(() => loadPromptData())
-        .catch((error) => {
-          console.error('[AdminDashboard] Sequential data loading failed:', error);
-        });
+    if (!session?.accessToken) {
+      setInitialFetchDone(false);
+      return;
     }
-  }, [session?.accessToken, loadConfigData, loadPromptData, loadUserStats]);
+
+    if (initialFetchDone) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        await loadConfigData();
+        if (cancelled) return;
+        await loadUserStats();
+        if (cancelled) return;
+        await loadPromptData();
+        if (!cancelled) {
+          setInitialFetchDone(true);
+        }
+      } catch (error) {
+        console.error('[AdminDashboard] Sequential data loading failed:', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken, loadConfigData, loadPromptData, loadUserStats, initialFetchDone]);
 
   // Set up periodic token refresh to prevent expiry
   useEffect(() => {
@@ -814,11 +837,13 @@ function AdminDashboardContent() {
           throw new Error(promptResult.error?.message || 'Failed to save system prompt');
         }
         
-        if (promptResult.success) {
-          // Update local state with new version
+        if (promptResult.success && promptResult.data?.prompt) {
+          // Update local state with FRESH data from server
+          const freshContent = promptResult.data.prompt.content;
+          setSystemPrompt(freshContent);
           setPromptVersion(promptResult.data.version);
-          setOriginalPrompt(systemPrompt);
-          
+          setOriginalPrompt(freshContent);
+
           // Reload prompt data to get updated history
           await loadPromptData();
         }

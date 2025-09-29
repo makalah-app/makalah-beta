@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         responseTime,
         details: detailed ? {
           note: 'Tool registry architecture not implemented',
-          basicTools: ['webSearch', 'artifact generation'],
+          basicTools: ['webSearch'],
         } : {
           note: 'Tool registry not implemented',
         },
