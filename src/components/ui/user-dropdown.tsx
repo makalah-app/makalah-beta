@@ -22,6 +22,8 @@ export interface UserDropdownProps {
   onLogout: () => void | Promise<void>;
   className?: string;
   showRole?: boolean;
+  triggerClassName?: string;
+  contentClassName?: string;
 }
 
 export const UserDropdown: React.FC<UserDropdownProps> = ({
@@ -29,7 +31,9 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
   variant = 'header',
   onLogout,
   className,
-  showRole = true
+  showRole = true,
+  triggerClassName,
+  contentClassName
 }) => {
   const router = useRouter();
 
@@ -88,7 +92,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
         <SidebarMenuItem>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <SidebarMenuButton className={cn("w-full justify-between", className)}>
+              <SidebarMenuButton className={cn("w-full justify-between", className, triggerClassName)}>
                 <div className="flex items-center gap-3">
                   <UserAvatar
                     initials={getUserInitials(user)}
@@ -108,7 +112,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
                 <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuContent side="top" align="start" className={cn("w-56", contentClassName)}>
               {renderMenuItems()}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -123,7 +127,10 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="group mr-4 flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              "group mr-4 flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              triggerClassName
+            )}
           >
             <UserAvatar
               initials={getUserInitials(user)}
@@ -142,7 +149,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             <ChevronDown className="w-4 h-4 ml-2 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52 p-2">
+        <DropdownMenuContent align="end" className={cn("w-52 p-2", contentClassName)}>
           {renderMenuItems()}
         </DropdownMenuContent>
       </DropdownMenu>

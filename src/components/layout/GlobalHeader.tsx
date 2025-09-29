@@ -11,13 +11,12 @@
  * - Authentication state management dengan useAuth
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
-import { UserAvatar } from "../ui/user-avatar";
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
@@ -26,8 +25,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "../ui/sheet";
-import { Menu } from 'lucide-react';
-import { getUserDisplayName, getUserInitials, getUserRole } from '@/lib/utils/user-helpers';
+import { ViewVerticalIcon } from '@radix-ui/react-icons';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -47,6 +45,10 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -129,15 +131,15 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('md:hidden text-muted-foreground hover:text-primary', !showNavigation && 'ml-2')}
+                className={cn('md:hidden h-12 w-12 rounded-[3px] border border-border text-muted-foreground hover:text-primary', !showNavigation && 'ml-2')}
                 aria-label="Buka menu utama"
               >
-                <Menu className="h-6 w-6" />
+                <ViewVerticalIcon className="h-9 w-9" />
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex w-56 flex-col gap-5 p-6 pt-16"
+              className="flex w-56 flex-col gap-5 p-6 pt-16 [&>button[data-radix-dialog-close]]:top-10 [&>button[data-radix-dialog-close]]:right-8"
             >
               <div className="flex flex-col gap-5">
                 {!isLoading && !isAuthenticated && (
@@ -152,39 +154,19 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                   </Button>
                 )}
 
-                {!isLoading && isAuthenticated && user && (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2">
-                      <UserAvatar initials={getUserInitials(user)} size="md" />
-                      <div className="text-left">
-                        <span className="block text-sm font-medium text-foreground">
-                          {getUserDisplayName(user)}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
-                          {getUserRole(user)}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      className="justify-start"
-                      onClick={() => {
-                        handleMobileMenuSelect();
-                        router.push('/settings');
-                      }}
-                    >
-                      Pengaturan
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="justify-start text-destructive hover:text-destructive"
-                      onClick={async () => {
-                        handleMobileMenuSelect();
+                {!isLoading && isAuthenticated && user && showUserProfile && (
+                  <div className="md:hidden">
+                    <UserDropdown
+                      user={user}
+                      variant="header"
+                      onLogout={async () => {
                         await handleLogout();
+                        setIsMobileMenuOpen(false);
                       }}
-                    >
-                      Keluar
-                    </Button>
+                      className="w-full"
+                      triggerClassName="mr-0 w-full justify-between"
+                      contentClassName="w-full min-w-full max-w-full"
+                    />
                   </div>
                 )}
 
