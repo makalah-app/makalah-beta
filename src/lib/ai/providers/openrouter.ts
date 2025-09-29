@@ -48,9 +48,7 @@ export function createOpenRouterProvider(): ReturnType<typeof createOpenRouter> 
   });
 
   if (env.NODE_ENV === 'development') {
-    console.log('🌐 OpenRouter provider initialized');
-    console.log(`  Base URL: ${baseURL}`);
-    console.log('  Model: [Dynamic - configured from admin panel]');
+    // OpenRouter provider initialized - silent handling for production
   }
 
   return provider;
@@ -209,7 +207,7 @@ export async function testOpenRouterConnection(): Promise<{
       testTemperature = dynamicConfig.config.temperature; // ✅ Dynamic from admin panel
     } catch (configError) {
       // Use fallback values if dynamic config fails (for test reliability)
-      console.warn('[OpenRouterTest] Using fallback config due to:', configError);
+      // Using fallback config for test reliability - silent handling for production
     }
 
     const model = provider.chat(modelName);

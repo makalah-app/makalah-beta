@@ -101,7 +101,6 @@ export class ProviderManagerAdapter {
     try {
       this.dynamicConfig = await getDynamicModelConfig();
     } catch (error) {
-      console.error('[ProviderAdapter] Failed to load dynamic config:', error);
     }
   }
 
@@ -160,7 +159,6 @@ export class ProviderManagerAdapter {
    */
   setStrategy(strategy: ProviderStrategy): void {
     this.strategy = strategy;
-    console.log(`[ProviderAdapter] Strategy set to: ${strategy}`);
   }
 
   /**

@@ -946,7 +946,6 @@ export const PerformanceUtils = {
       const duration = timer.stop();
       
       if (label && process.env.NODE_ENV === 'development') {
-        console.log(`Performance [${label}]: ${this.formatDuration(duration)}`);
       }
       
       return { result, duration };
@@ -954,7 +953,6 @@ export const PerformanceUtils = {
       const duration = timer.stop();
       
       if (label && process.env.NODE_ENV === 'development') {
-        console.error(`Performance [${label}] failed after: ${this.formatDuration(duration)}`);
       }
       
       throw error;

@@ -94,12 +94,12 @@ async function fetchDynamicConfig(): Promise<DynamicConfigData> {
   // Check cache first
   const now = Date.now();
   if (CONFIG_CACHE.data && (now - CONFIG_CACHE.timestamp) < CONFIG_CACHE.TTL) {
-    console.log('[useDynamicConfig] ⚡ Using cached configuration');
+    // Using cached configuration - silent handling for production
     return CONFIG_CACHE.data;
   }
 
   try {
-    console.log('[useDynamicConfig] 🔄 Fetching fresh configuration from API...');
+    // Fetching fresh configuration from API - silent handling for production
 
     const response = await fetch('/api/admin/config?scope=all&includeStats=false&includeHealth=false', {
       method: 'GET',
@@ -112,14 +112,14 @@ async function fetchDynamicConfig(): Promise<DynamicConfigData> {
 
     if (!response.ok) {
       // If API call fails, return fallback config
-      console.warn('[useDynamicConfig] ⚠️ API call failed, using fallback config');
+      // API call failed, using fallback config - silent handling for production
       return FALLBACK_CONFIG;
     }
 
     const result = await response.json();
 
     if (!result.success) {
-      console.warn('[useDynamicConfig] ⚠️ API returned error, using fallback config');
+      // API returned error, using fallback config - silent handling for production
       return FALLBACK_CONFIG;
     }
 
@@ -139,12 +139,12 @@ async function fetchDynamicConfig(): Promise<DynamicConfigData> {
     // Cache the result
     CONFIG_CACHE.data = configData;
     CONFIG_CACHE.timestamp = now;
-    console.log('[useDynamicConfig] ⚡ Configuration cached for', CONFIG_CACHE.TTL / 1000, 'seconds');
+    // Configuration cached - silent handling for production
 
     return configData;
 
   } catch (error) {
-    console.error('[useDynamicConfig] ❌ Fetch error:', error);
+    // Fetch error occurred - silent handling for production
     return FALLBACK_CONFIG;
   }
 }
@@ -165,17 +165,11 @@ export function useDynamicConfig(): UseDynamicConfigReturn {
       const configData = await fetchDynamicConfig();
       setConfig(configData);
 
-      console.log('[useDynamicConfig] ✅ Configuration loaded:', {
-        primaryProvider: configData.models.primary?.provider,
-        primaryModel: configData.models.primary?.model,
-        fallbackProvider: configData.models.fallback?.provider,
-        fallbackModel: configData.models.fallback?.model,
-        webSearchProvider: configData.features.webSearchProvider
-      });
+      // Configuration loaded successfully - silent handling for production
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Configuration load failed';
-      console.error('[useDynamicConfig] ❌ Load error:', errorMessage);
+      // Load error occurred - silent handling for production
       setError(errorMessage);
       setConfig(FALLBACK_CONFIG); // Always provide fallback
     } finally {

@@ -121,7 +121,7 @@ export class ConversationManager {
    */
   async createConversation(request: ConversationCreateRequest): Promise<ConversationResponse> {
     try {
-      console.log('[ConversationManager] Creating new conversation:', request);
+      // Creating new conversation - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/conversations`, {
         method: 'POST',
@@ -137,11 +137,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Conversation created successfully:', result.conversationId);
+      // Conversation created successfully - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error creating conversation:', error);
+      // Error creating conversation - silent handling for production
       throw error;
     }
   }
@@ -163,7 +163,7 @@ export class ConversationManager {
         archived: (options.includeArchived || false).toString(),
       });
       
-      console.log('[ConversationManager] Loading conversations for user:', userId);
+      // Loading conversations for user - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/conversations?${params}`);
       
@@ -173,11 +173,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Loaded conversations:', result.metadata.total);
+      // Loaded conversations - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error loading conversations:', error);
+      // Error loading conversations - silent handling for production
       throw error;
     }
   }
@@ -198,7 +198,7 @@ export class ConversationManager {
         includeWorkflow: (options.includeWorkflow !== false).toString(),
       });
       
-      console.log('[ConversationManager] Loading conversation:', conversationId);
+      // Loading conversation - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}?${params}`);
       
@@ -208,11 +208,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Loaded conversation with', result.metadata.messageCount, 'messages');
+      // Loaded conversation with messages - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error loading conversation:', error);
+      // Error loading conversation - silent handling for production
       throw error;
     }
   }
@@ -225,7 +225,7 @@ export class ConversationManager {
     updates: ConversationUpdateRequest
   ): Promise<ConversationResponse> {
     try {
-      console.log('[ConversationManager] Updating conversation:', conversationId, updates);
+      // Updating conversation - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}`, {
         method: 'PUT',
@@ -241,11 +241,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Conversation updated successfully');
+      // Conversation updated successfully - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error updating conversation:', error);
+      // Error updating conversation - silent handling for production
       throw error;
     }
   }
@@ -262,7 +262,7 @@ export class ConversationManager {
         permanent: permanent.toString(),
       });
       
-      console.log('[ConversationManager]', permanent ? 'Deleting' : 'Archiving', 'conversation:', conversationId);
+      // Deleting or archiving conversation - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}?${params}`, {
         method: 'DELETE',
@@ -274,11 +274,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Conversation', permanent ? 'deleted' : 'archived', 'successfully');
+      // Conversation deleted or archived successfully - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error deleting conversation:', error);
+      // Error deleting conversation - silent handling for production
       throw error;
     }
   }
@@ -307,7 +307,7 @@ export class ConversationManager {
       if (request.dateTo) params.append('dateTo', request.dateTo);
       if (request.messageType) params.append('messageType', request.messageType);
       
-      console.log('[ConversationManager] Loading chat history:', Object.fromEntries(params));
+      // Loading chat history - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/chat/history?${params}`);
       
@@ -317,11 +317,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Loaded chat history:', result.metadata);
+      // Loaded chat history - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error loading chat history:', error);
+      // Error loading chat history - silent handling for production
       throw error;
     }
   }
@@ -331,7 +331,7 @@ export class ConversationManager {
    */
   async searchChatHistory(request: ConversationSearchRequest): Promise<ConversationSearchResponse> {
     try {
-      console.log('[ConversationManager] Searching chat history:', request);
+      // Searching chat history - silent handling for production
       
       const response = await fetch(`${this.baseUrl}/api/chat/history/search`, {
         method: 'POST',
@@ -347,11 +347,11 @@ export class ConversationManager {
       }
       
       const result = await response.json();
-      console.log('[ConversationManager] Search completed:', result.metadata.total, 'results');
+      // Search completed - silent handling for production
       
       return result;
     } catch (error) {
-      console.error('[ConversationManager] Error searching chat history:', error);
+      // Error searching chat history - silent handling for production
       throw error;
     }
   }

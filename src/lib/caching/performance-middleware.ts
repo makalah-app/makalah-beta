@@ -190,13 +190,7 @@ export class PerformanceMiddleware {
       const totalTime = Date.now() - startTime;
       this.metrics.queries.failed++;
       
-      console.error('Query execution failed:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        query: query.substring(0, 100),
-        parameters: parameters.length,
-        context,
-        executionTime: totalTime,
-      });
+      // Query execution failed - silent handling for production
 
       throw error;
     }
@@ -231,7 +225,7 @@ export class PerformanceMiddleware {
         );
         results.push(result);
       } catch (error) {
-        console.error('Batch query failed:', error);
+        // Batch query failed - silent handling for production
         // Continue with other queries
       }
     }
@@ -247,13 +241,13 @@ export class PerformanceMiddleware {
         );
         results.push(result);
       } catch (error) {
-        console.error('Batch query failed:', error);
+        // Batch query failed - silent handling for production
         // Continue with other queries
       }
     }
 
     const totalTime = Date.now() - startTime;
-    console.log(`✓ Executed batch of ${queries.length} queries in ${totalTime}ms`);
+    // Executed batch queries - silent handling for production
 
     return results;
   }
@@ -281,12 +275,12 @@ export class PerformanceMiddleware {
         );
         if (deleted > 0) {
           this.metrics.cacheEfficiency.invalidations += deleted;
-          console.log(`✓ Invalidated ${deleted} cache entries for pattern: ${pattern}`);
+          // Invalidated cache entries - silent handling for production
         }
       }
 
     } catch (error) {
-      console.error('Cache invalidation failed:', error);
+      // Cache invalidation failed - silent handling for production
     }
   }
 
@@ -321,12 +315,12 @@ export class PerformanceMiddleware {
         loaded++;
 
       } catch (error) {
-        console.error(`Failed to preload ${queryInfo.key}:`, error);
+        // Failed to preload query - silent handling for production
         failed++;
       }
     }
 
-    console.log(`✓ Preloaded ${loaded} queries, ${failed} failed`);
+    // Preloaded queries completed - silent handling for production
     return { loaded, failed };
   }
 

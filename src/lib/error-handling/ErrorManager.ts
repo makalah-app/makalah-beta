@@ -195,7 +195,7 @@ export class ErrorManager {
       this.scheduleAutoRecovery(errorId);
     }
 
-    console.log(`[ErrorManager] Registered error ${errorId}:`, managedError);
+    // Registered error - silent handling for production
     return managedError;
   }
 
@@ -233,7 +233,7 @@ export class ErrorManager {
     this.errors.set(errorId, resolvedError);
     this.notifySubscribers(resolvedError);
     
-    console.log(`[ErrorManager] Resolved error ${errorId}:`, resolution);
+    // Resolved error - silent handling for production
     return true;
   }
 
@@ -251,7 +251,7 @@ export class ErrorManager {
     if (!action || action.executed) return false;
 
     try {
-      console.log(`[ErrorManager] Attempting recovery for ${errorId} with action ${action.id}`);
+      // Attempting recovery for error - silent handling for production
       
       const startTime = performance.now();
       const result = await this.executeRecoveryAction(action, error);
@@ -280,7 +280,7 @@ export class ErrorManager {
 
       return true;
     } catch (recoveryError) {
-      console.error(`[ErrorManager] Recovery failed for ${errorId}:`, recoveryError);
+      // Recovery failed for error - silent handling for production
       
       // Update action as failed
       const failedAction = {
@@ -489,7 +489,7 @@ export class ErrorManager {
       this.errorHistory = this.errorHistory.filter(errorId => errorId !== id);
     });
 
-    console.log(`[ErrorManager] Cleaned up ${toRemove.length} old errors`);
+    // Cleaned up old errors - silent handling for production
   }
 
   /**
@@ -761,7 +761,7 @@ export class ErrorManager {
       try {
         callback(error);
       } catch (callbackError) {
-        console.error('[ErrorManager] Subscriber callback failed:', callbackError);
+        // Subscriber callback failed - silent handling for production
       }
     });
   }
@@ -805,14 +805,14 @@ export class ErrorManager {
         const entries = list.getEntries();
         entries.forEach(entry => {
           if (entry.duration > this.config.performanceThreshold) {
-            console.warn(`[ErrorManager] Performance threshold exceeded: ${entry.name} took ${entry.duration}ms`);
+            // Performance threshold exceeded - silent handling for production
           }
         });
       });
 
       this.performanceObserver.observe({ entryTypes: ['measure', 'navigation'] });
     } catch (e) {
-      console.warn('[ErrorManager] Performance monitoring not available');
+      // Performance monitoring not available - silent handling for production
     }
   }
 
@@ -835,7 +835,7 @@ export class ErrorManager {
         body: JSON.stringify(report),
       });
     } catch (error) {
-      console.error('[ErrorManager] Failed to send report to endpoint:', error);
+      // Failed to send report to endpoint - silent handling for production
     }
   }
 

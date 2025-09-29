@@ -1019,7 +1019,6 @@ export class TokenOptimizerService {
       };
 
       this.alertHistory.push(alert);
-      console.warn(`Budget alert: ${alertType} - ${utilizationPercent.toFixed(1)}% of budget used`);
     }
   }
 
@@ -1047,7 +1046,6 @@ export class TokenOptimizerService {
     const efficiency = metrics.efficiencyScore || 0.5;
     
     if (efficiency < 0.6 || metrics.costPerWord > this.config.efficiencyTargets.costEfficiencyRatio) {
-      console.log(`Optimization triggered for request ${requestId} due to low efficiency`);
       // Would trigger automatic re-optimization in real implementation
     }
   }

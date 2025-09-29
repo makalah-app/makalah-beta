@@ -11,281 +11,11 @@
  * - Login/logout functionality with API integration
  * - Permission checking integration
  * - Authentication context for React components
- *
- * DEBUG FEATURES:
- * - Unique instance tracking with stack traces
- * - Comprehensive lifecycle logging
- * - Multiple instance detection and reporting
  */
 
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
-
-// ========================================================================================
-// DEBUG INFRASTRUCTURE - INSTANCE TRACKING SYSTEM
-// ========================================================================================
-
-interface AuthInstanceDebugInfo {
-  id: string;
-  createdAt: number;
-  componentStack: string;
-  source: string;
-  isActive: boolean;
-  initializationCount: number;
-  lastActivity: number;
-}
-
-// Global instance registry for debug tracking
-const GLOBAL_AUTH_INSTANCES = new Map<string, AuthInstanceDebugInfo>();
-
-// Generate unique instance ID with timestamp and random component
-function generateInstanceId(): string {
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  return `auth-${timestamp}-${random}`;
-}
-
-// Capture stack trace to identify component source
-function captureComponentStack(): { stack: string; source: string } {
-  const error = new Error();
-  const stack = error.stack || '';
-
-  // Extract the most relevant line from stack trace (skip useAuth internals)
-  const stackLines = stack.split('\n');
-  let source = 'unknown';
-
-  for (let i = 0; i < stackLines.length; i++) {
-    const line = stackLines[i];
-
-    // Multiple pattern matching for better source detection
-    if (line.includes('.tsx') || line.includes('.jsx') || line.includes('.js')) {
-      // Skip internal useAuth calls
-      if (!line.includes('useAuth.tsx') && !line.includes('AuthProvider')) {
-
-        // Try multiple regex patterns for different stack trace formats
-        const patterns = [
-          /\/([^/]+\.(tsx|jsx|js)):/, // Standard format
-          /([^/\s]+\.(tsx|jsx|js)):/, // Alternative format
-          /at\s+[^(]*\(([^)]*([^/\\]+\.(tsx|jsx|js)))/, // Function call format
-          /([a-zA-Z0-9_-]+\.(tsx|jsx|js))/, // Simple filename
-        ];
-
-        for (const pattern of patterns) {
-          const match = line.match(pattern);
-          if (match) {
-            // Extract filename from the match
-            const fullPath = match[1] || match[2] || match[0];
-            const filename = fullPath.split('/').pop() || fullPath;
-            if (filename && filename !== 'useAuth.tsx') {
-              source = filename;
-              break;
-            }
-          }
-        }
-
-        if (source !== 'unknown') break;
-      }
-    }
-  }
-
-  // Debug logging for stack trace analysis
-  if (source === 'unknown') {
-    console.warn('[DEBUG] Stack trace analysis failed. Full stack:', stack);
-    // Try to extract any component-like pattern as fallback
-    const componentPattern = /([A-Z][a-zA-Z0-9]*\.tsx|[A-Z][a-zA-Z0-9]*\.jsx)/g;
-    const componentMatches = stack.match(componentPattern);
-    if (componentMatches && componentMatches.length > 0) {
-      source = componentMatches[0];
-    }
-  }
-
-  // Special handling for AuthProvider detection
-  if (source === 'react-dom.development.js' || source.includes('react-dom')) {
-    // Enhanced detection for AuthProvider vs useAuth calls
-    console.warn('[DEBUG] react-dom detected, analyzing stack:', stack);
-
-    // Look for AuthProvider or providers-client context in stack
-    if (stack.includes('AuthProvider') || stack.includes('providers-client')) {
-      source = 'providers-client.tsx';
-      console.warn('[DEBUG] AuthProvider context found, setting source to providers-client.tsx');
-    } else if (stack.includes('layout.tsx')) {
-      source = 'layout.tsx';
-      console.warn('[DEBUG] layout.tsx context found');
-    } else {
-      // Try to find actual component in stack trace with more patterns
-      const lines = stack.split('\n');
-      for (const line of lines) {
-        // More comprehensive pattern matching
-        const patterns = [
-          /app\/([^/\s)]+\.tsx)/,
-          /src\/([^/\s)]+\.tsx)/,
-          /\/app\/([^/\s)]+\.tsx)/,
-          /\/src\/([^/\s)]+\.tsx)/,
-          /([^/\s)]+\.tsx)/
-        ];
-
-        for (const pattern of patterns) {
-          const match = line.match(pattern);
-          if (match) {
-            const fileName = match[1];
-            if (fileName &&
-                !fileName.includes('useAuth') &&
-                !fileName.includes('react-dom') &&
-                !fileName.includes('webpack') &&
-                !fileName.includes('node_modules')) {
-              source = fileName;
-              console.warn(`[DEBUG] Found component in stack: ${fileName} from line: ${line}`);
-              break;
-            }
-          }
-        }
-        if (source !== 'react-dom.development.js' && !source.includes('react-dom')) break;
-      }
-    }
-
-    // Final fallback - check if this is likely AuthProvider context
-    if (source === 'react-dom.development.js' || source.includes('react-dom')) {
-      // Check if we're being called from provider context by examining Error().stack depth
-      const stackDepth = stack.split('\n').length;
-      if (stackDepth > 15) { // AuthProvider typically has deeper stack
-        source = 'providers-client.tsx (inferred)';
-        console.warn('[DEBUG] Deep stack detected, likely AuthProvider - using providers-client.tsx');
-      } else {
-        source = 'unknown-react-component.tsx';
-        console.warn('[DEBUG] Shallow stack detected, likely useAuth hook from unknown component');
-      }
-    }
-  }
-
-  return { stack, source };
-}
-
-// Register new auth instance
-function registerAuthInstance(id: string): AuthInstanceDebugInfo {
-  const { stack, source } = captureComponentStack();
-
-  const debugInfo: AuthInstanceDebugInfo = {
-    id,
-    createdAt: Date.now(),
-    componentStack: stack,
-    source,
-    isActive: true,
-    initializationCount: 0,
-    lastActivity: Date.now()
-  };
-
-  GLOBAL_AUTH_INSTANCES.set(id, debugInfo);
-
-  console.group(`🔍 [AUTH-DEBUG] NEW INSTANCE REGISTERED`);
-  console.log(`Instance ID: ${id}`);
-  console.log(`Source Component: ${source}`);
-  console.log(`Created At: ${new Date(debugInfo.createdAt).toISOString()}`);
-  console.log(`Total Active Instances: ${Array.from(GLOBAL_AUTH_INSTANCES.values()).filter(i => i.isActive).length}`);
-  console.groupCollapsed('📍 Component Stack Trace');
-  console.log(stack);
-  console.groupEnd();
-
-  // Report if multiple instances detected
-  const activeInstances = Array.from(GLOBAL_AUTH_INSTANCES.values()).filter(i => i.isActive);
-  if (activeInstances.length > 1) {
-    console.warn(`⚠️ [AUTH-DEBUG] MULTIPLE INSTANCES DETECTED! Count: ${activeInstances.length}`);
-    console.table(activeInstances.map(i => ({
-      id: i.id,
-      source: i.source,
-      createdAt: new Date(i.createdAt).toLocaleTimeString(),
-      initCount: i.initializationCount
-    })));
-  }
-
-  console.groupEnd();
-
-  return debugInfo;
-}
-
-// Update instance activity
-function updateInstanceActivity(id: string, activity: string) {
-  const instance = GLOBAL_AUTH_INSTANCES.get(id);
-  if (instance) {
-    instance.lastActivity = Date.now();
-    if (activity === 'initialization') {
-      instance.initializationCount++;
-    }
-    console.log(`📝 [AUTH-DEBUG-${id.substring(5, 11)}] ${activity} | Init Count: ${instance.initializationCount}`);
-  }
-}
-
-// Unregister auth instance
-function unregisterAuthInstance(id: string) {
-  const instance = GLOBAL_AUTH_INSTANCES.get(id);
-  if (instance) {
-    instance.isActive = false;
-    console.log(`🗑️ [AUTH-DEBUG-${id.substring(5, 11)}] INSTANCE CLEANUP | Source: ${instance.source}`);
-
-    // Clean up old inactive instances
-    setTimeout(() => {
-      GLOBAL_AUTH_INSTANCES.delete(id);
-    }, 5000);
-  }
-}
-
-// Debug logger with instance context
-function debugLog(instanceId: string, level: 'log' | 'warn' | 'error', message: string, ...args: any[]) {
-  const shortId = instanceId.substring(5, 11);
-  const instance = GLOBAL_AUTH_INSTANCES.get(instanceId);
-  const source = instance?.source || 'unknown';
-
-  const prefix = `[AUTH-${shortId}:${source}]`;
-
-  switch (level) {
-    case 'warn':
-      console.warn(`⚠️ ${prefix} ${message}`, ...args);
-      break;
-    case 'error':
-      console.error(`❌ ${prefix} ${message}`, ...args);
-      break;
-    default:
-      console.log(`🔄 ${prefix} ${message}`, ...args);
-      break;
-  }
-}
-
-// Debug utility to get comprehensive instance report
-function getAuthInstancesReport() {
-  const instances = Array.from(GLOBAL_AUTH_INSTANCES.values());
-  const activeInstances = instances.filter(i => i.isActive);
-
-  const report = {
-    totalInstances: instances.length,
-    activeInstances: activeInstances.length,
-    inactiveInstances: instances.length - activeInstances.length,
-    sources: [...new Set(instances.map(i => i.source))],
-    instances: instances.map(i => ({
-      id: i.id.substring(5, 11),
-      source: i.source,
-      active: i.isActive,
-      createdAt: new Date(i.createdAt).toLocaleTimeString(),
-      initCount: i.initializationCount,
-      lastActivity: new Date(i.lastActivity).toLocaleTimeString()
-    }))
-  };
-
-  console.group('📊 AUTH INSTANCES REPORT');
-  console.log(`Total Instances: ${report.totalInstances}`);
-  console.log(`Active Instances: ${report.activeInstances}`);
-  console.log(`Inactive Instances: ${report.inactiveInstances}`);
-  console.log(`Sources: ${report.sources.join(', ')}`);
-  console.table(report.instances);
-  console.groupEnd();
-
-  return report;
-}
-
-// Make debug report available globally for dev tools
-if (typeof window !== 'undefined') {
-  (window as any).getAuthInstancesReport = getAuthInstancesReport;
-  (window as any).GLOBAL_AUTH_INSTANCES = GLOBAL_AUTH_INSTANCES;
-}
 import { Session } from '@supabase/supabase-js';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
@@ -397,23 +127,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * Authentication Provider Component
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // ========================================================================================
-  // DEBUG: INSTANCE REGISTRATION & TRACKING
-  // ========================================================================================
-  const instanceIdRef = useRef<string>(generateInstanceId());
-  const instanceId = instanceIdRef.current;
-
-  // Register this AuthProvider instance on first render
-  useEffect(() => {
-    const debugInfo = registerAuthInstance(instanceId);
-    debugLog(instanceId, 'log', '🚀 PROVIDER MOUNTED');
-
-    return () => {
-      debugLog(instanceId, 'log', '🛑 PROVIDER UNMOUNTING');
-      unregisterAuthInstance(instanceId);
-    };
-  }, []); // Only run once on mount
-
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     session: null,
@@ -458,22 +171,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const initializeAuth = useCallback(async (providedSession?: Session | null) => {
     if (initializingRef.current) {
-      debugLog(instanceId, 'warn', 'Already initializing, skipping...');
       return;
     }
 
-    updateInstanceActivity(instanceId, 'initialization');
-
     try {
       initializingRef.current = true;
-      debugLog(instanceId, 'log', '🔄 STARTING AUTHENTICATION INITIALIZATION...');
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
       // Check if we've tried too many times for this session
       if (providedSession?.user?.id) {
         const attempts = profileFetchAttemptsRef.current.get(providedSession.user.id) || 0;
         if (attempts >= 3) {
-          debugLog(instanceId, 'warn', 'Too many profile fetch attempts, using cached state');
           initializingRef.current = false;
           return;
         }
@@ -483,7 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let session = providedSession ?? null;
 
       if (!session) {
-        debugLog(instanceId, 'log', '📡 Getting session from Supabase...');
         const sessionResult = await withTimeout(
           supabaseClient.auth.getSession(),
           2500,
@@ -492,7 +199,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session: fetchedSession }, error } = sessionResult as any;
 
         if (error) {
-          debugLog(instanceId, 'error', 'Error getting Supabase session:', error);
           setAuthState({
             user: null,
             session: null,
@@ -508,7 +214,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!session) {
-        debugLog(instanceId, 'log', '❌ No active session found, setting isLoading: false');
         setAuthState(prev => ({ ...prev, isLoading: false }));
         initializingRef.current = false;
         return;
@@ -519,13 +224,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastAccessTokenRef.current === session.access_token &&
         lastSessionUserIdRef.current === session.user?.id
       ) {
-        debugLog(instanceId, 'log', '✅ Session already synchronized, skipping state update');
         setAuthState(prev => ({ ...prev, isLoading: false }));
         initializingRef.current = false;
         return;
       }
-
-      debugLog(instanceId, 'log', '👤 Session found, fetching user profile...');
 
       // Get user profile from database (join users with user_profiles)
       const profileResult = await withTimeout(
@@ -545,8 +247,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: userProfile, error: profileError } = profileResult as any;
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.warn('[initializeAuth] Profile fetch failed, using fallback:', profileError);
-
         // Check retry attempts
         const sessionId = session.user?.id;
         const attempts = profileFetchAttemptsRef.current.get(sessionId) || 0;
@@ -576,8 +276,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Update tracking refs
           lastAccessTokenRef.current = session.access_token;
           lastSessionUserIdRef.current = session.user?.id;
-
-          console.log('[initializeAuth] Using fallback user profile');
         } else {
           setAuthState({
             user: null,
@@ -643,10 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileFetchAttemptsRef.current.delete(session.user.id);
       }
 
-      debugLog(instanceId, 'log', '✅ INITIALIZATION AUTH FUNCTION COMPLETE');
-
     } catch (error) {
-      debugLog(instanceId, 'error', 'Auth initialization error:', error);
       setAuthState({
         user: null,
         session: null,
@@ -656,7 +351,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     } finally {
       initializingRef.current = false;
-      debugLog(instanceId, 'log', '🏁 INITIALIZATION AUTH FUNCTION FINISHED');
     }
   }, []);
 
@@ -665,27 +359,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     async function initialize() {
-      if (!mounted) {
-        debugLog(instanceId, 'warn', 'Component unmounted before initialization');
-        return;
-      }
+      if (!mounted) return;
 
       // Use ref for atomic check-and-set to prevent race conditions
       if (hasInitializedRef.current) {
-        debugLog(instanceId, 'warn', '🔒 INITIALIZATION ALREADY TRIGGERED, SKIPPING DUPLICATE');
         return;
       }
       hasInitializedRef.current = true;
 
-      debugLog(instanceId, 'log', '🔄 INITIALIZING AUTHENTICATION...');
-      updateInstanceActivity(instanceId, 'main-initialization');
-
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         await initializeAuth(session);
-        debugLog(instanceId, 'log', '✅ MAIN AUTHENTICATION INITIALIZATION COMPLETE');
       } catch (error) {
-        debugLog(instanceId, 'error', '❌ MAIN AUTHENTICATION INITIALIZATION FAILED:', error);
         if (mounted) {
           setAuthState(prev => ({ ...prev, isLoading: false }));
         }
@@ -696,23 +381,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) {
-        debugLog(instanceId, 'warn', 'Auth state change after unmount, ignoring');
-        return;
-      }
-
-      debugLog(instanceId, 'log', `🔔 AUTH STATE CHANGE: ${event} | User ID: ${session?.user?.id || 'none'}`);
-      updateInstanceActivity(instanceId, `auth-event-${event.toLowerCase()}`);
+      if (!mounted) return;
 
       // ✅ CRITICAL FIX: Handle INITIAL_SESSION separately to prevent double initialization
       if (event === 'INITIAL_SESSION') {
-        debugLog(instanceId, 'log', '🏁 INITIAL_SESSION - Ignoring to prevent double initialization');
         // INITIAL_SESSION is handled by main initialize() function, don't duplicate
         return;
       }
 
-      if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
-        debugLog(instanceId, 'log', '🚪 SIGNED OUT - Resetting state');
+      if (event === 'SIGNED_OUT' || !session) {
         initializingRef.current = false; // Reset flag
         setAuthState({
           user: null,
@@ -724,19 +401,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (event === 'SIGNED_IN') {
         // ✅ CRITICAL FIX: Only handle first sign-in if not initializing
         if (!initializingRef.current) {
-          debugLog(instanceId, 'log', '🔑 NEW SIGN IN DETECTED - Initializing...');
           await initializeAuth(session);
-        } else {
-          debugLog(instanceId, 'warn', '🔑 SIGN IN EVENT IGNORED - Already initializing');
         }
       }
       // ✅ CRITICAL FIX: Ignore ALL refresh events to prevent infinite loops
       else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        debugLog(instanceId, 'log', `🔄 ${event} EVENT IGNORED - Preventing infinite loops`);
-      }
-      // Log unhandled events for debugging
-      else {
-        debugLog(instanceId, 'log', `🔄 UNHANDLED EVENT: ${event} - Ignoring`);
+        // Ignored to prevent infinite loops
       }
     });
 
@@ -745,11 +415,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      debugLog(instanceId, 'log', '🧹 CLEANUP - Unsubscribing and resetting flags');
       subscription.unsubscribe();
       profileFetchAttemptsRef.current.clear(); // Clear attempts map
       hasInitializedRef.current = false; // Reset initialization flag
-      updateInstanceActivity(instanceId, 'cleanup');
     };
   }, []); // NO DEPENDENCIES - run only once on mount
 
@@ -766,7 +434,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // ✅ DISABLE: Auto token refresh timer - causes infinite loop
     // Token refresh will be handled on-demand when API calls fail with 401
-    console.log('[useAuth] Auto token refresh disabled to prevent infinite loops');
 
     return () => {
       if (tokenRefreshTimeoutRef.current) {
@@ -923,7 +590,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }),
         });
       } catch (e) {
-        console.warn('[useAuth] SSR cookie sync failed:', e);
+        // SSR cookie sync failed, but login still successful
       }
 
       return true;
@@ -987,7 +654,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } as any, { onConflict: 'user_id' });
 
       if (profileError) {
-        console.warn('Failed to create user profile:', profileError);
         // Don't throw error since auth registration was successful
         // User can still use the app with just auth.users entry
       }
@@ -1024,7 +690,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear SSR cookies
       try { await fetch('/api/auth/signout', { method: 'POST' }); } catch {}
     } catch (error) {
-      console.warn('Supabase logout failed:', error);
+      // Supabase logout failed, but continue with local cleanup
     }
 
     // Clear local storage
@@ -1046,7 +712,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       error: null
     });
-  }, [authState.user?.id]);
+  }, [authState.user?.id, permissionManager]);
 
   /**
    * Refresh authentication token
@@ -1066,13 +732,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabaseClient.auth.refreshSession({ refresh_token: refreshTokenValue });
 
       if (error || !data.session) {
-        console.error('Token refresh failed:', error);
         return false;
       }
 
       // Get updated user profile
       if (!data.user) {
-        console.error('Token refresh returned no user.');
         return false;
       }
       const { data: userProfile, error: profileError } = await (supabaseClient as any)
@@ -1087,7 +751,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (profileError || !userProfile) {
-        console.error('Failed to fetch updated user profile:', profileError);
         return false;
       }
 
@@ -1135,7 +798,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
 
     } catch (error) {
-      console.error('Token refresh error:', error);
       return false;
     }
   }, []);
@@ -1147,14 +809,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Use Supabase to validate the current session
       const { data, error } = await supabaseClient.auth.getUser(accessToken);
-      
+
       return !error && !!data.user;
     } catch (error) {
       return false;
     }
   }, []);
-
-  // ✅ REMOVED: setupTokenRefresh function - moved inline to prevent callback dependency loops
 
   /**
    * Permission checking methods
@@ -1247,7 +907,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
 
     } catch (error) {
-      console.error('Profile update error:', error);
       return false;
     }
   }, [authState.user?.id, authState.session?.sessionId]); // ✅ CRITICAL FIX: Depend only on stable user and session IDs
@@ -1268,7 +927,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
 
     } catch (error) {
-      console.error('Password change error:', error);
       return false;
     }
   }, [authState.session?.sessionId]); // ✅ CRITICAL FIX: Depend only on sessionId, not full session object
@@ -1420,64 +1078,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  * Custom hook to use authentication context
  */
 export function useAuth(): AuthContextType {
-  // ========================================================================================
-  // DEBUG: HOOK INSTANCE TRACKING
-  // ========================================================================================
-  const hookInstanceIdRef = useRef<string | null>(null);
-
-  if (!hookInstanceIdRef.current) {
-    hookInstanceIdRef.current = generateInstanceId();
-    const hookInstanceId = hookInstanceIdRef.current;
-
-    // Register this useAuth hook instance
-    const { stack, source } = captureComponentStack();
-    const debugInfo: AuthInstanceDebugInfo = {
-      id: hookInstanceId,
-      createdAt: Date.now(),
-      componentStack: stack,
-      source,
-      isActive: true,
-      initializationCount: 1,
-      lastActivity: Date.now()
-    };
-
-    GLOBAL_AUTH_INSTANCES.set(hookInstanceId, debugInfo);
-
-    debugLog(hookInstanceId, 'log', `🎣 HOOK INSTANCE CREATED | Source: ${source}`);
-
-    // Check for multiple hook instances
-    const activeHookInstances = Array.from(GLOBAL_AUTH_INSTANCES.values()).filter(i => i.isActive);
-    if (activeHookInstances.length > 1) {
-      console.group(`⚠️ [AUTH-DEBUG] MULTIPLE HOOK INSTANCES DETECTED! Count: ${activeHookInstances.length}`);
-      console.table(activeHookInstances.map(i => ({
-        id: i.id.substring(5, 11),
-        source: i.source,
-        createdAt: new Date(i.createdAt).toLocaleTimeString(),
-        active: i.isActive
-      })));
-      console.groupEnd();
-    }
-  }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    const hookInstanceId = hookInstanceIdRef.current;
-    if (hookInstanceId) {
-      return () => {
-        const instance = GLOBAL_AUTH_INSTANCES.get(hookInstanceId);
-        if (instance) {
-          instance.isActive = false;
-          debugLog(hookInstanceId, 'log', '🗑️ HOOK INSTANCE CLEANUP');
-
-          // Clean up after delay
-          setTimeout(() => {
-            GLOBAL_AUTH_INSTANCES.delete(hookInstanceId);
-          }, 5000);
-        }
-      };
-    }
-  }, []);
-
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -1490,7 +1090,7 @@ export function useAuth(): AuthContextType {
  */
 export function usePermissions() {
   const { user } = useAuth();
-  
+
   if (!user) {
     return {
       hasPermission: () => false,

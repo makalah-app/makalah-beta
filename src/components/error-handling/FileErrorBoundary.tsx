@@ -100,17 +100,7 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
     const fileError = FileErrorBoundary.enhanceFileError(error);
     const errorCategory = FileErrorBoundary.classifyFileError(fileError);
     
-    console.error('[FileErrorBoundary] File error intercepted:', {
-      errorId,
-      errorCategory,
-      fileId: fileError.fileId,
-      fileName: fileError.fileName,
-      operation: fileError.operation,
-      stage: fileError.stage,
-      progress: fileError.progress,
-      retryable: fileError.retryable,
-      message: fileError.message,
-    });
+    // File error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -121,28 +111,9 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    const { errorId, errorCategory } = this.state;
+    const { errorId } = this.state;
     
-    // Enhanced file error logging dengan metadata
-    console.error('[FileErrorBoundary] File error details:', {
-      errorId,
-      errorCategory,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        fileId: (error as FileError).fileId,
-        fileName: (error as FileError).fileName,
-        fileSize: (error as FileError).fileSize,
-        fileType: (error as FileError).fileType,
-        operation: (error as FileError).operation,
-        stage: (error as FileError).stage,
-        progress: (error as FileError).progress,
-      },
-      componentStack: errorInfo.componentStack,
-      fileMetadata: this.state.fileMetadata,
-      timestamp: new Date().toISOString(),
-    });
+    // Enhanced file error logging dengan metadata - silent handling for production
 
     // Store error info
     this.setState({ errorInfo });
@@ -262,7 +233,7 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
         this.setState({ fileMetadata: metadata });
       }
     } catch (loadError) {
-      console.warn('[FileErrorBoundary] Failed to load file metadata:', loadError);
+      // Failed to load file metadata - silent handling for production
     }
   }
 
@@ -295,10 +266,10 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
         lastProgressUpdate: Date.now(),
       });
       
-      console.log('[FileErrorBoundary] File progress preserved:', metadata);
+      // File progress preserved - silent handling for production
       
     } catch (preserveError) {
-      console.error('[FileErrorBoundary] Failed to preserve progress:', preserveError);
+      // Failed to preserve progress - silent handling for production
     }
   }
 
@@ -324,7 +295,7 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
       const { error, fileMetadata } = this.state;
       const fileId = error?.fileId || fileMetadata?.id || this.props.fileId;
       
-      console.log(`[FileErrorBoundary] Performing cleanup for file: ${fileId}`);
+      // Performing cleanup for file - silent handling for production
       
       // Here you would call cleanup APIs
       // For example: await deletePartialUpload(fileId);
@@ -335,10 +306,10 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
       }
       
       this.setState({ cleanupCompleted: true });
-      console.log('[FileErrorBoundary] Cleanup completed');
+      // Cleanup completed - silent handling for production
       
     } catch (cleanupError) {
-      console.error('[FileErrorBoundary] Cleanup failed:', cleanupError);
+      // Cleanup failed - silent handling for production
     }
   }
 
@@ -359,9 +330,9 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
    * Handles retry attempt
    */
   private handleRetry = (): void => {
-    const { errorId, retryCount, fileMetadata } = this.state;
+    const { errorId, fileMetadata } = this.state;
     
-    console.log(`[FileErrorBoundary] Retrying file operation ${retryCount + 1} for ${errorId}`);
+    // Retrying file operation - silent handling for production
 
     // Cancel cleanup if scheduled
     if (this.cleanupTimer) {
@@ -385,7 +356,7 @@ export class FileErrorBoundary extends Component<FileErrorBoundaryProps, FileErr
   private handleSkip = (): void => {
     const { errorId, fileMetadata } = this.state;
     
-    console.log(`[FileErrorBoundary] Skipping file operation for ${errorId}`);
+    // Skipping file operation - silent handling for production
     
     this.setState({
       hasError: false,

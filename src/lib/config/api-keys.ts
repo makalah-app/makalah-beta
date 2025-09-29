@@ -142,8 +142,8 @@ export function getProviderAPIKeys() {
 if (env.NODE_ENV === 'development') {
   const validation = validateAllAPIKeys();
   if (!validation.valid) {
-    console.warn('⚠️  API key validation issues:', validation.errors);
+    // API key validation issues detected - silent handling for production
   } else {
-    console.log('✓ API keys validated successfully');
+    // API keys validated successfully - silent handling for production
   }
 }

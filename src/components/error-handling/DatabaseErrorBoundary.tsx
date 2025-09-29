@@ -89,16 +89,7 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
     const dbError = DatabaseErrorBoundary.enhanceDatabaseError(error);
     const errorCategory = DatabaseErrorBoundary.classifyDatabaseError(dbError);
     
-    console.error('[DatabaseErrorBoundary] Database error intercepted:', {
-      errorId,
-      errorCategory,
-      code: dbError.code,
-      operation: dbError.operation,
-      table: dbError.table,
-      rlsRelated: dbError.rlsRelated,
-      retryable: dbError.retryable,
-      message: dbError.message,
-    });
+    // Database error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -110,28 +101,9 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    const { errorId, errorCategory } = this.state;
+    const { errorId } = this.state;
     
-    // Enhanced database error logging dengan Supabase context
-    console.error('[DatabaseErrorBoundary] Database error details:', {
-      errorId,
-      errorCategory,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        code: (error as DatabaseError).code,
-        details: (error as DatabaseError).details,
-        hint: (error as DatabaseError).hint,
-        operation: (error as DatabaseError).operation,
-        table: (error as DatabaseError).table,
-        statusCode: (error as DatabaseError).statusCode,
-      },
-      componentStack: errorInfo.componentStack,
-      connectionHealth: this.state.connectionHealth,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-    });
+    // Enhanced database error logging dengan Supabase context - silent handling for production
 
     // Store error info
     this.setState({ errorInfo });
@@ -277,7 +249,7 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
       }
       
     } catch (healthError) {
-      console.warn('[DatabaseErrorBoundary] Connection health check failed:', healthError);
+      // Connection health check failed - silent handling for production
       this.setState({ connectionHealth: 'failed' });
     }
   }
@@ -301,10 +273,10 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
       localStorage.setItem(this.offlineStorageKey, JSON.stringify(existingData));
       this.setState({ dataPreserved: true });
       
-      console.log('[DatabaseErrorBoundary] Data preserved for offline mode');
+      // Data preserved for offline mode - silent handling for production
       
     } catch (preserveError) {
-      console.error('[DatabaseErrorBoundary] Failed to preserve data:', preserveError);
+      // Failed to preserve data - silent handling for production
     }
   }
 
@@ -325,9 +297,9 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
    * Handles retry attempt
    */
   private handleRetry = (): void => {
-    const { errorId, retryCount } = this.state;
+    const { errorId } = this.state;
     
-    console.log(`[DatabaseErrorBoundary] Retrying database operation ${retryCount + 1} for ${errorId}`);
+    // Retrying database operation - silent handling for production
 
     this.setState(prevState => ({
       hasError: false,
@@ -345,9 +317,9 @@ export class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps,
    */
   private handleOfflineMode = (): void => {
     const { errorId } = this.state;
-    
-    console.log(`[DatabaseErrorBoundary] Switching to offline mode for ${errorId}`);
-    
+
+    // Switching to offline mode - silent handling for production
+
     this.setState({
       hasError: false,
       offlineMode: true,

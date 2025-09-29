@@ -54,13 +54,11 @@ export class SecretsManager {
     // Redis for caching (if available)
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
       // Redis client setup would go here
-      console.log('✅ Redis backend available for secrets caching');
     }
   }
 
   private generateMasterKey(): string {
     const key = crypto.randomBytes(32).toString('hex');
-    console.warn('⚠️ Generated temporary master key - set SECRETS_MASTER_KEY in production');
     return key;
   }
 
@@ -186,12 +184,10 @@ export class SecretsManager {
         });
 
       if (error) {
-        console.error('Failed to store secret:', error);
         throw new Error('Failed to store secret securely');
       }
     }
 
-    console.log(`✅ Secret ${name} stored securely for ${provider} in ${environment}`);
     return secretId;
   }
 
@@ -222,13 +218,11 @@ export class SecretsManager {
         .single();
 
       if (error || !data) {
-        console.warn(`Secret ${name} not found for ${provider} in ${env}`);
         return null;
       }
 
       // Check expiration
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        console.warn(`Secret ${name} has expired`);
         return null;
       }
 
@@ -247,7 +241,6 @@ export class SecretsManager {
 
         return decryptedValue;
       } catch (error) {
-        console.error('Failed to decrypt secret:', error);
         throw new Error('Secret decryption failed - possible tampering detected');
       }
     }
@@ -290,7 +283,6 @@ export class SecretsManager {
         .eq('id', newSecretId);
     }
 
-    console.log(`🔄 Secret ${name} rotated successfully for ${provider} in ${env}`);
     return newSecretId;
   }
 
@@ -339,7 +331,6 @@ export class SecretsManager {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to list secrets:', error);
         return [];
       }
 
@@ -368,12 +359,10 @@ export class SecretsManager {
         .eq('environment', env);
 
       if (error) {
-        console.error('Failed to delete secret:', error);
         return false;
       }
     }
 
-    console.log(`🗑️ Secret ${name} deleted for ${provider} in ${env}`);
     return true;
   }
 
@@ -398,14 +387,11 @@ export class SecretsManager {
       const decrypted = this.decryptSecret(encrypted, testMetadata);
 
       if (decrypted === testSecret) {
-        console.log('✅ Secrets manager health check passed');
         return true;
       } else {
-        console.error('❌ Secrets manager health check failed: decryption mismatch');
         return false;
       }
     } catch (error) {
-      console.error('❌ Secrets manager health check failed:', error);
       return false;
     }
   }

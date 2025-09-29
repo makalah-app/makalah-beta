@@ -17,15 +17,8 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { supabaseAdmin } from '@/lib/database/supabase-client';
-import {
-  HybridConfiguration,
-  HybridProviderConfig,
-  ToolProviderConfig,
-  TextProvider,
-  ToolProvider
-} from '@/lib/ai/config/provider-adapter';
-import { apiKeyManager, generateAPIKeyHint } from '@/lib/security/api-key-encryption';
+import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
+import { apiKeyManager, generateAPIKeyHint } from '../../../../src/lib/security/api-key-encryption';
 
 // Admin email hardcoded for security
 const ADMIN_EMAIL = 'makalah.app@gmail.com';
@@ -42,7 +35,6 @@ try {
     crypto = require('node:crypto').webcrypto || require('crypto');
   }
 } catch (error) {
-  console.warn('⚠️ Crypto not available, using fallback for ID generation');
   crypto = {
     randomUUID: () => `${Date.now()}-${Math.random().toString(36).substring(2)}`
   };
@@ -202,7 +194,6 @@ export async function GET(request: NextRequest) {
     const validatedRequest: GetConfigRequest = GetConfigRequestSchema.parse(parsedParams);
     const { scope, includeSecrets, includeStats, includeHealth, hybridDetails } = validatedRequest;
 
-    console.log('⚙️ Enhanced admin config request:', { scope, includeSecrets, includeStats, includeHealth, hybridDetails });
 
     const response: any = {
       success: true,
@@ -220,7 +211,6 @@ export async function GET(request: NextRequest) {
     if (scope === 'all' || scope === 'models') {
       try {
         // Get ALL active model configurations (remove is_default filter to support all models)
-        console.log('🔍 Getting all active model configurations');
         const { data: allConfigs, error: allConfigsError } = await supabaseAdmin
           .from('model_configs')
           .select('*')
@@ -245,7 +235,6 @@ export async function GET(request: NextRequest) {
         } as const;
 
         if (allConfigsError) {
-          console.warn('⚠️ Model config query failed, using default fallback', allConfigsError);
           response.data.models = fallbackModels;
         } else {
           // Dynamic provider assignment based on latest created_at timestamp
@@ -264,7 +253,6 @@ export async function GET(request: NextRequest) {
           let fallbackData: ModelConfigRow | null = null;
 
           if (!allConfigs || allConfigs.length === 0) {
-            console.warn('⚠️ No active model configs found, using default fallback');
             response.data.models = fallbackModels;
           } else {
             // Sort by created_at descending to get most recent first
@@ -274,16 +262,6 @@ export async function GET(request: NextRequest) {
 
             primaryData = sortedConfigs[0];  // Most recent = Primary
             fallbackData = sortedConfigs[1] || null;  // Second most recent = Fallback
-
-            console.log('🔄 Dynamic provider assignment:', {
-              primaryProvider: primaryData?.provider,
-              primaryModel: primaryData?.model_name,
-              primaryCreatedAt: primaryData?.created_at,
-              fallbackProvider: fallbackData?.provider,
-              fallbackModel: fallbackData?.model_name,
-              fallbackCreatedAt: fallbackData?.created_at,
-              totalConfigs: allConfigs.length
-            });
 
             if (primaryData) {
               // ✅ Transform database structure ke format frontend
@@ -303,29 +281,17 @@ export async function GET(request: NextRequest) {
                   isActive: fallbackData.is_active
                 } : fallbackModels.fallback
               };
-
-              console.log('✅ Model configs loaded with dynamic assignment:', {
-                primaryExists: !!primaryData,
-                fallbackExists: !!fallbackData,
-                primaryProvider: primaryData?.provider,
-                fallbackProvider: fallbackData?.provider,
-                primaryModel: primaryData?.model_name,
-                fallbackModel: fallbackData?.model_name
-              });
             } else {
-              console.warn('⚠️ No active primary model config found after sorting, using default fallback');
               response.data.models = fallbackModels;
             }
           }
 
           if (!response.data.models) {
-            console.warn('⚠️ No active primary model config found, using default fallback');
             response.data.models = fallbackModels;
           }
         }
 
       } catch (modelError) {
-        console.error('❌ Error loading model configs:', modelError);
         response.data.models = {
           primary: { provider: 'openai', model: 'gpt-4o', error: 'Configuration load failed', temperature: 0.1, maxTokens: 4096, isActive: true },
           fallback: { provider: 'openrouter', model: 'google/gemini-2.5-flash', error: 'Configuration load failed', temperature: 0.1, maxTokens: 4096, isActive: true }
@@ -336,8 +302,7 @@ export async function GET(request: NextRequest) {
     // Get system prompts
     if (scope === 'all' || scope === 'prompts') {
       try {
-        console.log('🔍 Getting system prompts');
-        const { data: promptData, error: promptError } = await supabaseAdmin
+        const { data: promptData } = await supabaseAdmin
           .from('system_prompts')
           .select('content, version, created_at, updated_at, priority_order, phase')
           .eq('is_active', true)
@@ -359,13 +324,7 @@ export async function GET(request: NextRequest) {
           } : null
         };
 
-        console.log('✅ System prompts loaded:', {
-          hasPrompt: !!systemPrompt,
-          charCount: systemPrompt?.content?.length || 0
-        });
-
       } catch (promptError) {
-        console.error('❌ Error loading system prompts:', promptError);
         response.data.prompts = {
           systemInstructions: { content: '', error: 'Prompt load failed' }
         };
@@ -375,8 +334,7 @@ export async function GET(request: NextRequest) {
     // Get API keys and settings
     if (scope === 'all' || scope === 'keys' || scope === 'settings') {
       try {
-        console.log('🔍 Getting admin settings');
-        const { data: settingsData, error: settingsError } = await supabaseAdmin
+        const { data: settingsData } = await supabaseAdmin
           .from('admin_settings')
           .select('setting_key, setting_value, setting_type, category, is_sensitive')
           .eq('category', 'model_config')
@@ -409,7 +367,6 @@ export async function GET(request: NextRequest) {
 
         // Fallback to environment variables if database is empty
         if (settings.length === 0 || Object.keys(response.data.apiKeys).length === 0) {
-          console.log('📝 No API keys in database, falling back to environment variables');
           
           // Add environment API keys if available
           if (process.env.OPENAI_API_KEY) {
@@ -440,14 +397,7 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        console.log('✅ Settings loaded:', {
-          settingsCount: settings.length,
-          apiKeysFound: Object.keys(response.data.apiKeys).length,
-          environmentFallback: settings.length === 0
-        });
-
       } catch (settingsError) {
-        console.error('❌ Error loading settings:', settingsError);
         response.data.settings = { error: 'Settings load failed' };
         response.data.apiKeys = { error: 'API keys load failed' };
       }
@@ -463,17 +413,14 @@ export async function GET(request: NextRequest) {
           .maybeSingle();
 
         if (webSearchError) {
-          console.error('❌ Error loading web search config:', webSearchError);
         }
 
         response.data.features = {
           webSearchProvider: ((webSearchConfig as any)?.setting_value as 'openai' | 'perplexity') || 'openai'
         };
 
-        console.log('✅ Features loaded:', response.data.features);
 
       } catch (featuresError) {
-        console.error('❌ Error loading features:', featuresError);
         response.data.features = { webSearchProvider: 'openai' };
       }
     }
@@ -497,7 +444,6 @@ export async function GET(request: NextRequest) {
     return Response.json(response);
 
   } catch (error) {
-    console.error('❌ Admin config GET error:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Configuration fetch failed';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
@@ -536,15 +482,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedRequest: UpdateConfigRequest = UpdateConfigRequestSchema.parse(body);
 
-    const { models, hybrid, prompts, apiKeys, features } = validatedRequest;
+    const { models, prompts, apiKeys, features } = validatedRequest;
 
-    console.log('⚙️ Enhanced admin config update:', {
-      hasModels: !!models,
-      hasHybrid: !!hybrid,
-      hasPrompts: !!prompts,
-      hasApiKeys: !!apiKeys,
-      hasFeatures: !!features
-    });
 
     const results: any = {
       updated: {},
@@ -554,7 +493,6 @@ export async function POST(request: NextRequest) {
 
     // Update model configurations with dynamic provider swap support
     if (models) {
-      console.log('🔧 Updating model configurations with swap support');
       
       // First, deactivate ALL existing active configurations to prevent conflicts
       const { error: deactivateError } = await (supabaseAdmin as any)
@@ -568,9 +506,7 @@ export async function POST(request: NextRequest) {
         .eq('is_active', true);
       
       if (deactivateError) {
-        console.error('❌ Error deactivating old configs:', deactivateError);
       } else {
-        console.log('✅ Old default configurations deactivated');
       }
 
       // Create new configurations with current timestamp for proper ordering
@@ -578,10 +514,6 @@ export async function POST(request: NextRequest) {
       
       if (models.primary) {
         const primaryData = models.primary;
-        console.log('🔧 Creating new primary model config:', {
-          provider: primaryData.provider,
-          model: primaryData.model
-        });
         
         const { data: primaryResult, error: primaryError } = await supabaseAdmin
           .from('model_configs')
@@ -605,18 +537,12 @@ export async function POST(request: NextRequest) {
         if (!primaryError && primaryResult) {
           results.updated.primary = primaryResult;
           results.timestamps.primary = new Date().toISOString();
-          console.log('✅ Primary model config created:', primaryResult);
         } else {
-          console.error('❌ Primary model config creation failed:', primaryError);
         }
       }
 
       if (models.fallback) {
         const fallbackData = models.fallback;
-        console.log('🔧 Creating new fallback model config:', {
-          provider: fallbackData.provider,
-          model: fallbackData.model
-        });
         
         const { data: fallbackResult, error: fallbackError } = await supabaseAdmin
           .from('model_configs')
@@ -640,19 +566,15 @@ export async function POST(request: NextRequest) {
         if (!fallbackError && fallbackResult) {
           results.updated.fallback = fallbackResult;
           results.timestamps.fallback = new Date().toISOString();
-          console.log('✅ Fallback model config created:', fallbackResult);
         } else {
-          console.error('❌ Fallback model config creation failed:', fallbackError);
         }
       }
 
-      console.log('✅ Model configuration swap completed successfully');
     }
 
     // Update system prompts
     if (prompts?.systemInstructions) {
       const promptData = prompts.systemInstructions;
-      console.log('🔧 Updating system prompt');
       
       const { data: promptResult, error: promptError } = await supabaseAdmin
         .from('system_prompts')
@@ -672,9 +594,7 @@ export async function POST(request: NextRequest) {
       if (!promptError && promptResult) {
         results.updated.systemPrompt = promptResult;
         results.timestamps.systemPrompt = new Date().toISOString();
-        console.log('✅ System prompt updated');
       } else {
-        console.error('❌ System prompt update failed:', promptError);
       }
     }
 
@@ -685,7 +605,6 @@ export async function POST(request: NextRequest) {
       for (const [provider, apiKey] of Object.entries(apiKeys)) {
         if (apiKey && typeof apiKey === 'string') {
           const keySettingName = `${provider}_api_key`;
-          console.log(`🔧 Updating ${provider} API key (legacy)`);
           
           try {
             // Encrypt the API key
@@ -711,12 +630,9 @@ export async function POST(request: NextRequest) {
             if (!keyError && keyResult) {
               results.updated[`${provider}ApiKey`] = keyResult;
               results.timestamps[`${provider}ApiKey`] = new Date().toISOString();
-              console.log(`✅ ${provider} API key updated (encrypted)`);
             } else {
-              console.error(`❌ ${provider} API key update failed:`, keyError);
             }
           } catch (encryptError) {
-            console.error(`❌ ${provider} API key encryption failed:`, encryptError);
           }
         }
       }
@@ -724,10 +640,8 @@ export async function POST(request: NextRequest) {
 
     // Update features (including web search provider)
     if (features) {
-      console.log('🔧 Updating features configuration:', features);
 
       if (features.webSearchProvider) {
-        console.log(`🔍 Updating web search provider to: ${features.webSearchProvider}`);
 
         const { error: webSearchError } = await supabaseAdmin
           .from('admin_settings')
@@ -753,22 +667,18 @@ export async function POST(request: NextRequest) {
           });
 
         if (webSearchError) {
-          console.error('❌ Web search provider update failed:', webSearchError);
         } else {
           results.updated.webSearchProvider = features.webSearchProvider;
           results.timestamps.webSearchProvider = new Date().toISOString();
-          console.log('✅ Web search provider updated successfully');
         }
       }
     }
 
     // ⚡ PERFORMANCE: Clear dynamic config cache after admin updates
     try {
-      const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
+      const { clearDynamicConfigCache } = await import('../../../../src/lib/ai/dynamic-config');
       clearDynamicConfigCache();
-      console.log('⚡ Dynamic config cache cleared after admin update');
     } catch (cacheError) {
-      console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
     }
 
     return Response.json({
@@ -779,8 +689,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Admin config POST error:', error);
-
     const errorMessage = error instanceof Error ? error.message : 'Configuration update failed';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
 

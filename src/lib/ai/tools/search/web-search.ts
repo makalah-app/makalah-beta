@@ -39,7 +39,7 @@ export async function webSearch(
     forceProvider
   } = options;
 
-  console.log(`[WebSearch] Starting unified search for: "${query}"`);
+  // Starting unified search - silent handling for production
 
   const config: ProviderConfig = {
     maxResults,
@@ -53,7 +53,7 @@ export async function webSearch(
 
     if (forceProvider) {
       // Use explicitly specified provider
-      console.log(`[WebSearch] Using forced provider: ${forceProvider}`);
+      // Using forced provider - silent handling for production
       results = await searchManager.search(forceProvider, query, config);
       actualProvider = forceProvider;
     } else {
@@ -62,7 +62,7 @@ export async function webSearch(
       const textProvider = dynamicConfig.primaryProvider;
 
       if (textProvider) {
-        console.log(`[WebSearch] Auto-selecting based on text provider: ${textProvider}`);
+        // Auto-selecting based on text provider - silent handling for production
         results = await searchManager.searchWithAutoProvider(query, config, textProvider);
 
         // Determine actual provider used
@@ -75,13 +75,13 @@ export async function webSearch(
         }
       } else {
         // Default fallback
-        console.log('[WebSearch] No text provider detected, using DuckDuckGo fallback');
+        // No text provider detected, using DuckDuckGo fallback - silent handling for production
         results = await searchManager.search('duckduckgo', query, config);
         actualProvider = 'duckduckgo';
       }
     }
 
-    console.log(`[WebSearch] Search completed via ${actualProvider}. Found ${results.length} results`);
+    // Search completed - silent handling for production
 
     return {
       results,
@@ -91,7 +91,7 @@ export async function webSearch(
     };
 
   } catch (error) {
-    console.error('[WebSearch] Search failed:', error);
+    // Search failed - silent handling for production
 
     // Return empty results instead of throwing
     return {

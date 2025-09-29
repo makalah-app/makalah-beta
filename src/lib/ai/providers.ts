@@ -11,7 +11,6 @@ import { getAIProviders, AIProviderConfig } from './config';
 import { ProviderHealthManager } from './providers/health';
 import { ProviderManager } from './providers/manager';
 import { ERROR_CONFIG, LOGGING_CONFIG } from '../config/constants';
-import { env } from '../config/env';
 
 /**
  * Provider selection strategy
@@ -57,10 +56,6 @@ export class AIProviderManager {
 
     // Start health monitoring
     this.healthManager.startHealthChecks();
-    
-    if (env.NODE_ENV === 'development') {
-      console.log(`🔄 AI Provider Manager initialized with strategy: ${strategy}`);
-    }
   }
 
   /**
@@ -111,9 +106,6 @@ export class AIProviderManager {
     const primaryHealth = await this.healthManager.checkProviderHealth('openrouter');
     
     if (this.isProviderViable(primaryHealth, requireHealthy, maxResponseTime)) {
-      if (LOGGING_CONFIG.logProviderSwitching) {
-        console.log('✅ Selected primary provider: OpenRouter');
-      }
       
       return {
         provider: this.providers.primary.provider,
@@ -163,9 +155,6 @@ export class AIProviderManager {
     const fallbackScore = this.calculateHealthScore(fallbackHealth, maxResponseTime);
 
     if (primaryScore >= fallbackScore && primaryScore > 0) {
-      if (LOGGING_CONFIG.logProviderSwitching) {
-        console.log(`✅ Selected OpenRouter (health score: ${primaryScore})`);
-      }
       
       return {
         provider: this.providers.primary.provider,
@@ -178,9 +167,6 @@ export class AIProviderManager {
     }
 
     if (fallbackScore > 0) {
-      if (LOGGING_CONFIG.logProviderSwitching) {
-        console.log(`✅ Selected OpenAI (health score: ${fallbackScore})`);
-      }
       
       return {
         provider: this.providers.fallback.provider,
@@ -306,9 +292,6 @@ export class AIProviderManager {
    */
   setStrategy(strategy: ProviderStrategy) {
     this.currentStrategy = strategy;
-    if (LOGGING_CONFIG.logProviderSwitching) {
-      console.log(`🔄 Provider strategy changed to: ${strategy}`);
-    }
   }
 
   /**

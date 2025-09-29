@@ -127,7 +127,7 @@ export class ErrorLogger {
     this.setupBatchProcessing();
     this.setupUnloadHandler();
     
-    console.log('[ErrorLogger] Initialized dengan config:', this.config);
+    // ErrorLogger initialized - silent handling for production
   }
 
   /**
@@ -433,7 +433,7 @@ export class ErrorLogger {
 
     this.lastFlush = Date.now();
     
-    console.log(`[ErrorLogger] Flushed ${logsToFlush.length} log entries`);
+    // Flushed log entries - silent handling for production
   }
 
   /**
@@ -449,7 +449,7 @@ export class ErrorLogger {
       
       localStorage.setItem('error-logs', JSON.stringify(trimmedLogs));
     } catch (error) {
-      console.warn('[ErrorLogger] Failed to store logs:', error);
+      // Failed to store logs - silent handling for production
     }
   }
 
@@ -480,7 +480,7 @@ export class ErrorLogger {
         body: JSON.stringify(payload),
       });
     } catch (error) {
-      console.warn('[ErrorLogger] Failed to send logs to remote:', error);
+      // Failed to send logs to remote - silent handling for production
     }
   }
 
@@ -492,7 +492,7 @@ export class ErrorLogger {
       const stored = localStorage.getItem('error-logs');
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.warn('[ErrorLogger] Failed to retrieve stored logs:', error);
+      // Failed to retrieve stored logs - silent handling for production
       return [];
     }
   }
@@ -642,9 +642,9 @@ export class ErrorLogger {
     try {
       localStorage.removeItem('error-logs');
       this.logCounts.clear();
-      console.log('[ErrorLogger] Logs cleared');
+      // Logs cleared - silent handling for production
     } catch (error) {
-      console.warn('[ErrorLogger] Failed to clear logs:', error);
+      // Failed to clear logs - silent handling for production
     }
   }
 
@@ -653,7 +653,7 @@ export class ErrorLogger {
    */
   updateConfig(newConfig: Partial<LoggerConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    console.log('[ErrorLogger] Configuration updated:', this.config);
+    // Configuration updated - silent handling for production
   }
 
   /**
@@ -667,7 +667,7 @@ export class ErrorLogger {
     // Final flush
     this.flushLogs();
     
-    console.log('[ErrorLogger] Destroyed');
+    // ErrorLogger destroyed - silent handling for production
   }
 }
 

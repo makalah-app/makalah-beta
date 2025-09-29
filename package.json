@@ -11,9 +11,9 @@
     "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.15",
     "@ai-sdk/openai": "^2.0.0",
     "@ai-sdk/perplexity": "^2.0.9",
+    "@ai-sdk/provider": "^2.0.0",
     "@ai-sdk/react": "^2.0.0",
     "@openrouter/ai-sdk-provider": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -39,6 +39,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.1",
     "@tailwindcss/typography": "^0.5.19",
+    "@testing-library/jest-dom": "^6.8.0",
     "@upstash/redis": "^1.35.3",
     "ai": "^5.0.47",
     "ai-elements": "^1.1.2",
@@ -47,13 +48,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "crypto-browserify": "^3.12.1",
-    "crypto-js": "^4.2.0",
     "dotenv": "^17.2.2",
     "lucide-react": "^0.294.0",
-    "nanoid": "^5.1.5",
     "next": "^14.2.0",
     "next-themes": "^0.3.0",
-    "openai": "^4.56.0",
     "postcss": "^8.4.0",
     "process": "^0.11.10",
     "react": "^18.3.0",
@@ -72,9 +70,9 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.5",
+    "@jest/globals": "^30.2.0",
     "@playwright/test": "^1.55.0",
-    "@supabase/mcp-server-supabase": "^0.5.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.13",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
@@ -82,7 +80,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "node-fetch": "^2.7.0",
+    "jest": "^30.2.0",
     "typescript": "^5.4.0"
   },
   "engines": {

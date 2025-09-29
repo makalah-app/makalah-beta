@@ -89,14 +89,7 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
     const apiError = APIErrorBoundary.enhanceError(error);
     const errorCategory = APIErrorBoundary.classifyError(apiError);
     
-    console.error('[APIErrorBoundary] API error intercepted:', {
-      errorId,
-      errorCategory,
-      status: apiError.status,
-      endpoint: apiError.endpoint,
-      message: apiError.message,
-      retryable: apiError.retryable,
-    });
+    // API error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -110,22 +103,7 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { errorId, errorCategory } = this.state;
     
-    // Enhanced API error logging
-    console.error('[APIErrorBoundary] API error details:', {
-      errorId,
-      errorCategory,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        status: (error as APIError).status,
-        endpoint: (error as APIError).endpoint,
-      },
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      retryCount: this.state.retryCount,
-    });
+    // Enhanced API error logging - silent handling for production
 
     // Store error info
     this.setState({ errorInfo });
@@ -216,12 +194,12 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
    */
   private setupNetworkListeners() {
     this.offlineListener = () => {
-      console.log('[APIErrorBoundary] Network went offline');
+      // Network went offline - silent handling for production
       this.setState({ offlineMode: true });
     };
 
     this.onlineListener = () => {
-      console.log('[APIErrorBoundary] Network came back online');
+      // Network came back online - silent handling for production
       this.setState({ offlineMode: false });
       
       // Retry if we had an error and network is back
@@ -279,7 +257,7 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
     // Max delay of 30 seconds
     delay = Math.min(delay, 30000);
 
-    console.log(`[APIErrorBoundary] Scheduling retry ${retryCount + 1} in ${delay}ms`);
+    // Scheduling retry - silent handling for production
 
     this.setState({ 
       isRetrying: true,
@@ -297,7 +275,7 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
   private executeRetry() {
     const { errorId, retryCount } = this.state;
     
-    console.log(`[APIErrorBoundary] Executing retry attempt ${retryCount + 1} for ${errorId}`);
+    // Executing retry attempt - silent handling for production
 
     this.setState(prevState => ({
       hasError: false,
@@ -326,7 +304,7 @@ export class APIErrorBoundary extends Component<APIErrorBoundaryProps, APIErrorB
    */
   private handleClearError = (): void => {
     const { errorId } = this.state;
-    console.log(`[APIErrorBoundary] Clearing error state for ${errorId}`);
+    // Clearing error state - silent handling for production
     
     this.setState({
       hasError: false,

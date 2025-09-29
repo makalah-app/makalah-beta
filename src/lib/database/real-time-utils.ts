@@ -111,7 +111,7 @@ class RealtimeSubscriptionManager {
       
       // Check if already subscribed
       if (this.subscriptions.has(channelName)) {
-        console.log(`[RealtimeSync] Already subscribed to ${channelName}`);
+        // Already subscribed to channel - silent handling for production
         return {
           success: true,
           channel: this.subscriptions.get(channelName)
@@ -137,7 +137,7 @@ class RealtimeSubscriptionManager {
             filter: `conversation_id=eq.${conversationId}`
           },
           (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
-            console.log('[RealtimeSync] New message received:', payload.new);
+            // New message received - silent handling for production
             callbacks.onNewMessage?.(payload.new);
           }
         )
@@ -150,7 +150,7 @@ class RealtimeSubscriptionManager {
             filter: `conversation_id=eq.${conversationId}`
           },
           (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
-            console.log('[RealtimeSync] Message updated:', payload.new);
+            // Message updated - silent handling for production
             callbacks.onMessageUpdate?.(payload.new);
           }
         )
@@ -163,7 +163,7 @@ class RealtimeSubscriptionManager {
             filter: `conversation_id=eq.${conversationId}`
           },
           (payload: RealtimePostgresChangesPayload<ChatMessage>) => {
-            console.log('[RealtimeSync] Message deleted:', payload.old?.message_id);
+            // Message deleted - silent handling for production
             if (payload.old?.message_id) {
               callbacks.onMessageDelete?.(payload.old.message_id);
             }
@@ -191,7 +191,7 @@ class RealtimeSubscriptionManager {
               data: conversation.metadata
             };
             
-            console.log('[RealtimeSync] Workflow state updated:', workflowEvent);
+            // Workflow state updated - silent handling for production
             callbacks.onWorkflowSync?.(workflowEvent);
           }
         );
@@ -200,7 +200,7 @@ class RealtimeSubscriptionManager {
       channel
         .on('presence', { event: 'sync' }, () => {
           const presenceState = channel.presenceState();
-          console.log('[RealtimeSync] Presence sync:', presenceState);
+          // Presence sync - silent handling for production
           
           // Process presence state changes
           Object.keys(presenceState).forEach(userId => {
@@ -212,14 +212,14 @@ class RealtimeSubscriptionManager {
           });
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
-          console.log('[RealtimeSync] User joined:', newPresences);
+          // User joined - silent handling for production
           newPresences.forEach((presence: PresenceState) => {
             this.presenceStates.set(presence.user_id, presence);
             callbacks.onPresenceChange?.(presence);
           });
         })
         .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-          console.log('[RealtimeSync] User left:', leftPresences);
+          // User left - silent handling for production
           leftPresences.forEach((presence: PresenceState) => {
             this.presenceStates.delete(presence.user_id);
             callbacks.onPresenceChange?.(presence);
@@ -230,12 +230,12 @@ class RealtimeSubscriptionManager {
       channel
         .on('broadcast', { event: 'typing' }, ({ payload }) => {
           const typingIndicator: TypingIndicator = payload;
-          console.log('[RealtimeSync] Typing indicator:', typingIndicator);
+          // Typing indicator - silent handling for production
           callbacks.onTyping?.(typingIndicator);
         })
         .on('broadcast', { event: 'notification' }, ({ payload }) => {
           const notification: RealtimeNotification = payload;
-          console.log('[RealtimeSync] Real-time notification:', notification);
+          // Real-time notification - silent handling for production
           callbacks.onNotification?.(notification);
         });
 
@@ -244,7 +244,7 @@ class RealtimeSubscriptionManager {
       
       if (subscriptionResponse === 'SUBSCRIBED') {
         this.subscriptions.set(channelName, channel);
-        console.log(`[RealtimeSync] Successfully subscribed to ${channelName}`);
+        // Successfully subscribed to channel - silent handling for production
         
         return {
           success: true,
@@ -255,7 +255,7 @@ class RealtimeSubscriptionManager {
       }
 
     } catch (error) {
-      console.error('[RealtimeSync] Subscription failed:', error);
+      // Subscription failed - silent handling for production
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -276,7 +276,7 @@ class RealtimeSubscriptionManager {
     const channel = this.subscriptions.get(channelName);
 
     if (!channel) {
-      console.warn('[RealtimeSync] Channel not found for typing indicator');
+      // Channel not found for typing indicator - silent handling for production
       return;
     }
 
@@ -310,7 +310,7 @@ class RealtimeSubscriptionManager {
       this.typingTimeouts.set(timeoutKey, timeout);
     }
 
-    console.log('[RealtimeSync] Typing indicator sent:', typingIndicator);
+    // Typing indicator sent - silent handling for production
   }
 
   /**
@@ -325,7 +325,7 @@ class RealtimeSubscriptionManager {
     const channel = this.subscriptions.get(channelName);
 
     if (!channel) {
-      console.warn('[RealtimeSync] Channel not found for presence update');
+      // Channel not found for presence update - silent handling for production
       return;
     }
 
@@ -345,7 +345,7 @@ class RealtimeSubscriptionManager {
     await channel.track(newPresence);
     this.presenceStates.set(userId, newPresence);
 
-    console.log('[RealtimeSync] Presence updated:', newPresence);
+    // Presence updated - silent handling for production
   }
 
   /**
@@ -359,7 +359,7 @@ class RealtimeSubscriptionManager {
     const channel = this.subscriptions.get(channelName);
 
     if (!channel) {
-      console.warn('[RealtimeSync] Channel not found for notification');
+      // Channel not found for notification - silent handling for production
       return;
     }
 
@@ -376,7 +376,7 @@ class RealtimeSubscriptionManager {
       payload: fullNotification
     });
 
-    console.log('[RealtimeSync] Notification sent:', fullNotification);
+    // Notification sent - silent handling for production
   }
 
   /**
@@ -409,7 +409,7 @@ class RealtimeSubscriptionManager {
         throw error;
       }
 
-      console.log(`[RealtimeSync] Workflow state synchronized: Phase ${phase}, Status: ${status}`);
+      // Workflow state synchronized - silent handling for production
 
       // Send notification if phase completed
       if (status === 'completed') {
@@ -424,7 +424,7 @@ class RealtimeSubscriptionManager {
       }
 
     } catch (error) {
-      console.error('[RealtimeSync] Workflow sync failed:', error);
+      // Workflow sync failed - silent handling for production
     }
   }
 
@@ -436,7 +436,7 @@ class RealtimeSubscriptionManager {
     conversationId: string,
     conflictData: Omit<ConflictResolution, 'messageId' | 'conversationId'>
   ): Promise<ConflictResolution> {
-    console.log('[RealtimeSync] Resolving message conflict:', { messageId, conflictData });
+    // Resolving message conflict - silent handling for production
 
     const resolution: ConflictResolution = {
       messageId,
@@ -500,7 +500,7 @@ class RealtimeSubscriptionManager {
           this.typingTimeouts.delete(key);
         });
 
-      console.log(`[RealtimeSync] Unsubscribed from ${channelName}`);
+      // Unsubscribed from channel - silent handling for production
     }
   }
 
@@ -510,7 +510,7 @@ class RealtimeSubscriptionManager {
   async unsubscribeAll(): Promise<void> {
     for (const [channelName, channel] of this.subscriptions) {
       await channel.unsubscribe();
-      console.log(`[RealtimeSync] Unsubscribed from ${channelName}`);
+      // Unsubscribed from channel - silent handling for production
     }
     
     this.subscriptions.clear();
@@ -519,7 +519,7 @@ class RealtimeSubscriptionManager {
     this.typingTimeouts.forEach(timeout => clearTimeout(timeout));
     this.typingTimeouts.clear();
     
-    console.log('[RealtimeSync] Unsubscribed from all channels');
+    // Unsubscribed from all channels - silent handling for production
   }
 
   /**
@@ -572,7 +572,7 @@ export async function initializeRealtimeSync(
   channel?: RealtimeChannel;
   error?: string;
 }> {
-  console.log(`[RealtimeSync] Initializing real-time sync for conversation ${conversationId}`);
+  // Initializing real-time sync for conversation - silent handling for production
 
   // Subscribe to conversation
   const subscriptionResult = await realtimeManager.subscribeToConversation(
@@ -673,7 +673,7 @@ export const realtimePerformance = {
       
       return Date.now() - startTime;
     } catch (error) {
-      console.error('[RealtimeSync] Latency test failed:', error);
+      // Latency test failed - silent handling for production
       return -1;
     }
   }

@@ -554,24 +554,19 @@ export class ApiKeyManager {
     try {
       // Test encryption
       const encrypted = await this.encryptKey(testApiKey);
-      console.log('🔐 Test encryption successful, encrypted length:', encrypted.length);
       
       // Test decryption
       const decrypted = await this.decryptKey(encrypted);
-      console.log('🔓 Test decryption successful, key length:', decrypted.plainKey.length);
       
       // Test hint generation
       const hint = this.generateHint(testApiKey);
-      console.log('💡 Test hint generation successful:', hint);
       
       // Verify roundtrip
       const success = decrypted.plainKey === testApiKey;
-      console.log(success ? '✅ Roundtrip test PASSED' : '❌ Roundtrip test FAILED');
       
       return success;
       
     } catch (error) {
-      console.error('❌ Roundtrip test ERROR:', error);
       return false;
     }
   }
@@ -610,21 +605,17 @@ export function generateAPIKeyHint(key: string): string {
  * Migration utility for one-time environment to database migration
  */
 export async function migrateEnvironmentAPIKeys(): Promise<MigrationResult[]> {
-  console.log('🚀 Starting API key migration from environment to database...');
   
   const results = await apiKeyManager.migrateEnvironmentKeys();
   
   const successful = results.filter(r => r.migrated).length;
   const total = results.length;
   
-  console.log(`✅ Migration completed: ${successful}/${total} providers migrated successfully`);
   
   // Log detailed results
   results.forEach(result => {
     if (result.migrated) {
-      console.log(`✅ ${result.provider.toUpperCase()}: Migrated successfully, hint: ${result.originalHint}`);
     } else {
-      console.log(`❌ ${result.provider.toUpperCase()}: Failed - ${result.error}`);
     }
   });
   

@@ -96,7 +96,6 @@ export class ApiKeyRotationManager {
   async testApiKey(provider: string, apiKey: string): Promise<boolean> {
     const config = this.providers[provider];
     if (!config || !config.apiEndpoint) {
-      console.warn(`No test configuration for provider: ${provider}`);
       return false;
     }
 
@@ -112,7 +111,6 @@ export class ApiKeyRotationManager {
 
       return response.ok;
     } catch (error) {
-      console.error(`API key test failed for ${provider}:`, error);
       return false;
     }
   }
@@ -383,7 +381,6 @@ export class ApiKeyRotationManager {
       await this.notifyRotation(warning.provider, 'production', 'warning');
     }
 
-    console.log(`Rotation check complete: ${warnings.critical.length} critical, ${warnings.warnings.length} warnings`);
   }
 
   /**
@@ -410,7 +407,6 @@ export class ApiKeyRotationManager {
             user_id: null // Would be set if user-initiated
           });
       } catch (error) {
-        console.error('Failed to log rotation:', error);
       }
     }
   }
@@ -433,7 +429,6 @@ export class ApiKeyRotationManager {
     };
 
     // In a real implementation, this would send emails, Slack notifications, etc.
-    console.log(`🔔 Rotation Notification: ${messages[type]}`);
 
     // Log notification
     if (this.supabase) {
@@ -448,7 +443,6 @@ export class ApiKeyRotationManager {
             sent_at: new Date()
           });
       } catch (error) {
-        console.error('Failed to log notification:', error);
       }
     }
   }
@@ -480,7 +474,6 @@ export class ApiKeyRotationManager {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to fetch rotation history:', error);
         return [];
       }
 

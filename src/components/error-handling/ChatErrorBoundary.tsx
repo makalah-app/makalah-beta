@@ -69,13 +69,7 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
     const errorType = ChatErrorBoundary.classifyError(error);
     const recoverable = ChatErrorBoundary.isRecoverable(error, errorType);
     
-    console.error('[ChatErrorBoundary] Error intercepted:', {
-      errorId,
-      errorType,
-      recoverable,
-      message: error.message,
-      stack: error.stack,
-    });
+    // Error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -92,19 +86,7 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
     const performanceImpact = performance.now() - this.performanceStartTime;
 
     // Enhanced error logging dengan performance metrics
-    console.error('[ChatErrorBoundary] Detailed error report:', {
-      errorId,
-      errorType,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-      componentStack: errorInfo.componentStack,
-      performanceImpact: `${performanceImpact.toFixed(2)}ms`,
-      retryCount: this.state.retryCount,
-      timestamp: new Date().toISOString(),
-    });
+    // Detailed error report - silent handling for production
 
     // Store error info in state
     this.setState({ errorInfo });
@@ -180,20 +162,9 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
       try {
         // Here you would send to monitoring service
         // For now, we'll just log comprehensively
-        console.log('[ChatErrorBoundary] Error report scheduled:', {
-          errorId,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-          url: window.location.href,
-          error: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          },
-          componentStack: errorInfo.componentStack,
-        });
+        // Error report scheduled - silent handling for production
       } catch (reportingError) {
-        console.warn('[ChatErrorBoundary] Error reporting failed:', reportingError);
+        // Error reporting failed - silent handling for production
       }
     }, 1000);
   }
@@ -206,11 +177,11 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
     const { retryCount, errorId } = this.state;
 
     if (retryCount >= maxRetries) {
-      console.warn(`[ChatErrorBoundary] Maximum retries (${maxRetries}) exceeded for ${errorId}`);
+      // Maximum retries exceeded - silent handling for production
       return;
     }
 
-    console.log(`[ChatErrorBoundary] Attempting recovery ${retryCount + 1}/${maxRetries} for ${errorId}`);
+    // Attempting recovery - silent handling for production
     
     this.setState(prevState => ({
       hasError: false,
@@ -228,7 +199,7 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
    */
   private handleRefresh = (): void => {
     const { errorId } = this.state;
-    console.log(`[ChatErrorBoundary] Performing hard refresh for ${errorId}`);
+    // Performing hard refresh - silent handling for production
     
     this.props.onRecover?.(errorId, 'refresh');
     window.location.reload();
@@ -239,7 +210,7 @@ export class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErr
    */
   private handleClear = (): void => {
     const { errorId } = this.state;
-    console.log(`[ChatErrorBoundary] Clearing error state for ${errorId}`);
+    // Clearing error state - silent handling for production
     
     this.setState({
       hasError: false,

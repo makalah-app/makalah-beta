@@ -1259,7 +1259,7 @@ export class FormatConverterServiceExtended extends FormatConverterService {
     const finalTokens = this.estimateTokenCount(formattedContent);
     const compressionRatio = originalTokens > 0 ? finalTokens / originalTokens : 1;
 
-    console.log(`[FormatConverter] 🔄 Formatted phase ${phase} snapshot: ${originalTokens} → ${finalTokens} tokens (${config.format})`);
+    // Formatted phase snapshot with token compression - silent handling for production
 
     return {
       content: formattedContent,

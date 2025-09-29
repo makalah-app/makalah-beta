@@ -1089,7 +1089,7 @@ export class TemplateVersioningSystem {
    */
   private initializeVersioningSystem(): void {
     // Initialization logic for the versioning system
-    console.log('Template Versioning System initialized');
+    // Template Versioning System initialized - silent handling for production
   }
 }
 

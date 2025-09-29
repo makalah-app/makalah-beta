@@ -55,7 +55,6 @@ function createOpenRouterProvider() {
       throw new Error('OpenRouter API key is missing or invalid');
     }
     
-    console.log('[Config] 🔧 Initializing OpenRouter provider...');
     
     return createOpenRouter({
       apiKey: apiKeys.openrouter,
@@ -71,7 +70,6 @@ function createOpenRouterProvider() {
     } as any);
     
   } catch (error) {
-    console.error('[Config] ❌ Failed to initialize OpenRouter provider:', error);
     throw new Error(`OpenRouter provider initialization failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -88,7 +86,6 @@ function createOpenAIProvider() {
       throw new Error('OpenAI API key is missing or invalid');
     }
     
-    console.log('[Config] 🔧 Initializing OpenAI fallback provider...');
     
     return (openai as any)({
       apiKey: apiKeys.openai,
@@ -99,7 +96,6 @@ function createOpenAIProvider() {
     } as any);
     
   } catch (error) {
-    console.error('[Config] ❌ Failed to initialize OpenAI provider:', error);
     throw new Error(`OpenAI provider initialization failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -134,7 +130,6 @@ export function initializeAIProviders(): AIProviderConfig {
   const openrouter = createOpenRouterProvider();
   const openaiProvider = createOpenAIProvider();
   
-  console.log('[Config] 🔄 SWAPPED: OpenAI GPT-4o as primary, OpenRouter Gemini 2.5 Pro as fallback');
   
   return {
     primary: {
@@ -257,11 +252,9 @@ export function getPrimaryModel() {
       throw new Error(`Unknown primary provider: ${providers.primary.name}`);
     }
     
-    console.log(`[Config] ✅ Primary model ready: ${providers.primary.model} (${providers.primary.name}) 🔧 FIXED CONFIG`);
     return model;
     
   } catch (error) {
-    console.error('[Config] ❌ Failed to get primary model:', error);
     throw new Error(`Primary model initialization failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -282,11 +275,9 @@ export function getFallbackModel() {
     // OpenRouter provider menggunakan .chat() method untuk chat models
     const model = fallbackProvider.chat(PRIMARY_MODEL_CONFIG.model);
     
-    console.log(`[Config] ✅ Fallback model ready: ${PRIMARY_MODEL_CONFIG.model} (OpenRouter - Independent) 🔄 SWAPPED`);
     return model;
     
   } catch (error) {
-    console.error('[Config] ❌ Failed to get independent fallback model:', error);
     throw new Error(`Independent fallback model (${PRIMARY_MODEL_CONFIG.model}) initialization failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -296,11 +287,4 @@ export function getFallbackModel() {
  * 🔄 SWAPPED for tool calling testing
  */
 if (env.NODE_ENV === 'development') {
-  console.log('🤖 AI SDK Configuration (🔄 SWAPPED FOR TOOL TESTING):');
-  console.log(`  Primary: ${FALLBACK_MODEL_CONFIG.model} (OpenAI) ← SWAPPED`);
-  console.log(`  Fallback: ${PRIMARY_MODEL_CONFIG.model} (OpenRouter) ← SWAPPED`);
-  console.log(`  Academic Persona: Enabled`);
-  console.log(`  Max Tokens: ${FALLBACK_MODEL_CONFIG.maxTokens} (Primary), ${PRIMARY_MODEL_CONFIG.maxTokens} (Fallback)`);
-  console.log(`  Temperature: ${FALLBACK_MODEL_CONFIG.temperature} (Primary), ${PRIMARY_MODEL_CONFIG.temperature} (Fallback)`);
-  console.log(`  🎯 Goal: Test web search tools with OpenAI's proven tool calling support`);
 }

@@ -1166,7 +1166,7 @@ export class ContentProcessorServiceExtended extends ContentProcessorService {
       ...options
     };
 
-    console.log(`[ContentProcessor] 🎯 Distilling phase ${phase} content (${artifactContent.length} chars)`);
+    // Distilling phase content - silent handling for production
 
     // Get dynamic maxTokens from admin panel for content analysis
     const dynamicConfig = await getDynamicModelConfig();
@@ -1222,7 +1222,7 @@ export class ContentProcessorServiceExtended extends ContentProcessorService {
     // Step 7: Generate warnings
     const warnings = this.generateSnapshotWarnings(compressedSnapshot, tokenCount, config);
 
-    console.log(`[ContentProcessor] ✅ Distillation complete: ${tokenCount}/${config.maxTokens} tokens (${Math.round(compressionRatio * 100)}% compression)`);
+    // Distillation complete - silent handling for production
 
     return {
       snapshot: compressedSnapshot,
@@ -1283,7 +1283,7 @@ export class ContentProcessorServiceExtended extends ContentProcessorService {
       return components; // Already within target
     }
 
-    console.log(`[ContentProcessor] 🔧 Compressing from ${currentTokens} to ${config.targetTokens} tokens`);
+    // Compressing content - silent handling for production
 
     // Apply priority-based compression
     const compressed: PhaseSnapshot = {

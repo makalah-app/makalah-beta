@@ -149,18 +149,18 @@ export const validateEnvironment = () => {
       throw new Error(`Security validation failed: ${failedChecks.join(', ')}`);
     }
 
-    console.log(`✅ Environment validation passed for ${env}`);
+    // Environment validation passed - silent handling for production
     return validatedEnv;
 
   } catch (error) {
-    console.error('❌ Environment validation failed:', error);
+    // Environment validation failed - silent handling for production
 
     if (env === 'production') {
       // In production, fail hard
       process.exit(1);
     } else {
       // In development, warn but continue
-      console.warn('⚠️ Continuing with invalid environment in development mode');
+      // Continuing with invalid environment in development mode - silent handling for production
       throw error;
     }
   }

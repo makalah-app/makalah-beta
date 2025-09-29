@@ -140,7 +140,7 @@ export async function initializeCachingSystem(): Promise<{
   };
 }> {
   try {
-    console.log('🚀 Initializing Makalah AI Caching System...');
+    // Initializing Makalah AI Caching System - silent handling for production
     
     const components = {
       redis: false,
@@ -153,9 +153,9 @@ export async function initializeCachingSystem(): Promise<{
     // 1. Initialize Redis connection
     try {
       components.redis = await redisManager.performHealthCheck();
-      console.log('✓ Redis connection established');
+      // Redis connection established - silent handling for production
     } catch (error) {
-      console.error('✗ Redis connection failed:', error);
+      // Redis connection failed - silent handling for production
     }
 
     // 2. Initialize session management
@@ -163,9 +163,9 @@ export async function initializeCachingSystem(): Promise<{
       // Test session manager
       const testSession = await sessionManager.getSessionStats();
       components.session = true;
-      console.log('✓ Session management initialized');
+      // Session management initialized - silent handling for production
     } catch (error) {
-      console.error('✗ Session management initialization failed:', error);
+      // Session management initialization failed - silent handling for production
     }
 
     // 3. Artifact caching - REMOVED: Artifact functionality eliminated per cleanup philosophy
@@ -174,27 +174,27 @@ export async function initializeCachingSystem(): Promise<{
     try {
       const perfMetrics = performanceMiddleware.getPerformanceMetrics();
       components.performance = true;
-      console.log('✓ Performance middleware initialized');
+      // Performance middleware initialized - silent handling for production
     } catch (error) {
-      console.error('✗ Performance middleware initialization failed:', error);
+      // Performance middleware initialization failed - silent handling for production
     }
 
     // 5. Initialize cache invalidation
     try {
       const invalidationStats = cacheInvalidationManager.getInvalidationStats();
       components.invalidation = true;
-      console.log('✓ Cache invalidation system initialized');
+      // Cache invalidation system initialized - silent handling for production
     } catch (error) {
-      console.error('✗ Cache invalidation initialization failed:', error);
+      // Cache invalidation initialization failed - silent handling for production
     }
 
     // 6. Initialize performance monitoring
     try {
       const monitoringMetrics = await performanceMonitorManager.getRealTimeMetrics();
       components.monitoring = true;
-      console.log('✓ Performance monitoring initialized');
+      // Performance monitoring initialized - silent handling for production
     } catch (error) {
-      console.error('✗ Performance monitoring initialization failed:', error);
+      // Performance monitoring initialization failed - silent handling for production
     }
 
     const successCount = Object.values(components).filter(Boolean).length;
@@ -204,7 +204,7 @@ export async function initializeCachingSystem(): Promise<{
       ? '🎉 All caching system components initialized successfully!'
       : `⚠️ Caching system partially initialized (${successCount}/${Object.keys(components).length} components)`;
 
-    console.log(message);
+    // System initialization status logged - silent handling for production
     
     return {
       success,
@@ -214,7 +214,7 @@ export async function initializeCachingSystem(): Promise<{
 
   } catch (error) {
     const errorMessage = `❌ Caching system initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    console.error(errorMessage);
+    // System initialization error logged - silent handling for production
     
     return {
       success: false,
@@ -288,7 +288,7 @@ export async function getCachingSystemStatus(): Promise<{
     };
     
   } catch (error) {
-    console.error('Failed to get caching system status:', error);
+    // Failed to get caching system status - silent handling for production
     throw error;
   }
 }

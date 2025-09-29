@@ -46,7 +46,7 @@ const webSearchTool = {
         .describe('Search provider to use - native-openai for general web, perplexity for academic search, Indonesian sources for academic'),
     }),
     execute: async ({ query, maxResults = 8, provider = 'native-openai' }) => {
-      console.log(`[WebSearch] Executing search: "${query}"`);
+      // Executing search - silent handling for production
 
       try {
         const config: ProviderConfig = {
@@ -64,7 +64,7 @@ const webSearchTool = {
           const textProvider = dynamicConfig.primaryProvider;
 
           if (textProvider) {
-            console.log(`[WebSearch] Using auto-selection based on text provider: ${textProvider}`);
+            // Using auto-selection based on text provider - silent handling for production
             results = await searchManager.searchWithAutoProvider(query, config, textProvider as any);
 
             // Determine which provider was actually used
@@ -77,11 +77,11 @@ const webSearchTool = {
             }
           } else {
             // Fallback to explicit provider selection
-            console.log(`[WebSearch] No text provider found, using explicit provider: ${provider}`);
+            // No text provider found, using explicit provider - silent handling for production
             results = await searchManager.search(provider as any, query, config);
           }
         } catch (autoError) {
-          console.warn(`[WebSearch] Auto-selection failed, falling back to explicit provider:`, autoError);
+          // Auto-selection failed, falling back to explicit provider - silent handling for production
           results = await searchManager.search(provider as any, query, config);
         }
 
@@ -94,7 +94,7 @@ const webSearchTool = {
           publishedDate: result.publishedDate,
         }));
 
-        console.log(`[WebSearch] Found ${mappedResults.length} results via ${actualProvider} for "${query}"`);
+        // Found results - silent handling for production
 
         return {
           results: mappedResults,
@@ -103,7 +103,7 @@ const webSearchTool = {
           query,
         };
       } catch (error) {
-        console.error(`[WebSearch] Search failed for "${query}":`, error);
+        // Search failed - silent handling for production
 
         // Return empty results on error - tool should not throw
         return {

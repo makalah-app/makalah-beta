@@ -32,8 +32,6 @@ export const phdAdvisorMiddleware: LanguageModelV2Middleware = {
     // Build minimal persona injection berdasarkan fase
     const personaInjection = buildPhaseAwarePersona(currentPhase, lastUserMessageText);
 
-    console.log(`[PhD Advisor Middleware] Injecting phase ${currentPhase} persona: "${personaInjection.substring(0, 50)}..."`);
-
     // Inject persona ke last user message
     return addToLastUserMessage({ params, text: personaInjection });
   },

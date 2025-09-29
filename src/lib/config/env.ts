@@ -134,5 +134,5 @@ export function isAIDebugEnabled(): boolean {
  * Validate environment on module load in development
  */
 if (isDevelopment()) {
-  console.log('✓ Environment variables validated successfully');
+  // Environment variables validated successfully - silent handling for production
 }

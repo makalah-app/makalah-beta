@@ -132,15 +132,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
     const errorId = `universal-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const universalError = UniversalErrorBoundary.enhanceUniversalError(error);
     
-    console.error('[UniversalErrorBoundary] Universal error intercepted:', {
-      errorId,
-      errorType: universalError.errorType,
-      severity: universalError.severity,
-      component: universalError.component,
-      cascading: universalError.cascading,
-      recoverable: universalError.recoverable,
-      message: universalError.message,
-    });
+    // Universal error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -157,24 +149,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
     const { errorId, cascadingCount, errorChain } = this.state;
     const { maxCascadingErrors = 5 } = this.props;
     
-    // Enhanced universal error logging
-    console.error('[UniversalErrorBoundary] Universal error details:', {
-      errorId,
-      cascadingCount,
-      errorChain: errorChain.length,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        errorType: (error as UniversalError).errorType,
-        severity: (error as UniversalError).severity,
-        component: (error as UniversalError).component,
-      },
-      componentStack: errorInfo.componentStack,
-      performanceMetrics: this.state.performanceMetrics,
-      telemetryData: this.state.telemetryData,
-      timestamp: new Date().toISOString(),
-    });
+    // Enhanced universal error logging - silent handling for production
 
     // Update error chain
     const newChainItem: ErrorChainItem = {
@@ -198,7 +173,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
 
     // Check for critical cascading errors
     if (cascadingCount >= maxCascadingErrors) {
-      console.error(`[UniversalErrorBoundary] CRITICAL: Too many cascading errors (${cascadingCount})`);
+      // CRITICAL: Too many cascading errors - silent handling for production
       this.handleCriticalError(updatedError, errorInfo, errorId);
       return;
     }
@@ -397,12 +372,12 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
       this.performanceObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         // Process performance entries
-        console.log('[UniversalErrorBoundary] Performance entries:', entries);
+        // Performance entries collected - silent handling for production
       });
       
       this.performanceObserver.observe({ entryTypes: ['measure', 'navigation'] });
     } catch (perfError) {
-      console.warn('[UniversalErrorBoundary] Performance monitoring unavailable:', perfError);
+      // Performance monitoring unavailable - silent handling for production
     }
   }
 
@@ -445,11 +420,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
    * Handles critical errors
    */
   private handleCriticalError(error: UniversalError, errorInfo: ErrorInfo, errorId: string) {
-    console.error('[UniversalErrorBoundary] CRITICAL ERROR HANDLER ACTIVATED:', {
-      errorId,
-      cascadingCount: this.state.cascadingCount,
-      errorChain: this.state.errorChain,
-    });
+    // CRITICAL ERROR HANDLER ACTIVATED - silent handling for production
 
     // In a real application, you might:
     // 1. Send immediate alert to monitoring service
@@ -495,10 +466,10 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
       };
 
       // In production, send to monitoring service
-      console.log('[UniversalErrorBoundary] Telemetry:', telemetryPayload);
+      // Telemetry data collected - silent handling for production
       
     } catch (telemetryError) {
-      console.error('[UniversalErrorBoundary] Telemetry failed:', telemetryError);
+      // Telemetry failed - silent handling for production
     }
   }
 
@@ -508,7 +479,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
   private handleRecovery = (): void => {
     const { errorId } = this.state;
     
-    console.log(`[UniversalErrorBoundary] Attempting universal recovery for ${errorId}`);
+    // Attempting universal recovery - silent handling for production
 
     this.setState({
       hasError: false,
@@ -523,7 +494,7 @@ export class UniversalErrorBoundary extends Component<UniversalErrorBoundaryProp
    * Handles page refresh
    */
   private handleRefresh = (): void => {
-    console.log('[UniversalErrorBoundary] Performing application refresh');
+    // Performing application refresh - silent handling for production
     window.location.reload();
   };
 

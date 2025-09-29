@@ -224,16 +224,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
       const newConfigs = generateDynamicConfigs(primaryModel, fallbackModel, systemPrompt);
       setDynamicConfigs(newConfigs);
 
-      console.log('✅ Dynamic configuration presets generated:', {
-        primaryProvider: primaryModel.provider,
-        primaryModel: primaryModel.model,
-        primaryTemp: primaryModel.temperature,
-        primaryMaxTokens: primaryModel.maxTokens,
-        fallbackProvider: fallbackModel.provider,
-        fallbackModel: fallbackModel.model,
-        systemPromptLength: systemPrompt.length,
-        presetsCount: Object.keys(newConfigs).length
-      });
+      // Dynamic configuration presets generated - silent handling for production
     }
   }, [dynamicConfig, configLoading]);
 

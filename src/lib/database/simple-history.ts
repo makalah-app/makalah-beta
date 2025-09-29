@@ -18,7 +18,7 @@ export interface ConversationItem {
  */
 export async function getAllConversations(): Promise<ConversationItem[]> {
   try {
-    console.log('[SimpleHistory] Loading all conversations...');
+    // Loading all conversations - silent handling for production
     
     const { data: conversations, error } = await supabaseAdmin
       .from('conversations')
@@ -26,20 +26,20 @@ export async function getAllConversations(): Promise<ConversationItem[]> {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      console.error('[SimpleHistory] Database error:', error);
+      // Database error - silent handling for production
       return [];
     }
 
     if (!conversations) {
-      console.log('[SimpleHistory] No conversations found');
+      // No conversations found - silent handling for production
       return [];
     }
 
-    console.log(`[SimpleHistory] Loaded ${conversations.length} conversations`);
+    // Loaded conversations successfully - silent handling for production
     return conversations;
 
   } catch (error) {
-    console.error('[SimpleHistory] Failed to load conversations:', error);
+    // Failed to load conversations - silent handling for production
     return [];
   }
 }

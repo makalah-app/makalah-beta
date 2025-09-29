@@ -530,7 +530,7 @@ export class PromptTunerService {
         return await this.refineStructure(prompt, strategy.config);
         
       default:
-        console.warn(`Unknown optimization strategy: ${strategy.name}`);
+        // Unknown optimization strategy - silent handling for production
         return null;
     }
   }
@@ -901,7 +901,7 @@ export class PromptTunerService {
     test.winner = this.determineWinner(test);
     test.confidence = this.calculateTestConfidence(test);
     
-    console.log(`A/B Test ${testId} completed. Winner: ${test.winner || 'No significant difference'}`);
+    // A/B Test completed - silent handling for production
   }
 
   private calculateABTestMetrics(test: ABTestResult): ABTestMetric[] {
@@ -1033,7 +1033,7 @@ export class PromptTunerService {
     const qualityDrop = historicalAvg.qualityScore - recentAvg.qualityScore;
     
     if (qualityDrop > 0.1) {
-      console.log(`Auto-optimization triggered for prompt ${promptId} due to quality drop`);
+      // Auto-optimization triggered due to quality drop - silent handling for production
       // In real implementation, would trigger automatic re-optimization
     }
   }

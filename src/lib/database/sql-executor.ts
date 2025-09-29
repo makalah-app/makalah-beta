@@ -16,7 +16,7 @@ export interface SqlResult {
 
 export async function executeSql(query: string): Promise<SqlResult> {
   try {
-    console.log('🔍 Executing SQL via direct client:', query.substring(0, 50) + '...')
+    // Executing SQL via direct client - silent handling for production
     
     // For SELECT queries, try to parse table and use Supabase client
     if (query.trim().toLowerCase().startsWith('select')) {
@@ -39,7 +39,7 @@ export async function executeSql(query: string): Promise<SqlResult> {
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('❌ SQL execution failed:', errorMessage)
+    // SQL execution failed - silent handling for production
     
     return {
       data: [],
@@ -84,7 +84,7 @@ export async function countRecords(tableName: string): Promise<number> {
     return count || 0
     
   } catch (error) {
-    console.error(`Failed to count records in ${tableName}:`, error)
+    // Failed to count records - silent handling for production
     return 0
   }
 }
@@ -101,7 +101,7 @@ export async function getTableSchema(tableName: string) {
     return data
     
   } catch (error) {
-    console.error(`Failed to get schema for ${tableName}:`, error)
+    // Failed to get schema - silent handling for production
     return []
   }
 }

@@ -92,11 +92,8 @@ export async function persistMessagesAsync(
   const startTime = Date.now();
   
   try {
-    console.log(`[MessagePersistence] 🔄 Starting persistence for ${messages.length} messages`);
-    
     // CRITICAL SAFETY CHECK: Only proceed if stream completed successfully
     if (!metadata.streamCoordinationData.primarySuccess) {
-      console.log(`[MessagePersistence] ⚠️ Skipping persistence - stream not successfully completed`);
       return;
     }
     
@@ -109,12 +106,6 @@ export async function persistMessagesAsync(
     
     // Race between persistence and timeout
     const result = await Promise.race([persistencePromise, timeoutPromise]);
-    
-    console.log(`[MessagePersistence] ✅ Persistence completed:`, {
-      conversationId: result.conversationId,
-      messagesStored: result.messagesStored,
-      duration: result.timing.duration
-    });
     
   } catch (error) {
     // Re-throw error for proper handling by caller
@@ -153,7 +144,6 @@ async function performMessagePersistence(
   const startTime = Date.now();
   
   try {
-    console.log(`[MessagePersistence] 📝 Persisting ${messages.length} messages to database`);
     
     // Step 1: Ensure conversation exists or create new one
     let conversationId = metadata.conversationId;
@@ -164,8 +154,6 @@ async function performMessagePersistence(
         getValidUserUUID(metadata.userId),
         extractConversationTitle(messages)
       );
-      
-      console.log(`[MessagePersistence] 🆕 Created new conversation: ${conversationId}`);
     }
     
     // Step 2: Enhance messages with persistence metadata
@@ -192,8 +180,6 @@ async function performMessagePersistence(
     
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
-    console.log(`[MessagePersistence] ✅ Successfully persisted ${messages.length} messages in ${duration}ms`);
     
     return {
       success: true,
@@ -226,7 +212,6 @@ async function attemptFallbackPersistence(
   metadata: PersistenceMetadata
 ): Promise<void> {
   try {
-    console.log(`[MessagePersistence] 🔄 Attempting fallback persistence`);
     
     // Create fallback data structure
     const fallbackData = {
@@ -257,8 +242,6 @@ async function attemptFallbackPersistence(
       if (globalThis.messagePersistenceFallback.length > 100) {
         globalThis.messagePersistenceFallback = globalThis.messagePersistenceFallback.slice(-100);
       }
-      
-      console.log(`[MessagePersistence] ✅ Fallback persistence successful (memory cache)`);
     }
     
   } catch (fallbackError) {
@@ -307,7 +290,6 @@ export function isPersistenceEnabled(): boolean {
  */
 export function updatePersistenceConfig(updates: Partial<PersistenceConfig>): void {
   Object.assign(PERSISTENCE_CONFIG, updates);
-  console.log(`[MessagePersistence] 🔧 Configuration updated:`, PERSISTENCE_CONFIG);
 }
 
 /**
@@ -326,7 +308,6 @@ export function getFallbackData(): any[] {
 export function clearFallbackData(): void {
   if (typeof globalThis !== 'undefined') {
     globalThis.messagePersistenceFallback = [];
-    console.log(`[MessagePersistence] 🧹 Fallback data cleared`);
   }
 }
 

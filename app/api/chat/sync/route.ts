@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       data
     }: SyncRequest = await req.json();
 
-    console.log(`[ChatSync] Processing ${action} for conversation ${conversationId}`);
+    // Processing sync action - silent handling for production
 
     const timestamp = Date.now();
     let response: SyncResponse = {
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[ChatSync] API error:', error);
+    // API error occurred - silent handling for production
     
     return NextResponse.json({
       success: false,
@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
     }, { status: 400 });
   }
 
-  console.log(`[ChatSync] Starting SSE stream for conversation ${conversationId}`);
+  // Starting SSE stream - silent handling for production
 
   // Create real-time stream using AI SDK patterns
   const realtimeStream = createUIMessageStream({
@@ -241,7 +241,7 @@ export async function GET(req: NextRequest) {
 
             // Check if this is a phase completion event
             if (event.phase && event.status === 'completed') {
-              console.log(`[ChatSync] ✅ Phase ${event.phase} completion detected in workflow sync`);
+              // Phase completion detected - silent handling for production
               eventData.type = 'phase_completed';
             }
 
@@ -256,7 +256,7 @@ export async function GET(req: NextRequest) {
 
             // P0.2 ENHANCEMENT: Special handling for phase_context_updated events
             if (notification.data?.type === 'phase_context_updated') {
-              console.log(`[ChatSync] 📡 Phase context updated event for phase ${notification.data.phase}`);
+              // Phase context updated - silent handling for production
 
               writer.write({
                 type: 'data-phase-context',
@@ -329,19 +329,19 @@ export async function GET(req: NextRequest) {
 
       // Clean up when stream closes
       req.signal.addEventListener('abort', async () => {
-        console.log(`[ChatSync] Client disconnected from conversation ${conversationId}`);
+        // Client disconnected - silent handling for production
         subscriptionActive = false;
         clearInterval(heartbeatInterval);
         
         try {
           await realtimeManager.unsubscribeFromConversation(conversationId);
         } catch (error) {
-          console.error('[ChatSync] Cleanup error:', error);
+          // Cleanup error occurred - silent handling for production
         }
       });
 
       // Keep the stream alive
-      console.log(`[ChatSync] Real-time stream established for conversation ${conversationId}`);
+      // Real-time stream established - silent handling for production
     }
   });
 
@@ -359,13 +359,13 @@ async function handleSubscribe(
     const result = await initializeRealtimeSync(conversationId, userId, username, {
       // Basic callbacks for non-streaming subscription
       onNewMessage: (message) => {
-        console.log('[ChatSync] New message (non-stream):', message.message_id);
+        // New message received - silent handling for production
       },
       onWorkflowSync: (event) => {
-        console.log('[ChatSync] Workflow sync (non-stream):', event.phase);
+        // Workflow sync event - silent handling for production
       },
       onNotification: (notification) => {
-        console.log('[ChatSync] Notification (non-stream):', notification.title);
+        // Notification received - silent handling for production
       }
     });
 
@@ -606,7 +606,7 @@ export async function PATCH(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[ChatSync] Manual phase context update for conversation ${conversationId}, phase ${phase}`);
+    // Manual phase context update - silent handling for production
 
     const response = await handlePhaseContextUpdated(
       conversationId,
@@ -617,7 +617,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[ChatSync] Manual phase context update error:', error);
+    // Manual phase context update error - silent handling for production
 
     return NextResponse.json({
       success: false,
@@ -642,7 +642,7 @@ export async function PUT(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[ChatSync] Manual sync for conversation ${conversationId}`);
+    // Manual sync initiated - silent handling for production
 
     // Load current messages from database
     const currentMessages = await loadChat(conversationId);
@@ -686,7 +686,7 @@ export async function PUT(req: NextRequest) {
     }, { status: 409 });
 
   } catch (error) {
-    console.error('[ChatSync] Manual sync error:', error);
+    // Manual sync error occurred - silent handling for production
     
     return NextResponse.json({
       success: false,
@@ -722,7 +722,7 @@ async function detectConflicts(conversationId: string, currentMessages: any[], n
     }
   }
 
-  console.log(`[ChatSync] Detected ${conflicts.length} conflicts for conversation ${conversationId}`);
+  // Conflicts detected - silent handling for production
   return conflicts;
 }
 
@@ -740,7 +740,7 @@ async function handlePhaseContextUpdated(
   }
 ): Promise<SyncResponse> {
   try {
-    console.log(`[ChatSync] 📸 Processing phase_context_updated for phase ${phaseData.phase}`);
+    // Processing phase context update - silent handling for production
 
     // Emit notification untuk all subscribers
     await notifyWorkflowEvent(
@@ -776,7 +776,7 @@ async function handlePhaseContextUpdated(
     };
 
   } catch (error) {
-    console.error('[ChatSync] ❌ Phase context update failed:', error);
+    // Phase context update failed - silent handling for production
 
     return {
       success: false,

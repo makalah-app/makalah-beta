@@ -116,7 +116,6 @@ async function updateConversationMetadata(
     .in('role', ['user', 'assistant']);
 
   if (countError) {
-    console.warn(`[saveChat] Failed to count messages for ${chatId}: ${countError.message}`);
   }
 
   const messageCount = dbMessageCount ?? 0;
@@ -137,7 +136,6 @@ async function updateConversationMetadata(
     .eq('id', chatId);
 
   if (conversationError) {
-    console.warn(`[saveChat] Failed to update conversation metadata: ${conversationError.message}`);
     // Don't throw - messages are saved, this is just metadata
   }
 }
@@ -193,12 +191,10 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
             }
           }
         } catch (error) {
-          console.warn(`[saveChat] Background title generation failed for ${chatId}:`, error);
-        }
+          }
       });
     }
   } catch (error) {
-    console.warn('[handleSmartTitleGeneration] Failed to check/update title:', error);
   }
 }
 
@@ -220,13 +216,11 @@ export async function saveChat({
   const startTime = Date.now();
 
   try {
-    console.log(`[saveChat] Saving ${messages.length} messages for chat ${chatId}`);
 
     // DATABASE FALLBACK: Check if database is available
     const health = await checkDatabaseHealth();
 
     if (!health.connected || isFallbackModeActive()) {
-      console.log(`[saveChat] 🔄 Database unavailable (${health.consecutiveFailures} failures), using fallback mode`);
       return await measureFallbackPerformance(
         `saveChat-${chatId}`,
         () => saveChatFallback({ chatId, messages })
@@ -242,7 +236,6 @@ export async function saveChat({
 
     if (!conversation) {
       const detailedError = `❌ CRITICAL: Failed to create or retrieve conversation for chatId: ${chatId}, userId: ${userId}. This indicates a database constraint violation or connection issue.`;
-      console.error(`[saveChat] ${detailedError}`);
       throw new Error(detailedError);
     }
 
@@ -258,12 +251,10 @@ export async function saveChat({
     ]);
 
     const saveTime = Date.now() - startTime;
-    console.log(`[saveChat] Successfully saved ${messages.length} messages in ${saveTime}ms`);
 
   } catch (error) {
     const saveTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[saveChat] 💥 Database save failed for chat ${chatId} after ${saveTime}ms:`, error);
 
     // 🔍 ENHANCED ERROR CLASSIFICATION for better UI feedback
     const isConstraintError = errorMessage.includes('foreign key constraint') || errorMessage.includes('violates foreign key');
@@ -281,16 +272,13 @@ export async function saveChat({
 
     // DATABASE FALLBACK: Try fallback mode if database operation fails
     try {
-      console.log(`[saveChat] 🔄 Attempting fallback save for chat ${chatId}`);
       await measureFallbackPerformance(
         `saveChat-fallback-${chatId}`,
         () => saveChatFallback({ chatId, messages })
       );
 
-      console.log(`[saveChat] ✅ Successfully saved to fallback for chat ${chatId}`);
     } catch (fallbackError) {
       const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
-      console.error(`[saveChat] ❌ Both database and fallback failed for chat ${chatId}:`, fallbackError);
 
       // 🔥 SURFACE DETAILED ERROR TO UI for proper user feedback
       const combinedError = new Error(`${userFriendlyMessage}\n\nDetail: Database (${errorMessage}) dan Fallback (${fallbackMessage})`);
@@ -314,11 +302,9 @@ export async function loadChat(id: string, client?: SupabaseClient<Database>): P
   const startTime = Date.now();
   
   try {
-    console.log(`[loadChat] Loading messages for chat ${id}`);
     
     // UUID FORMAT VALIDATION: Check if chatId is valid UUID for PostgreSQL
     if (!isValidUUID(id)) {
-      console.warn(`[loadChat] Invalid UUID format: ${id}, using fallback mode`);
       const result = await measureFallbackPerformance(
         `loadChat-invalid-uuid-${id}`,
         () => loadChatFallback(id)
@@ -330,7 +316,6 @@ export async function loadChat(id: string, client?: SupabaseClient<Database>): P
     const health = await checkDatabaseHealth();
     
     if (!health.connected || isFallbackModeActive()) {
-      console.log(`[loadChat] 🔄 Database unavailable (${health.consecutiveFailures} failures), using fallback mode`);
       return await measureFallbackPerformance(
         `loadChat-${id}`,
         () => loadChatFallback(id)
@@ -350,7 +335,6 @@ export async function loadChat(id: string, client?: SupabaseClient<Database>): P
     }
     
     if (!dbMessages || dbMessages.length === 0) {
-      console.log(`[loadChat] No messages found for chat ${id}`);
       return [];
     }
     
@@ -379,29 +363,23 @@ export async function loadChat(id: string, client?: SupabaseClient<Database>): P
     });
     
     const loadTime = Date.now() - startTime;
-    console.log(`[loadChat] Successfully loaded ${uiMessages.length} messages in ${loadTime}ms`);
     
     return uiMessages;
     
   } catch (error) {
     const loadTime = Date.now() - startTime;
-    console.error(`[loadChat] Database load failed for chat ${id} after ${loadTime}ms:`, error);
     
     // DATABASE FALLBACK: Try fallback mode if database operation fails
     try {
-      console.log(`[loadChat] 🔄 Attempting fallback load for chat ${id}`);
       const result = await measureFallbackPerformance(
         `loadChat-fallback-${id}`,
         () => loadChatFallback(id)
       );
       
-      console.log(`[loadChat] ✅ Successfully loaded ${result.result.length} messages from fallback for chat ${id}`);
       return result.result;
     } catch (fallbackError) {
-      console.error(`[loadChat] ❌ Both database and fallback failed for chat ${id}:`, fallbackError);
       
       // Return empty array as final fallback to prevent UI breakage
-      console.log(`[loadChat] 🔧 Returning empty array to prevent UI breakage`);
       return [];
     }
   }
@@ -417,7 +395,6 @@ export async function createChat(userId?: string, title?: string): Promise<strin
     const health = await checkDatabaseHealth();
     
     if (!health.connected || isFallbackModeActive()) {
-      console.log(`[createChat] 🔄 Database unavailable (${health.consecutiveFailures} failures), using fallback mode`);
       return await createChatFallback(userId, title);
     }
     
@@ -444,20 +421,15 @@ export async function createChat(userId?: string, title?: string): Promise<strin
       throw new Error(`Failed to create chat: ${error.message}`);
     }
     
-    console.log(`[createChat] Created new chat ${chatId} for user ${actualUserId}`);
     return chatId;
     
   } catch (error) {
-    console.error('[createChat] Database create failed:', error);
     
     // DATABASE FALLBACK: Try fallback mode if database operation fails
     try {
-      console.log(`[createChat] 🔄 Attempting fallback create chat`);
       const fallbackChatId = await createChatFallback(userId, title);
-      console.log(`[createChat] ✅ Successfully created chat ${fallbackChatId} in fallback mode`);
       return fallbackChatId;
     } catch (fallbackError) {
-      console.error(`[createChat] ❌ Both database and fallback failed:`, fallbackError);
       throw new Error(`Chat creation failed: Database (${error instanceof Error ? error.message : String(error)}) and Fallback (${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)})`);
     }
   }
@@ -486,7 +458,6 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       .limit(50);
 
     if (error) {
-      console.error(`[getUserConversations] Database error for user ${userId}:`, error);
       throw new Error(`Failed to load conversations: ${error.message}`);
     }
 
@@ -499,11 +470,9 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       workflowId: null // Remove workflow reference as it's been cleaned up
     }));
 
-    console.log(`[getUserConversations] Found ${summaries.length} conversations for user ${userId}`);
     return summaries;
 
   } catch (error) {
-    console.error(`[getUserConversations] Failed to load conversations for user ${userId}:`, error);
     // Return empty array as graceful fallback to prevent UI breakage
     return [];
   }
@@ -522,12 +491,10 @@ export async function getConversationDetails(conversationId: string): Promise<Co
       .single();
 
     if (convError) {
-      console.error(`[getConversationDetails] Database error loading conversation ${conversationId}:`, convError);
       return null;
     }
 
     if (!conversation) {
-      console.warn(`[getConversationDetails] Conversation ${conversationId} not found`);
       return null;
     }
 
@@ -536,7 +503,6 @@ export async function getConversationDetails(conversationId: string): Promise<Co
     try {
       messages = await loadChat(conversationId);
     } catch (messageError) {
-      console.error(`[getConversationDetails] Failed to load messages for ${conversationId}:`, messageError);
       // Continue with empty messages to provide partial data
     }
 
@@ -548,7 +514,6 @@ export async function getConversationDetails(conversationId: string): Promise<Co
     } as any;
 
   } catch (error) {
-    console.error(`[getConversationDetails] Unexpected error loading conversation ${conversationId}:`, error);
     return null;
   }
 }
@@ -600,7 +565,6 @@ async function ensureConversationExists(
   if (!error && newConversation) {
     setImmediate(async () => {
       try {
-        console.log(`[ensureConversationExists] 🎯 Generating smart title for conversation ${chatId} (non-blocking)`);
         const smartTitle = await generateSmartTitleFromMessages(messages);
 
         if (smartTitle && smartTitle !== fallbackTitle) {
@@ -617,7 +581,6 @@ async function ensureConversationExists(
             })
             .eq('id', chatId);
 
-          console.log(`[ensureConversationExists] ✅ Smart title updated for ${chatId}: "${smartTitle}"`);
 
           // Send notification to UI about smart title generation
           if (typeof window !== 'undefined') {
@@ -630,7 +593,6 @@ async function ensureConversationExists(
           }
         }
       } catch (titleError) {
-        console.warn(`[ensureConversationExists] ⚠️ Smart title generation failed for ${chatId}:`, titleError);
         // Update metadata to indicate failure but keep fallback title
         await (supabaseAdmin as any)
           .from('conversations')
@@ -660,7 +622,6 @@ async function ensureConversationExists(
       }
     }
     const detailedError = `❌ CRITICAL DATABASE ERROR: Failed to create conversation ${chatId} for user ${userId}. Error: ${error.message || error}. Code: ${(error as any)?.code || 'unknown'}`;
-    console.error(`[ensureConversationExists] ${detailedError}`, error);
     throw new Error(detailedError); // 🔥 THROW instead of returning null to surface error to UI
   }
   
@@ -753,14 +714,12 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
       const openaiModule = await import('@ai-sdk/openai');
       createOpenAI = openaiModule.createOpenAI;
     } catch (importError) {
-      console.warn('[TitleGen] Failed to import @ai-sdk/openai:', importError);
       return generateTitleFromMessages(messages);
     }
 
     // Get environment API key (guaranteed to work since main chat works)
     const envOpenAIKey = process.env.OPENAI_API_KEY;
     if (!envOpenAIKey) {
-      console.warn('[TitleGen] No OpenAI API key available, using fallback title generation');
       return generateTitleFromMessages(messages);
     }
 
@@ -780,9 +739,7 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
         ? dynamicConfig.primaryModelName  // Use 'gpt-4o' from admin config
         : 'gpt-4o-mini';  // Force OpenAI model for OpenAI API
       titleTemperature = Math.min(dynamicConfig.config.temperature * 3, 0.5); // ✅ Dynamic base * 3 (capped at 0.5 for creativity)
-      console.log(`[TitleGen] Using model: ${titleModel} with provider: OpenAI (primaryProvider: ${dynamicConfig.primaryProvider})`);
     } catch (error) {
-      console.warn('[TitleGen] Using fallback config for title generation');
     }
 
     // Use dynamic model selection for title generation
@@ -800,10 +757,8 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
       ? String(result.text)
       : '';
     const title = sanitizeTitle(raw);
-    console.log('[TitleGen] ✅ AI title generated successfully:', title);
     return title.length > 0 ? title : generateTitleFromMessages(messages);
   } catch (err) {
-    console.warn('[TitleGen] AI title generation failed, using fallback:', err);
     return generateTitleFromMessages(messages);
   }
 }
@@ -865,7 +820,6 @@ async function trackAIInteraction(
       const dynamicConfig = await getDynamicModelConfig();
       fallbackModel = dynamicConfig.primaryModelName; // ✅ Dynamic from admin panel
     } catch (error) {
-      console.warn('[trackAIInteraction] Using hardcoded fallback model');
     }
 
     // Type-safe metadata extraction
@@ -911,7 +865,6 @@ async function trackAIInteraction(
     
   } catch (error) {
     // Don't throw - this is just tracking
-    console.warn('[trackAIInteraction] Failed to track AI interaction:', error);
   }
 }
 
@@ -928,7 +881,6 @@ export async function measureChatPerformance<T>(
     const result = await fn();
     const time = Date.now() - startTime;
     
-    console.log(`[Performance] ${operation} completed in ${time}ms`);
     
     return {
       result,
@@ -936,7 +888,6 @@ export async function measureChatPerformance<T>(
     };
   } catch (error) {
     const time = Date.now() - startTime;
-    console.error(`[Performance] ${operation} failed after ${time}ms:`, error);
     throw error;
   }
 }

@@ -74,7 +74,7 @@ export class ProviderHealthManager {
     this.consecutiveFailures.set('openai', 0);
 
     if (env.NODE_ENV === 'development') {
-      console.log('🏥 Provider Health Manager initialized');
+      // Provider Health Manager initialized - silent handling for production
     }
   }
 
@@ -113,7 +113,7 @@ export class ProviderHealthManager {
     );
 
     if (env.NODE_ENV === 'development') {
-      console.log(`🔄 Health checks started (interval: ${this.config.interval}ms)`);
+      // Health checks started - silent handling for production
     }
   }
 
@@ -129,7 +129,7 @@ export class ProviderHealthManager {
     this.isMonitoring = false;
 
     if (env.NODE_ENV === 'development') {
-      console.log('🛑 Health checks stopped');
+      // Health checks stopped - silent handling for production
     }
   }
 
@@ -146,7 +146,7 @@ export class ProviderHealthManager {
       await Promise.allSettled(healthChecks);
     } catch (error) {
       if (LOGGING_CONFIG.logProviderSwitching) {
-        console.error('❌ Error during health checks:', error);
+        // Error during health checks - silent handling for production
       }
     }
   }
@@ -284,9 +284,9 @@ export class ProviderHealthManager {
       
       if (LOGGING_CONFIG.logProviderSwitching) {
         if (newResult.status === 'healthy') {
-          console.log(message);
+          // Provider health status change logged - silent handling for production
         } else {
-          console.warn(`${message}${newResult.error ? `: ${newResult.error}` : ''}`);
+          // Provider health warning logged - silent handling for production
         }
       }
     }

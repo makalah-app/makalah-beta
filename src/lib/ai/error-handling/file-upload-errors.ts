@@ -183,10 +183,7 @@ export class FileErrorRecoveryManager {
           break;
         }
 
-        console.warn(`[File Error Recovery] Attempt ${attempt + 1} failed for ${operationId}:`, {
-          error: lastError.message,
-          context,
-        });
+        // Retry attempt failed - silent handling for production
       }
     }
 
@@ -416,13 +413,13 @@ export class FileStreamingErrorHandler {
   createStreamErrorHandler(onError?: (error: Error) => void) {
     return {
       onAbort: () => {
-        console.log('[File Streaming] Operation aborted');
+        // Operation aborted - silent handling for production
         onError?.(new Error('File operation was cancelled by user'));
       },
       
       onError: (error: Error) => {
         const handled = this.handleStreamError(error);
-        console.error(`[File Streaming] ${handled.type}:`, handled.message);
+        // File streaming error occurred - silent handling for production
         onError?.(handled.error);
       },
     };

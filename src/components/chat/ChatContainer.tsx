@@ -166,7 +166,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     // Event handlers from documentation patterns
     onFinish: (arg: any) => {
       const message = (arg && arg.message) ? arg.message : arg;
-      console.log('[ChatContainer] Message completed:', message?.id);
       
       // ❌ REMOVED: Phase information extraction - 4 lines of rigid phase control
       // Natural LLM conversation doesn't need phase metadata tracking
@@ -191,7 +190,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     },
     
     onError: (error) => {
-      console.error('[ChatContainer] Chat error:', error);
+      // Chat error occurred - silent handling for production
 
       // 🔍 ENHANCED ERROR PARSING & CLASSIFICATION
       let errorData: {
@@ -238,19 +237,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
       // 🔄 RETRY LOGIC: Auto-clear retryable errors setelah delay
       if (errorData.isRetryable) {
-        console.log('[ChatContainer] Error is retryable, will auto-clear in 5 seconds');
         setTimeout(() => {
           setErrorState(null);
         }, 5000);
       }
-
-      // Log classification untuk debugging
-      console.log('[ChatContainer] Error classified:', {
-        type: errorData.type,
-        isRetryable: errorData.isRetryable,
-        provider: errorData.provider,
-        message: errorData.message
-      });
 
       if (externalErrorHandler) {
         externalErrorHandler(error);
@@ -258,13 +248,10 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     },
     
     onData: (dataPart: any) => {
-      console.log('[ChatContainer] Streaming data part:', dataPart);
       
       // Handle AI SDK v5 compliant history refresh notification (transient)
       if (dataPart.type === 'data-history') {
         try {
-          console.log('[ChatContainer] 📣 Received data-history:', dataPart.data);
-
           // Always refresh sidebar list
           if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
             (window as any).refreshChatHistory();
@@ -272,17 +259,14 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
           // ❌ REMOVED: Complex message reloading logic - 7 lines of rigid database sync
           // Natural LLM conversation doesn't need complex artifact-based reloading
-          console.log('[ChatContainer] ⏭️ Simple refresh without complex reloading logic');
         } catch (e) {
-          console.warn('[ChatContainer] history refresh failed:', e);
+          // History refresh failed - silent handling for production
         }
       }
 
       // 🔥 HANDLE ERROR EVENTS FROM STREAM
       if (dataPart.type === 'error') {
         try {
-          console.log('[ChatContainer] 📣 Received error from stream:', dataPart.error);
-
           const streamError = dataPart.error;
           setErrorState({
             message: streamError.message || 'Terjadi kesalahan streaming',
@@ -299,7 +283,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             }, 5000);
           }
         } catch (e) {
-          console.warn('[ChatContainer] Error processing stream error:', e);
+          // Error processing stream - silent handling for production
         }
       }
 
@@ -330,7 +314,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
         // Handle transient notifications
         if (dataPart.data?.type === 'notification' && dataPart.data?.message) {
-          console.log('[Notification]', dataPart.data.message);
+          // Notification handled silently
         }
 
         // citations streaming disabled
@@ -341,16 +325,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     experimental_throttle: 50,
   });
 
-  // Debug useChat hook result
-  if (debugMode) {
-    console.log('[ChatContainer] useChat result:', chatHookResult);
-    console.log('[ChatContainer] sendMessage type:', typeof chatHookResult.sendMessage);
-  }
-
-  // Log initial status only in debug mode
-  if (debugMode) {
-    console.log('[ChatContainer] Initial useChat status:', chatHookResult.status);
-  }
+  // Debug mode logging removed for production
 
   // Destructure values dari useChat hook including addToolResult for HITL
   const {
@@ -367,40 +342,25 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const previousStatusRef = useRef(status);
 
   const persistChatHistory = useCallback(async () => {
-    console.log('[ChatContainer] persistChatHistory called', {
-      chatId,
-      messagesLength: messages.length,
-      hasAssistant: messages.some(message => message.role === 'assistant'),
-      lastPersistedCount: lastPersistedCountRef.current,
-      isPersisting: isPersistingRef.current
-    });
-
     if (!chatId) {
-      console.log('[ChatContainer] persistChatHistory: No chatId, skipping');
       return;
     }
 
     if (messages.length === 0) {
-      console.log('[ChatContainer] persistChatHistory: No messages, skipping');
       return;
     }
 
     if (!messages.some(message => message.role === 'assistant')) {
-      console.log('[ChatContainer] persistChatHistory: No assistant message yet, skipping');
       return;
     }
 
     if (messages.length === lastPersistedCountRef.current) {
-      console.log('[ChatContainer] persistChatHistory: Already persisted this count, skipping');
       return;
     }
 
     if (isPersistingRef.current) {
-      console.log('[ChatContainer] persistChatHistory: Already persisting, skipping');
       return;
     }
-
-    console.log('[ChatContainer] persistChatHistory: Starting persist...');
     const effectiveUserId = getUserId(); // Use consistent user ID extraction
     const timestamp = new Date().toISOString();
 
@@ -463,17 +423,16 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         }
 
         clearTimeout(timeout);
-        console.log('[ChatContainer] persistChatHistory: Sync successful!');
         return true;
       } catch (error: any) {
         clearTimeout(timeout);
 
         if (error.name === 'AbortError') {
-          console.warn(`[ChatContainer] Chat sync timeout (attempt ${retryCount + 1}/${maxRetries + 1})`);
+          // Chat sync timeout - silent handling for production
           return false;
         }
 
-        console.error(`[ChatContainer] Chat sync error (attempt ${retryCount + 1}):`, error);
+        // Chat sync error - silent handling for production
         return false;
       }
     };
@@ -484,8 +443,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     // Retry if failed (but not for abort errors)
     while (!syncSuccess && retryCount < maxRetries) {
       retryCount++;
-      console.log(`[ChatContainer] Retrying chat sync (attempt ${retryCount + 1}/${maxRetries + 1})...`);
-
       // Wait before retry (exponential backoff)
       await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
 
@@ -512,13 +469,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             try {
               refreshHistory();
             } catch (refreshError) {
-              console.warn('[ChatContainer] refreshChatHistory failed:', refreshError);
+              // Refresh chat history failed - silent handling for production
             }
           }, 500);
         }
       }
     } else {
-      console.error(`[ChatContainer] ❌ Chat persistence failed after ${maxRetries + 1} attempts`);
+      // Chat persistence failed - silent handling for production
       // DO NOT REFRESH PAGE - just log error
       // User can continue chatting, we'll try to save on next message
     }
@@ -577,20 +534,11 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     
     isExistingConversation.current = fromHistoryNavigation && hasUrlChatId && chatId !== undefined;
     
-    if (debugMode) {
-      console.log(`[ChatContainer] Conversation detection:`, {
-        chatId,
-        fromHistoryNavigation,
-        hasUrlChatId,
-        isExisting: isExistingConversation.current
-      });
-    }
+    // Conversation detection completed
   }, [chatId, searchParams, debugMode]);
 
   // ✅ FIXED: Load initial messages with stable dependencies - PREVENT SETMESSAGES LOOP
   useEffect(() => {
-    console.log(`[ChatContainer] useEffect triggered with chatId: ${chatId}`);
-
     const loadInitialMessages = async () => {
       // Only proceed if we have a chatId
       if (!chatId) {
@@ -610,7 +558,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         return;
       }
 
-      console.log(`[ChatContainer] Loading initial messages for chat ${chatId}`);
       hasLoadedRef.current = true; // Mark as loading attempted
       setIsLoadingInitialMessages(true);
 
@@ -619,7 +566,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         const loadedChatMessages = await loadChat(chatId, supabaseChatClient as any);
 
         if (loadedChatMessages.length > 0) {
-          console.log(`[ChatContainer] ✅ Loaded ${loadedChatMessages.length} messages from database`);
           setLoadedMessages(loadedChatMessages as AcademicUIMessage[]);
           // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop that causes infinite re-renders
           setTimeout(() => {
@@ -627,7 +573,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           }, 0);
           lastPersistedCountRef.current = loadedChatMessages.length;
         } else {
-          console.log(`[ChatContainer] No messages found for chat ${chatId} - starting fresh`);
           // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop
           setTimeout(() => {
             setMessages([]);
@@ -635,7 +580,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           lastPersistedCountRef.current = 0;
         }
       } catch (error) {
-        console.error(`[ChatContainer] Failed to load initial messages:`, error);
+        // Failed to load initial messages - silent handling for production
         // Continue with empty chat - also async to prevent loops
         setTimeout(() => {
           setMessages([]);
@@ -655,7 +600,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     try {
       regenerate(); // AI SDK v5 uses regenerate() for regeneration
     } catch (error) {
-      console.error('[ChatContainer] Regenerate error:', error);
+      // Regenerate error - silent handling for production
     }
   };
 
@@ -744,14 +689,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   }, [editingMessageId, handleCancelEdit]);
 
   useEffect(() => {
-    console.log('[ChatContainer] Status change detected:', {
-      previousStatus: previousStatusRef.current,
-      currentStatus: status,
-      willPersist: previousStatusRef.current === 'streaming' && status === 'ready'
-    });
-
     if (previousStatusRef.current === 'streaming' && status === 'ready') {
-      console.log('[ChatContainer] ✅ Status changed from streaming to ready - CALLING persistChatHistory');
       persistChatHistory();
     }
 
@@ -827,7 +765,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                       clearError();
                       setErrorState(null);
                       if (errorState?.isRetryable) {
-                        console.log('[ChatContainer] Manual retry triggered for retryable error');
+                        // Manual retry triggered for retryable error
                       }
                     }}
                     onClear={() => {

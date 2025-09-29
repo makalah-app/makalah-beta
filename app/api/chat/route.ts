@@ -33,24 +33,11 @@ export type AcademicUIMessage = UIMessage & {
 
 export async function POST(req: Request) {
   try {
-    console.log('[Chat API] Initializing NATIVE OpenAI web search system...');
-    
-    // Native OpenAI implementation - no custom tools needed for primary provider
-    console.log('[Chat API] 🌐 Using built-in OpenAI web search - no mock data!');
-    
     // Extract chatId from headers for persistence
     const chatId = req.headers.get('X-Chat-Id') || undefined;
-    console.log(`[Chat API] 📋 ChatId from headers: ${chatId || 'not provided'}`);
-    
+
     // Extract user ID from authenticated session - NO FALLBACK to 'system'
     let userId = await getUserIdWithSystemFallback();
-    console.log(`[Chat API] 👤 User ID extracted: ${userId || 'null - no session'}`);
-    
-    if (userId) {
-      console.log(`[Chat API] ✅ Authenticated user session detected - messages will persist with user ID: ${userId}`);
-    } else {
-      console.log(`[Chat API] ⚠️ No authenticated session detected - will check client-provided user ID`);
-    }
     
     // Parse request body with additional academic workflow parameters
     const rawPayload: any = await req.json();
@@ -75,38 +62,20 @@ export async function POST(req: Request) {
       const valid = getValidUserUUID(candidate || undefined);
       if (valid !== '00000000-0000-4000-8000-000000000000') {
         userId = valid;
-        console.log(`[Chat API] 🔧 Using client-provided user ID: ${userId}`);
-      } else {
-        console.log(`[Chat API] ❌ No valid client-provided user ID found`);
       }
     }
 
     // 🔒 AUTHENTICATION GUARD: Require valid user ID for all operations
     // No fallback - must have either authenticated session or valid client-provided UUID
     if (!userId) {
-      console.warn('[Chat API] 🚫 Authentication failed: no authenticated session and no valid client user ID provided');
       return new Response(JSON.stringify({
         error: 'AUTHENTICATION_REQUIRED',
         message: 'Valid user authentication required for all chat operations',
       }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
-    
-    console.log(`[Chat API] ✅ Authentication successful - proceeding with user ID: ${userId}`);
 
     // Natural 7-phase workflow - simple phase tracking
     let currentPhase = phase;
-
-    console.log(`[Chat API] Processing ${messages.length} messages, Phase: ${currentPhase}${testMode ? ' (TEST MODE)' : ''}`);
-
-    // Debug: Log first message structure untuk troubleshooting
-    if (messages.length > 0) {
-      console.log('[Chat API] First message structure:', {
-        id: messages[0].id,
-        role: messages[0].role,
-        hasContent: !!messages[0].parts && messages[0].parts.length > 0,
-        hasMetadata: !!messages[0].metadata
-      });
-    }
 
     // Validate and ensure messages have proper structure
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -144,10 +113,7 @@ export async function POST(req: Request) {
     let processedMessages;
     try {
       processedMessages = convertToModelMessages(validatedMessages);
-      console.log(`[Chat API] ✅ Successfully converted ${validatedMessages.length} messages to ${processedMessages.length} model messages`);
     } catch (conversionError) {
-      console.error('[Chat API] ❌ Message conversion failed:', conversionError);
-      console.log('[Chat API] 🔄 Attempting fallback message recovery...');
       
       // 🛠️ FIX 4: Enhanced error recovery - create minimal valid AI SDK v5 UIMessage structure
       try {
@@ -164,9 +130,7 @@ export async function POST(req: Request) {
         }];
 
         processedMessages = convertToModelMessages(fallbackMessages);
-        console.log(`[Chat API] ✅ Fallback recovery successful with message: "${textContent.substring(0, 50)}..."`);
       } catch (fallbackError) {
-        console.error('[Chat API] ❌ Fallback recovery also failed:', fallbackError);
         throw new Error(`Message processing failed completely. Original: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`);
       }
     }
@@ -180,17 +144,11 @@ export async function POST(req: Request) {
     // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        console.log('[Chat API] 🚀 HITL Integration: Processing tool results and handling approvals');
-
         // Simple phase sync - trust LLM flow
-
 
         // 🔧 CLEANUP: Removed rigid approval tool processing
         // User requirement: Natural LLM flow without programmatic approval gates
         const finalProcessedMessages = validatedMessages;
-
-        console.log('[Chat API] 🧹 Using simplified message processing - no rigid approval gates');
-        console.log('[Chat API] 📊 Message count:', finalProcessedMessages.length);
 
         // Simple processing - trust LLM intelligence
 
@@ -203,16 +161,7 @@ export async function POST(req: Request) {
         try {
           // 🚀 HIGH PRIORITY FIX 1: DYNAMIC EXECUTION PATTERN
           // PRIMARY: Dynamic provider based on database configuration
-          console.log(`[Chat API] 🔧 Using DYNAMIC PRIMARY: ${dynamicConfig.primaryProvider} (from database config)`);
-          
           primaryExecuted = true;
-          // Debug: Check finalProcessedMessages before conversion
-          console.log('[Chat API] 🔍 DEBUG finalProcessedMessages:', {
-            type: typeof finalProcessedMessages,
-            isArray: Array.isArray(finalProcessedMessages),
-            length: finalProcessedMessages?.length,
-            sample: finalProcessedMessages?.[0]
-          });
 
           // Simple message processing
           const filteredDebugMessages = finalProcessedMessages;
@@ -222,21 +171,15 @@ export async function POST(req: Request) {
           try {
             // AI SDK v5 compliant conversion that preserves supported tool parts
             manualMessages = convertToModelMessages(filteredDebugMessages);
-            console.log('[Chat API] ✅ Using AI SDK convertToModelMessages with filtered tool parts');
           } catch (conversionError) {
-            console.warn('[Chat API] ⚠️ convertToModelMessages failed, using fallback conversion:', conversionError);
             // Fallback: Preserve essential message structure while extracting text
             manualMessages = filteredDebugMessages.map(msg => ({
               role: msg.role,
               content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
             }));
           }
-          
-          console.log('[Chat API] 🔍 DEBUG manualMessages:', manualMessages);
 
           // Removed unused persistAndBroadcast function
-          
-          console.log('[Chat API] 🛠️ Tools enabled: openai.tools.webSearchPreview (Responses API)');
 
   // AI SDK v5: Phase approval state is handled by processToolCalls automatically
   // 🔧 NOTE: Phase detection logic moved earlier in the flow for proper progressive tracking
@@ -245,9 +188,6 @@ export async function POST(req: Request) {
   // Removing complex conversation-aware tools per user requirement:
   // "Tools yang ada hanyalah web search"
   // Removed unused availableTools and toolNames variables
-
-  console.log(`[Chat API] 🔧 Simplified tools: web search only (native OpenAI/Perplexity)`);
-  console.log(`[Chat API] 🧹 Complex conversation-aware tools removed`);
 
   // Build primary tools with guard to prevent repeated native web search loops
   const recentAssistant = (() => {
@@ -293,35 +233,26 @@ export async function POST(req: Request) {
         } as Record<string, any>)
       : ({} as Record<string, any>);
 
-  console.log('[Chat API] 🚀 Initializing primary model streamText');
-  console.log('[Chat API] 🛠️ Tools for primary model:', Object.keys(toolsForPrimary));
-  console.log('[Chat API] ⚙️ Native web search included:', includeNativeWebSearch);
-  console.log('[Chat API] 🌐 Web search provider:', dynamicConfig.webSearchProvider);
+  // Tools configuration completed
 
   let streamModel = dynamicConfig.primaryModel;
   let streamTools = toolsForPrimary;
   let sendSources = false;
 
   if (dynamicConfig.webSearchProvider === 'openai') {
-    console.log('[Chat API] 🌐 Using OpenAI Responses API with native web search');
     streamModel = (openai as any).responses(
       dynamicConfig.primaryModelName || process.env.OPENAI_MODEL || 'gpt-4o'
     );
     streamTools = toolsForPrimary;
     sendSources = true; // OpenAI handles sources automatically
   } else if (dynamicConfig.webSearchProvider === 'perplexity' && dynamicConfig.webSearchModel) {
-    console.log('[Chat API] 🌐 Using Perplexity Sonar model with built-in search');
     streamModel = dynamicConfig.webSearchModel;
     streamTools = {};
     sendSources = false; // Perplexity uses manual source injection
   } else {
-    console.log('[Chat API] 🌐 Using dynamic primary model without external web search tool');
     streamModel = dynamicConfig.primaryModel;
     streamTools = {};
   }
-
-  console.log('[Chat API] 🎯 Tool choice setting:', testMode ? 'web_search_preview (test mode)' : 'auto');
-  console.log('[Chat API] 📊 Manual messages count:', manualMessages.length);
 
   // 🎓 MIDDLEWARE INTEGRATION: Wrap model dengan PhD advisor persona injection
   const modelWithPersona = dynamicConfig.webSearchProvider === 'perplexity'
@@ -331,18 +262,13 @@ export async function POST(req: Request) {
         middleware: phdAdvisorMiddleware,
       });
 
-  if (dynamicConfig.webSearchProvider === 'perplexity') {
-    console.log('[Chat API] 🎓 Skipping PhD advisor persona to let Perplexity handle native web grounding');
-  } else {
-    console.log('[Chat API] 🎓 PhD Advisor middleware attached - persona injection enabled');
-  }
+  // PhD advisor middleware configuration completed
 
   // 🛑 ABORT HANDLING: Create abort controller untuk clean request cancellation
   const abortController = new AbortController();
 
   // Register abort handler from request signal
   req.signal?.addEventListener('abort', () => {
-    console.log('[Chat API] 🛑 Request aborted by client');
     abortController.abort();
   });
 
@@ -375,14 +301,11 @@ export async function POST(req: Request) {
             // 🛑 ABORT HANDLING: Pass abort signal dan register cleanup callback
             abortSignal: abortController.signal,
             onAbort: ({ steps }) => {
-              console.log('[Chat API] ⚠️ Stream aborted after', steps.length, 'steps');
               // Cleanup jika diperlukan - stream akan automatically close
             }
           });
 
           // Citations streaming disabled for stability; sources available via debug endpoint
-          
-          console.log('[Chat API] ✅ Native OpenAI web search initialized');
 
           // 🔥 STEP 1: smoothStream at streamText level handles word-by-word chunking
           // 🔥 STEP 2: Return to official AI SDK streaming protocol dengan penanganan Perplexity khusus
@@ -442,7 +365,6 @@ export async function POST(req: Request) {
                     });
                   }
                 } catch (sourceError) {
-                  console.warn('[Chat API] ⚠️ Failed to attach Perplexity sources:', sourceError);
                 }
 
                 writer.write({
@@ -453,7 +375,6 @@ export async function POST(req: Request) {
                 });
 
                 writerUsed = true;
-                console.log('[Chat API] ✅ Perplexity streaming completed dengan sumber manual');
               } else {
                 writer.merge(result.toUIMessageStream({
                   originalMessages: finalProcessedMessages,
@@ -461,14 +382,12 @@ export async function POST(req: Request) {
                   sendSources,
                 }));
                 writerUsed = true;
-                console.log('[Chat API] ✅ AI SDK official streaming protocol with smoothStream: first chunk immediate, words flow dengan 35ms delay');
               }
             }
 
             // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah
             await result.response;
             primarySuccess = true;
-            console.log('[Chat API] ✅ Primary execution FULLY completed - fallback akan diblokir');
 
           } catch (responseError: any) {
             // 🔍 ENHANCED ERROR TYPE DETECTION & CLASSIFICATION
@@ -528,15 +447,6 @@ export async function POST(req: Request) {
               userMessage = 'Format pesan tidak valid. Silakan coba dengan pesan berbeda.';
             }
 
-            console.error('[Chat API] ⚠️ Primary provider error classified:', {
-              errorType,
-              isRetryable,
-              statusCode: responseError?.statusCode,
-              message: responseError?.error?.message || responseError?.message,
-              provider: dynamicConfig.primaryProvider,
-              model: dynamicConfig.primaryModelName,
-              writerUsed
-            });
 
             // Write error to stream if not yet written
             if (!writerUsed) {
@@ -551,16 +461,10 @@ export async function POST(req: Request) {
               throw responseError; // Re-throw to trigger fallback provider
             } else {
               // Non-retryable errors, don't trigger fallback
-              console.error('[Chat API] ❌ Non-retryable error, stopping execution');
               throw responseError;
             }
           }
         } catch (error) {
-          console.error('[Chat API] ❌ UI stream creation failed:', {
-            error: error instanceof Error ? error.message : String(error),
-            provider: dynamicConfig.primaryProvider,
-            model: dynamicConfig.primaryModelName
-          });
 
           // Fallback: Send error sebagai plain message
           if (!writerUsed) {
@@ -577,21 +481,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 🔧 HITL DEBUG: Final request summary
-    console.log('[Chat API] 🎯 REQUEST COMPLETED SUCCESSFULLY');
-    console.log('[Chat API] 📊 Final request summary:', {
-      userId: userId?.substring(0, 8) + '...',
-      requestId: (req as any).requestId || 'unknown',
-      currentPhase: currentPhase,
-      messagesProcessed: validatedMessages.length,
-      primaryProviderUsed: dynamicConfig.primaryModelName,
-      fallbackProviderUsed: dynamicConfig.fallbackModelName,
-      fallbackUsed: false, // Note: primarySuccess not accessible in this scope
-      streamInitialized: true,
-      smoothStreamEnabled: true, // Both primary and fallback use smoothStream
-      timestamp: new Date().toISOString()
-    });
-    console.log('[Chat API] ✅ Returning createUIMessageStreamResponse with HITL integration');
+    // Request completed successfully
 
     // Return stream response as per AI SDK v5 documentation
     return createUIMessageStreamResponse({
@@ -606,20 +496,10 @@ export async function POST(req: Request) {
     });
     
   } catch (error) {
-    console.error('[Chat API] 💥 Fatal API error:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
-      request_info: {
-        method: 'POST',
-        url: '/api/chat'
-      }
-    });
 
     // 🛡️ GRACEFUL DEGRADATION: Try to return stream with error if possible
     try {
       // Simple error response instead of complex stream
-      console.log('[Chat API] 🛡️ Creating simple error response');
 
       return new Response(JSON.stringify({
         error: 'Kedua provider AI tidak tersedia',
@@ -640,7 +520,6 @@ export async function POST(req: Request) {
       });
     } catch (streamError) {
       // 🚨 ULTIMATE FALLBACK: Plain JSON response
-      console.error('[Chat API] ❌ Stream creation also failed, using JSON fallback:', streamError);
 
       return new Response(JSON.stringify({
         error: 'Sistem tidak dapat memproses permintaan',

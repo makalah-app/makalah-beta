@@ -86,13 +86,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
     const errorId = `stream-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const streamingError = StreamingErrorBoundary.enhanceStreamError(error);
     
-    console.error('[StreamingErrorBoundary] Streaming error intercepted:', {
-      errorId,
-      streamType: streamingError.streamType,
-      connectionState: streamingError.connectionState,
-      retryable: streamingError.retryable,
-      message: streamingError.message,
-    });
+    // Streaming error intercepted - silent handling for production
 
     return {
       hasError: true,
@@ -105,22 +99,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const { errorId } = this.state;
     
-    // Enhanced streaming error logging
-    console.error('[StreamingErrorBoundary] Streaming error details:', {
-      errorId,
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        streamType: (error as StreamingError).streamType,
-        connectionState: (error as StreamingError).connectionState,
-        lastEventId: (error as StreamingError).lastEventId,
-      },
-      componentStack: errorInfo.componentStack,
-      streamState: this.state.streamState,
-      recoveryAttempts: this.state.recoveryAttempts,
-      timestamp: new Date().toISOString(),
-    });
+    // Enhanced streaming error logging - silent handling for production
 
     // Store error info
     this.setState({ errorInfo });
@@ -213,7 +192,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
     
     // If no activity for 30 seconds, consider connection stale
     if (timeSinceLastConnection > 30000 && this.state.streamState === 'connected') {
-      console.warn('[StreamingErrorBoundary] Connection appears stale, marking as disconnected');
+      // Connection appears stale - silent handling for production
       this.setState({ streamState: 'disconnected' });
     }
   }
@@ -224,7 +203,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
   private preserveStreamMessages() {
     try {
       // This would integrate dengan chat store untuk preserve messages
-      console.log('[StreamingErrorBoundary] Preserving stream messages...');
+      // Preserving stream messages - silent handling for production
       
       // Here you would save current chat state
       const chatState = {
@@ -237,7 +216,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
       this.setState({ messagesPreserved: true });
       
     } catch (preserveError) {
-      console.error('[StreamingErrorBoundary] Failed to preserve messages:', preserveError);
+      // Failed to preserve messages - silent handling for production
     }
   }
 
@@ -262,13 +241,13 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
       clearTimeout(this.recoveryTimer);
     }
 
-    const { recoveryTimeout = 2000 } = this.props;
+    // Recovery timeout unused - using default delay calculation
     const { recoveryAttempts, reconnectDelay } = this.state;
     
     // Exponential backoff
     const delay = Math.min(reconnectDelay * Math.pow(2, recoveryAttempts), 30000);
     
-    console.log(`[StreamingErrorBoundary] Scheduling recovery attempt ${recoveryAttempts + 1} in ${delay}ms`);
+    // Scheduling recovery attempt - silent handling for production
 
     this.setState({ 
       streamState: 'recovering',
@@ -286,7 +265,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
   private executeRecovery() {
     const { errorId, recoveryAttempts, error } = this.state;
     
-    console.log(`[StreamingErrorBoundary] Executing recovery attempt ${recoveryAttempts + 1} for ${errorId}`);
+    // Executing recovery attempt - silent handling for production
 
     // Determine recovery method based on error type
     let recoveryMethod: StreamRecoveryMethod = 'reconnect';
@@ -328,7 +307,7 @@ export class StreamingErrorBoundary extends Component<StreamingErrorBoundaryProp
   private handleFallbackMode = (): void => {
     const { errorId } = this.state;
     
-    console.log(`[StreamingErrorBoundary] Switching to fallback mode for ${errorId}`);
+    // Switching to fallback mode - silent handling for production
     
     this.setState({
       hasError: false,

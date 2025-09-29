@@ -61,7 +61,7 @@ export class ProviderManager {
     };
 
     if (env.NODE_ENV === 'development') {
-      console.log('🔄 Provider Manager initialized');
+      // Provider Manager initialized - silent handling for production
     }
   }
 
@@ -140,7 +140,7 @@ export class ProviderManager {
     }
 
     if (env.NODE_ENV === 'development') {
-      console.warn(`⚠️  Primary provider failure (${this.failoverState.consecutiveFailures}/${ERROR_CONFIG.circuitBreakerFailureThreshold}):`, error.message);
+      // Primary provider failure logged - silent handling for production
     }
   }
 
@@ -156,7 +156,7 @@ export class ProviderManager {
     );
 
     if (env.NODE_ENV === 'development') {
-      console.warn('🚨 Failover triggered - switching to fallback provider');
+      // Failover triggered - silent handling for production
     }
   }
 
@@ -171,7 +171,7 @@ export class ProviderManager {
       this.failoverState.nextRetryTime = undefined;
 
       if (env.NODE_ENV === 'development') {
-        console.log('✅ Failover reset - primary provider recovered');
+        // Failover reset - primary provider recovered - silent handling for production
       }
     }
   }

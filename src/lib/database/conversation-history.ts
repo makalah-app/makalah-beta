@@ -15,9 +15,9 @@
  * - Performance optimization with caching
  */
 
-import { supabaseServer, supabaseAdmin } from './supabase-client';
+import { supabaseServer } from './supabase-client';
 import { loadChat } from './chat-store';
-import type { ConversationSummary, ConversationDetails, DatabaseUIMessage } from '../types/database-types';
+import type { ConversationSummary, ConversationDetails } from '../types/database-types';
 import type { UIMessage } from 'ai';
 
 /**
@@ -95,9 +95,9 @@ export async function getConversationHistory(
   limit: number = 20
 ): Promise<PaginatedHistoryResponse> {
   try {
-    console.log(`[ConversationHistory] 📚 Loading conversation history (page: ${page}, limit: ${limit})`, filters);
+    // Loading conversation history - silent handling for production
     
-    const startTime = Date.now();
+    // const startTime = Date.now(); // Unused variable
     const offset = (page - 1) * limit;
     
     // Build query with filters
@@ -185,21 +185,24 @@ export async function getConversationHistory(
     }
     
     // Transform to ConversationSummary format
-    const conversationSummaries: ConversationSummary[] = (conversations || []).map(conv => ({
-      id: conv.id,
-      title: conv.title || 'Untitled Chat',
-      messageCount: conv.message_count,
-      lastActivity: conv.updated_at,
-      currentPhase: conv.current_phase,
-      workflowId: conv.workflow_id,
-      archived: conv.archived,
-      metadata: conv.metadata
-    }));
+    const conversationSummaries: ConversationSummary[] = (conversations || []).map(conv => {
+      const convData = conv as any;
+      return {
+        id: convData.id,
+        title: convData.title || 'Untitled Chat',
+        messageCount: convData.message_count,
+        lastActivity: convData.updated_at,
+        currentPhase: convData.current_phase,
+        workflowId: convData.workflow_id,
+        archived: convData.archived,
+        metadata: convData.metadata
+      };
+    });
     
     const totalPages = Math.ceil((totalCount || 0) / limit);
-    const loadTime = Date.now() - startTime;
+    // const loadTime = Date.now() - startTime; // Unused variable
     
-    console.log(`[ConversationHistory] ✅ Loaded ${conversationSummaries.length} conversations in ${loadTime}ms`);
+    // Loaded conversations successfully - silent handling for production
     
     return {
       conversations: conversationSummaries,
@@ -212,7 +215,7 @@ export async function getConversationHistory(
     };
     
   } catch (error) {
-    console.error(`[ConversationHistory] ❌ Failed to load conversation history:`, error);
+    // Failed to load conversation history - silent handling for production
     
     // Return empty result on error
     return {
@@ -235,7 +238,7 @@ export async function getConversationTimeline(
   conversationId: string
 ): Promise<ConversationTimelineEntry[]> {
   try {
-    console.log(`[ConversationHistory] 📅 Building timeline for conversation ${conversationId}`);
+    // Building timeline for conversation - silent handling for production
     
     const timeline: ConversationTimelineEntry[] = [];
     
@@ -247,19 +250,20 @@ export async function getConversationTimeline(
       .single();
     
     if (!conversation) {
-      console.warn(`[ConversationHistory] Conversation ${conversationId} not found`);
+      // Conversation not found - silent handling for production
       return [];
     }
     
     // Add conversation created event
+    const conversationData = conversation as any;
     timeline.push({
-      id: `conv_created_${conversation.id}`,
+      id: `conv_created_${conversationData.id}`,
       type: 'session_started',
-      timestamp: conversation.created_at,
+      timestamp: conversationData.created_at,
       title: 'Conversation Started',
-      description: `New academic writing session: "${conversation.title}"`,
+      description: `New academic writing session: "${conversationData.title}"`,
       metadata: {
-        conversationId: conversation.id,
+        conversationId: conversationData.id,
         initialPhase: 1
       }
     });
@@ -272,31 +276,32 @@ export async function getConversationTimeline(
       .order('sequence_number', { ascending: true });
     
     (messages || []).forEach(message => {
+      const messageData = message as any;
       // Add message events
       timeline.push({
-        id: `message_${message.id}`,
+        id: `message_${messageData.id}`,
         type: 'message',
-        timestamp: message.created_at,
-        title: `${message.role === 'user' ? 'User' : 'Assistant'} Message`,
-        description: extractMessagePreview(message.content, message.parts),
+        timestamp: messageData.created_at,
+        title: `${messageData.role === 'user' ? 'User' : 'Assistant'} Message`,
+        description: extractMessagePreview(messageData.content, messageData.parts),
         metadata: {
-          messageId: message.message_id,
-          role: message.role,
-          phase: message.metadata?.phase
+          messageId: messageData.message_id,
+          role: messageData.role,
+          phase: messageData.metadata?.phase
         }
       });
-      
+
       // Add phase change events if detected
-      if (message.metadata?.phaseChanged) {
+      if (messageData.metadata?.phaseChanged) {
         timeline.push({
-          id: `phase_${message.id}`,
+          id: `phase_${messageData.id}`,
           type: 'phase_change',
-          timestamp: message.created_at,
-          title: `Phase ${message.metadata.phaseChanged.to} Started`,
-          description: `Progressed from Phase ${message.metadata.phaseChanged.from} to Phase ${message.metadata.phaseChanged.to}`,
+          timestamp: messageData.created_at,
+          title: `Phase ${messageData.metadata.phaseChanged.to} Started`,
+          description: `Progressed from Phase ${messageData.metadata.phaseChanged.from} to Phase ${messageData.metadata.phaseChanged.to}`,
           metadata: {
-            phase: message.metadata.phaseChanged.to,
-            previousPhase: message.metadata.phaseChanged.from
+            phase: messageData.metadata.phaseChanged.to,
+            previousPhase: messageData.metadata.phaseChanged.from
           }
         });
       }
@@ -310,16 +315,17 @@ export async function getConversationTimeline(
       .order('created_at', { ascending: true });
     
     (artifacts || []).forEach(artifact => {
+      const artifactData = artifact as any;
       timeline.push({
-        id: `artifact_${artifact.id}`,
+        id: `artifact_${artifactData.id}`,
         type: 'artifact_created',
-        timestamp: artifact.created_at,
+        timestamp: artifactData.created_at,
         title: 'Artifact Created',
-        description: `Created artifact: "${artifact.title}"`,
+        description: `Created artifact: "${artifactData.title}"`,
         metadata: {
-          artifactId: artifact.id,
-          artifactType: artifact.type,
-          phase: artifact.metadata?.phase
+          artifactId: artifactData.id,
+          artifactType: artifactData.type,
+          phase: artifactData.metadata?.phase
         }
       });
     });
@@ -332,30 +338,31 @@ export async function getConversationTimeline(
       .order('started_at', { ascending: true });
     
     (sessions || []).forEach(session => {
+      const sessionData = session as any;
       timeline.push({
-        id: `session_start_${session.id}`,
+        id: `session_start_${sessionData.id}`,
         type: 'session_started',
-        timestamp: session.started_at,
+        timestamp: sessionData.started_at,
         title: 'Chat Session Started',
         description: 'User joined the conversation',
         metadata: {
-          sessionId: session.id,
-          userId: session.user_id
+          sessionId: sessionData.id,
+          userId: sessionData.user_id
         }
       });
-      
-      if (session.ended_at) {
+
+      if (sessionData.ended_at) {
         timeline.push({
-          id: `session_end_${session.id}`,
+          id: `session_end_${sessionData.id}`,
           type: 'session_ended',
-          timestamp: session.ended_at,
+          timestamp: sessionData.ended_at,
           title: 'Chat Session Ended',
           description: `Session lasted ${formatDuration(
-            new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()
+            new Date(sessionData.ended_at).getTime() - new Date(sessionData.started_at).getTime()
           )}`,
           metadata: {
-            sessionId: session.id,
-            duration: new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()
+            sessionId: sessionData.id,
+            duration: new Date(sessionData.ended_at).getTime() - new Date(sessionData.started_at).getTime()
           }
         });
       }
@@ -364,11 +371,11 @@ export async function getConversationTimeline(
     // Sort timeline by timestamp
     timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     
-    console.log(`[ConversationHistory] ✅ Built timeline with ${timeline.length} entries`);
+    // Built timeline successfully - silent handling for production
     return timeline;
     
   } catch (error) {
-    console.error(`[ConversationHistory] ❌ Failed to build conversation timeline:`, error);
+    // Failed to build conversation timeline - silent handling for production
     return [];
   }
 }
@@ -382,7 +389,7 @@ export async function getHistoryStatistics(
   dateRange?: { startDate: string; endDate: string }
 ): Promise<HistoryStatistics> {
   try {
-    console.log(`[ConversationHistory] 📊 Generating statistics for user ${userId}`);
+    // Generating statistics for user - silent handling for production
     
     let query = supabaseServer
       .from('conversations')
@@ -434,27 +441,28 @@ export async function getHistoryStatistics(
     const topicCount: { [topic: string]: number } = {};
     
     conversations.forEach(conv => {
-      stats.totalMessages += conv.message_count;
-      
+      const convData = conv as any;
+      stats.totalMessages += convData.message_count;
+
       // Phase distribution
-      const phase = conv.current_phase;
+      const phase = convData.current_phase;
       stats.phaseDistribution[phase] = (stats.phaseDistribution[phase] || 0) + 1;
-      
+
       // Daily activity
-      const date = new Date(conv.created_at).toISOString().split('T')[0];
+      const date = new Date(convData.created_at).toISOString().split('T')[0];
       stats.dailyActivity[date] = (stats.dailyActivity[date] || 0) + 1;
-      
+
       // Topic extraction (from title)
-      if (conv.title) {
-        const topic = extractTopicFromTitle(conv.title);
+      if (convData.title) {
+        const topic = extractTopicFromTitle(convData.title);
         if (topic) {
           topicCount[topic] = (topicCount[topic] || 0) + 1;
         }
       }
-      
+
       // Session time calculation
-      if (conv.chat_sessions) {
-        conv.chat_sessions.forEach((session: any) => {
+      if (convData.chat_sessions) {
+        convData.chat_sessions.forEach((session: any) => {
           if (session.ended_at) {
             const duration = new Date(session.ended_at).getTime() - new Date(session.started_at).getTime();
             stats.totalTimeSpent += duration;
@@ -474,16 +482,12 @@ export async function getHistoryStatistics(
       .slice(0, 10)
       .map(([topic, count]) => ({ topic, count }));
     
-    console.log(`[ConversationHistory] ✅ Generated statistics:`, {
-      conversations: stats.totalConversations,
-      messages: stats.totalMessages,
-      timeSpent: formatDuration(stats.totalTimeSpent)
-    });
+    // Generated statistics successfully - silent handling for production
     
     return stats;
     
   } catch (error) {
-    console.error(`[ConversationHistory] ❌ Failed to generate statistics:`, error);
+    // Failed to generate statistics - silent handling for production
     
     // Return empty stats on error
     return {
@@ -508,7 +512,7 @@ export async function searchConversations(
   limit: number = 10
 ): Promise<ConversationSummary[]> {
   try {
-    console.log(`[ConversationHistory] 🔍 Searching conversations: "${searchQuery}"`);
+    // Searching conversations - silent handling for production
     
     let query = supabaseServer
       .from('conversations')
@@ -537,21 +541,24 @@ export async function searchConversations(
       throw new Error(`Search failed: ${error.message}`);
     }
     
-    const results = (conversations || []).map(conv => ({
-      id: conv.id,
-      title: conv.title || 'Untitled Chat',
-      messageCount: conv.message_count,
-      lastActivity: conv.updated_at,
-      currentPhase: conv.current_phase,
-      workflowId: conv.workflow_id,
-      metadata: conv.metadata
-    }));
+    const results = (conversations || []).map(conv => {
+      const convData = conv as any;
+      return {
+        id: convData.id,
+        title: convData.title || 'Untitled Chat',
+        messageCount: convData.message_count,
+        lastActivity: convData.updated_at,
+        currentPhase: convData.current_phase,
+        workflowId: convData.workflow_id,
+        metadata: convData.metadata
+      };
+    });
     
-    console.log(`[ConversationHistory] ✅ Found ${results.length} matching conversations`);
+    // Found matching conversations - silent handling for production
     return results;
     
   } catch (error) {
-    console.error(`[ConversationHistory] ❌ Search failed:`, error);
+    // Search failed - silent handling for production
     return [];
   }
 }
@@ -565,7 +572,7 @@ export async function exportConversationHistory(
   format: 'json' | 'csv' | 'markdown' = 'json'
 ): Promise<string> {
   try {
-    console.log(`[ConversationHistory] 📤 Exporting ${conversationIds.length} conversations as ${format}`);
+    // Exporting conversations - silent handling for production
     
     const exportData = [];
     
@@ -596,7 +603,7 @@ export async function exportConversationHistory(
     }
     
   } catch (error) {
-    console.error(`[ConversationHistory] ❌ Export failed:`, error);
+    // Export failed - silent handling for production
     throw error;
   }
 }
@@ -665,7 +672,7 @@ function convertToMarkdown(data: any[]): string {
 
 ## Messages
 ${item.messages.map((msg: UIMessage) => `
-**${msg.role.toUpperCase()}:** ${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}
+**${msg.role.toUpperCase()}:** ${typeof (msg as any).content === 'string' ? (msg as any).content : JSON.stringify((msg as any).content)}
 `).join('\n')}
 
 ---

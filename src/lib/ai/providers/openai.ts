@@ -41,9 +41,7 @@ export function createOpenAIProvider() {
   });
 
   if (env.NODE_ENV === 'development') {
-    console.log('🤖 OpenAI provider initialized (fallback)');
-    console.log(`  Base URL: ${baseURL}`);
-    console.log('  Model: [Dynamic - configured from admin panel]');
+    // OpenAI provider initialized (fallback) - silent handling for production
   }
 
   return provider;
@@ -235,7 +233,7 @@ export async function testOpenAIConnection(): Promise<{
       testTemperature = dynamicConfig.config.temperature; // ✅ Dynamic from admin panel
     } catch (configError) {
       // Use fallback values if dynamic config fails (for test reliability)
-      console.warn('[OpenAITest] Using fallback config due to:', configError);
+      // Using fallback config for test reliability - silent handling for production
     }
 
     const model = provider(modelName);

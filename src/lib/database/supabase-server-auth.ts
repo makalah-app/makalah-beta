@@ -36,7 +36,7 @@ export function createSupabaseServerClient() {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
             // Cookie setting might fail in certain server contexts
-            console.warn('[Supabase Server Auth] Cookie set failed:', error);
+            // Cookie setting failed - silent handling for production
           }
         },
         remove(name: string, options: CookieOptions) {
@@ -44,7 +44,7 @@ export function createSupabaseServerClient() {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
             // Cookie removal might fail in certain server contexts
-            console.warn('[Supabase Server Auth] Cookie remove failed:', error);
+            // Cookie removal failed - silent handling for production
           }
         },
       },
@@ -68,7 +68,7 @@ export async function getServerSessionUserId(): Promise<{
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.warn('[Supabase Server Auth] User extraction failed:', error.message);
+      // User extraction failed - silent handling for production
       return {
         userId: null,
         error: error.message
@@ -83,14 +83,14 @@ export async function getServerSessionUserId(): Promise<{
       };
     }
 
-    console.log(`[Supabase Server Auth] ✅ User extracted successfully: ${user.id}`);
+    // User extracted successfully - silent handling for production
     return {
       userId: user.id,
       error: null
     };
     
   } catch (error) {
-    console.error('[Supabase Server Auth] Fatal user extraction error:', error);
+    // Fatal user extraction error - silent handling for production
     return {
       userId: null,
       error: error instanceof Error ? error.message : 'Unknown authentication error'
@@ -108,14 +108,14 @@ export async function getServerSessionUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.warn('[Supabase Server Auth] Full user extraction failed:', error.message);
+      // Full user extraction failed - silent handling for production
       return { user: null, error };
     }
 
     return { user, error: null };
     
   } catch (error) {
-    console.error('[Supabase Server Auth] Fatal user extraction error:', error);
+    // Fatal user extraction error - silent handling for production
     return { 
       user: null, 
       error: { 
@@ -200,7 +200,7 @@ export async function getValidatedServerSession(): Promise<{
     
     // No fallback - return null userId with failure reason
     const failureReason = error ? `Auth error: ${error}` : 'No authenticated user';
-    console.log(`[Supabase Server Auth] Authentication failed: ${failureReason}`);
+    // Authentication failed - silent handling for production
     
     return {
       userId: null,
@@ -210,7 +210,7 @@ export async function getValidatedServerSession(): Promise<{
     };
     
   } catch (error) {
-    console.error('[Supabase Server Auth] Session validation failed:', error);
+    // Session validation failed - silent handling for production
     return {
       userId: null,
       isSystem: false,

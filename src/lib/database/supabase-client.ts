@@ -53,9 +53,6 @@ if (typeof window !== 'undefined') {
  */
 export const supabaseClient: SupabaseClient<Database> = (() => {
   if (!_supabaseClient) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[supabase-client] Creating new Supabase client instance');
-    }
     _supabaseClient = createClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -88,10 +85,6 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
     // ✅ Store in window for HMR survival
     if (typeof window !== 'undefined') {
       (window as any).__supabase_client_singleton.client = _supabaseClient;
-    }
-  } else {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[supabase-client] Using existing Supabase client instance');
     }
   }
   return _supabaseClient;

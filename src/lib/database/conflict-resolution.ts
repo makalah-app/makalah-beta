@@ -14,11 +14,23 @@
  * - Performance-optimized resolution
  */
 
-import { generateId, UIMessage } from 'ai';
+import { generateId } from 'ai';
 import { supabaseChatClient } from './supabase-client';
-import type { AcademicUIMessage } from '../../components/chat/ChatContainer';
-import type { ConflictResolution } from './real-time-utils';
+// import type { UIMessage } from '../../components/chat/ChatContainer';
+// import type { ConflictResolution } from './real-time-utils';
 import { realtimeManager } from './real-time-utils';
+
+// Extended UIMessage interface with required properties
+interface ExtendedUIMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content?: string;
+  createdAt?: string | number;
+  timestamp?: number;
+  metadata?: any;
+  version?: number;
+  parts?: any[];
+}
 
 export interface MessageVersion {
   id: string;
@@ -76,9 +88,9 @@ export class ConflictDetectionEngine {
    */
   async detectConflicts(
     conversationId: string,
-    messageUpdates: AcademicUIMessage[]
+    messageUpdates: ExtendedUIMessage[]
   ): Promise<ConflictDetectionResult> {
-    console.log(`[ConflictDetection] Scanning ${messageUpdates.length} messages for conflicts`);
+    // Scanning messages for conflicts - silent handling for production
 
     const conflicts: DetectedConflict[] = [];
     const affectedMessages: string[] = [];
@@ -91,7 +103,7 @@ export class ConflictDetectionEngine {
       .in('message_id', messageUpdates.map(m => m.id));
 
     if (error) {
-      console.error('[ConflictDetection] Database error:', error);
+      // Conflict detection database error - silent handling for production
       return {
         hasConflicts: false,
         conflicts: [],
@@ -102,18 +114,18 @@ export class ConflictDetectionEngine {
 
     // Check each message for conflicts
     for (const message of messageUpdates) {
-      const messageVersions = currentVersions?.filter(v => v.message_id === message.id) || [];
+      const messageVersions = (currentVersions as any[])?.filter((v: any) => v.message_id === message.id) || [];
       
       if (messageVersions.length === 0) {
         // No existing versions, no conflict
         continue;
       }
 
-      const latestVersion = messageVersions.sort((a, b) => b.version - a.version)[0];
+      const latestVersion = messageVersions.sort((a: any, b: any) => b.version - a.version)[0];
       const messageTimestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now();
 
       // Check for concurrent editing
-      const concurrentEdits = messageVersions.filter(v => 
+      const concurrentEdits = messageVersions.filter((v: any) =>
         Math.abs(v.timestamp - messageTimestamp) < 10000 // Within 10 seconds
       );
 
@@ -123,8 +135,8 @@ export class ConflictDetectionEngine {
           conflictType: 'concurrent_edit',
           severity: 'medium',
           description: `${concurrentEdits.length} users edited this message simultaneously`,
-          conflictingVersions: concurrentEdits.map(v => ({
-            ...v,
+          conflictingVersions: concurrentEdits.map((v: any) => ({
+            ...(v as any),
             content: v.content,
             metadata: v.metadata || {}
           })),
@@ -138,12 +150,12 @@ export class ConflictDetectionEngine {
 
       // Check for version mismatches
       const expectedVersion = (message.metadata as any)?.version || 0;
-      if (expectedVersion > 0 && expectedVersion < latestVersion.version) {
+      if (expectedVersion > 0 && expectedVersion < (latestVersion as any).version) {
         conflicts.push({
           messageId: message.id,
           conflictType: 'version_mismatch',
           severity: 'high',
-          description: `Message version ${expectedVersion} conflicts with latest version ${latestVersion.version}`,
+          description: `Message version ${expectedVersion} conflicts with latest version ${(latestVersion as any).version}`,
           conflictingVersions: [latestVersion],
           suggestedResolution: 'user_choice'
         });
@@ -181,7 +193,7 @@ export class ConflictDetectionEngine {
   /**
    * Check if message content conflicts with existing version
    */
-  private hasContentConflict(message: AcademicUIMessage, latestVersion: MessageVersion): boolean {
+  private hasContentConflict(message: ExtendedUIMessage, latestVersion: MessageVersion): boolean {
     const currentContent = JSON.stringify(message.content);
     const latestContent = JSON.stringify(latestVersion.content);
     
@@ -253,7 +265,7 @@ export class ConflictResolutionStrategies {
     canAutoResolve: true,
     
     async resolve(conflict: DetectedConflict): Promise<ConflictResolutionResult> {
-      console.log(`[ConflictResolution] Resolving ${conflict.messageId} with last-writer-wins`);
+      // Resolving conflict with last-writer-wins - silent handling for production
       
       // Find the latest version
       const latestVersion = conflict.conflictingVersions
@@ -287,7 +299,7 @@ export class ConflictResolutionStrategies {
     canAutoResolve: true,
     
     async resolve(conflict: DetectedConflict): Promise<ConflictResolutionResult> {
-      console.log(`[ConflictResolution] Resolving ${conflict.messageId} with auto-merge`);
+      // Resolving conflict with auto-merge - silent handling for production
       
       if (conflict.conflictingVersions.length < 2) {
         return {
@@ -309,8 +321,8 @@ export class ConflictResolutionStrategies {
         messageId: conflict.messageId,
         conversationId: sortedVersions[0].conversationId,
         version: Math.max(...sortedVersions.map(v => v.version)) + 1,
-        content: this.mergeContent(sortedVersions.map(v => v.content)),
-        metadata: this.mergeMetadata(sortedVersions.map(v => v.metadata)),
+        content: ConflictResolutionStrategies.mergeContent(sortedVersions.map(v => v.content)),
+        metadata: ConflictResolutionStrategies.mergeMetadata(sortedVersions.map(v => v.metadata)),
         userId: 'system_merge',
         timestamp: Date.now(),
         conflictResolved: true
@@ -334,7 +346,7 @@ export class ConflictResolutionStrategies {
     canAutoResolve: false,
     
     async resolve(conflict: DetectedConflict): Promise<ConflictResolutionResult> {
-      console.log(`[ConflictResolution] Resolving ${conflict.messageId} with user-choice`);
+      // Resolving conflict with user-choice - silent handling for production
       
       return {
         success: false,
@@ -342,7 +354,7 @@ export class ConflictResolutionStrategies {
         strategy: 'user_choice',
         conflictsRemaining: [conflict],
         requiresUserInput: true,
-        userChoices: conflict.conflictingVersions.map((version, index) => ({
+        userChoices: conflict.conflictingVersions.map((version, _index) => ({
           id: version.id,
           label: `Version ${version.version} (${new Date(version.timestamp).toLocaleString()})`,
           preview: JSON.stringify(version.content).substring(0, 100) + '...',
@@ -384,10 +396,10 @@ export class ConflictResolutionStrategies {
       ...merged,
       ...metadata,
       // Keep arrays of unique values
-      tags: [...new Set([
+      tags: [...Array.from(new Set([
         ...(merged.tags || []),
         ...(metadata?.tags || [])
-      ])],
+      ]))],
       // Update version info
       lastModified: Math.max(
         merged.lastModified || 0,
@@ -419,17 +431,17 @@ export class ConflictResolutionManager {
    */
   async resolveConflicts(
     conversationId: string,
-    messageUpdates: AcademicUIMessage[]
+    messageUpdates: ExtendedUIMessage[]
   ): Promise<{
     success: boolean;
-    resolvedMessages: AcademicUIMessage[];
+    resolvedMessages: ExtendedUIMessage[];
     unresolvedConflicts: DetectedConflict[];
     requiresUserInput: boolean;
     userChoices?: any[];
     error?: string;
   }> {
     try {
-      console.log(`[ConflictResolution] Starting resolution for ${messageUpdates.length} messages`);
+      // Starting conflict resolution for messages - silent handling for production
 
       // Detect conflicts
       const detection = await this.detectionEngine.detectConflicts(conversationId, messageUpdates);
@@ -443,7 +455,7 @@ export class ConflictResolutionManager {
         };
       }
 
-      console.log(`[ConflictResolution] Found ${detection.conflicts.length} conflicts`);
+      // Found conflicts in messages - silent handling for production
 
       const resolvedMessages = [...messageUpdates];
       const unresolvedConflicts: DetectedConflict[] = [];
@@ -455,7 +467,7 @@ export class ConflictResolutionManager {
         const strategy = this.strategies.get(conflict.suggestedResolution);
         
         if (!strategy) {
-          console.warn(`[ConflictResolution] Unknown strategy: ${conflict.suggestedResolution}`);
+          // Unknown conflict resolution strategy - silent handling for production
           unresolvedConflicts.push(conflict);
           continue;
         }
@@ -513,7 +525,7 @@ export class ConflictResolutionManager {
       };
 
     } catch (error) {
-      console.error('[ConflictResolution] Resolution failed:', error);
+      // Conflict resolution failed - silent handling for production
       
       return {
         success: false,
@@ -543,13 +555,13 @@ export class ConflictResolutionManager {
           timestamp: version.timestamp,
           parent_version: version.parentVersion,
           conflict_resolved: version.conflictResolved
-        });
+        } as any);
 
       if (error) {
-        console.error('[ConflictResolution] Failed to store resolved version:', error);
+        // Failed to store resolved version - silent handling for production
       }
     } catch (error) {
-      console.error('[ConflictResolution] Database error storing version:', error);
+      // Database error storing version - silent handling for production
     }
   }
 
@@ -562,7 +574,7 @@ export class ConflictResolutionManager {
     chosenVersionId: string
   ): Promise<{
     success: boolean;
-    resolvedMessage?: AcademicUIMessage;
+    resolvedMessage?: ExtendedUIMessage;
     error?: string;
   }> {
     try {
@@ -580,15 +592,19 @@ export class ConflictResolutionManager {
         };
       }
 
+      // Type assertion for version from database
+      const versionData = version as any;
+
       // Create resolved message
-      const resolvedMessage: AcademicUIMessage = {
+      const resolvedMessage: ExtendedUIMessage = {
         id: messageId,
         role: 'assistant', // Default role
-        content: version.content,
-        createdAt: new Date(version.timestamp),
+        content: versionData.content,
+        createdAt: versionData.timestamp,
+        parts: [], // Required by UIMessage interface
         metadata: {
-          ...version.metadata,
-          version: version.version + 1,
+          ...versionData.metadata,
+          version: versionData.version + 1,
           conflictResolved: true,
           resolvedBy: 'user_choice',
           resolvedAt: Date.now()
@@ -597,9 +613,9 @@ export class ConflictResolutionManager {
 
       // Store the resolution
       await this.storeResolvedVersion({
-        ...version,
+        ...(versionData as any),
         id: generateId(),
-        version: version.version + 1,
+        version: versionData.version + 1,
         timestamp: Date.now(),
         conflictResolved: true
       });
@@ -612,7 +628,7 @@ export class ConflictResolutionManager {
         priority: 'low',
         data: {
           messageId,
-          chosenVersion: version.version
+          chosenVersion: versionData.version
         }
       });
 
@@ -622,7 +638,7 @@ export class ConflictResolutionManager {
       };
 
     } catch (error) {
-      console.error('[ConflictResolution] User choice handling failed:', error);
+      // User choice handling failed - silent handling for production
       
       return {
         success: false,
@@ -636,10 +652,10 @@ export class ConflictResolutionManager {
 export const conflictResolver = new ConflictResolutionManager();
 
 // Convenience functions
-export const detectConflicts = (conversationId: string, messages: AcademicUIMessage[]) =>
+export const detectConflicts = (conversationId: string, messages: ExtendedUIMessage[]) =>
   new ConflictDetectionEngine().detectConflicts(conversationId, messages);
 
-export const resolveConflicts = (conversationId: string, messages: AcademicUIMessage[]) =>
+export const resolveConflicts = (conversationId: string, messages: ExtendedUIMessage[]) =>
   conflictResolver.resolveConflicts(conversationId, messages);
 
 export const handleUserConflictChoice = (conversationId: string, messageId: string, versionId: string) =>

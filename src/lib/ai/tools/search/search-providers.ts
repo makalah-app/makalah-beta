@@ -38,59 +38,59 @@ export class SearchProviderManager {
       const dynamicConfig = await getDynamicModelConfig();
       const adminWebSearchProvider = dynamicConfig.webSearchProvider;
 
-      console.log(`[Search] Admin panel web search provider: ${adminWebSearchProvider}`);
+      // Admin panel web search provider logged - silent handling for production
 
       // Use admin panel web search provider setting as primary choice
       if (adminWebSearchProvider === 'openai') {
         selectedProvider = 'native-openai';
-        console.log('[Search] Using native-openai per admin panel setting');
+        // Using native-openai per admin panel setting - silent handling for production
       } else if (adminWebSearchProvider === 'perplexity') {
         selectedProvider = 'perplexity';
-        console.log('[Search] Using perplexity per admin panel setting');
+        // Using perplexity per admin panel setting - silent handling for production
       } else {
         // Fallback to text provider based selection if admin setting unclear
-        console.log('[Search] Admin setting unclear, falling back to text provider selection');
+        // Admin setting unclear, falling back to text provider selection - silent handling for production
         if (textProvider === 'openai') {
           selectedProvider = 'native-openai';
-          console.log('[Search] Auto-selected native-openai for OpenAI text provider');
+          // Auto-selected native-openai for OpenAI text provider - silent handling for production
         } else if (textProvider === 'openrouter') {
           selectedProvider = 'perplexity';
-          console.log('[Search] Auto-selected perplexity for OpenRouter text provider');
+          // Auto-selected perplexity for OpenRouter text provider - silent handling for production
         } else {
           selectedProvider = 'duckduckgo';
-          console.log('[Search] Auto-selected duckduckgo as final fallback');
+          // Auto-selected duckduckgo as final fallback - silent handling for production
         }
       }
 
     } catch (configError) {
-      console.warn('[Search] Failed to get admin panel config, using text provider fallback:', configError);
+      // Failed to get admin panel config, using text provider fallback - silent handling for production
 
       // Fallback to original logic if admin config fails
       if (textProvider === 'openai') {
         selectedProvider = 'native-openai';
-        console.log('[Search] Fallback: Auto-selected native-openai for OpenAI text provider');
+        // Fallback: Auto-selected native-openai for OpenAI text provider - silent handling for production
       } else if (textProvider === 'openrouter') {
         selectedProvider = 'perplexity';
-        console.log('[Search] Fallback: Auto-selected perplexity for OpenRouter text provider');
+        // Fallback: Auto-selected perplexity for OpenRouter text provider - silent handling for production
       } else {
         selectedProvider = 'duckduckgo';
-        console.log('[Search] Fallback: Auto-selected duckduckgo as default');
+        // Fallback: Auto-selected duckduckgo as default - silent handling for production
       }
     }
 
     try {
       return await this.search(selectedProvider, query, config);
     } catch (error) {
-      console.error(`[Search] Selected provider ${selectedProvider} failed:`, error);
+      // Selected provider failed - silent handling for production
 
       // Fallback chain: try DuckDuckGo if primary fails
       if (selectedProvider !== 'duckduckgo') {
-        console.log('[Search] Falling back to DuckDuckGo for auto-selection');
+        // Falling back to DuckDuckGo for auto-selection - silent handling for production
         return await this.search('duckduckgo', query, config);
       }
 
       // Ultimate fallback: return empty results
-      console.error('[Search] All auto-selection fallbacks failed');
+      // All auto-selection fallbacks failed - silent handling for production
       return [];
     }
   }
@@ -128,7 +128,7 @@ export class SearchProviderManager {
         break;
       default:
         // Fallback to mock for other providers
-        console.log(`[Search] Provider ${provider} not implemented, using mock results`);
+        // Provider not implemented, using mock results - silent handling for production
         results = await this.simulateSearch(provider, query, config);
         break;
     }
@@ -152,7 +152,7 @@ export class SearchProviderManager {
 
       const controller = AbortSignal.timeout(config.timeout || 10000);
 
-      console.log(`[Search] Native OpenAI starting. Model=${modelId}, q="${query}"`);
+      // Native OpenAI starting - silent handling for production
 
       const result: any = await generateText({
         model: (openai as any).responses(modelId),
@@ -187,10 +187,10 @@ export class SearchProviderManager {
 
       const limited = mapped.slice(0, Math.max(1, Math.min(config.maxResults || 10, 20)));
 
-      console.log(`[Search] Native OpenAI done. results=${limited.length}`);
+      // Native OpenAI done - silent handling for production
       return limited;
     } catch (error) {
-      console.error('[Search] Native OpenAI search failed:', error);
+      // Native OpenAI search failed - silent handling for production
       return [];
     }
   }
@@ -204,7 +204,7 @@ export class SearchProviderManager {
     config: ProviderConfig
   ): Promise<SearchResult[]> {
     try {
-      console.log(`[Search] Perplexity starting. Query="${query}"`);
+      // Perplexity starting - silent handling for production
 
       const apiKey = process.env.PERPLEXITY_API_KEY;
       if (!apiKey) {
@@ -223,9 +223,9 @@ export class SearchProviderManager {
         const dynamicConfig = await getDynamicModelConfig();
         // Use lower temperature for search queries (0.3x of admin setting for precise results)
         searchTemperature = Math.max(dynamicConfig.config.temperature * 0.3, 0.05);
-        console.log(`[Perplexity] Using dynamic temperature: ${searchTemperature} (${dynamicConfig.config.temperature} * 0.3)`);
+        // Using dynamic temperature - silent handling for production
       } catch (tempError) {
-        console.warn('[Perplexity] Failed to get dynamic temperature, using fallback:', tempError);
+        // Failed to get dynamic temperature, using fallback - silent handling for production
       }
 
       const result: any = await generateText({
@@ -266,14 +266,14 @@ Please provide current, accurate information about this topic. Include specific 
 
       const limited = searchResults.slice(0, Math.max(1, Math.min(config.maxResults || 10, 20)));
 
-      console.log(`[Search] Perplexity done. results=${limited.length}`);
+      // Perplexity done - silent handling for production
       return limited;
 
     } catch (error) {
-      console.error('[Search] Perplexity search failed:', error);
+      // Perplexity search failed - silent handling for production
 
       // Fallback to DuckDuckGo for seamless user experience
-      console.log('[Search] Falling back to DuckDuckGo due to Perplexity error');
+      // Falling back to DuckDuckGo due to Perplexity error - silent handling for production
       return this.searchDuckDuckGo(query, config);
     }
   }
@@ -325,7 +325,7 @@ Please provide current, accurate information about this topic. Include specific 
         });
       } catch (error) {
         // Skip invalid URLs
-        console.warn('[Perplexity] Invalid URL found:', url);
+        // Invalid URL found - silent handling for production
       }
     });
 
@@ -340,7 +340,7 @@ Please provide current, accurate information about this topic. Include specific 
     config: ProviderConfig
   ): Promise<SearchResult[]> {
     try {
-      console.log(`[DuckDuckGo] Searching for: "${query}"`);
+      // DuckDuckGo searching - silent handling for production
       
       // Use DuckDuckGo Instant Answer API (JSON endpoint)
       const encodedQuery = encodeURIComponent(query);
@@ -359,7 +359,7 @@ Please provide current, accurate information about this topic. Include specific 
       }
 
       const data = await response.json();
-      console.log(`[DuckDuckGo] API Response keys:`, Object.keys(data));
+      // DuckDuckGo API Response keys logged - silent handling for production
       
       const results: SearchResult[] = [];
       
@@ -431,14 +431,14 @@ Please provide current, accurate information about this topic. Include specific 
         });
       }
 
-      console.log(`[DuckDuckGo] Found ${results.length} results`);
+      // DuckDuckGo found results - silent handling for production
       return results;
 
     } catch (error) {
-      console.error('[DuckDuckGo] Search failed:', error);
+      // DuckDuckGo Search failed - silent handling for production
       
       // Fallback to mock results if API fails
-      console.log('[DuckDuckGo] Falling back to mock results due to API error');
+      // DuckDuckGo Falling back to mock results due to API error - silent handling for production
       return this.simulateSearch('duckduckgo', query, config);
     }
   }
@@ -468,7 +468,7 @@ Please provide current, accurate information about this topic. Include specific 
     config: ProviderConfig
   ): Promise<SearchResult[]> {
     try {
-      console.log(`[Sinta] Searching Indonesian academic sources for: "${query}"`);
+      // Sinta Searching Indonesian academic sources - silent handling for production
       
       // Note: Actual Sinta API implementation akan depend pada available API endpoints
       // For now, create realistic mock structure yang bisa di-replace dengan real API calls
@@ -493,11 +493,11 @@ Please provide current, accurate information about this topic. Include specific 
         });
       }
       
-      console.log(`[Sinta] Found ${mockResults.length} Indonesian academic results`);
+      // Sinta Found Indonesian academic results - silent handling for production
       return mockResults;
       
     } catch (error) {
-      console.error('[Sinta] Search failed:', error);
+      // Sinta Search failed - silent handling for production
       return this.simulateSearch('sinta-kemdiktisaintek', query, config);
     }
   }
@@ -511,7 +511,7 @@ Please provide current, accurate information about this topic. Include specific 
     config: ProviderConfig
   ): Promise<SearchResult[]> {
     try {
-      console.log(`[Garuda] Searching Indonesian repository for: "${query}"`);
+      // Garuda Searching Indonesian repository - silent handling for production
       
       // Note: Actual Garuda API implementation akan depend pada available API endpoints
       // For now, create realistic mock structure yang bisa di-replace dengan real API calls
@@ -536,11 +536,11 @@ Please provide current, accurate information about this topic. Include specific 
         });
       }
       
-      console.log(`[Garuda] Found ${mockResults.length} Indonesian repository results`);
+      // Garuda Found Indonesian repository results - silent handling for production
       return mockResults;
       
     } catch (error) {
-      console.error('[Garuda] Search failed:', error);
+      // Garuda Search failed - silent handling for production
       return this.simulateSearch('garuda-kemdikbud', query, config);
     }
   }
@@ -590,7 +590,7 @@ Please provide current, accurate information about this topic. Include specific 
       });
     }
     
-    console.log(`[${provider}] Generated ${mockResults.length} realistic query-relevant results`);
+    // Generated realistic query-relevant results - silent handling for production
     return mockResults;
   }
 

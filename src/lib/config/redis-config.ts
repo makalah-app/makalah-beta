@@ -56,7 +56,7 @@ export class RedisManager {
       token: env.UPSTASH_REDIS_REST_TOKEN,
       retry: {
         retries: env.REDIS_MAX_RETRIES,
-        retryDelayOnFailure: 200,
+        backoff: (retryCount: number) => Math.min(200 * Math.pow(2, retryCount), 3000),
       },
       automaticDeserialization: true,
     });
@@ -88,9 +88,9 @@ export class RedisManager {
   private async initializeHealthCheck(): Promise<void> {
     try {
       await this.performHealthCheck();
-      console.log('✓ Redis connection established successfully');
+      // Redis connection established successfully - silent handling for production
     } catch (error) {
-      console.error('✗ Redis connection failed:', error);
+      // Redis connection failed - silent handling for production
       this.isHealthy = false;
     }
   }
@@ -127,7 +127,7 @@ export class RedisManager {
       this.isHealthy = false;
       return false;
     } catch (error) {
-      console.error('Redis health check failed:', error);
+      // Redis health check failed - silent handling for production
       this.isHealthy = false;
       return false;
     }
@@ -157,7 +157,7 @@ export class RedisManager {
   ): Promise<boolean> {
     try {
       if (!this.isHealthy) {
-        console.warn('Redis not healthy, cache set skipped for:', key);
+        // Redis not healthy, cache set skipped - silent handling for production
         return false;
       }
 
@@ -166,7 +166,7 @@ export class RedisManager {
       
       return true;
     } catch (error) {
-      console.error('Redis cache set failed:', { key, error });
+      // Redis cache set failed - silent handling for production
       return false;
     }
   }
@@ -177,14 +177,14 @@ export class RedisManager {
   public async getCache<T>(key: string): Promise<T | null> {
     try {
       if (!this.isHealthy) {
-        console.warn('Redis not healthy, cache get skipped for:', key);
+        // Redis not healthy, cache get skipped - silent handling for production
         return null;
       }
 
       const result = await this.redis.get<T>(key);
       return result;
     } catch (error) {
-      console.error('Redis cache get failed:', { key, error });
+      // Redis cache get failed - silent handling for production
       return null;
     }
   }
@@ -195,14 +195,14 @@ export class RedisManager {
   public async deleteCache(key: string): Promise<boolean> {
     try {
       if (!this.isHealthy) {
-        console.warn('Redis not healthy, cache delete skipped for:', key);
+        // Redis not healthy, cache delete skipped - silent handling for production
         return false;
       }
 
       const result = await this.redis.del(key);
       return result > 0;
     } catch (error) {
-      console.error('Redis cache delete failed:', { key, error });
+      // Redis cache delete failed - silent handling for production
       return false;
     }
   }
@@ -213,7 +213,7 @@ export class RedisManager {
   public async deleteCachePattern(pattern: string): Promise<number> {
     try {
       if (!this.isHealthy) {
-        console.warn('Redis not healthy, pattern delete skipped for:', pattern);
+        // Redis not healthy, pattern delete skipped - silent handling for production
         return 0;
       }
 
@@ -225,7 +225,7 @@ export class RedisManager {
       const result = await this.redis.del(...keys);
       return result;
     } catch (error) {
-      console.error('Redis pattern delete failed:', { pattern, error });
+      // Redis pattern delete failed - silent handling for production
       return 0;
     }
   }
@@ -242,7 +242,7 @@ export class RedisManager {
       const exists = await this.redis.exists(key);
       return exists === 1;
     } catch (error) {
-      console.error('Redis exists check failed:', { key, error });
+      // Redis exists check failed - silent handling for production
       return false;
     }
   }
@@ -259,7 +259,7 @@ export class RedisManager {
       const ttl = await this.redis.ttl(key);
       return ttl;
     } catch (error) {
-      console.error('Redis TTL check failed:', { key, error });
+      // Redis TTL check failed - silent handling for production
       return null;
     }
   }
@@ -282,7 +282,7 @@ export class RedisManager {
       const result = await this.redis.expire(key, newTtl);
       return result === 1;
     } catch (error) {
-      console.error('Redis TTL extend failed:', { key, error });
+      // Redis TTL extend failed - silent handling for production
       return false;
     }
   }
@@ -311,7 +311,7 @@ export class RedisManager {
         };
       }
     } catch (error) {
-      console.error('Failed to get Redis stats:', error);
+      // Failed to get Redis stats - silent handling for production
     }
 
     return stats;

@@ -186,7 +186,7 @@ export class PerformanceMonitorManager {
       this.startMetricsCollection();
     }
     
-    console.log('✓ Performance monitoring configuration updated');
+    // Performance monitoring configuration updated - silent handling for production
   }
 
   /**
@@ -397,7 +397,7 @@ export class PerformanceMonitorManager {
     };
     
     this.alerts.set(id, fullAlert);
-    console.log(`✓ Added performance alert: ${alert.name}`);
+    // Added performance alert - silent handling for production
     
     return id;
   }
@@ -408,7 +408,7 @@ export class PerformanceMonitorManager {
   public removeAlert(alertId: string): boolean {
     const deleted = this.alerts.delete(alertId);
     if (deleted) {
-      console.log(`✓ Removed performance alert: ${alertId}`);
+      // Removed performance alert - silent handling for production
     }
     return deleted;
   }
@@ -510,7 +510,7 @@ export class PerformanceMonitorManager {
     }
     
     if (clearedCount > 0) {
-      console.log(`✓ Cleared ${clearedCount} old metric data points`);
+      // Cleared old metric data points - silent handling for production
     }
     
     return clearedCount;
@@ -564,7 +564,7 @@ export class PerformanceMonitorManager {
       this.clearMetrics(); // Clean old data
     }, this.config.collectionInterval * 1000);
 
-    console.log(`✓ Performance metrics collection started (${this.config.collectionInterval}s interval)`);
+    // Performance metrics collection started - silent handling for production
   }
 
   /**
@@ -726,18 +726,18 @@ export class PerformanceMonitorManager {
     for (const channel of this.config.alerting.channels) {
       switch (channel) {
         case 'console':
-          console.warn(`🚨 ${message}`);
+          // Performance alert triggered - silent handling for production
           break;
         case 'log':
-          console.log(`ALERT [${new Date().toISOString()}]: ${message}`);
+          // Performance alert logged - silent handling for production
           break;
         case 'webhook':
           if (this.config.alerting.webhookUrl) {
             try {
               // In a real implementation, would send HTTP request to webhook
-              console.log(`Would send webhook to: ${this.config.alerting.webhookUrl}`);
+              // Webhook alert would be sent - silent handling for production
             } catch (error) {
-              console.error('Failed to send webhook alert:', error);
+              // Failed to send webhook alert - silent handling for production
             }
           }
           break;

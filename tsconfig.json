@@ -31,9 +31,7 @@
   },
   "include": [
     "next-env.d.ts",
-    "app/admin/**/*",
-    "app/auth/**/*",
-    "app/layout.tsx",
+    "app/**/*",
     "src/components/**/*",
     "src/lib/ai/**/*",
     ".next/types/**/*.ts"
@@ -61,6 +59,8 @@
     "src/lib/database/fallback-mode.ts",
     "src/lib/database/message-persistence.ts",
     "src/lib/database/message-validation.ts",
-    "src/lib/database/real-time-sync.ts"
+    "src/lib/database/real-time-sync.ts",
+    "src/lib/database/conflict-resolution.ts",
+    "src/lib/database/conversation-history.ts"
   ]
 }

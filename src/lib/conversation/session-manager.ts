@@ -115,7 +115,7 @@ export class ConversationSessionManager {
    */
   async initializeSession(options: SessionInitializationOptions): Promise<ConversationSession> {
     try {
-      console.log('[SessionManager] Initializing session:', options);
+      // Initializing session - silent handling for production
       
       // Generate session ID
       const sessionId = this.generateSessionId();
@@ -130,6 +130,11 @@ export class ConversationSessionManager {
           phase: options.initialPhase || 1
         });
         conversationId = createResponse.conversation.id;
+      }
+
+      // Ensure conversationId is defined
+      if (!conversationId) {
+        throw new Error('Failed to obtain conversation ID');
       }
       
       // Create session object
@@ -185,12 +190,12 @@ export class ConversationSessionManager {
         this.setupAutoSave(sessionId);
       }
       
-      console.log('[SessionManager] Session initialized:', sessionId, 'for conversation:', conversationId);
+      // Session initialized for conversation - silent handling for production
       
       return session;
       
     } catch (error) {
-      console.error('[SessionManager] Error initializing session:', error);
+      // Error initializing session - silent handling for production
       throw error;
     }
   }
@@ -225,7 +230,7 @@ export class ConversationSessionManager {
       }
     }
     
-    console.log(`[SessionManager] Session ${sessionId} activity updated`);
+    // Session activity updated - silent handling for production
   }
   
   /**
@@ -238,7 +243,7 @@ export class ConversationSessionManager {
         throw new Error('Session not found');
       }
       
-      console.log(`[SessionManager] Phase transition requested for session ${sessionId}:`, transitionRequest);
+      // Phase transition requested for session - silent handling for production
       
       // Validate phase transition
       if (transitionRequest.fromPhase !== session.currentPhase) {
@@ -250,7 +255,7 @@ export class ConversationSessionManager {
       }
       
       if (!transitionRequest.approved) {
-        console.log(`[SessionManager] Phase ${transitionRequest.fromPhase} transition not approved`);
+        // Phase transition not approved - silent handling for production
         return false;
       }
       
@@ -294,16 +299,16 @@ export class ConversationSessionManager {
           }
         });
       } catch (error) {
-        console.warn('[SessionManager] Failed to update conversation phase:', error);
+        // Failed to update conversation phase - silent handling for production
         // Don't fail the transition for database errors
       }
       
-      console.log(`[SessionManager] Phase transition successful: ${transitionRequest.fromPhase} → ${transitionRequest.toPhase}`);
+      // Phase transition successful - silent handling for production
       
       return true;
       
     } catch (error) {
-      console.error('[SessionManager] Error during phase transition:', error);
+      // Error during phase transition - silent handling for production
       throw error;
     }
   }
@@ -318,7 +323,7 @@ export class ConversationSessionManager {
     session.state.phaseComplete = true;
     session.state.workflowProgress.currentPhaseProgress = 100;
     
-    console.log(`[SessionManager] Phase ${session.currentPhase} marked complete for session ${sessionId}`);
+    // Phase marked complete for session - silent handling for production
   }
   
   /**
@@ -345,10 +350,10 @@ export class ConversationSessionManager {
         }
       });
       
-      console.log(`[SessionManager] Session ${sessionId} saved`);
+      // Session saved - silent handling for production
       
     } catch (error) {
-      console.error('[SessionManager] Error saving session:', error);
+      // Error saving session - silent handling for production
     }
   }
   
@@ -357,7 +362,7 @@ export class ConversationSessionManager {
    */
   async restoreSession(conversationId: string, userId: string): Promise<ConversationSession | null> {
     try {
-      console.log('[SessionManager] Restoring session for conversation:', conversationId);
+      // Restoring session for conversation - silent handling for production
       
       // Load conversation details
       const conversationResponse = await conversationManager.getConversation(conversationId);
@@ -428,12 +433,12 @@ export class ConversationSessionManager {
         this.setupAutoSave(sessionId);
       }
       
-      console.log('[SessionManager] Session restored:', sessionId);
+      // Session restored - silent handling for production
       
       return session;
       
     } catch (error) {
-      console.error('[SessionManager] Error restoring session:', error);
+      // Error restoring session - silent handling for production
       return null;
     }
   }
@@ -461,10 +466,10 @@ export class ConversationSessionManager {
       // Remove from active sessions
       this.sessions.delete(sessionId);
       
-      console.log(`[SessionManager] Session ${sessionId} ended`);
+      // Session ended - silent handling for production
       
     } catch (error) {
-      console.error('[SessionManager] Error ending session:', error);
+      // Error ending session - silent handling for production
     }
   }
   
@@ -506,7 +511,7 @@ export class ConversationSessionManager {
   private setupAutoSave(sessionId: string): void {
     const timer = setInterval(() => {
       this.saveSession(sessionId).catch(error => {
-        console.error(`[SessionManager] Auto-save failed for session ${sessionId}:`, error);
+        // Auto-save failed for session - silent handling for production
       });
     }, this.saveInterval);
     
@@ -519,9 +524,9 @@ export class ConversationSessionManager {
       const now = Date.now();
       const inactivityThreshold = 30 * 60 * 1000; // 30 minutes
       
-      for (const [sessionId, session] of this.sessions.entries()) {
+      for (const [sessionId, session] of Array.from(this.sessions.entries())) {
         if (now - session.lastActivity > inactivityThreshold) {
-          console.log(`[SessionManager] Cleaning up inactive session: ${sessionId}`);
+          // Cleaning up inactive session - silent handling for production
           this.endSession(sessionId);
         }
       }

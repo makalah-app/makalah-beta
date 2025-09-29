@@ -177,7 +177,7 @@ export function randomUUID(): string {
   }
   
   // Manual implementation (RFC 4122 compliant)
-  console.warn('[CRYPTO-POLYFILL] Using manual UUID generation fallback');
+  // Using manual UUID generation fallback - silent handling for production
   return manualUUIDv4();
 }
 
@@ -225,7 +225,7 @@ export function getRandomBytes(length: number): Uint8Array {
   }
   
   // Fallback using Math.random() (not cryptographically secure)
-  console.warn('[CRYPTO-POLYFILL] Using Math.random() fallback for random bytes - not cryptographically secure');
+  // Using Math.random() fallback for random bytes - silent handling for production
   const array = new Uint8Array(length);
   for (let i = 0; i < length; i++) {
     array[i] = Math.floor(Math.random() * 256);

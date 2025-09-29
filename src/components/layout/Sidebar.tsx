@@ -62,7 +62,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Handle conversation click - UNIFIED PARAMETER SYSTEM
   const handleConversationClick = (conversation: ConversationItem) => {
-    console.log('[Sidebar] Loading conversation:', conversation.id);
     // Navigate to chat page with UNIFIED chatId parameter (no more conversationId)
     const url = `/chat?chatId=${conversation.id}`;
     if (onNavigate) {

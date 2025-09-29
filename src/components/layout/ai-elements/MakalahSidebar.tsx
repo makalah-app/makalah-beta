@@ -84,7 +84,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
       // Check for our custom events
       if (event.data?.type === 'chat-persisted' ||
           event.data?.type === 'smart-title-generated') {
-        console.log(`[MakalahSidebar] Received ${event.data.type} event, refreshing list...`);
+        // Received event, refreshing list - silent handling for production
 
         // Small delay to ensure database write completes
         setTimeout(() => {
@@ -138,7 +138,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
 
   // Handle conversation click - BASIC NAVIGATION
   const handleConversationClick = (conversation: ConversationItem) => {
-    console.log('[MakalahSidebar] Loading conversation:', conversation.id);
+    // Loading conversation - silent handling for production
     // Navigate to chat page with conversation ID
     const url = `/chat?conversationId=${conversation.id}`;
     if (onNavigate) {
@@ -167,7 +167,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
       });
 
       if (response.ok) {
-        console.log('[MakalahSidebar] ✅ Conversation deleted successfully');
+        // Conversation deleted successfully - silent handling for production
         refetch(); // Refresh the conversations list
         setDeleteTarget(null);
       } else {
@@ -175,7 +175,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
         setDeleteError(errorData.error || 'Failed to delete conversation');
       }
     } catch (error) {
-      console.error('[MakalahSidebar] ❌ Delete error:', error);
+      // Delete error occurred - silent handling for production
       setDeleteError('Network error occurred');
     } finally {
       setIsDeleting(false);

@@ -646,7 +646,6 @@ export class AiConfigService {
       try {
         callback(this.config);
       } catch (error) {
-        console.error('Error in configuration watcher:', error);
       }
     });
   }

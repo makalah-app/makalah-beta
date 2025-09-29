@@ -45,7 +45,7 @@ export function useChatHistory(): UseChatHistoryReturn {
 
   const fetchConversations = useCallback(async (currentOffset = 0, isLoadMore = false) => {
     if (!isAuthenticated || !user?.id) {
-      console.log('[useChatHistory] Not authenticated, skipping fetch');
+      // Not authenticated, skipping fetch - silent handling for production
       setLoading(false);
       return;
     }
@@ -53,7 +53,7 @@ export function useChatHistory(): UseChatHistoryReturn {
     // ✅ PREVENT DUPLICATE REQUESTS: Check if same params already being fetched
     const fetchParams = `${user.id}-${currentOffset}-${isLoadMore}`;
     if (fetchParams === lastFetchParamsRef.current) {
-      console.log('[useChatHistory] Duplicate request prevented:', fetchParams);
+      // Duplicate request prevented - silent handling for production
       return;
     }
 
@@ -72,7 +72,7 @@ export function useChatHistory(): UseChatHistoryReturn {
     setError(null);
 
     try {
-      console.log(`[useChatHistory] Fetching conversations for user: ${user.id}, offset: ${currentOffset}`);
+      // Fetching conversations - silent handling for production
 
       // Create new AbortController for this request
       abortControllerRef.current = new AbortController();
@@ -91,7 +91,7 @@ export function useChatHistory(): UseChatHistoryReturn {
       }
 
       const data = await response.json();
-      console.log('[useChatHistory] Fetched conversations:', data);
+      // Fetched conversations - silent handling for production
 
       // Handle both array response and object with conversations property
       const conversationList = Array.isArray(data) ? data : (data.conversations || []);
@@ -108,10 +108,10 @@ export function useChatHistory(): UseChatHistoryReturn {
     } catch (err) {
       // ✅ HANDLE ABORTED REQUESTS: Don't treat aborted requests as errors
       if (err instanceof Error && err.name === 'AbortError') {
-        console.log('[useChatHistory] Request aborted:', err.message);
+        // Request aborted - silent handling for production
         return;
       }
-      console.error('[useChatHistory] Error fetching conversations:', err);
+      // Error fetching conversations - silent handling for production
       setError(err instanceof Error ? err.message : 'Failed to load chat history');
     } finally {
       // Clear fetch params on completion

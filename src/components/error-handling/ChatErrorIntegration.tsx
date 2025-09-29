@@ -210,25 +210,25 @@ export const ChatErrorIntegration: React.FC<ChatErrorIntegrationProps> = ({
       case 'details':
         const error = errorManager.getError(notificationId);
         if (error && enableDiagnostics) {
-          console.log('Error Details:', error);
+          // Error details available - silent handling for production
           // Here you could open a detailed error modal
         }
         break;
         
       case 'status':
         // Show system status or health check
-        console.log('System Status Check');
+        // System status check - silent handling for production
         break;
         
       default:
-        console.log('Unknown action:', actionType);
+        // Unknown action - silent handling for production
     }
   }, [enableDiagnostics]);
 
   // Recovery handler for streaming errors
   const handleStreamRecovery = useCallback((errorId: string, recoveryMethod: string) => {
-    console.log(`[ChatErrorIntegration] Stream recovery: ${recoveryMethod} for ${errorId}`);
-    
+    // Stream recovery - silent handling for production
+
     setErrorState(prev => ({
       ...prev,
       hasError: false,
@@ -479,7 +479,7 @@ export const useChatErrorHandling = (chatId?: string, userId?: string) => {
       }
       return success;
     } catch (e) {
-      console.error('Recovery attempt failed:', e);
+      // Recovery attempt failed - silent handling for production
       return false;
     }
   }, [clearError]);

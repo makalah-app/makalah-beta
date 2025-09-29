@@ -119,13 +119,13 @@ export class SessionManager {
         });
 
         this.metrics.creates++;
-        console.log(`✓ Session created for user: ${session.userId}`);
+        // Session created - silent handling for production
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('Failed to create session:', error);
+      // Failed to create session - silent handling for production
       return false;
     }
   }
@@ -151,7 +151,7 @@ export class SessionManager {
       this.metrics.misses++;
       return null;
     } catch (error) {
-      console.error('Failed to get session:', error);
+      // Failed to get session - silent handling for production
       this.metrics.misses++;
       return null;
     }
@@ -171,7 +171,7 @@ export class SessionManager {
 
       return null;
     } catch (error) {
-      console.error('Failed to get session by user ID:', error);
+      // Failed to get session by user ID - silent handling for production
       return null;
     }
   }
@@ -200,7 +200,7 @@ export class SessionManager {
 
       return false;
     } catch (error) {
-      console.error('Failed to update session:', error);
+      // Failed to update session - silent handling for production
       return false;
     }
   }
@@ -232,13 +232,13 @@ export class SessionManager {
         });
 
         this.metrics.deletes++;
-        console.log(`✓ Session deleted for user: ${session.userId}`);
+        // Session deleted - silent handling for production
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('Failed to delete session:', error);
+      // Failed to delete session - silent handling for production
       return false;
     }
   }
@@ -279,7 +279,7 @@ export class SessionManager {
 
       return false;
     } catch (error) {
-      console.error('Failed to extend session:', error);
+      // Failed to extend session - silent handling for production
       return false;
     }
   }
@@ -292,7 +292,7 @@ export class SessionManager {
       const activityKey = cacheUtils.formatKey('SESSION', `activity:${activity.sessionId}:${Date.now()}`);
       await cacheUtils.set(activityKey, activity, 86400); // Store for 24 hours
     } catch (error) {
-      console.error('Failed to track session activity:', error);
+      // Failed to track session activity - silent handling for production
     }
   }
 
@@ -348,7 +348,7 @@ export class SessionManager {
         avgSessionDuration: 0, // TODO: Calculate from activity data
       };
     } catch (error) {
-      console.error('Failed to get session stats:', error);
+      // Failed to get session stats - silent handling for production
       return {
         totalActiveSessions: 0,
         userSessions: {},
@@ -385,12 +385,12 @@ export class SessionManager {
       }
 
       if (cleanedCount > 0) {
-        console.log(`✓ Cleaned up ${cleanedCount} expired sessions`);
+        // Cleaned up expired sessions - silent handling for production
       }
 
       return cleanedCount;
     } catch (error) {
-      console.error('Failed to cleanup expired sessions:', error);
+      // Failed to cleanup expired sessions - silent handling for production
       return 0;
     }
   }

@@ -119,7 +119,6 @@ export function getDatabaseHealth(): DatabaseHealth {
         }
       }
     } catch (error) {
-      console.warn('[Fallback] Failed to parse cached health status:', error);
     }
   }
   
@@ -147,7 +146,6 @@ export async function saveChatFallback({
   const startTime = Date.now();
   
   try {
-    console.log(`[Fallback] Saving ${messages.length} messages for chat ${chatId} to localStorage`);
     
     // Update session storage
     const conversation: FallbackConversation = {
@@ -176,17 +174,14 @@ export async function saveChatFallback({
         
         localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(conversations));
       } catch (error) {
-        console.warn('[Fallback] Failed to persist to localStorage:', error);
         // Continue with session storage only
       }
     }
     
     const saveTime = Date.now() - startTime;
-    console.log(`[Fallback] Successfully saved ${messages.length} messages in ${saveTime}ms (fallback mode)`);
     
   } catch (error) {
     const saveTime = Date.now() - startTime;
-    console.error(`[Fallback] Failed to save chat ${chatId} after ${saveTime}ms:`, error);
     throw error;
   }
 }
@@ -198,13 +193,11 @@ export async function loadChatFallback(chatId: string): Promise<UIMessage[]> {
   const startTime = Date.now();
   
   try {
-    console.log(`[Fallback] Loading messages for chat ${chatId} from fallback storage`);
     
     // First check session storage
     const sessionConversation = sessionStorage.get(chatId);
     if (sessionConversation) {
       const loadTime = Date.now() - startTime;
-      console.log(`[Fallback] Successfully loaded ${sessionConversation.messages.length} messages from session in ${loadTime}ms`);
       return sessionConversation.messages;
     }
     
@@ -221,23 +214,19 @@ export async function loadChatFallback(chatId: string): Promise<UIMessage[]> {
             sessionStorage.set(chatId, conversation);
             
             const loadTime = Date.now() - startTime;
-            console.log(`[Fallback] Successfully loaded ${conversation.messages.length} messages from localStorage in ${loadTime}ms`);
             return conversation.messages;
           }
         }
       } catch (error) {
-        console.warn('[Fallback] Failed to load from localStorage:', error);
       }
     }
     
     // No messages found
     const loadTime = Date.now() - startTime;
-    console.log(`[Fallback] No messages found for chat ${chatId} after ${loadTime}ms`);
     return [];
     
   } catch (error) {
     const loadTime = Date.now() - startTime;
-    console.error(`[Fallback] Failed to load chat ${chatId} after ${loadTime}ms:`, error);
     throw error;
   }
 }
@@ -248,7 +237,6 @@ export async function loadChatFallback(chatId: string): Promise<UIMessage[]> {
 export async function createChatFallback(userId?: string, title?: string): Promise<string> {
   const chatId = generateUUID(); // Use UUID for database compatibility
   
-  console.log(`[Fallback] Created new chat ${chatId} in fallback mode`);
   
   // Create empty conversation entry
   const conversation: FallbackConversation = {
@@ -316,18 +304,15 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
           }
         }
       } catch (error) {
-        console.warn('[Fallback] Failed to load conversations from localStorage:', error);
       }
     }
     
     // Sort by last activity
     conversations.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
     
-    console.log(`[Fallback] Found ${conversations.length} conversations in fallback mode`);
     return conversations;
     
   } catch (error) {
-    console.error('[Fallback] Failed to get user conversations:', error);
     return [];
   }
 }
@@ -350,7 +335,6 @@ export async function syncFallbackToDatabase(): Promise<{
       throw new Error('Database still unavailable for sync');
     }
     
-    console.log('[Fallback] Starting sync of fallback data to database');
     
     // Import database functions
     const { saveChat } = await import('./chat-store');
@@ -364,11 +348,9 @@ export async function syncFallbackToDatabase(): Promise<{
         });
         
         syncedCount++;
-        console.log(`[Fallback] Synced conversation ${chatId} (${conversation.messages.length} messages)`);
       } catch (error) {
         const errorMsg = `Failed to sync ${chatId}: ${error instanceof Error ? error.message : String(error)}`;
         errors.push(errorMsg);
-        console.error('[Fallback]', errorMsg);
       }
     }
     
@@ -392,12 +374,10 @@ export async function syncFallbackToDatabase(): Promise<{
               });
               
               syncedCount++;
-              console.log(`[Fallback] Synced localStorage conversation ${chatId}`);
             } catch (error) {
               const errorMsg = `Failed to sync localStorage ${chatId}: ${error instanceof Error ? error.message : String(error)}`;
               errors.push(errorMsg);
-              console.error('[Fallback]', errorMsg);
-            }
+                  }
           }
         }
       } catch (error) {
@@ -405,7 +385,6 @@ export async function syncFallbackToDatabase(): Promise<{
       }
     }
     
-    console.log(`[Fallback] Sync completed: ${syncedCount} conversations synced, ${errors.length} errors`);
     
     return {
       success: errors.length === 0,
@@ -438,7 +417,6 @@ export function clearFallbackData(): void {
     localStorage.removeItem(STORAGE_KEYS.FALLBACK_MODE);
   }
   
-  console.log('[Fallback] Cleared all fallback data');
 }
 
 // Helper functions
@@ -483,7 +461,6 @@ export async function measureFallbackPerformance<T>(
     const result = await fn();
     const time = Date.now() - startTime;
     
-    console.log(`[Fallback Performance] ${operation} completed in ${time}ms (fallback mode)`);
     
     return {
       result,
@@ -491,7 +468,6 @@ export async function measureFallbackPerformance<T>(
     };
   } catch (error) {
     const time = Date.now() - startTime;
-    console.error(`[Fallback Performance] ${operation} failed after ${time}ms:`, error);
     throw error;
   }
 }

@@ -94,7 +94,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       timestamp: Date.now(),
     };
 
-    console.log('[EventHandler] Emitting event:', event);
+    // Emitting event - silent handling for production
     
     // Add to history
     addEventToHistory(event);
@@ -106,7 +106,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
           try {
             subscription.callback(event);
           } catch (error) {
-            console.error('[EventHandler] Subscription callback error:', error);
+            // Subscription callback error - silent handling for production
           }
         }
       }
@@ -135,7 +135,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
         metadata: parsedData.metadata,
       };
 
-      console.log('[EventHandler] Processing SSE event:', event);
+      // Processing SSE event - silent handling for production
       
       // Add to history
       addEventToHistory(event);
@@ -147,14 +147,14 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
             try {
               subscription.callback(event);
             } catch (error) {
-              console.error('[EventHandler] Subscription callback error:', error);
+              // Subscription callback error - silent handling for production
             }
           }
         }
       });
 
     } catch (error) {
-      console.error('[EventHandler] Error processing SSE event:', error);
+      // Error processing SSE event - silent handling for production
       emit({
         type: 'error',
         data: { message: 'Failed to process SSE event', error: (error as any)?.message },
@@ -175,7 +175,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       const newEventSource = new EventSource(sseEndpoint);
       
       newEventSource.onopen = () => {
-        console.log('[EventHandler] SSE connection opened');
+        // SSE connection opened - silent handling for production
         setConnectionStatus('connected');
         
         emit({
@@ -190,7 +190,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
           const data = JSON.parse(event.data);
           processSSEEvent(data);
         } catch (error) {
-          console.error('[EventHandler] Error parsing SSE message:', error);
+          // Error parsing SSE message - silent handling for production
         }
       };
 
@@ -214,7 +214,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       });
 
       newEventSource.onerror = (error) => {
-        console.error('[EventHandler] SSE connection error:', error);
+        // SSE connection error - silent handling for production
         setConnectionStatus('error');
         
         emit({
@@ -227,7 +227,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
         if (autoReconnect) {
           setTimeout(() => {
             if (connectionStatus !== 'connected') {
-              console.log('[EventHandler] Attempting to reconnect...');
+              // Attempting to reconnect - silent handling for production
               connect();
             }
           }, 5000);
@@ -237,7 +237,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       setEventSource(newEventSource);
       
     } catch (error) {
-      console.error('[EventHandler] Failed to establish SSE connection:', error);
+      // Failed to establish SSE connection - silent handling for production
       setConnectionStatus('error');
     }
   }, [autoReconnect, connectionStatus, emit, eventSource, processSSEEvent, sseEndpoint]);
@@ -275,7 +275,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
 
     setSubscriptions(prev => new Map(prev.set(subscriptionId, subscription)));
     
-    console.log(`[EventHandler] Subscription created: ${subscriptionId} for events: ${types.join(', ')}`);
+    // Subscription created - silent handling for production
     
     return subscriptionId;
   }, [generateSubscriptionId]);
@@ -288,7 +288,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
       return updated;
     });
     
-    console.log(`[EventHandler] Subscription removed: ${subscriptionId}`);
+    // Subscription removed - silent handling for production
   }, []);
 
   // Initialize connection saat component mount
@@ -302,7 +302,7 @@ export const EventHandlerProvider: React.FC<EventHandlerProviderProps> = ({
 
   // Monitor connection status changes
   useEffect(() => {
-    console.log(`[EventHandler] Connection status changed: ${connectionStatus}`);
+    // Connection status changed - silent handling for production
   }, [connectionStatus]);
 
   const contextValue: EventHandlerContextType = {

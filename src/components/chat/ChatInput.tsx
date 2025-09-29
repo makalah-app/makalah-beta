@@ -76,7 +76,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       const fileNames = Array.from(selectedFiles).map(f => f.name).join(', ');
       const messageWithFiles = `${messageText}\n\n[Files attached: ${fileNames}]`;
       sendMessage({ text: messageWithFiles });
-      console.log('[ChatInput] Files attached:', selectedFiles);
 
       // Clear selected files after sending
       clearFiles();

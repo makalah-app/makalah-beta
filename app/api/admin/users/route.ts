@@ -15,7 +15,7 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { supabaseAdmin } from '@/lib/database/supabase-client';
+import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
 
 // Admin email hardcoded for security
 const ADMIN_EMAIL = 'makalah.app@gmail.com';
@@ -94,21 +94,21 @@ export async function GET(request: NextRequest) {
     const validatedRequest: UsersRequest = UsersRequestSchema.parse(parsedParams);
     const { includeDetails, includeInactive, limit } = validatedRequest;
 
-    console.log('📊 Admin users request:', { includeDetails, includeInactive, limit });
+    // Admin users request processed - silent handling for production
 
     // Get total user count
-    console.log('🔍 Getting total users count');
+    // Getting total users count - silent handling for production
     const { count: totalUsers, error: totalUsersError } = await supabaseAdmin
       .from('users')
       .select('*', { count: 'exact', head: true });
     
     if (totalUsersError) {
-      console.error('❌ Error getting total users:', totalUsersError);
+      // Error getting total users - silent handling for production
       throw new Error('Failed to get total users count');
     }
 
     // Get active users (last 30 days)
-    console.log('🔍 Getting active users count');
+    // Getting active users count - silent handling for production
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -118,17 +118,17 @@ export async function GET(request: NextRequest) {
       .gte('last_login_at', thirtyDaysAgo.toISOString());
     
     if (activeUsersError) {
-      console.error('❌ Error getting active users:', activeUsersError);
+      // Error getting active users - silent handling for production
     }
 
     // Get role distribution
-    console.log('🔍 Getting role distribution');
+    // Getting role distribution - silent handling for production
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('users')
       .select('role');
     
     if (roleError) {
-      console.error('❌ Error getting roles:', roleError);
+      // Error getting roles - silent handling for production
     }
     
     const roleDistribution = (roleData || []).reduce((acc: any[], user: any) => {
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
     }, []);
 
     // Get recent users (last 7 days)
-    console.log('🔍 Getting recent users count');
+    // Getting recent users count - silent handling for production
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
       .gte('created_at', sevenDaysAgo.toISOString());
     
     if (recentUsersError) {
-      console.error('❌ Error getting recent users:', recentUsersError);
+      // Error getting recent users - silent handling for production
     }
 
     // Build base response
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
 
     // Include user details if requested
     if (includeDetails) {
-      console.log('🔍 Getting user details with limit:', limit);
+      // Getting user details - silent handling for production
       
       let usersQuery = supabaseAdmin
         .from('users')
@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
       const { data: userDetailsData, error: userDetailsError } = await usersQuery;
       
       if (userDetailsError) {
-        console.error('❌ Error getting user details:', userDetailsError);
+        // Error getting user details - silent handling for production
         throw new Error('Failed to get user details');
       }
       
@@ -217,18 +217,12 @@ export async function GET(request: NextRequest) {
       response.data.metadata.userCount = response.data.users.length;
     }
 
-    console.log('✅ Admin users response generated:', {
-      totalUsers: totalUsers || 0,
-      activeUsers: activeUsers || 0,
-      recentUsers: recentUsers || 0,
-      rolesCount: roleDistribution.length,
-      includesUserList: includeDetails
-    });
+    // Admin users response generated - silent handling for production
 
     return Response.json(response);
 
   } catch (error) {
-    console.error('❌ Admin users error:', error);
+    // Admin users error occurred - silent handling for production
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user statistics';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
@@ -266,7 +260,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, userId, data } = body;
 
-    console.log('🔧 Admin user management:', { action, userId, hasData: !!data });
+    // Admin user management action - silent handling for production
 
     if (!action) {
       return Response.json({
@@ -292,7 +286,7 @@ export async function POST(request: NextRequest) {
           }, { status: 400 });
         }
 
-        console.log('🔧 Updating user role:', { userId, newRole: data.role });
+        // Updating user role - silent handling for production
         
         const { data: updateResult, error: updateError } = await (supabaseAdmin as any)
           .from('users')
@@ -305,7 +299,7 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (updateError || !updateResult) {
-          console.error('❌ Role update failed:', updateError);
+          // Role update failed - silent handling for production
           return Response.json({
             success: false,
             error: {
@@ -316,7 +310,7 @@ export async function POST(request: NextRequest) {
           }, { status: 404 });
         }
 
-        console.log('✅ Role updated successfully:', updateResult);
+        // Role updated successfully - silent handling for production
         
         return Response.json({
           success: true,
@@ -362,7 +356,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Admin user management error:', error);
+    // Admin user management error - silent handling for production
 
     const errorMessage = error instanceof Error ? error.message : 'User management operation failed';
     

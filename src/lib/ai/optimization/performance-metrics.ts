@@ -502,7 +502,7 @@ export class PerformanceMetricsService {
 
     // Log if detailed logging is enabled
     if (this.config.metricsCollection.enableDetailedLogging) {
-      console.debug(`Metric recorded: ${metric.type} = ${metric.value} ${metric.unit}`, metric);
+      // Detailed logging for production - silent handling for production
     }
   }
 
@@ -611,7 +611,7 @@ export class PerformanceMetricsService {
   private startAutoAnalysis(): void {
     setInterval(() => {
       this.performAutomaticAnalysis().catch(error => {
-        console.error('Automatic analysis failed:', error);
+        // Automatic analysis failed - silent handling for production
       });
     }, this.config.performanceAnalysis.analysisInterval);
   }
@@ -711,8 +711,7 @@ export class PerformanceMetricsService {
       this.alerts.push(alert);
       this.lastAlertTime.set(alertKey, now);
 
-      // Log alert
-      console.warn(`Performance Alert [${alertSeverity.toUpperCase()}]: ${alert.description}`);
+      // Performance alert triggered - silent handling for production
     }
   }
 
