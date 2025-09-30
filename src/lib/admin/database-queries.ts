@@ -674,7 +674,7 @@ export async function getConfigurationStatus(): Promise<DatabaseQueryResponse<Co
 
 // ==================== EXPORT ALL FUNCTIONS ====================
 
-export default {
+const databaseQueries = {
   getUserStatistics,
   getModelConfigurations,
   updateModelConfiguration,
@@ -685,6 +685,8 @@ export default {
   storeAPIKey,
   getConfigurationStatus
 };
+
+export default databaseQueries;
 
 /**
  * Health check function for database query helpers

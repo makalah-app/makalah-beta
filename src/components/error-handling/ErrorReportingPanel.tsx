@@ -20,6 +20,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 export interface ErrorReportingPanelProps {
   isOpen: boolean;
@@ -544,10 +545,13 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
                 </label>
                 {screenshot ? (
                   <div>
-                    <img 
-                      src={screenshot} 
-                      alt="Error screenshot" 
-                      style={{ maxWidth: '100%', height: 'auto', border: '1px solid #d1d5db', borderRadius: '6px' }} 
+                    <Image
+                      src={screenshot}
+                      alt="Error screenshot"
+                      width={600}
+                      height={400}
+                      style={{ maxWidth: '100%', height: 'auto', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                      unoptimized
                     />
                     <button
                       onClick={() => setScreenshot(null)}

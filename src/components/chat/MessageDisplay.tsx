@@ -15,6 +15,7 @@
  */
 
 import React from 'react';
+import Image from 'next/image';
 import { AcademicUIMessage } from './ChatContainer';
 import { SystemMessage } from './SystemMessage';
 // AI Elements Message components
@@ -325,11 +326,14 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                 {fileParts.map((part, index) => (
                   <div key={index} className="mt-2">
                     {part.mediaType?.startsWith('image/') ? (
-                      <div className="relative">
-                        <img
+                      <div className="relative max-w-xs">
+                        <Image
                           src={part.url}
                           alt={part.filename || 'Uploaded image'}
-                          className="max-w-xs rounded-lg border"
+                          width={400}
+                          height={400}
+                          className="rounded-lg border w-full h-auto"
+                          unoptimized
                         />
                         {part.filename && (
                           <div className="mt-1 text-xs text-muted-foreground">{part.filename}</div>

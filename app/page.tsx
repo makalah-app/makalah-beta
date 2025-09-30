@@ -170,11 +170,6 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto">
           <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px]">
             <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
-              <img
-                className="w-full h-full object-cover"
-                alt=""
-              />
-
               {/* Play button overlay */}
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all">
                 <div className="w-20 h-20 rounded-[3px] bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">

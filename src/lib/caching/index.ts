@@ -371,8 +371,10 @@ export const cachingUtils = {
 /**
  * Default export for easy initialization
  */
-export default {
+const cachingSystem = {
   initialize: initializeCachingSystem,
   getStatus: getCachingSystemStatus,
   utils: cachingUtils,
 };
+
+export default cachingSystem;

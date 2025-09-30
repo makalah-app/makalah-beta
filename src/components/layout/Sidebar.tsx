@@ -12,6 +12,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useChatHistory, ConversationItem } from '../../hooks/useChatHistory';
 
 
@@ -291,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div>
                 {user.avatar ? (
-                  <img src={user.avatar} alt={user.name || user.email || 'User'} />
+                  <Image src={user.avatar} alt={user.name || user.email || 'User'} width={40} height={40} className="rounded-full" unoptimized />
                 ) : (
                   ((user.name || user.fullName || user.email?.split('@')[0] || 'U') + '').split(' ').map(n => n && n[0] ? n[0] : 'U').join('').toUpperCase()
                 )}
