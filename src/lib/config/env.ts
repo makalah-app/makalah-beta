@@ -1,10 +1,6 @@
 /**
  * Environment Variable Validation for AI Providers
  * Ensures all required AI SDK configuration is present and valid
- * 
- * Based on Vercel AI SDK v5 Core patterns from:
- * - /documentation/docs/03-ai-sdk-core/45-provider-management.mdx
- * - /documentation/providers/03-community-providers/13-openrouter.mdx
  */
 
 import { z } from 'zod';
@@ -13,21 +9,21 @@ import { z } from 'zod';
  * Environment validation schema for AI providers
  */
 const envSchema = z.object({
-  // Primary Provider - OpenRouter Configuration
-  OPENROUTER_API_KEY: z.string().min(1, 'OpenRouter API key is required'),
-  OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
-  
-  // Primary Model Configuration
-  PRIMARY_MODEL: z.string().default('google/gemini-2.5-pro'),
-  PRIMARY_MODEL_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
-  PRIMARY_MODEL_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
-  
-  // Fallback Provider - OpenAI Configuration
+  // Primary Provider - OpenAI Configuration (Dynamic from DB)
   OPENAI_API_KEY: z.string().min(1, 'OpenAI API key is required'),
   OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
-  
+
+  // Primary Model Configuration
+  PRIMARY_MODEL: z.string().default('gpt-4o'),
+  PRIMARY_MODEL_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
+  PRIMARY_MODEL_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
+
+  // Fallback Provider - OpenRouter Configuration
+  OPENROUTER_API_KEY: z.string().min(1, 'OpenRouter API key is required'),
+  OPENROUTER_BASE_URL: z.string().url().default('https://openrouter.ai/api/v1'),
+
   // Fallback Model Configuration
-  FALLBACK_MODEL: z.string().default('gpt-4o'),
+  FALLBACK_MODEL: z.string().default('google/gemini-2.5-flash'),
   FALLBACK_MODEL_MAX_TOKENS: z.coerce.number().int().positive().default(4096),
   FALLBACK_MODEL_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
   

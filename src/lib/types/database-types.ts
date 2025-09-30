@@ -222,6 +222,7 @@ export interface Database {
           id: string;
           provider: 'openai' | 'openrouter';
           model_name: string;
+          parameters?: any; // JSONB field for dynamic parameters like topP
           temperature: number;
           max_tokens: number;
           frequency_penalty: number;

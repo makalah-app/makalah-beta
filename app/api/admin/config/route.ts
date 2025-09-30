@@ -119,11 +119,6 @@ const UpdateConfigRequestSchema = z.object({
     openai: z.string().optional(),
     openrouter: z.string().optional(),
     perplexity: z.string().optional()
-  }).optional(),
-
-  // Features configuration (including web search provider)
-  features: z.object({
-    webSearchProvider: z.enum(['openai', 'perplexity']).optional()
   }).optional()
 });
 
@@ -403,27 +398,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get features configuration
-    if (scope === 'all') {
-      try {
-        const { data: webSearchConfig, error: webSearchError } = await supabaseAdmin
-          .from('admin_settings')
-          .select('setting_value')
-          .eq('setting_key', 'web_search_provider')
-          .maybeSingle();
-
-        if (webSearchError) {
-        }
-
-        response.data.features = {
-          webSearchProvider: ((webSearchConfig as any)?.setting_value as 'openai' | 'perplexity') || 'openai'
-        };
-
-
-      } catch (featuresError) {
-        response.data.features = { webSearchProvider: 'openai' };
-      }
-    }
+    // Features configuration removed - using auto-pairing instead
 
     // Hybrid configuration block disabled for now to stabilize type-check/build.
     // (kept intentionally empty)
@@ -482,7 +457,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedRequest: UpdateConfigRequest = UpdateConfigRequestSchema.parse(body);
 
-    const { models, prompts, apiKeys, features } = validatedRequest;
+    const { models, prompts, apiKeys } = validatedRequest;
 
 
     const results: any = {
@@ -638,41 +613,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update features (including web search provider)
-    if (features) {
-
-      if (features.webSearchProvider) {
-
-        const { error: webSearchError } = await supabaseAdmin
-          .from('admin_settings')
-          .upsert({
-            setting_key: 'web_search_provider',
-            setting_value: features.webSearchProvider,
-            setting_type: 'string',
-            category: 'ai_config',
-            description: 'Active web search provider (openai or perplexity)',
-            metadata: {
-              display_order: 65,
-              options: ['openai', 'perplexity']
-            },
-            validation_rules: {
-              enum: ['openai', 'perplexity']
-            },
-            is_sensitive: false,
-            is_system: false,
-            updated_at: new Date().toISOString(),
-            updated_by: adminUserId
-          } as any, {
-            onConflict: 'setting_key'
-          });
-
-        if (webSearchError) {
-        } else {
-          results.updated.webSearchProvider = features.webSearchProvider;
-          results.timestamps.webSearchProvider = new Date().toISOString();
-        }
-      }
-    }
+    // Features update removed - using auto-pairing instead
 
     // ⚡ PERFORMANCE: Clear dynamic config cache after admin updates
     try {

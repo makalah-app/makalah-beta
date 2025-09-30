@@ -1,6 +1,6 @@
 /**
  * Core AI SDK Configuration
- * Central configuration for AI providers with OpenRouter primary and OpenAI fallback
+ * Central configuration for AI providers with OpenAI primary and OpenRouter fallback
  * 
  * Based on Vercel AI SDK v5 Core patterns from:
  * - /documentation/docs/03-ai-sdk-core/45-provider-management.mdx
@@ -33,13 +33,13 @@ export interface AIProviderConfig {
     name: 'openai';
     provider: any;
     model: string;
-    config: typeof FALLBACK_MODEL_CONFIG; // Using OpenAI config as primary now
+    config: typeof PRIMARY_MODEL_CONFIG; // Using PRIMARY config for OpenAI primary
   };
   fallback: {
     name: 'openrouter';
     provider: any;
     model: string;
-    config: typeof PRIMARY_MODEL_CONFIG; // Using OpenRouter config as fallback now
+    config: typeof FALLBACK_MODEL_CONFIG; // Using FALLBACK config for OpenRouter fallback
   };
 }
 
@@ -135,14 +135,14 @@ export function initializeAIProviders(): AIProviderConfig {
     primary: {
       name: 'openai',
       provider: openaiProvider,
-      model: FALLBACK_MODEL_CONFIG.model, // gpt-4o now as primary
-      config: FALLBACK_MODEL_CONFIG,
+      model: PRIMARY_MODEL_CONFIG.model, // gpt-4o now as primary
+      config: PRIMARY_MODEL_CONFIG,
     },
     fallback: {
       name: 'openrouter', 
       provider: openrouter,
-      model: PRIMARY_MODEL_CONFIG.model, // gemini-2.5-pro now as fallback
-      config: PRIMARY_MODEL_CONFIG,
+      model: FALLBACK_MODEL_CONFIG.model, // gemini-2.5-flash now as fallback
+      config: FALLBACK_MODEL_CONFIG,
     },
   };
 }
@@ -273,12 +273,12 @@ export function getFallbackModel() {
     }
     
     // OpenRouter provider menggunakan .chat() method untuk chat models
-    const model = fallbackProvider.chat(PRIMARY_MODEL_CONFIG.model);
+    const model = fallbackProvider.chat(FALLBACK_MODEL_CONFIG.model);
     
     return model;
     
   } catch (error) {
-    throw new Error(`Independent fallback model (${PRIMARY_MODEL_CONFIG.model}) initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Independent fallback model (${FALLBACK_MODEL_CONFIG.model}) initialization failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

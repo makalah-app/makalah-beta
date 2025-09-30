@@ -10,16 +10,16 @@
 import { env } from './env';
 
 /**
- * Primary model configuration - OPTIMIZED untuk Gemini 2.5 Pro capabilities
+ * Primary model configuration - OPTIMIZED untuk OpenAI GPT-4o capabilities
  */
 export const PRIMARY_MODEL_CONFIG = {
   model: env.PRIMARY_MODEL,
   maxTokens: env.PRIMARY_MODEL_MAX_TOKENS, // 8192 untuk leverage enhanced capacity
   temperature: env.PRIMARY_MODEL_TEMPERATURE, // 0.1 focused untuk academic precision
-  topP: 0.98, // Gemini 2.5 Pro handles higher diversity better
+  topP: 0.9, // GPT-4o optimized diversity setting
   frequencyPenalty: 0.05, // Lower untuk academic terminology consistency 
   presencePenalty: 0.15, // Higher untuk avoid repetitive academic phrases
-  // Gemini 2.5 Pro specific optimizations
+  // OpenAI GPT-4o specific optimizations
   reasoning: {
     enabled: true,
     budget_tokens: 32000, // Leverage 1M+ context untuk deep analysis
@@ -39,7 +39,7 @@ export const PRIMARY_MODEL_CONFIG = {
 } as const;
 
 /**
- * Fallback model configuration (OpenAI GPT-4o)
+ * Fallback model configuration (OpenRouter Gemini 2.5 Flash)
  */
 export const FALLBACK_MODEL_CONFIG = {
   model: env.FALLBACK_MODEL,

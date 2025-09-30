@@ -1,8 +1,8 @@
 /**
  * CHAT API ROUTE - DUAL PROVIDER IMPLEMENTATION
  * 
- * AI SDK v5 compliant streaming dengan Gemini 2.5 Pro primary (OpenRouter)
- * dan OpenAI GPT-4o-mini fallback. Enhanced academic workflow support.
+ * AI SDK v5 compliant streaming dengan OpenAI GPT-4o primary
+ * dan OpenRouter Gemini 2.5 Flash fallback. Enhanced academic workflow support.
  */
 
 import {
@@ -284,6 +284,8 @@ export async function POST(req: Request) {
               ? { type: 'tool', toolName: 'web_search_preview' } // Test mode only
               : undefined, // 🔧 HITL FIX: Let model decide naturally, enable proper approval flow for phase tools
             temperature: dynamicConfig.config.temperature,
+            maxOutputTokens: dynamicConfig.config.maxTokens,
+            topP: dynamicConfig.config.topP,
             maxRetries: 3,
             frequencyPenalty: dynamicConfig.config.frequencyPenalty,
             presencePenalty: dynamicConfig.config.presencePenalty,

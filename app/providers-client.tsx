@@ -15,8 +15,9 @@ function LayoutShell({ children }: ProvidersProps) {
   const pathname = usePathname();
   const isChatPage = pathname === '/chat';
   const isAuthPage = pathname.startsWith('/auth');
+  const isAdminPage = pathname.startsWith('/admin');
 
-  if (isChatPage || isAuthPage) {
+  if (isChatPage || isAuthPage || isAdminPage) {
     return <>{children}</>;
   }
 

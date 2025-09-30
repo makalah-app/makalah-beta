@@ -207,7 +207,7 @@ function generateNextVersion(currentVersion: string): string {
 }
 
 /**
- * GET /api/admin/prompts - Get current prompt and history
+ * GET /api/admin/prompts - Get prompts based on action
  */
 export async function GET(request: NextRequest) {
   try {
@@ -225,7 +225,35 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
     const limit = parseInt(searchParams.get('limit') || '10');
+
+    // Handle different actions
+    if (action === 'list-all') {
+      // Get all system prompts from database for management
+      console.log('🔍 Getting all system prompts for management');
+
+      const { data: allPrompts, error: listError } = await (supabaseAdmin as any)
+        .from('system_prompts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (listError) {
+        console.error('❌ Error getting all prompts:', listError);
+        throw new Error('Failed to get system prompts');
+      }
+
+      return Response.json({
+        success: true,
+        data: {
+          prompts: allPrompts || []
+        },
+        metadata: {
+          count: allPrompts?.length || 0,
+          generatedAt: new Date().toISOString()
+        }
+      });
+    }
 
     console.log('🔍 Getting current system prompt and history');
 
@@ -466,6 +494,217 @@ export async function POST(request: NextRequest) {
         code: error instanceof z.ZodError ? 'INVALID_REQUEST' : 'PROMPT_SAVE_ERROR'
       }
     }, { status: statusCode });
+  }
+}
+
+/**
+ * PUT /api/admin/prompts - Update existing system prompt
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    // Validate admin access
+    const adminCheck = await validateAdminAccess(request);
+    if (!adminCheck.valid) {
+      return Response.json({
+        success: false,
+        error: {
+          message: adminCheck.error || 'Admin access required',
+          type: 'auth_error',
+          code: 'ADMIN_ONLY'
+        }
+      }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { id, name, content, phase, isActive, priorityOrder, metadata } = body;
+
+    if (!id) {
+      return Response.json({
+        success: false,
+        error: {
+          message: 'Prompt ID is required',
+          type: 'validation_error',
+          code: 'MISSING_ID'
+        }
+      }, { status: 400 });
+    }
+
+    console.log('📝 Updating system prompt:', { id, name, phase });
+
+    // If setting as active, deactivate other prompts in same phase
+    if (isActive) {
+      await (supabaseAdmin as any)
+        .from('system_prompts')
+        .update({ is_active: false })
+        .eq('phase', phase)
+        .neq('id', id);
+    }
+
+    // Update the prompt
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+      updated_by: adminCheck.userId
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (content !== undefined) updateData.content = content;
+    if (phase !== undefined) updateData.phase = phase;
+    if (isActive !== undefined) updateData.is_active = isActive;
+    if (priorityOrder !== undefined) updateData.priority_order = priorityOrder;
+    if (metadata !== undefined) updateData.metadata = metadata;
+
+    const { data: updatedPrompt, error: updateError } = await (supabaseAdmin as any)
+      .from('system_prompts')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      console.error('❌ Error updating prompt:', updateError);
+      throw new Error('Failed to update system prompt');
+    }
+
+    // ⚡ CRITICAL: Clear dynamic config cache after updating system prompt
+    try {
+      const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
+      clearDynamicConfigCache();
+      console.log('⚡ Dynamic config cache cleared after system prompt update');
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
+    }
+
+    return Response.json({
+      success: true,
+      data: {
+        prompt: updatedPrompt
+      },
+      message: 'System prompt updated successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Admin prompts PUT error:', error);
+
+    return Response.json({
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Failed to update prompt',
+        type: 'internal_error',
+        code: 'PROMPT_UPDATE_ERROR'
+      }
+    }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/admin/prompts - Delete system prompt
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Validate admin access
+    const adminCheck = await validateAdminAccess(request);
+    if (!adminCheck.valid) {
+      return Response.json({
+        success: false,
+        error: {
+          message: adminCheck.error || 'Admin access required',
+          type: 'auth_error',
+          code: 'ADMIN_ONLY'
+        }
+      }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const promptId = searchParams.get('id');
+
+    if (!promptId) {
+      return Response.json({
+        success: false,
+        error: {
+          message: 'Prompt ID is required',
+          type: 'validation_error',
+          code: 'MISSING_ID'
+        }
+      }, { status: 400 });
+    }
+
+    console.log('🗑️ Deleting system prompt:', { promptId });
+
+    // Check if prompt exists and is not the only active prompt
+    const { data: prompt } = await (supabaseAdmin as any)
+      .from('system_prompts')
+      .select('*')
+      .eq('id', promptId)
+      .single();
+
+    if (!prompt) {
+      return Response.json({
+        success: false,
+        error: {
+          message: 'Prompt not found',
+          type: 'not_found_error',
+          code: 'PROMPT_NOT_FOUND'
+        }
+      }, { status: 404 });
+    }
+
+    // Prevent deletion of the only active system_instructions prompt
+    if (prompt.is_active && prompt.phase === 'system_instructions') {
+      const { count } = await (supabaseAdmin as any)
+        .from('system_prompts')
+        .select('id', { count: 'exact', head: true })
+        .eq('phase', 'system_instructions');
+
+      if (count <= 1) {
+        return Response.json({
+          success: false,
+          error: {
+            message: 'Cannot delete the only system instructions prompt',
+            type: 'validation_error',
+            code: 'LAST_PROMPT_PROTECTION'
+          }
+        }, { status: 400 });
+      }
+    }
+
+    // Delete the prompt
+    const { error: deleteError } = await (supabaseAdmin as any)
+      .from('system_prompts')
+      .delete()
+      .eq('id', promptId);
+
+    if (deleteError) {
+      console.error('❌ Error deleting prompt:', deleteError);
+      throw new Error('Failed to delete system prompt');
+    }
+
+    // ⚡ Clear cache if deleted prompt was active
+    if (prompt.is_active) {
+      try {
+        const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
+        clearDynamicConfigCache();
+        console.log('⚡ Dynamic config cache cleared after active prompt deletion');
+      } catch (cacheError) {
+        console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
+      }
+    }
+
+    return Response.json({
+      success: true,
+      message: 'System prompt deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Admin prompts DELETE error:', error);
+
+    return Response.json({
+      success: false,
+      error: {
+        message: error instanceof Error ? error.message : 'Failed to delete prompt',
+        type: 'internal_error',
+        code: 'PROMPT_DELETE_ERROR'
+      }
+    }, { status: 500 });
   }
 }
 

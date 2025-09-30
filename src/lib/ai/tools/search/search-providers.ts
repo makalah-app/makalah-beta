@@ -1,9 +1,8 @@
 /**
  * Search Provider Management
- * Multi-provider search dengan fallback mechanisms dan rate limiting
+ * Multi-provider search dengan auto-pairing dan fallback mechanisms
  *
- * ENHANCEMENT: Now uses dynamic web search provider selection dari admin panel
- * instead of hardcoded auto-selection logic
+ * SIMPLIFIED: Direct auto-pairing - OpenAI models → OpenAI Native, OpenRouter models → Perplexity Sonar
  */
 
 import { SearchProvider, SearchResult } from './search-schemas';
@@ -23,8 +22,9 @@ export class SearchProviderManager {
   private rateLimits: Map<SearchProvider, { count: number; resetTime: number }> = new Map();
 
   /**
-   * Auto-select search provider based on admin panel web search provider setting
-   * ✅ FIXED: Now uses dynamic web search provider dari admin panel instead of hardcoded logic
+   * Auto-select search provider with simple direct pairing
+   * OpenAI models → OpenAI Native WebSearch
+   * OpenRouter models → Perplexity Sonar Pro
    */
   async searchWithAutoProvider(
     query: string,
@@ -33,49 +33,16 @@ export class SearchProviderManager {
   ): Promise<SearchResult[]> {
     let selectedProvider: SearchProvider;
 
-    try {
-      // ✅ Get web search provider from admin panel
-      const dynamicConfig = await getDynamicModelConfig();
-      const adminWebSearchProvider = dynamicConfig.webSearchProvider;
-
-      // Admin panel web search provider logged - silent handling for production
-
-      // Use admin panel web search provider setting as primary choice
-      if (adminWebSearchProvider === 'openai') {
-        selectedProvider = 'native-openai';
-        // Using native-openai per admin panel setting - silent handling for production
-      } else if (adminWebSearchProvider === 'perplexity') {
-        selectedProvider = 'perplexity';
-        // Using perplexity per admin panel setting - silent handling for production
-      } else {
-        // Fallback to text provider based selection if admin setting unclear
-        // Admin setting unclear, falling back to text provider selection - silent handling for production
-        if (textProvider === 'openai') {
-          selectedProvider = 'native-openai';
-          // Auto-selected native-openai for OpenAI text provider - silent handling for production
-        } else if (textProvider === 'openrouter') {
-          selectedProvider = 'perplexity';
-          // Auto-selected perplexity for OpenRouter text provider - silent handling for production
-        } else {
-          selectedProvider = 'duckduckgo';
-          // Auto-selected duckduckgo as final fallback - silent handling for production
-        }
-      }
-
-    } catch (configError) {
-      // Failed to get admin panel config, using text provider fallback - silent handling for production
-
-      // Fallback to original logic if admin config fails
-      if (textProvider === 'openai') {
-        selectedProvider = 'native-openai';
-        // Fallback: Auto-selected native-openai for OpenAI text provider - silent handling for production
-      } else if (textProvider === 'openrouter') {
-        selectedProvider = 'perplexity';
-        // Fallback: Auto-selected perplexity for OpenRouter text provider - silent handling for production
-      } else {
-        selectedProvider = 'duckduckgo';
-        // Fallback: Auto-selected duckduckgo as default - silent handling for production
-      }
+    // Simple auto-pairing logic - no complex admin panel lookups
+    if (textProvider === 'openai') {
+      selectedProvider = 'native-openai';
+      console.log('🔄 Auto-paired: OpenAI model → OpenAI native search');
+    } else if (textProvider === 'openrouter') {
+      selectedProvider = 'perplexity';
+      console.log('🔄 Auto-paired: OpenRouter model → Perplexity Sonar search');
+    } else {
+      selectedProvider = 'duckduckgo';
+      console.log('🔄 Fallback: Unknown provider → DuckDuckGo');
     }
 
     try {

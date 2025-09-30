@@ -34,6 +34,7 @@ export interface DynamicModelConfig {
   config: {
     temperature: number;
     maxTokens: number;
+    topP: number;
     frequencyPenalty: number;
     presencePenalty: number;
   };
@@ -75,33 +76,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       console.error('[DynamicConfig] API keys error:', settingsError);
     }
 
-    // Get system prompt
-    const { data: promptData, error: promptError } = await supabaseAdmin
-      .from('system_prompts')
-      .select('content')
-      .eq('is_active', true)
-      .eq('phase', 'system_instructions')
-      .order('priority_order')
-      .limit(1)
-      .maybeSingle() as { data: SystemPromptRow | null; error: any };
-
-    if (promptError) {
-      console.error('[DynamicConfig] Prompt error:', promptError);
-    }
-
-    // Get web search provider configuration
-    const { data: webSearchConfig, error: webSearchError } = await supabaseAdmin
-      .from('admin_settings')
-      .select('setting_value')
-      .eq('setting_key', 'web_search_provider')
-      .maybeSingle() as { data: AdminSettingRow | null; error: any };
-
-    if (webSearchError) {
-      console.error('[DynamicConfig] Web search config error:', webSearchError);
-    }
-
-    const webSearchProvider: 'openai' | 'perplexity' = ((webSearchConfig && webSearchConfig.setting_value as 'openai' | 'perplexity') || 'openai') as 'openai' | 'perplexity';
-
     // Process API keys
     const apiKeysMap = new Map(
       settings?.map((s: AdminSettingRow) => [s.setting_key, s.setting_value]) || []
@@ -119,10 +93,73 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
       primaryConfig = sortedConfigs[0];  // Most recent = Primary
       fallbackConfig = sortedConfigs[1] || null;  // Second most recent = Fallback
+
+      console.log('[DynamicConfig] 📌 Model configs loaded:', {
+        primary: primaryConfig?.model_name || 'none',
+        fallback: fallbackConfig?.model_name || 'none'
+      });
+    }
+
+    // Get system prompt - check for model-specific template first, fallback to system prompt
+    let systemPromptContent = '';
+
+    // Step 1: Try to get model-specific template for primary model
+    if (primaryConfig?.model_name) {
+      const { data: templateData, error: templateError } = await supabaseAdmin
+        .from('model_prompt_templates')
+        .select('template_content')
+        .eq('model_slug', primaryConfig.model_name)
+        .eq('is_active', true)
+        .maybeSingle() as { data: { template_content: string } | null; error: any };
+
+      if (templateData?.template_content && !templateError) {
+        systemPromptContent = templateData.template_content;
+        console.log('[DynamicConfig] ✅ Using model-specific template for:', primaryConfig.model_name);
+        console.log('[DynamicConfig] 📝 Model template preview:', systemPromptContent.substring(0, 100) + '...');
+      } else if (templateError) {
+        console.warn('[DynamicConfig] Template error for model:', primaryConfig.model_name, templateError);
+      } else {
+        console.log('[DynamicConfig] 🔍 No model-specific template found for:', primaryConfig.model_name);
+      }
+    }
+
+    // Step 2: Fallback to general system prompt if no model-specific template
+    if (!systemPromptContent) {
+      const { data: promptData, error: promptError } = await supabaseAdmin
+        .from('system_prompts')
+        .select('content')
+        .eq('is_active', true)
+        .eq('phase', 'system_instructions')
+        .order('priority_order')
+        .limit(1)
+        .maybeSingle() as { data: SystemPromptRow | null; error: any };
+
+      if (promptData?.content && !promptError) {
+        systemPromptContent = promptData.content;
+        console.log('[DynamicConfig] ✅ Using general system prompt (no model-specific template found)');
+        // Log first 100 chars of prompt for debugging
+        console.log('[DynamicConfig] 📝 System prompt preview:', systemPromptContent.substring(0, 100) + '...');
+      } else if (promptError) {
+        console.error('[DynamicConfig] System prompt error:', promptError);
+      } else {
+        console.warn('[DynamicConfig] ⚠️ No active system prompt found in database');
+      }
     }
 
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
     const fallbackProvider: 'openai' | 'openrouter' = fallbackConfig?.provider || 'openrouter';
+
+    // Auto-pair web search provider based on primary model provider
+    // OpenAI models → OpenAI Native WebSearch
+    // OpenRouter models → Perplexity Sonar Pro
+    const webSearchProvider: 'openai' | 'perplexity' =
+      primaryProvider === 'openai' ? 'openai' : 'perplexity';
+
+    console.log('[DynamicConfig] 🔄 Auto-pairing web search:', {
+      primaryProvider,
+      webSearchProvider,
+      pairing: `${primaryProvider} → ${webSearchProvider === 'openai' ? 'OpenAI Native' : 'Perplexity Sonar'}`
+    });
 
     // Create provider instances with AI SDK v5 compliant patterns
     // FIX: Prioritize environment keys over potentially corrupted database keys
@@ -171,8 +208,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     }
 
     // Get config values from the active primary model config
-    const temperature = primaryConfig?.temperature || 0.1;
-    const maxTokens = primaryConfig?.max_tokens || 8192;
+    const temperature = primaryConfig?.temperature || 0.3;
+    const maxTokens = primaryConfig?.max_tokens || 12288;
+    const topP = primaryConfig?.parameters?.topP || 0.9;
 
     const config: DynamicModelConfig = {
       primaryProvider,
@@ -183,18 +221,29 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       fallbackModelName: fallbackConfig?.model_name || 'google/gemini-2.5-flash',
       webSearchProvider,
       webSearchModel,
-      systemPrompt: (promptData && promptData.content) || '',
+      systemPrompt: systemPromptContent || '',
       config: {
         temperature,
         maxTokens,
+        topP,
         frequencyPenalty: 0.0,
         presencePenalty: 0.0,
       },
     };
 
     // AI SDK compliance: Warn when no system prompt available
-    if (!promptData || !promptData.content) {
-      console.warn('[DynamicConfig] ⚠️ No system prompt in database - using AI SDK defaults');
+    if (!systemPromptContent) {
+      console.warn('[DynamicConfig] ⚠️ No system prompt or template found - using AI SDK defaults');
+    } else {
+      console.log('[DynamicConfig] ✅ Final system prompt loaded, length:', systemPromptContent.length, 'chars');
+      // Check if it's Moka or Makalah AI
+      const isUsingMoka = systemPromptContent.includes('You are Moka');
+      const isUsingMakalah = systemPromptContent.includes('You are Makalah AI');
+      console.log('[DynamicConfig] 🤖 AI Identity:', {
+        isMoka: isUsingMoka,
+        isMakalahAI: isUsingMakalah,
+        preview: systemPromptContent.substring(0, 50) + '...'
+      });
     }
 
     // ⚡ PERFORMANCE: Cache the result
@@ -241,8 +290,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         webSearchModel: undefined,
         systemPrompt: '', // AI SDK compliance: empty string instead of undefined
         config: {
-          temperature: 0.1,
-          maxTokens: 8192,
+          temperature: 0.3,
+          maxTokens: 12288,
+          topP: 0.9,
           frequencyPenalty: 0.0,
           presencePenalty: 0.0,
         },
