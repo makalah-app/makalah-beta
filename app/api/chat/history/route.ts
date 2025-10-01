@@ -20,6 +20,7 @@ import {
 } from '../../../../src/lib/database/chat-store';
 import { createSupabaseServerClient, getServerSessionUserId } from '../../../../src/lib/database/supabase-server-auth';
 import { generateText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { getDynamicModelConfig } from '../../../../src/lib/ai/dynamic-config';
 import { SYSTEM_USER_UUID } from '../../../../src/lib/utils/uuid-generator';
 import type { ExtendedUIMessage, ConversationData, SearchResult } from './types';
@@ -317,30 +318,39 @@ export async function GET(request: NextRequest) {
               if (userTexts.length >= 3) break;
             }
             if (userTexts.length > 0) {
-              const dynamic = await getDynamicModelConfig();
-              const result = await generateText({
-                model: dynamic.primaryModel,
-                prompt: [
-                  'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
-                  'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
-                  'Dasarkan pada 1-3 prompt awal user:',
-                  ...userTexts.map((t, i) => `${i + 1}. ${t}`),
-                  'Output hanya judulnya saja.'
-                ].join('\n'),
-                temperature: Math.min(0.5, Math.max(0.1, dynamic.config.temperature || 0.3)),
-                maxOutputTokens: 32,
-              });
-              const raw = (result as any)?.text || '';
-              const cleaned = raw.replace(/^"|"$/g, '').replace(/[\s\-–—:;,.!?]+$/g, '').replace(/\s+/g, ' ').trim();
-              if (cleaned && !/^test\s+chat(\s+history)?$/i.test(cleaned)) {
-                const titleCased = cleaned.split(' ').map((w: string) => w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase()).join(' ');
-                fixedTitle = truncateTitle(titleCased);
-                // Persist update (admin client)
-                const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
-                await (supabaseAdmin as any)
-                  .from('conversations')
-                  .update({ title: fixedTitle })
-                  .eq('id', conv.id);
+              // 🔧 FIX: Force OpenAI provider for title generation (not OpenRouter)
+              const envOpenAIKey = process.env.OPENAI_API_KEY;
+              if (envOpenAIKey) {
+                const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
+                const dynamic = await getDynamicModelConfig();
+                // Use primary model name but force OpenAI provider
+                const titleModel = dynamic.primaryProvider === 'openai'
+                  ? dynamic.primaryModelName
+                  : 'gpt-4o-mini';
+                const result = await generateText({
+                  model: titleOpenAI(titleModel),
+                  prompt: [
+                    'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
+                    'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
+                    'Dasarkan pada 1-3 prompt awal user:',
+                    ...userTexts.map((t, i) => `${i + 1}. ${t}`),
+                    'Output hanya judulnya saja.'
+                  ].join('\n'),
+                  temperature: Math.min(0.5, Math.max(0.1, dynamic.config.temperature || 0.3)),
+                  maxOutputTokens: 32,
+                });
+                const raw = (result as any)?.text || '';
+                const cleaned = raw.replace(/^"|"$/g, '').replace(/[\s\-–—:;,.!?]+$/g, '').replace(/\s+/g, ' ').trim();
+                if (cleaned && !/^test\s+chat(\s+history)?$/i.test(cleaned)) {
+                  const titleCased = cleaned.split(' ').map((w: string) => w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase()).join(' ');
+                  fixedTitle = truncateTitle(titleCased);
+                  // Persist update (admin client)
+                  const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
+                  await (supabaseAdmin as any)
+                    .from('conversations')
+                    .update({ title: fixedTitle })
+                    .eq('id', conv.id);
+                }
               }
             }
             
@@ -363,24 +373,32 @@ export async function GET(request: NextRequest) {
               }
               if (assistantTexts.length > 0) {
                 try {
-                  const dynamic2 = await getDynamicModelConfig();
-                  const result2 = await generateText({
-                    model: dynamic2.primaryModel,
-                    prompt: [
-                      'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
-                      'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
-                      'Dasarkan pada konteks asisten berikut (1-3 baris):',
-                      ...assistantTexts.map((t, i) => `${i + 1}. ${t}`),
-                      'Output hanya judulnya saja.'
-                    ].join('\n'),
-                    temperature: 0.3,
-                    maxOutputTokens: 32,
-                  });
-                  const cleaned2 = sanitize(((result2 as any)?.text || ''));
-                  if (cleaned2 && !looksDefault(cleaned2)) {
-                    fixedTitle = truncateTitle(toTitleCase(cleaned2));
-                    const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
-                    await (supabaseAdmin as any).from('conversations').update({ title: fixedTitle }).eq('id', conv.id);
+                  // 🔧 FIX: Force OpenAI provider for assistant-based title generation
+                  const envOpenAIKey = process.env.OPENAI_API_KEY;
+                  if (envOpenAIKey) {
+                    const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
+                    const dynamic2 = await getDynamicModelConfig();
+                    const titleModel = dynamic2.primaryProvider === 'openai'
+                      ? dynamic2.primaryModelName
+                      : 'gpt-4o-mini';
+                    const result2 = await generateText({
+                      model: titleOpenAI(titleModel),
+                      prompt: [
+                        'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
+                        'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
+                        'Dasarkan pada konteks asisten berikut (1-3 baris):',
+                        ...assistantTexts.map((t, i) => `${i + 1}. ${t}`),
+                        'Output hanya judulnya saja.'
+                      ].join('\n'),
+                      temperature: 0.3,
+                      maxOutputTokens: 32,
+                    });
+                    const cleaned2 = sanitize(((result2 as any)?.text || ''));
+                    if (cleaned2 && !looksDefault(cleaned2)) {
+                      fixedTitle = truncateTitle(toTitleCase(cleaned2));
+                      const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
+                      await (supabaseAdmin as any).from('conversations').update({ title: fixedTitle }).eq('id', conv.id);
+                    }
                   }
                 } catch (e) {
                   console.warn('[Chat History API] Assistant-based title generation failed:', e);

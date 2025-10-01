@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
 import { getDynamicModelConfig } from '../../../../src/lib/ai/dynamic-config';
 import { generateText } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
 
 export const maxDuration = 60;
 
@@ -52,9 +53,18 @@ async function buildSmartTitle(conversationId: string): Promise<string | null> {
   }
   if (userTexts.length === 0) return null;
 
+  // 🔧 FIX: Force OpenAI provider for title generation (not OpenRouter)
+  const envOpenAIKey = process.env.OPENAI_API_KEY;
+  if (!envOpenAIKey) return null;
+
+  const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
   const dynamic = await getDynamicModelConfig();
+  const titleModel = dynamic.primaryProvider === 'openai'
+    ? dynamic.primaryModelName
+    : 'gpt-4o-mini';
+
   const result = await generateText({
-    model: dynamic.primaryModel,
+    model: titleOpenAI(titleModel),
     prompt: [
       'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
       'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
