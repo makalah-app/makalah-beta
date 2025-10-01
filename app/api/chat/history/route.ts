@@ -318,15 +318,17 @@ export async function GET(request: NextRequest) {
               if (userTexts.length >= 3) break;
             }
             if (userTexts.length > 0) {
-              // 🔧 FIX: Force OpenAI provider for title generation (not OpenRouter)
+              // 🔧 CRITICAL FIX: Force OpenAI provider and model for title generation
+              // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
+              // so we MUST use OpenAI-compatible model names only.
+              // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
+              // causing API errors and routing to wrong provider.
               const envOpenAIKey = process.env.OPENAI_API_KEY;
               if (envOpenAIKey) {
                 const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
                 const dynamic = await getDynamicModelConfig();
-                // Use primary model name but force OpenAI provider
-                const titleModel = dynamic.primaryProvider === 'openai'
-                  ? dynamic.primaryModelName
-                  : 'gpt-4o-mini';
+                // Always use GPT-4o for title generation via OpenAI
+                const titleModel = 'gpt-4o';
                 const result = await generateText({
                   model: titleOpenAI(titleModel),
                   prompt: [
@@ -373,14 +375,16 @@ export async function GET(request: NextRequest) {
               }
               if (assistantTexts.length > 0) {
                 try {
-                  // 🔧 FIX: Force OpenAI provider for assistant-based title generation
+                  // 🔧 CRITICAL FIX: Force OpenAI provider and model for assistant-based title generation
+                  // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
+                  // so we MUST use OpenAI-compatible model names only.
+                  // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
+                  // causing API errors and routing to wrong provider.
                   const envOpenAIKey = process.env.OPENAI_API_KEY;
                   if (envOpenAIKey) {
                     const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
                     const dynamic2 = await getDynamicModelConfig();
-                    const titleModel = dynamic2.primaryProvider === 'openai'
-                      ? dynamic2.primaryModelName
-                      : 'gpt-4o-mini';
+                    const titleModel = 'gpt-4o'; // Always use GPT-4o for title generation via OpenAI
                     const result2 = await generateText({
                       model: titleOpenAI(titleModel),
                       prompt: [

@@ -728,18 +728,20 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
       apiKey: envOpenAIKey,
     });
 
-    // Get dynamic configuration for consistent model selection and temperature
-    let titleModel = 'gpt-4o-mini'; // Fallback for title generation
-    let titleTemperature = 0.3; // Fallback for title generation
+    // 🔧 CRITICAL FIX: Always use GPT-4o for title generation
+    // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
+    // so we MUST use OpenAI-compatible model names only.
+    // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
+    // causing API errors and routing to wrong provider.
+    let titleModel = 'gpt-4o'; // Force GPT-4o for all title generation
+    let titleTemperature = 0.3; // Conservative temperature for consistent titles
 
     try {
       const dynamicConfig = await getDynamicModelConfig();
-      // Smart model selection based on provider compatibility
-      titleModel = dynamicConfig.primaryProvider === 'openai'
-        ? dynamicConfig.primaryModelName  // Use 'gpt-4o' from admin config
-        : 'gpt-4o-mini';  // Force OpenAI model for OpenAI API
-      titleTemperature = Math.min(dynamicConfig.config.temperature * 3, 0.5); // ✅ Dynamic base * 3 (capped at 0.5 for creativity)
+      // Use dynamic temperature but cap it for title generation
+      titleTemperature = Math.min(dynamicConfig.config.temperature * 3, 0.5);
     } catch (error) {
+      // Silently use fallback temperature
     }
 
     // Use dynamic model selection for title generation

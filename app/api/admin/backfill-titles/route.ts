@@ -53,15 +53,17 @@ async function buildSmartTitle(conversationId: string): Promise<string | null> {
   }
   if (userTexts.length === 0) return null;
 
-  // 🔧 FIX: Force OpenAI provider for title generation (not OpenRouter)
+  // 🔧 CRITICAL FIX: Force OpenAI provider and model for title generation
+  // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
+  // so we MUST use OpenAI-compatible model names only.
+  // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
+  // causing API errors and routing to wrong provider.
   const envOpenAIKey = process.env.OPENAI_API_KEY;
   if (!envOpenAIKey) return null;
 
   const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
   const dynamic = await getDynamicModelConfig();
-  const titleModel = dynamic.primaryProvider === 'openai'
-    ? dynamic.primaryModelName
-    : 'gpt-4o-mini';
+  const titleModel = 'gpt-4o'; // Always use GPT-4o for title generation via OpenAI
 
   const result = await generateText({
     model: titleOpenAI(titleModel),
