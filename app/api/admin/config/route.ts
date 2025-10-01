@@ -463,33 +463,31 @@ export async function POST(request: NextRequest) {
 
     // Update model configurations with dynamic provider swap support
     if (models) {
-      
-      // First, deactivate ALL existing active configurations to prevent conflicts
-      const { error: deactivateError } = await (supabaseAdmin as any)
-        .from('model_configs')
-        .update({ 
-          is_active: false, 
-          is_default: false, 
-          updated_at: new Date().toISOString(),
-          updated_by: adminUserId 
-        } as any)
-        .eq('is_active', true);
-      
-      if (deactivateError) {
-      } else {
-      }
 
       // Create new configurations with current timestamp for proper ordering
       const currentTime = new Date();
-      
+
       if (models.primary) {
+        // Deactivate existing PRIMARY configs only
+        await (supabaseAdmin as any)
+          .from('model_configs')
+          .update({
+            is_active: false,
+            is_default: false,
+            updated_at: new Date().toISOString(),
+            updated_by: adminUserId
+          } as any)
+          .eq('is_active', true)
+          .eq('role', 'primary');
+
         const primaryData = models.primary;
-        
+
         const { data: primaryResult, error: primaryError } = await supabaseAdmin
           .from('model_configs')
           .insert({
             id: crypto.randomUUID(),
             name: `${primaryData.provider} ${primaryData.model} - Primary`,
+            role: 'primary',
             provider: primaryData.provider,
             model_name: primaryData.model,
             temperature: primaryData.temperature ?? 0.1,
@@ -513,13 +511,26 @@ export async function POST(request: NextRequest) {
       }
 
       if (models.fallback) {
+        // Deactivate existing FALLBACK configs only
+        await (supabaseAdmin as any)
+          .from('model_configs')
+          .update({
+            is_active: false,
+            is_default: false,
+            updated_at: new Date().toISOString(),
+            updated_by: adminUserId
+          } as any)
+          .eq('is_active', true)
+          .eq('role', 'fallback');
+
         const fallbackData = models.fallback;
-        
+
         const { data: fallbackResult, error: fallbackError } = await supabaseAdmin
           .from('model_configs')
           .insert({
             id: crypto.randomUUID(),
             name: `${fallbackData.provider} ${fallbackData.model} - Fallback`,
+            role: 'fallback',
             provider: fallbackData.provider,
             model_name: fallbackData.model,
             temperature: fallbackData.temperature ?? 0.1,

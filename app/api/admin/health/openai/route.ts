@@ -72,11 +72,13 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 OpenAI health check - Model: ${model}`);
 
-    // Create a test model instance with OpenAI provider  
+    // Create OpenAI provider with explicit API key
     // Prioritize environment variable for security
     const finalApiKey = process.env.OPENAI_API_KEY || apiKey;
-    // Use correct provider/model creation API
-    const testModel: any = (openai as any)(model, { apiKey: finalApiKey });
+    const customOpenAI = createOpenAI({
+      apiKey: finalApiKey,
+    });
+    const testModel: any = customOpenAI(model);
 
     // Create timeout controller
     const abortController = new AbortController();

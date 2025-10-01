@@ -13,11 +13,11 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { supabaseAdmin } from '../database/supabase-client';
 import type { ModelConfigRow, AdminSettingRow, SystemPromptRow } from '../types/database-types';
 
-// ⚡ PERFORMANCE: In-memory cache with 5-minute TTL
+// ⚡ PERFORMANCE: In-memory cache with 30-second TTL
 const CONFIG_CACHE = {
   data: null as DynamicModelConfig | null,
   timestamp: 0,
-  TTL: 5 * 60 * 1000 // 5 minutes
+  TTL: 30 * 1000 // 30 seconds (optimized from 5 minutes)
 };
 
 export interface DynamicModelConfig {
