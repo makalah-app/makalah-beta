@@ -642,6 +642,9 @@ function AdminPromptContent() {
                   placeholder="Masukkan system prompt untuk AI agent…"
                 />
                 <p className="text-xs text-muted-foreground">
+                  {promptCharCount} characters (min: 100, max: 15,000)
+                </p>
+                <p className="text-xs text-muted-foreground">
                   Prompt ini menjadi referensi utama bagi agent saat memandu 7 fase penulisan.
                 </p>
               </div>
@@ -739,7 +742,7 @@ function AdminPromptContent() {
                       placeholder="Enter fallback system prompt..."
                     />
                     <p className="text-xs text-muted-foreground">
-                      {fallbackContent.length} characters (min: 100, max: 50,000)
+                      {fallbackContent.length} characters (min: 100, max: 15,000)
                     </p>
                   </div>
 

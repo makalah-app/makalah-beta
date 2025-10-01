@@ -80,10 +80,10 @@ export class SearchProviderManager {
         results = await this.searchNativeOpenAI(query, config);
         break;
       case 'openrouter-online':
-        // OpenRouter :online suffix handles web search automatically
-        // No separate search implementation needed - handled by model itself
-        console.log('[SearchProviders] OpenRouter :online - web search handled by model');
-        results = [];  // Empty results - model handles search natively
+        // OpenRouter without :online suffix - fallback to DuckDuckGo for actual search
+        // Model will call web_search tool explicitly when needed
+        console.log('[SearchProviders] OpenRouter model - using DuckDuckGo for web search');
+        results = await this.searchDuckDuckGo(query, config);
         break;
       case 'sinta-kemdiktisaintek':
         results = await this.searchSintaKemdiktisaintek(query, config);

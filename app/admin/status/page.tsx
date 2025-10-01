@@ -105,9 +105,35 @@ function AdminStatusContent() {
       }
 
       if (result.success && result.data) {
+        const primaryProvider = result.data.models?.primary?.provider || 'openai';
+
+        // Fetch the appropriate system prompt based on active provider
+        let activePromptCharCount = 0;
+        let activePromptVersion = 'v2.1';
+
+        if (primaryProvider === 'openrouter') {
+          // Fetch OpenRouter system prompt
+          try {
+            const openrouterPromptResponse = await authenticatedFetch('/api/admin/openrouter-prompt');
+            const openrouterPromptResult = await openrouterPromptResponse.json();
+
+            if (openrouterPromptResult.success && openrouterPromptResult.data?.prompt) {
+              activePromptCharCount = openrouterPromptResult.data.prompt.content?.length || 0;
+              activePromptVersion = openrouterPromptResult.data.prompt.version || 'v1.0';
+            }
+          } catch (openrouterError) {
+            console.warn('Failed to load OpenRouter prompt, using fallback:', openrouterError);
+            activePromptCharCount = 0;
+          }
+        } else {
+          // Use OpenAI system prompt (default from config endpoint)
+          activePromptCharCount = result.data.prompts?.systemInstructions?.content?.length || 0;
+          activePromptVersion = result.data.prompts?.systemInstructions?.version || 'v2.1';
+        }
+
         // Extract config status from response
         setConfigStatus({
-          primaryProvider: result.data.models?.primary?.provider || 'openai',
+          primaryProvider: primaryProvider,
           primaryModel: result.data.models?.primary?.model || 'gpt-4o',
           primaryTemperature: result.data.models?.primary?.temperature || 0.3,
           primaryMaxTokens: result.data.models?.primary?.maxTokens || 12288,
@@ -117,25 +143,25 @@ function AdminStatusContent() {
           fallbackTemperature: result.data.models?.fallback?.temperature || 0.3,
           fallbackMaxTokens: result.data.models?.fallback?.maxTokens || 12288,
           fallbackTopP: result.data.models?.fallback?.topP || 0.9,
-          promptCharCount: result.data.prompts?.systemInstructions?.content?.length || 0,
-          promptVersion: result.data.prompts?.systemInstructions?.version || 'v2.1'
+          promptCharCount: activePromptCharCount,
+          promptVersion: activePromptVersion
         });
 
         console.log('\n========================================');
         console.log('📊 ADMIN STATUS - CONFIGURATION LOADED');
         console.log('========================================');
         console.log('🤖 Model yang sedang aktif:',
-          result.data.models?.primary?.provider?.toUpperCase(),
+          primaryProvider.toUpperCase(),
           '·',
           result.data.models?.primary?.model
         );
         console.log('📄 System prompt yang berlaku:',
-          result.data.models?.primary?.provider === 'openrouter'
+          primaryProvider === 'openrouter'
             ? '🟡 System Prompt OpenRouter (untuk Gemini)'
             : '🟢 System Prompt OpenAI (untuk GPT)'
         );
-        console.log('📏 Prompt length:', result.data.prompts?.systemInstructions?.content?.length, 'characters');
-        console.log('🔖 Prompt version:', result.data.prompts?.systemInstructions?.version);
+        console.log('📏 Prompt length:', activePromptCharCount, 'characters');
+        console.log('🔖 Prompt version:', activePromptVersion);
         console.log('🔄 Fallback model:',
           result.data.models?.fallback?.provider?.toUpperCase(),
           '·',

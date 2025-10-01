@@ -99,10 +99,90 @@ Focus: Submission readiness, professional presentation, final compliance validat
   // Get base persona untuk fase ini
   const basePersona = phasePersona[phase] || phasePersona[1];
 
+  // Inject phase-aware web search framework
+  const webSearchFramework = getPhaseWebSearchFramework(phase);
+
   // Additional behavioral cues berdasarkan user message content
   const behaviorCues = generateBehaviorCues(userMessage);
 
-  return basePersona + behaviorCues;
+  return basePersona + webSearchFramework + behaviorCues;
+}
+
+/**
+ * Get phase-aware web search framework guidance
+ *
+ * CRITICAL: NO hardcoded detection logic (no isGreeting, needsTrends, etc.)
+ * Only provides GENERIC framework per phase - model interprets context itself
+ *
+ * Respects model's agentic capacity to decide when web search is needed
+ * based on contextual understanding, not keyword matching.
+ */
+function getPhaseWebSearchFramework(phase: number): string {
+  const frameworks: Record<number, string> = {
+    1: `[Web Search Framework - Phase 1: Topic Clarification]
+
+FACTUAL DATA AWARENESS (MANDATORY):
+Use web_search for ANY factual/current data query:
+- Current state: "siapa X saat ini?", "berapa X sekarang?"
+- Recent data: "tren 2025", "statistik terkini", "data terbaru"
+- Specific facts: "kapan X?", "di mana X?", "hasil X?"
+NEVER answer factual queries from training knowledge (may be outdated).
+
+TOPIC EXPLORATION (Contextual):
+Use web_search when:
+- User explicitly requests topic inspiration from recent publications
+- You need preliminary literature to help user refine/choose topic
+- User asks for research landscape understanding
+
+CONVERSATIONAL FLEXIBILITY:
+This is brainstorming phase. If user asks exploratory questions:
+- Answer helpfully (use web_search for factual data)
+- Then contextualize to academic relevance when appropriate
+- Don't reject questions abruptly
+
+`,
+
+    2: `[Web Search Framework - Phase 2: Research Foundation]
+
+FACTUAL DATA AWARENESS: Same rules as Phase 1 - ALWAYS search for current/factual queries.
+
+PRIMARY RESEARCH PHASE:
+Use web search extensively for:
+- Academic source discovery (sinta, garuda, ieee, jstor, pubmed)
+- Literature review and research gap identification
+- Citation finding and verification
+- Data collection for research foundation
+
+Default to searching unless user indicates they already have materials.
+
+CONVERSATIONAL FLEXIBILITY: Answer exploratory questions helpfully while maintaining academic rigor.
+
+`,
+
+    3: `[Web Search Framework - Phase 3-7: Writing/Review Phases]
+
+FACTUAL DATA AWARENESS: Same rules - ALWAYS search for current/factual queries.
+
+Work with existing research materials gathered in Phase 2.
+
+Use web search when:
+- User explicitly requests new information or verification
+- You need specific facts/data not available in gathered materials
+- Factual/current data query (mandatory)
+
+Default: Use gathered materials from Phase 2 for writing, integration, review tasks.
+
+CONVERSATIONAL FLEXIBILITY: Maintain dialogue openness for clarification and refinement.
+
+`
+  };
+
+  // Phases 3-7 use same framework (work with existing materials)
+  if (phase >= 3) {
+    return frameworks[3];
+  }
+
+  return frameworks[phase] || frameworks[1];
 }
 
 /**

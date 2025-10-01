@@ -99,11 +99,11 @@ export class AIProviderManager {
    * Primary-first strategy: Try primary, fallback to secondary
    */
   private async selectPrimaryFirst(
-    requireHealthy: boolean, 
+    requireHealthy: boolean,
     maxResponseTime: number
   ): Promise<ProviderSelection> {
     // Try primary provider first
-    const primaryHealth = await this.healthManager.checkProviderHealth('openrouter');
+    const primaryHealth = await this.healthManager.checkProviderHealth(this.providers.primary.name);
     
     if (this.isProviderViable(primaryHealth, requireHealthy, maxResponseTime)) {
       
@@ -118,11 +118,11 @@ export class AIProviderManager {
     }
 
     // Fallback to secondary provider
-    const fallbackHealth = await this.healthManager.checkProviderHealth('openai');
-    
+    const fallbackHealth = await this.healthManager.checkProviderHealth(this.providers.fallback.name);
+
     if (this.isProviderViable(fallbackHealth, requireHealthy, maxResponseTime)) {
       if (LOGGING_CONFIG.logProviderSwitching) {
-        console.warn('⚠️  Primary provider unhealthy, using fallback: OpenAI');
+        console.warn(`⚠️  Primary provider unhealthy, using fallback: ${this.providers.fallback.name}`);
       }
       
       return {
@@ -146,8 +146,8 @@ export class AIProviderManager {
    */
   private async selectHealthBased(maxResponseTime: number): Promise<ProviderSelection> {
     const [primaryHealth, fallbackHealth] = await Promise.all([
-      this.healthManager.checkProviderHealth('openrouter'),
-      this.healthManager.checkProviderHealth('openai'),
+      this.healthManager.checkProviderHealth(this.providers.primary.name),
+      this.healthManager.checkProviderHealth(this.providers.fallback.name),
     ]);
 
     // Compare health scores
@@ -185,13 +185,13 @@ export class AIProviderManager {
    * Round-robin strategy: Alternate between providers
    */
   private async selectRoundRobin(
-    requireHealthy: boolean, 
+    requireHealthy: boolean,
     maxResponseTime: number
   ): Promise<ProviderSelection> {
     const usesPrimary = this.providerManager.getNextRoundRobin();
-    
+
     if (usesPrimary) {
-      const primaryHealth = await this.healthManager.checkProviderHealth('openrouter');
+      const primaryHealth = await this.healthManager.checkProviderHealth(this.providers.primary.name);
       if (this.isProviderViable(primaryHealth, requireHealthy, maxResponseTime)) {
         return {
           provider: this.providers.primary.provider,
@@ -205,7 +205,7 @@ export class AIProviderManager {
     }
 
     // Use fallback if primary unavailable or it's fallback's turn
-    const fallbackHealth = await this.healthManager.checkProviderHealth('openai');
+    const fallbackHealth = await this.healthManager.checkProviderHealth(this.providers.fallback.name);
     if (this.isProviderViable(fallbackHealth, requireHealthy, maxResponseTime)) {
       return {
         provider: this.providers.fallback.provider,
@@ -224,10 +224,10 @@ export class AIProviderManager {
    * Fallback-only strategy: Only use fallback provider
    */
   private async selectFallbackOnly(
-    requireHealthy: boolean, 
+    requireHealthy: boolean,
     maxResponseTime: number
   ): Promise<ProviderSelection> {
-    const fallbackHealth = await this.healthManager.checkProviderHealth('openai');
+    const fallbackHealth = await this.healthManager.checkProviderHealth(this.providers.fallback.name);
     
     if (this.isProviderViable(fallbackHealth, requireHealthy, maxResponseTime)) {
       return {
@@ -282,8 +282,8 @@ export class AIProviderManager {
    */
   async getProviderHealthStatus() {
     return {
-      primary: await this.healthManager.checkProviderHealth('openrouter'),
-      fallback: await this.healthManager.checkProviderHealth('openai'),
+      primary: await this.healthManager.checkProviderHealth(this.providers.primary.name),
+      fallback: await this.healthManager.checkProviderHealth(this.providers.fallback.name),
     };
   }
 
