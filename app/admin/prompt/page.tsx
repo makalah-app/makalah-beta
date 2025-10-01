@@ -9,21 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cpu, History, RefreshCw, Save, Loader2, Zap, Plus, Check, Copy, Trash2, Layers, Database } from 'lucide-react';
-import { OPENROUTER_MODELS } from '@/lib/ai/model-registry';
+import { Cpu, History, RefreshCw, Save, Loader2, Zap, Check, Copy, Database } from 'lucide-react';
 import DatabasePrompts from '@/components/admin/DatabasePrompts';
 
 // Default system prompt as per specifications
@@ -109,15 +96,18 @@ function AdminPromptContent() {
   const [promptValidation, setPromptValidation] = useState<{ valid: boolean; issues: string[] } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Template management state
-  const [selectedModel, setSelectedModel] = useState<string>('moonshotai/kimi-k2-0905');
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
-  const [templateContent, setTemplateContent] = useState('');
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
-  const [templatesLoading, setTemplatesLoading] = useState(false);
-  const [templateAction, setTemplateAction] = useState<string | null>(null);
+
+  // Fallback prompt management state
+  const [fallbackPrompt, setFallbackPrompt] = useState<any | null>(null);
+  const [fallbackContent, setFallbackContent] = useState('');
+  const [fallbackLoading, setFallbackLoading] = useState(false);
+  const [fallbackSaving, setFallbackSaving] = useState(false);
+  const [fallbackSuccess, setFallbackSuccess] = useState(false);
+
+  // Provider state
+  const [primaryProvider, setPrimaryProvider] = useState<'openai' | 'openrouter'>('openai');
+  const [currentModelName, setCurrentModelName] = useState<string>('');
+  const [providerStatusLoading, setProviderStatusLoading] = useState(false);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -126,10 +116,6 @@ function AdminPromptContent() {
   const [error, setError] = useState<string | null>(null);
   const [showPromptHistory, setShowPromptHistory] = useState(false);
   const [activeTab, setActiveTab] = useState('system-prompt');
-
-  // Delete confirmation dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [templateToDelete, setTemplateToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Circuit breaker for token refresh
   const [refreshAttempts, setRefreshAttempts] = useState(0);
@@ -237,57 +223,112 @@ function AdminPromptContent() {
     }
   }, [authenticatedFetch]);
 
-  // Load templates for selected model
-  const loadTemplates = useCallback(async (modelSlug?: string) => {
+
+  // Load fallback prompt
+  const loadFallbackPrompt = useCallback(async () => {
     if (!session?.accessToken) return;
 
     try {
-      setTemplatesLoading(true);
+      setFallbackLoading(true);
       setError(null);
 
-      const url = modelSlug
-        ? `/api/admin/templates?modelSlug=${encodeURIComponent(modelSlug)}`
-        : '/api/admin/templates';
-
-      const response = await authenticatedFetch(url);
+      const response = await authenticatedFetch('/api/admin/openrouter-prompt');
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to load templates');
+        throw new Error(result.error?.message || 'Failed to load fallback prompt');
       }
 
-      if (result.success && result.data) {
-        const modelTemplates = result.data.templates || [];
-        setTemplates(modelTemplates);
-
-        // Select active template if exists
-        const activeTemplate = modelTemplates.find((t: any) => t.is_active);
-        if (activeTemplate) {
-          setSelectedTemplate(activeTemplate);
-          setTemplateContent(activeTemplate.template_content);
-        } else if (modelTemplates.length > 0) {
-          // Select first template if no active template
-          setSelectedTemplate(modelTemplates[0]);
-          setTemplateContent(modelTemplates[0].template_content);
-        } else {
-          setSelectedTemplate(null);
-          setTemplateContent('');
-        }
-
-        console.log('✅ Templates loaded:', {
-          modelSlug,
-          count: modelTemplates.length,
-          activeTemplate: activeTemplate?.template_name
-        });
+      if (result.success && result.data.prompt) {
+        setFallbackPrompt(result.data.prompt);
+        setFallbackContent(result.data.prompt.content || '');
+        console.log('✅ Fallback prompt loaded');
+      } else {
+        // No fallback prompt - use default
+        setFallbackContent(DEFAULT_SYSTEM_PROMPT);
+        console.log('ℹ️ No fallback prompt found, using default');
       }
     } catch (err) {
-      console.error('Error loading templates:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load templates');
-      setTemplates([]);
-      setSelectedTemplate(null);
-      setTemplateContent('');
+      console.error('Error loading fallback prompt:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load fallback prompt');
+      setFallbackContent(DEFAULT_SYSTEM_PROMPT);
     } finally {
-      setTemplatesLoading(false);
+      setFallbackLoading(false);
+    }
+  }, [session?.accessToken, authenticatedFetch]);
+
+  // Save fallback prompt
+  const saveFallbackPrompt = async () => {
+    if (!session?.accessToken || !fallbackContent) return;
+
+    try {
+      setFallbackSaving(true);
+      setError(null);
+
+      const response = await authenticatedFetch('/api/admin/openrouter-prompt', {
+        method: 'PUT',
+        body: JSON.stringify({
+          content: fallbackContent,
+          version: fallbackPrompt?.version || 'v1.0',
+          description: 'OpenRouter system prompt for Gemini models'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || 'Failed to save fallback prompt');
+      }
+
+      if (result.success) {
+        setFallbackPrompt(result.data.prompt);
+        setFallbackSuccess(true);
+        setTimeout(() => setFallbackSuccess(false), 3000);
+        console.log('✅ Fallback prompt saved');
+      }
+    } catch (err) {
+      console.error('Error saving fallback prompt:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save fallback prompt');
+    } finally {
+      setFallbackSaving(false);
+    }
+  };
+
+  // Load provider status
+  const loadProviderStatus = useCallback(async () => {
+    if (!session?.accessToken) return;
+
+    try {
+      setProviderStatusLoading(true);
+
+      // Get current model config to determine primary provider
+      const configResponse = await authenticatedFetch('/api/admin/config');
+      const configResult = await configResponse.json();
+
+      // ✅ FIX: API returns models as object {primary, fallback}, not array
+      if (configResult.success && configResult.data?.models?.primary) {
+        const currentProvider = configResult.data.models.primary.provider;
+        const currentModel = configResult.data.models.primary.model;
+
+        setPrimaryProvider(currentProvider);
+
+        // Format model name for badge display
+        if (currentProvider === 'openai') {
+          // Show exact OpenAI model name (e.g., "gpt-4o", "gpt-4o-mini")
+          setCurrentModelName(currentModel || 'GPT-4o');
+        } else {
+          // For OpenRouter Gemini, show generic "Gemini 2.5" (could be Flash or Pro)
+          setCurrentModelName('Gemini 2.5');
+        }
+
+        console.log('✅ Primary provider loaded:', currentProvider, '- Model:', currentModel);
+      }
+    } catch (err) {
+      console.error('Error loading provider status:', err);
+      setPrimaryProvider('openai'); // fallback
+      setCurrentModelName('GPT-4o'); // fallback
+    } finally {
+      setProviderStatusLoading(false);
     }
   }, [session?.accessToken, authenticatedFetch]);
 
@@ -348,15 +389,9 @@ function AdminPromptContent() {
     }
 
     loadPromptData();
-    loadTemplates(selectedModel);
-  }, [session?.accessToken, loadPromptData, loadTemplates, selectedModel]);
-
-  // Reload templates when model changes
-  useEffect(() => {
-    if (session?.accessToken && selectedModel) {
-      loadTemplates(selectedModel);
-    }
-  }, [selectedModel, session?.accessToken, loadTemplates]);
+    loadFallbackPrompt();
+    loadProviderStatus();
+  }, [session?.accessToken, loadPromptData, loadFallbackPrompt, loadProviderStatus]);
 
   const handleSave = async () => {
     try {
@@ -466,206 +501,7 @@ function AdminPromptContent() {
     }
   };
 
-  // Template management functions
-  const handleActivateTemplate = async (templateId: string) => {
-    try {
-      setTemplateAction('activating');
-      setError(null);
-
-      // First, get the template content
-      const template = templates.find((t: any) => t.id === templateId);
-      if (!template) {
-        throw new Error('Template not found');
-      }
-
-      // Confirm with user that this will replace the main system prompt
-      if (!confirm(`This will replace your current system prompt with the "${template.template_name}" template. Continue?`)) {
-        return;
-      }
-
-      // Step 1: Update the main system prompt with template content
-      setSystemPrompt(template.template_content);
-
-      // Step 2: Save to database as main system prompt
-      const saveResponse = await authenticatedFetch('/api/admin/prompts', {
-        method: 'PUT',
-        body: JSON.stringify({
-          content: template.template_content,
-          name: `System Prompt from ${template.template_name}`,
-          phase: 'system_instructions'
-        })
-      });
-
-      if (!saveResponse.ok) {
-        const saveResult = await saveResponse.json();
-        throw new Error(saveResult.error?.message || 'Failed to update system prompt');
-      }
-
-      // Step 3: Mark template as active (optional - for visual indication)
-      const response = await authenticatedFetch('/api/admin/templates', {
-        method: 'PUT',
-        body: JSON.stringify({
-          modelSlug: selectedModel,
-          templateId
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.warn('Template activation flag update failed, but system prompt was updated');
-      }
-
-      // Update local state
-      setOriginalPrompt(template.template_content);
-      setHasUnsavedChanges(false);
-
-      // Reload templates to get updated state
-      await loadTemplates(selectedModel);
-      setSaveSuccess(true);
-      setError(null);
-
-      // Switch to system prompt tab to show the change
-      setActiveTab('system-prompt');
-
-      setTimeout(() => setSaveSuccess(false), 3000);
-
-    } catch (err) {
-      console.error('Error activating template:', err);
-      setError(err instanceof Error ? err.message : 'Failed to activate template');
-    } finally {
-      setTemplateAction(null);
-    }
-  };
-
-  const handleCreateTemplate = async () => {
-    try {
-      setTemplateAction('creating');
-      setError(null);
-
-      if (!newTemplateName.trim()) {
-        setError('Template name is required');
-        return;
-      }
-
-      if (!templateContent.trim()) {
-        setError('Template content is required');
-        return;
-      }
-
-      const response = await authenticatedFetch('/api/admin/templates', {
-        method: 'POST',
-        body: JSON.stringify({
-          modelSlug: selectedModel,
-          templateName: newTemplateName.trim(),
-          templateContent: templateContent,
-          isDefault: false
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to create template');
-      }
-
-      // Reset form and reload templates
-      setNewTemplateName('');
-      setShowCreateTemplate(false);
-      await loadTemplates(selectedModel);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-
-    } catch (err) {
-      console.error('Error creating template:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create template');
-    } finally {
-      setTemplateAction(null);
-    }
-  };
-
-  const handleGenerateDefaults = async () => {
-    try {
-      setTemplateAction('generating');
-      setError(null);
-
-      const response = await authenticatedFetch('/api/admin/templates?action=generate-defaults', {
-        method: 'POST',
-        body: JSON.stringify({
-          forceRegenerate: true
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to generate default templates');
-      }
-
-      // Reload templates
-      await loadTemplates(selectedModel);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-
-    } catch (err) {
-      console.error('Error generating defaults:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate default templates');
-    } finally {
-      setTemplateAction(null);
-    }
-  };
-
-  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
-    // Show the delete confirmation dialog
-    setTemplateToDelete({ id: templateId, name: templateName });
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDeleteTemplate = async () => {
-    if (!templateToDelete) return;
-
-    try {
-      setTemplateAction('deleting');
-      setError(null);
-
-      const response = await authenticatedFetch(`/api/admin/templates?templateId=${templateToDelete.id}`, {
-        method: 'DELETE'
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error?.message || 'Failed to delete template');
-      }
-
-      // Reload templates
-      await loadTemplates(selectedModel);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      setDeleteDialogOpen(false);
-      setTemplateToDelete(null);
-    } catch (err) {
-      console.error('Error deleting template:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete template');
-    } finally {
-      setTemplateAction(null);
-    }
-  };
-
-  const handleCopyToSystemPrompt = () => {
-    if (selectedTemplate) {
-      setSystemPrompt(selectedTemplate.template_content);
-      setActiveTab('system-prompt');
-      // Clear any existing errors
-      setError(null);
-      setSaveSuccess(false);
-      // Mark as having unsaved changes
-      setHasUnsavedChanges(true);
-    }
-  };
-
   const promptCharCount = systemPrompt.length;
-  const templateCharCount = templateContent.length;
 
   if (loading) {
     return (
@@ -684,8 +520,8 @@ function AdminPromptContent() {
       <div className="flex items-center gap-3">
         <Cpu className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-semibold">System Prompt & Templates</h1>
-          <p className="text-muted-foreground">Atur instruksi dasar dan template model-specific untuk akademik workflow</p>
+          <h1 className="text-2xl font-semibold">System Prompt Management</h1>
+          <p className="text-muted-foreground">Atur instruksi dasar untuk OpenAI dan OpenRouter Gemini workflows</p>
         </div>
       </div>
 
@@ -709,16 +545,26 @@ function AdminPromptContent() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="system-prompt" className="flex items-center gap-2">
             <Cpu className="h-4 w-4" />
-            System Prompt
+            System Prompt OpenAI
+            {primaryProvider === 'openai' && (
+              <Badge variant="default" className="ml-1 bg-green-600 hover:bg-green-700 text-white">
+                Active ({currentModelName || 'GPT-4o'})
+              </Badge>
+            )}
             {hasUnsavedChanges && (
               <Badge variant="destructive" className="ml-2 text-xs">
                 Unsaved
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Layers className="h-4 w-4" />
-            Model Templates
+          <TabsTrigger value="fallback" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            System Prompt OpenRouter
+            {primaryProvider === 'openrouter' && (
+              <Badge variant="default" className="ml-1 bg-green-600 hover:bg-green-700 text-white">
+                Active (Gemini 2.5)
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="database" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
@@ -735,8 +581,8 @@ function AdminPromptContent() {
                     <Cpu className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
-                    <CardTitle className="text-xl">System Prompt</CardTitle>
-                    <CardDescription>Tetapkan instruksi dasar untuk Makalah AI.</CardDescription>
+                    <CardTitle className="text-xl">System Prompt OpenAI</CardTitle>
+                    <CardDescription>System prompt untuk OpenAI models (GPT-4o, GPT-4o-mini). Aktif saat primary provider = OpenAI.</CardDescription>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -799,6 +645,20 @@ function AdminPromptContent() {
                   Prompt ini menjadi referensi utama bagi agent saat memandu 7 fase penulisan.
                 </p>
               </div>
+
+              {/* Alert: Kapan OpenAI Prompt Aktif */}
+              <Alert>
+                <Cpu className="h-4 w-4" />
+                <AlertTitle>Kapan System Prompt OpenAI Aktif?</AlertTitle>
+                <AlertDescription>
+                  System prompt ini otomatis digunakan saat:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Primary provider di Konfigurasi Model = <strong>OpenAI</strong></li>
+                    <li>Model aktif: GPT-4o, GPT-4o-mini, atau model OpenAI lainnya</li>
+                  </ul>
+                  Prompt ini dioptimasi khusus untuk GPT models dengan kemampuan native web search.
+                </AlertDescription>
+              </Alert>
               {promptValidation && !promptValidation.valid && (
                 <Alert variant="default">
                   <AlertTitle>Perlu penyesuaian</AlertTitle>
@@ -847,296 +707,94 @@ function AdminPromptContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-6">
+        <TabsContent value="fallback" className="space-y-6">
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
-                    <Layers className="h-5 w-5" />
+                    <Zap className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
-                    <CardTitle className="text-xl">Model-Specific Templates</CardTitle>
-                    <CardDescription>Kelola template system prompt yang dioptimalkan untuk setiap model AI.</CardDescription>
+                    <CardTitle className="text-xl">System Prompt OpenRouter</CardTitle>
+                    <CardDescription>System prompt untuk OpenRouter Gemini models (2.5 Flash & Pro). Aktif saat primary provider = OpenRouter.</CardDescription>
                   </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateDefaults}
-                    disabled={templateAction === 'generating'}
-                  >
-                    {templateAction === 'generating' ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="mr-2 h-4 w-4" />
-                        Generate Defaults
-                      </>
-                    )}
-                  </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Model Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="model-select">Pilih Model</Label>
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih model..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OPENROUTER_MODELS.map((model) => (
-                      <SelectItem key={model.value} value={model.value}>
-                        <div className="flex items-center gap-2">
-                          <span>{model.label}</span>
-                          {model.recommended && (
-                            <Badge variant="secondary" className="text-xs">Recommended</Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
-              {/* Templates List */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Templates untuk {OPENROUTER_MODELS.find(m => m.value === selectedModel)?.label}</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCreateTemplate(true)}
-                    disabled={templatesLoading}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Template
-                  </Button>
+            <CardContent className="space-y-4">
+              {fallbackLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-
-                {templatesLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Loading templates...</span>
-                    </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="fallback-content">Fallback Prompt Content</Label>
+                    <Textarea
+                      id="fallback-content"
+                      value={fallbackContent}
+                      onChange={(e) => setFallbackContent(e.target.value)}
+                      className="min-h-[400px] font-mono text-sm"
+                      placeholder="Enter fallback system prompt..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {fallbackContent.length} characters (min: 100, max: 50,000)
+                    </p>
                   </div>
-                ) : templates.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">No templates found for this model.</p>
+
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={saveFallbackPrompt}
+                      disabled={fallbackSaving || fallbackContent.length < 100}
+                      className="flex items-center gap-2"
+                    >
+                      {fallbackSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : fallbackSuccess ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Saved
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Fallback Prompt
+                        </>
+                      )}
+                    </Button>
+
                     <Button
                       variant="outline"
-                      onClick={() => handleGenerateDefaults()}
-                      disabled={templateAction === 'generating'}
+                      onClick={() => setFallbackContent(systemPrompt)}
+                      disabled={fallbackSaving}
                     >
-                      <Zap className="mr-2 h-4 w-4" />
-                      Generate Default Template
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy from System Prompt
                     </Button>
                   </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {templates.map((template) => (
-                      <div
-                        key={template.id}
-                        className={`rounded-[3px] border p-4 transition-colors ${
-                          template.is_active ? 'border-primary bg-primary/5' : 'border-border hover:border-border/80'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium">{template.template_name}</h4>
-                              {template.is_active && (
-                                <Badge variant="default" className="text-xs">
-                                  <Check className="mr-1 h-3 w-3" />
-                                  Active
-                                </Badge>
-                              )}
-                              {template.is_default && (
-                                <Badge variant="secondary" className="text-xs">Default</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {template.template_content.length} characters
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Created: {new Date(template.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {!template.is_active && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActivateTemplate(template.id)}
-                                disabled={templateAction === 'activating'}
-                                title="Replace main system prompt with this template"
-                              >
-                                {templateAction === 'activating' ? (
-                                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Check className="mr-1 h-3 w-3" />
-                                )}
-                                Use as System Prompt
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedTemplate(template);
-                                setTemplateContent(template.template_content);
-                              }}
-                              title="Copy template content"
-                            >
-                              <Copy className="mr-1 h-3 w-3" />
-                              Copy
-                            </Button>
-                            {!template.is_default && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteTemplate(template.id, template.template_name)}
-                                disabled={templateAction === 'deleting'}
-                                className="text-muted-foreground hover:text-foreground"
-                                title="Delete template"
-                              >
-                                <Trash2 className="mr-1 h-3 w-3" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* Template Content Editor */}
-              {selectedTemplate && !showCreateTemplate && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium">Template Content</h3>
-                        <p className="text-sm text-muted-foreground">{selectedTemplate.template_name}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {templateCharCount} characters
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCopyToSystemPrompt}
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy to System Prompt
-                        </Button>
-                      </div>
-                    </div>
-                    <Textarea
-                      value={templateContent}
-                      onChange={(e) => setTemplateContent(e.target.value)}
-                      rows={15}
-                      className="font-mono text-sm"
-                      placeholder="Template content..."
-                      readOnly
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Create New Template Form */}
-              {showCreateTemplate && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium">Create New Template</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowCreateTemplate(false);
-                          setNewTemplateName('');
-                          if (selectedTemplate) {
-                            setTemplateContent(selectedTemplate.template_content);
-                          }
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="template-name">Template Name</Label>
-                      <input
-                        id="template-name"
-                        type="text"
-                        value={newTemplateName}
-                        onChange={(e) => setNewTemplateName(e.target.value)}
-                        className="w-full px-3 py-2 border border-border rounded-[3px]"
-                        placeholder="e.g., Custom Academic Template"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="template-content">Template Content</Label>
-                      <Textarea
-                        id="template-content"
-                        value={templateContent}
-                        onChange={(e) => setTemplateContent(e.target.value)}
-                        rows={15}
-                        className="font-mono text-sm"
-                        placeholder="Enter template content..."
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowCreateTemplate(false);
-                          setNewTemplateName('');
-                          if (selectedTemplate) {
-                            setTemplateContent(selectedTemplate.template_content);
-                          }
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleCreateTemplate}
-                        disabled={templateAction === 'creating' || !newTemplateName.trim() || !templateContent.trim()}
-                      >
-                        {templateAction === 'creating' ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-4 w-4" />
-                            Create Template
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                  <Alert>
+                    <Zap className="h-4 w-4" />
+                    <AlertTitle>Kapan System Prompt OpenRouter Aktif?</AlertTitle>
+                    <AlertDescription>
+                      System prompt ini otomatis digunakan saat:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Primary provider di Konfigurasi Model = <strong>OpenRouter</strong></li>
+                        <li>Model aktif: Gemini 2.5 Flash, Gemini 2.5 Pro, atau model OpenRouter lainnya</li>
+                        <li>Admin swap provider dari OpenAI ke OpenRouter</li>
+                      </ul>
+                      Prompt ini dioptimasi khusus untuk Gemini models dengan web search via <code>:online</code> suffix.
+                    </AlertDescription>
+                  </Alert>
                 </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-
         <TabsContent value="database" className="space-y-6">
           <Card>
             <CardHeader>
@@ -1161,38 +819,6 @@ function AdminPromptContent() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="max-w-sm rounded-[3px] sm:rounded-[3px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Template</AlertDialogTitle>
-            <AlertDialogDescription>
-              Yakin ingin menghapus template &quot;{templateToDelete?.name}&quot;?
-              Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={templateAction === 'deleting'}>
-              Batal
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteTemplate}
-              disabled={templateAction === 'deleting'}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {templateAction === 'deleting' ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menghapus...
-                </>
-              ) : (
-                'Hapus'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

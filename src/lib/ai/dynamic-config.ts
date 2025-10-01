@@ -96,32 +96,37 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       });
     }
 
-    // Get system prompt - check for model-specific template first, fallback to system prompt
+    // Get system prompt based on provider (simple 2-source logic)
     let systemPromptContent = '';
+    let promptSource: 'openrouter_system_prompts' | 'openai_system_prompts' | 'none' = 'none';
 
-    // Step 1: Try to get model-specific template for primary model
-    if (primaryConfig?.model_name) {
-      const { data: templateData, error: templateError } = await supabaseAdmin
-        .from('model_prompt_templates')
-        .select('template_content')
-        .eq('model_slug', primaryConfig.model_name)
+    const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
+
+    if (primaryProvider === 'openrouter') {
+      // OpenRouter always uses openrouter_system_prompts (optimized for Gemini)
+      console.log('[DynamicConfig] 🔍 Loading OpenRouter (Gemini) system prompt');
+
+      const { data: openrouterPrompt, error: openrouterError } = await supabaseAdmin
+        .from('openrouter_system_prompts')
+        .select('content')
         .eq('is_active', true)
-        .maybeSingle() as { data: { template_content: string } | null; error: any };
+        .maybeSingle() as { data: { content: string } | null; error: any };
 
-      if (templateData?.template_content && !templateError) {
-        systemPromptContent = templateData.template_content;
-        console.log('[DynamicConfig] ✅ Using model-specific template for:', primaryConfig.model_name);
-        console.log('[DynamicConfig] 📝 Model template preview:', systemPromptContent.substring(0, 100) + '...');
-      } else if (templateError) {
-        console.warn('[DynamicConfig] Template error for model:', primaryConfig.model_name, templateError);
+      if (openrouterPrompt?.content && !openrouterError) {
+        systemPromptContent = openrouterPrompt.content;
+        promptSource = 'openrouter_system_prompts';
+        console.log('[DynamicConfig] ✅ Using OPENROUTER prompt for Gemini models');
+        console.log('[DynamicConfig] 📝 OpenRouter prompt preview:', systemPromptContent.substring(0, 100) + '...');
+      } else if (openrouterError) {
+        console.error('[DynamicConfig] ⚠️ OpenRouter prompt error:', openrouterError);
       } else {
-        console.log('[DynamicConfig] 🔍 No model-specific template found for:', primaryConfig.model_name);
+        console.warn('[DynamicConfig] ⚠️ No active OpenRouter prompt found');
       }
-    }
+    } else {
+      // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
+      console.log('[DynamicConfig] 🔍 Loading OpenAI system prompt');
 
-    // Step 2: Fallback to general system prompt if no model-specific template
-    if (!systemPromptContent) {
-      const { data: promptData, error: promptError } = await supabaseAdmin
+      const { data: openaiPrompt, error: openaiError } = await supabaseAdmin
         .from('system_prompts')
         .select('content')
         .eq('is_active', true)
@@ -130,19 +135,18 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         .limit(1)
         .maybeSingle() as { data: SystemPromptRow | null; error: any };
 
-      if (promptData?.content && !promptError) {
-        systemPromptContent = promptData.content;
-        console.log('[DynamicConfig] ✅ Using general system prompt (no model-specific template found)');
-        // Log first 100 chars of prompt for debugging
-        console.log('[DynamicConfig] 📝 System prompt preview:', systemPromptContent.substring(0, 100) + '...');
-      } else if (promptError) {
-        console.error('[DynamicConfig] System prompt error:', promptError);
+      if (openaiPrompt?.content && !openaiError) {
+        systemPromptContent = openaiPrompt.content;
+        promptSource = 'openai_system_prompts';
+        console.log('[DynamicConfig] ✅ Using OPENAI prompt for GPT models');
+        console.log('[DynamicConfig] 📝 OpenAI prompt preview:', systemPromptContent.substring(0, 100) + '...');
+      } else if (openaiError) {
+        console.error('[DynamicConfig] ⚠️ OpenAI prompt error:', openaiError);
       } else {
-        console.warn('[DynamicConfig] ⚠️ No active system prompt found in database');
+        console.warn('[DynamicConfig] ⚠️ No active OpenAI prompt found in database');
       }
     }
 
-    const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
     const fallbackProvider: 'openai' | 'openrouter' = fallbackConfig?.provider || 'openrouter';
 
     console.log('[DynamicConfig] 🔄 Provider configuration:', {
@@ -234,6 +238,32 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       });
     }
 
+    // 🔍 COMPREHENSIVE LOGGING: Show active configuration
+    console.log('\n========================================');
+    console.log('📊 ACTIVE AI CONFIGURATION');
+    console.log('========================================');
+    console.log('🤖 Primary Provider:', primaryProvider.toUpperCase());
+    console.log('📝 Primary Model:', config.primaryModelName);
+    console.log('🔄 Fallback Provider:', fallbackProvider.toUpperCase());
+    console.log('📝 Fallback Model:', config.fallbackModelName);
+    console.log('📄 System Prompt Source:',
+      promptSource === 'openrouter_system_prompts' ? '🟡 OPENROUTER_SYSTEM_PROMPTS (Gemini)' :
+      promptSource === 'openai_system_prompts' ? '🟢 OPENAI_SYSTEM_PROMPTS' :
+      '⚫ NONE (Emergency Fallback)'
+    );
+    console.log('📏 Prompt Length:', systemPromptContent.length, 'characters');
+    console.log('========================================');
+    console.log('');
+    console.log('✅ ACTIVE CONFIGURATION SUMMARY:');
+    console.log('   Model yang sedang aktif:', config.primaryModelName);
+    console.log('   System prompt yang berlaku:',
+      primaryProvider === 'openrouter' ? 'System Prompt OpenRouter (untuk Gemini)' : 'System Prompt OpenAI (untuk GPT)'
+    );
+    console.log('   Web search method:',
+      primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'
+    );
+    console.log('========================================\n');
+
     // ⚡ PERFORMANCE: Cache the result
     CONFIG_CACHE.data = config;
     CONFIG_CACHE.timestamp = now;
@@ -267,6 +297,23 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       const primaryModel = openaiProviderInstance('gpt-4o');
       const fallbackModel = openrouterProviderInstance.chat('google/gemini-2.5-flash:online');
 
+      // ⚠️ EMERGENCY FALLBACK PROMPT when database fails
+      const dbError = error instanceof Error ? error.message : 'Unknown database connection error';
+      const EMERGENCY_FALLBACK_SYSTEM_PROMPT = `⚠️ MAKALAH AI - EMERGENCY FALLBACK MODE
+
+🚨 CRITICAL ALERT: Database system prompt failed to load. Using emergency configuration.
+
+**PLEASE INFORM USER IMMEDIATELY:**
+"Terjadi masalah konfigurasi system prompt. Silakan hubungi administrator segera. Sistem menggunakan prompt darurat dengan fungsi terbatas."
+
+**Technical Context:**
+- Expected Prompt Source: openai_system_prompts atau openrouter_system_prompts (from database)
+- Actual Source: HARDCODED EMERGENCY FALLBACK
+- Database Error: ${dbError}
+
+**LIMITED CAPABILITIES:**
+You are Makalah AI operating in emergency mode. Basic academic writing assistance available in Bahasa Indonesia, but full 7-phase methodology may be unavailable. Prioritize informing user about system status.`;
+
       return {
         primaryProvider: 'openai',
         fallbackProvider: 'openrouter',
@@ -274,7 +321,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         fallbackModel,
         primaryModelName: 'gpt-4o',
         fallbackModelName: 'google/gemini-2.5-flash:online',
-        systemPrompt: '', // AI SDK compliance: empty string instead of undefined
+        systemPrompt: EMERGENCY_FALLBACK_SYSTEM_PROMPT,
         config: {
           temperature: 0.3,
           maxTokens: 12288,

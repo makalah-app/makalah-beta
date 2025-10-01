@@ -20,6 +20,7 @@ import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { phdAdvisorMiddleware } from '../../../src/lib/ai/persona/phd-advisor-middleware';
+import { getProviderManager } from '../../../src/lib/ai/providers';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -135,7 +136,10 @@ export async function POST(req: Request) {
       }
     }
     
-    // Get dynamic configuration from database (includes current swap state)
+    // Get provider manager
+    const providerManager = getProviderManager();
+
+    // Get dynamic configuration
     const dynamicConfig = await getDynamicModelConfig();
     
     // Use database system prompt AS-IS - no hardcoded additions
@@ -285,6 +289,9 @@ export async function POST(req: Request) {
     abortController.abort();
   });
 
+  // Track response time for health monitoring
+  const responseStartTime = Date.now();
+
   const result = streamText({
             model: modelWithPersona,
             messages: manualMessages,
@@ -337,9 +344,24 @@ export async function POST(req: Request) {
 
             // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah
             await result.response;
+
+            // Record success for provider health tracking
+            const responseEndTime = Date.now();
+            const responseTime = responseEndTime - responseStartTime;
+            providerManager.recordSuccess(
+              dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
+              responseTime
+            );
+
             primarySuccess = true;
 
           } catch (responseError: any) {
+            // Record failure for circuit breaker tracking
+            providerManager.recordFailure(
+              dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
+              responseError as Error
+            );
+
             // 🔍 ENHANCED ERROR TYPE DETECTION & CLASSIFICATION
             let errorType = 'unknown';
             let isRetryable = false;

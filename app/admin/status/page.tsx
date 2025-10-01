@@ -121,11 +121,27 @@ function AdminStatusContent() {
           promptVersion: result.data.prompts?.systemInstructions?.version || 'v2.1'
         });
 
-        console.log('✅ Status configuration loaded successfully:', {
-          primaryProvider: result.data.models?.primary?.provider,
-          fallbackProvider: result.data.models?.fallback?.provider,
-          promptVersion: result.data.prompts?.systemInstructions?.version
-        });
+        console.log('\n========================================');
+        console.log('📊 ADMIN STATUS - CONFIGURATION LOADED');
+        console.log('========================================');
+        console.log('🤖 Model yang sedang aktif:',
+          result.data.models?.primary?.provider?.toUpperCase(),
+          '·',
+          result.data.models?.primary?.model
+        );
+        console.log('📄 System prompt yang berlaku:',
+          result.data.models?.primary?.provider === 'openrouter'
+            ? '🟡 System Prompt OpenRouter (untuk Gemini)'
+            : '🟢 System Prompt OpenAI (untuk GPT)'
+        );
+        console.log('📏 Prompt length:', result.data.prompts?.systemInstructions?.content?.length, 'characters');
+        console.log('🔖 Prompt version:', result.data.prompts?.systemInstructions?.version);
+        console.log('🔄 Fallback model:',
+          result.data.models?.fallback?.provider?.toUpperCase(),
+          '·',
+          result.data.models?.fallback?.model
+        );
+        console.log('========================================\n');
       }
     } catch (err) {
       console.error('Failed to load config status:', err);
@@ -236,8 +252,12 @@ function AdminStatusContent() {
             {/* System Prompt */}
             <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">System prompt</p>
-              <p className="text-sm font-semibold text-foreground">{configStatus.promptCharCount} karakter</p>
-              <p className="text-xs text-muted-foreground">Versi {configStatus.promptVersion}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {configStatus.primaryProvider === 'openai' ? '🟢 System Prompt OpenAI' : '🟡 System Prompt OpenRouter'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {configStatus.promptCharCount} karakter · Versi {configStatus.promptVersion}
+              </p>
             </div>
 
             {/* Web Search */}

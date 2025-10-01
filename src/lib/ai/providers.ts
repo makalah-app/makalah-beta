@@ -288,10 +288,31 @@ export class AIProviderManager {
   }
 
   /**
+   * Get current failover state
+   */
+  getFailoverState() {
+    return this.providerManager.getFailoverState();
+  }
+
+  /**
    * Change provider selection strategy
    */
   setStrategy(strategy: ProviderStrategy) {
     this.currentStrategy = strategy;
+  }
+
+  /**
+   * Record successful provider response for health tracking
+   */
+  recordSuccess(providerName: string, responseTimeMs: number) {
+    this.providerManager.recordSuccess(providerName, responseTimeMs);
+  }
+
+  /**
+   * Record failed provider response for health tracking
+   */
+  recordFailure(providerName: string, error: Error) {
+    this.providerManager.recordFailure(providerName, error);
   }
 
   /**

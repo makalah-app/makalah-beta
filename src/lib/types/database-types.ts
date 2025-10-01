@@ -267,6 +267,22 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['system_prompts']['Insert']>;
       };
 
+      fallback_system_prompts: {
+        Row: {
+          id: string;
+          content: string;
+          is_active: boolean;
+          version: string;
+          description: string | null;
+          created_by: string;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['fallback_system_prompts']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['fallback_system_prompts']['Insert']>;
+      };
+
       // ==================== AI INTERACTION TRACKING ====================
       ai_interactions: {
         Row: {
@@ -457,3 +473,4 @@ export type UserRow = Database['public']['Tables']['users']['Row'];
 export type ModelConfigRow = Database['public']['Tables']['model_configs']['Row'];
 export type AdminSettingRow = Database['public']['Tables']['admin_settings']['Row'];
 export type SystemPromptRow = Database['public']['Tables']['system_prompts']['Row'];
+export type FallbackSystemPromptRow = Database['public']['Tables']['fallback_system_prompts']['Row'];
