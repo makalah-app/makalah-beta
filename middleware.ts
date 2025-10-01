@@ -15,7 +15,13 @@ export async function middleware(req: NextRequest) {
             return req.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
-            res.cookies.set({ name, value, ...options });
+            // Extend cookie lifetime to 7 days for better session persistence
+            res.cookies.set({
+              name,
+              value,
+              ...options,
+              maxAge: options.maxAge || 60 * 60 * 24 * 7, // 7 days default
+            });
           },
           remove(name: string, options: CookieOptions) {
             res.cookies.set({ name, value: '', ...options });
