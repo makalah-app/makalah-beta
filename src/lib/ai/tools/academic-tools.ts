@@ -37,7 +37,7 @@ const searchManager = new SearchProviderManager();
  */
 const webSearchTool = {
   web_search: tool({
-    description: 'Search the web for relevant academic sources, current information, or specific data to support research and analysis',
+    description: 'Search for factual data, recent statistics, academic literature, or verified information when current knowledge is insufficient. ONLY use when: (1) User explicitly requests research/data ("cari", "temukan", "riset"), OR (2) Making factual claims requiring verification. DO NOT use for conceptual explanations, how-to questions, or general discussion.',
     inputSchema: z.object({
       query: z.string().describe('Search query to find relevant information'),
       maxResults: z.number().min(1).max(10).default(8).describe('Maximum number of search results to return (1-10)'),

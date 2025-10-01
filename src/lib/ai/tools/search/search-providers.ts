@@ -197,9 +197,30 @@ export class SearchProviderManager {
 
       const result: any = await generateText({
         model: perplexityProvider('sonar-pro'),
-        prompt: `Web search query: ${query}
+        prompt: `Academic research query: ${query}
 
-Please provide current, accurate information about this topic. Include specific sources, URLs, and recent data when available.`,
+CRITICAL SOURCE REQUIREMENTS:
+
+1. PRIORITIZE (in order):
+   - Indonesian academic databases (.ac.id domains: sinta.kemdiktisaintek.go.id, garuda.kemdikbud.go.id, university repositories)
+   - International scholarly journals (.edu, pubmed.ncbi.nlm.nih.gov, ieee.org, springer.com, nature.com, science.org)
+   - University institutional repositories and research institutions
+   - Peer-reviewed publications with DOI/citations (jstor.org, arxiv.org, researchgate.net)
+   - Government agencies for official statistics (.go.id, .gov, bps.go.id)
+
+2. ACCEPTABLE for factual/current data:
+   - Reputable news sources (Reuters, BBC, Kompas, Tempo) for current events
+   - Professional organizations (.org) for industry data
+
+3. NEVER include:
+   - Social media (Twitter/X, Facebook, Instagram, TikTok, LinkedIn)
+   - Entertainment platforms (YouTube, Spotify, music services, video platforms)
+   - Discussion forums (Reddit, Quora, italki, Stack Exchange)
+   - Wikipedia (not a primary source for academic work)
+   - E-commerce sites (Amazon, Tokopedia, Shopee)
+   - Personal blogs (Medium, WordPress, Blogger)
+
+Provide ONLY credible scholarly and reputable sources with URLs, publication dates, and author credentials when available. Focus on academic rigor and factual accuracy.`,
         temperature: searchTemperature, // ✅ Dynamic from admin panel
         abortSignal: controller,
       });
@@ -207,33 +228,35 @@ Please provide current, accurate information about this topic. Include specific 
       // Extract citations and sources from Perplexity response
       const citations = this.extractPerplexityCitations(result.text || '');
 
-      // Create search results from citations
-      const searchResults: SearchResult[] = citations.map((citation, index) => ({
-        title: citation.title || `Perplexity Result ${index + 1}`,
+      // ✅ QUALITY FILTER: Apply domain classification to ensure academic sources only
+      const { filterByDomainQuality } = await import('./domain-classifier');
+      const filteredCitations = filterByDomainQuality(citations, {
+        allowTier3: false, // Only Tier 1 (academic) and Tier 2 (news/gov)
+        logFiltered: true, // Log filtered domains for debugging
+      });
+
+      // Create search results from FILTERED citations
+      const searchResults: SearchResult[] = filteredCitations.map((citation, index) => ({
+        title: citation.title || `Academic Source ${index + 1}`,
         url: citation.url,
         snippet: citation.snippet || result.text?.substring(0, 200) + '...' || '',
         publishedDate: new Date().toISOString(),
-        source: citation.domain || 'Perplexity',
-        contentType: 'website',
+        source: citation.domain || 'Academic Database',
+        contentType: 'article',
         language: config.language || 'en',
       }));
 
-      // If no citations found, create a synthetic result with the response
-      if (searchResults.length === 0 && result.text) {
-        searchResults.push({
-          title: `Perplexity Search: ${query}`,
-          url: 'https://www.perplexity.ai/',
-          snippet: result.text.substring(0, 300) + (result.text.length > 300 ? '...' : ''),
-          publishedDate: new Date().toISOString(),
-          source: 'Perplexity AI',
-          contentType: 'article',
-          language: config.language || 'en',
-        });
+      // ✅ QUALITY STANDARD: If NO academic sources found, return empty (maintain quality)
+      // Don't fallback to synthetic low-quality results
+      if (searchResults.length === 0) {
+        console.log('[Perplexity] No academic-quality sources found for query:', query);
+        // Return empty - better to have no results than low-quality results
+        return [];
       }
 
       const limited = searchResults.slice(0, Math.max(1, Math.min(config.maxResults || 10, 20)));
 
-      // Perplexity done - silent handling for production
+      console.log(`[Perplexity] ✅ Returning ${limited.length} academic-quality sources`);
       return limited;
 
     } catch (error) {

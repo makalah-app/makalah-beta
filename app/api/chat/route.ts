@@ -214,10 +214,31 @@ export async function POST(req: Request) {
       return '';
     } catch { return ''; }
   })().toLowerCase();
-  const userExplicitMoreSearch = /cari\s+lagi|lanjut\s+(cari|riset|search)|search\s+again|teruskan\s+pencarian/i.test(lastUserText);
+
+  // ✅ SMART TRIGGER DETECTION: Only enable web search when truly needed
+  const FACTUAL_TRIGGERS = [
+    'cari', 'riset', 'temukan', 'data', 'statistik', 'penelitian',
+    'search', 'research', 'find', 'study', 'literature',
+    'sumber', 'referensi', 'jurnal', 'artikel', 'paper', 'publikasi'
+  ];
+
+  const CONCEPTUAL_BLOCKERS = [
+    'bagaimana cara', 'jelaskan', 'apa itu', 'mengapa', 'kenapa',
+    'how to', 'how do', 'explain', 'what is', 'why', 'define'
+  ];
+
+  const hasFactualTrigger = FACTUAL_TRIGGERS.some(keyword => lastUserText.includes(keyword));
+  const isConceptualQuestion = CONCEPTUAL_BLOCKERS.some(phrase => lastUserText.includes(phrase));
+  const userExplicitSearch = /cari\s+(data|info|sumber|literatur|statistik)|search\s+(for|about)|riset\s+tentang|temukan\s+data/i.test(lastUserText);
+  const isEarlyResearch = validatedMessages.length <= 5; // Phase 1-2 exploration
+
   const includeNativeWebSearch =
     dynamicConfig.webSearchProvider === 'openai'
-      ? (!recentUsedNativeSearch || userExplicitMoreSearch)
+      ? (
+          userExplicitSearch || // Explicit "cari data...", "search for..."
+          (!recentUsedNativeSearch && hasFactualTrigger && !isConceptualQuestion) || // Factual need, not conceptual
+          (!recentUsedNativeSearch && isEarlyResearch && hasFactualTrigger) // Early research phase
+        )
       : false;
 
   const toolsForPrimary =
@@ -310,81 +331,16 @@ export async function POST(req: Request) {
           // Citations streaming disabled for stability; sources available via debug endpoint
 
           // 🔥 STEP 1: smoothStream at streamText level handles word-by-word chunking
-          // 🔥 STEP 2: Return to official AI SDK streaming protocol dengan penanganan Perplexity khusus
+          // 🔥 STEP 2: Official AI SDK streaming protocol with unified toUIMessageStream pattern
           try {
             if (!writerUsed) {
-              if (dynamicConfig.webSearchProvider === 'perplexity') {
-                const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-                const textBlockId = `text-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-                writer.write({
-                  type: 'start',
-                  messageId,
-                });
-
-                writer.write({
-                  type: 'text-start',
-                  id: textBlockId,
-                });
-
-                for await (const textPart of result.textStream) {
-                  writer.write({
-                    type: 'text-delta',
-                    id: textBlockId,
-                    delta: textPart,
-                  });
-                }
-
-                writer.write({
-                  type: 'text-end',
-                  id: textBlockId,
-                });
-
-                try {
-                  const providerMeta = await result.providerMetadata?.catch(() => undefined);
-                  const fallbackSources = await result.sources?.catch(() => undefined);
-                  const sources =
-                    providerMeta?.perplexity?.sources ||
-                    providerMeta?.sources ||
-                    fallbackSources ||
-                    [];
-
-                  if (Array.isArray(sources)) {
-                    sources
-                      .filter((src: any) => src && (src.url || src.source || src.origin))
-                      .forEach((src: any, index: number) => {
-                      const url = src.url || src.source || src.origin || '';
-                      const title =
-                        src.title || src.name || src.domain || src.url || `Sumber ${index + 1}`;
-
-                      writer.write({
-                        type: 'source-url',
-                        sourceId: src.id || `perplexity-source-${index + 1}`,
-                        url,
-                        title,
-                        providerMetadata: src,
-                      });
-                    });
-                  }
-                } catch (sourceError) {
-                }
-
-                writer.write({
-                  type: 'finish',
-                  messageMetadata: {
-                    finishReason: (await result.finishReason?.catch(() => undefined)) || 'stop',
-                  },
-                });
-
-                writerUsed = true;
-              } else {
-                writer.merge(result.toUIMessageStream({
-                  originalMessages: finalProcessedMessages,
-                  sendFinish: true,
-                  sendSources,
-                }));
-                writerUsed = true;
-              }
+              // 🔥 UNIFIED AI SDK PATTERN: Works for both OpenAI and Perplexity
+              writer.merge(result.toUIMessageStream({
+                originalMessages: finalProcessedMessages,
+                sendFinish: true,
+                sendSources: true,  // ✅ Enable sources for all providers
+              }));
+              writerUsed = true;
             }
 
             // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah
