@@ -12,7 +12,7 @@ import { z } from 'zod';
  */
 export const SearchProviderSchema = z.enum([
   'native-openai',        // Priority 1: Native OpenAI web search (default)
-  'perplexity',           // Priority 1: Perplexity web search for OpenRouter
+  'openrouter-online',    // Priority 1: OpenRouter :online suffix (built-in web search)
   'sinta-kemdiktisaintek', // Priority 2: Indonesian academic sources
   'garuda-kemdikbud',     // Priority 2: Indonesian academic sources
   'google',               // Priority 3: International sources

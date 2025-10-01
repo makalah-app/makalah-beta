@@ -41,9 +41,9 @@ const webSearchTool = {
     inputSchema: z.object({
       query: z.string().describe('Search query to find relevant information'),
       maxResults: z.number().min(1).max(10).default(8).describe('Maximum number of search results to return (1-10)'),
-      provider: z.enum(['native-openai', 'perplexity', 'duckduckgo', 'sinta-kemdiktisaintek', 'garuda-kemdikbud'])
+      provider: z.enum(['native-openai', 'openrouter-online', 'duckduckgo', 'sinta-kemdiktisaintek', 'garuda-kemdikbud'])
         .default('native-openai')
-        .describe('Search provider to use - native-openai for general web, perplexity for academic search, Indonesian sources for academic'),
+        .describe('Search provider to use - native-openai for general web, openrouter-online for built-in web search, Indonesian sources for academic'),
     }),
     execute: async ({ query, maxResults = 8, provider = 'native-openai' }) => {
       // Executing search - silent handling for production
@@ -71,7 +71,7 @@ const webSearchTool = {
             if (textProvider === 'openai') {
               actualProvider = 'native-openai';
             } else if (textProvider === 'openrouter') {
-              actualProvider = 'perplexity';
+              actualProvider = 'openrouter-online';
             } else {
               actualProvider = 'duckduckgo';
             }

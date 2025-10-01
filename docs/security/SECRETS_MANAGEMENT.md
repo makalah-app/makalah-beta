@@ -128,7 +128,6 @@ npm run secrets validate
 |----------|------------------|----------------|
 | OpenAI | 90 days | 30 days |
 | OpenRouter | 60 days | 15 days |
-| Perplexity | 90 days | 30 days |
 | GitHub | 365 days | 60 days |
 
 ### Manual Rotation Process

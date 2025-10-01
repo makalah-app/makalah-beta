@@ -10,7 +10,6 @@ import { z } from 'zod';
 // API Key validation patterns
 const openaiKeySchema = z.string().regex(/^sk-proj-[A-Za-z0-9_-]+$/, 'Invalid OpenAI API key format');
 const openrouterKeySchema = z.string().regex(/^sk-or-v1-[A-Za-z0-9_-]+$/, 'Invalid OpenRouter API key format');
-const perplexityKeySchema = z.string().regex(/^pplx-[A-Za-z0-9_-]+$/, 'Invalid Perplexity API key format');
 const githubTokenSchema = z.string().regex(/^ghp_[A-Za-z0-9_-]{36}$/, 'Invalid GitHub token format');
 const supabaseKeySchema = z.string().regex(/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, 'Invalid JWT format');
 
@@ -21,7 +20,6 @@ const developmentEnvSchema = z.object({
   // AI Provider Keys (Required in development)
   OPENAI_API_KEY: openaiKeySchema,
   OPENROUTER_API_KEY: openrouterKeySchema,
-  PERPLEXITY_API_KEY: perplexityKeySchema.optional(),
 
   // Database (Required)
   NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
@@ -49,7 +47,6 @@ const productionEnvSchema = z.object({
   // AI Provider Keys (All required in production)
   OPENAI_API_KEY: openaiKeySchema,
   OPENROUTER_API_KEY: openrouterKeySchema,
-  PERPLEXITY_API_KEY: perplexityKeySchema,
 
   // Database (Required)
   NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
@@ -79,7 +76,6 @@ const testEnvSchema = z.object({
   // Test environment - mock keys allowed
   OPENAI_API_KEY: z.string().default('sk-proj-test-key'),
   OPENROUTER_API_KEY: z.string().default('sk-or-v1-test-key'),
-  PERPLEXITY_API_KEY: z.string().optional(),
 
   // Database (Test)
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().default('http://localhost:54321'),
@@ -100,7 +96,6 @@ export const validateApiKeyStrength = (key: string, provider: string): boolean =
   const minLength = {
     openai: 51,
     openrouter: 45,
-    perplexity: 30,
     github: 40
   };
 
@@ -174,7 +169,6 @@ export const getEnvironmentInfo = () => ({
   nodeEnv: process.env.NODE_ENV,
   hasOpenAI: !!process.env.OPENAI_API_KEY,
   hasOpenRouter: !!process.env.OPENROUTER_API_KEY,
-  hasPerplexity: !!process.env.PERPLEXITY_API_KEY,
   hasSupabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
   hasRedis: !!process.env.UPSTASH_REDIS_REST_URL,
   hasGitHub: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,

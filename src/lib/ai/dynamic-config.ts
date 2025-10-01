@@ -10,7 +10,6 @@
 
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { perplexity, createPerplexity } from '@ai-sdk/perplexity';
 import { supabaseAdmin } from '../database/supabase-client';
 import type { ModelConfigRow, AdminSettingRow, SystemPromptRow } from '../types/database-types';
 
@@ -28,8 +27,6 @@ export interface DynamicModelConfig {
   fallbackModel: any; // AI SDK model instance
   primaryModelName: string; // Model identifier for identity
   fallbackModelName: string; // Fallback model identifier
-  webSearchProvider: 'openai' | 'perplexity'; // Web search provider selection
-  webSearchModel?: any; // Perplexity model instance for web search
   systemPrompt: string;
   config: {
     temperature: number;
@@ -64,8 +61,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       .select('setting_key, setting_value')
       .in('setting_key', [
         'openai_api_key',
-        'openrouter_api_key',
-        'perplexity_api_key'
+        'openrouter_api_key'
       ]) as { data: AdminSettingRow[] | null; error: any };
 
     if (modelError) {
@@ -149,23 +145,16 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
     const fallbackProvider: 'openai' | 'openrouter' = fallbackConfig?.provider || 'openrouter';
 
-    // Auto-pair web search provider based on primary model provider
-    // OpenAI models → OpenAI Native WebSearch
-    // OpenRouter models → Perplexity Sonar Pro
-    const webSearchProvider: 'openai' | 'perplexity' =
-      primaryProvider === 'openai' ? 'openai' : 'perplexity';
-
-    console.log('[DynamicConfig] 🔄 Auto-pairing web search:', {
+    console.log('[DynamicConfig] 🔄 Provider configuration:', {
       primaryProvider,
-      webSearchProvider,
-      pairing: `${primaryProvider} → ${webSearchProvider === 'openai' ? 'OpenAI Native' : 'Perplexity Sonar'}`
+      fallbackProvider,
+      webSearch: primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'
     });
 
     // Create provider instances with AI SDK v5 compliant patterns
     // FIX: Prioritize environment keys over potentially corrupted database keys
     const openaiKey = process.env.OPENAI_API_KEY || apiKeysMap.get('openai_api_key');
     const openrouterKey = process.env.OPENROUTER_API_KEY || apiKeysMap.get('openrouter_api_key');
-    const perplexityKey = process.env.PERPLEXITY_API_KEY || apiKeysMap.get('perplexity_api_key');
     
     // Create custom OpenAI provider with custom API key
     const customOpenAI = createOpenAI({
@@ -181,21 +170,16 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       },
     });
 
-    // Create Perplexity provider instance if needed for web search
-    let webSearchModel;
-    if (webSearchProvider === 'perplexity' && perplexityKey) {
-      const perplexityProviderInstance = createPerplexity({
-        apiKey: perplexityKey,
-      });
-      webSearchModel = perplexityProviderInstance('sonar-pro');
-    }
-
     // Create model instances with AI SDK v5 compliant patterns
+    // ✅ OpenRouter models use :online suffix for web search
     let primaryModel, fallbackModel;
 
     if (primaryProvider === 'openrouter') {
-      const primaryModelName = primaryConfig?.model_name || 'google/gemini-2.5-flash';
+      const baseModelName = primaryConfig?.model_name || 'google/gemini-2.5-flash';
+      // ✅ Add :online suffix for web search capability
+      const primaryModelName = `${baseModelName}:online`;
       primaryModel = openrouterProviderInstance.chat(primaryModelName);
+      console.log('[DynamicConfig] ✅ OpenRouter model with web search:', primaryModelName);
 
       const fallbackModelName = fallbackConfig?.model_name || 'gpt-4o';
       fallbackModel = customOpenAI(fallbackModelName);
@@ -203,7 +187,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       const primaryModelName = primaryConfig?.model_name || 'gpt-4o';
       primaryModel = customOpenAI(primaryModelName);
 
-      const fallbackModelName = fallbackConfig?.model_name || 'google/gemini-2.5-flash';
+      const baseFallbackName = fallbackConfig?.model_name || 'google/gemini-2.5-flash';
+      // ✅ Add :online suffix for fallback OpenRouter model too
+      const fallbackModelName = `${baseFallbackName}:online`;
       fallbackModel = openrouterProviderInstance.chat(fallbackModelName);
     }
 
@@ -217,10 +203,12 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       fallbackProvider,
       primaryModel,
       fallbackModel,
-      primaryModelName: primaryConfig?.model_name || 'gpt-4o',
-      fallbackModelName: fallbackConfig?.model_name || 'google/gemini-2.5-flash',
-      webSearchProvider,
-      webSearchModel,
+      primaryModelName: primaryProvider === 'openrouter'
+        ? `${primaryConfig?.model_name || 'google/gemini-2.5-flash'}:online`
+        : primaryConfig?.model_name || 'gpt-4o',
+      fallbackModelName: fallbackProvider === 'openrouter'
+        ? `${fallbackConfig?.model_name || 'google/gemini-2.5-flash'}:online`
+        : fallbackConfig?.model_name || 'gpt-4o',
       systemPrompt: systemPromptContent || '',
       config: {
         temperature,
@@ -277,7 +265,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
       // Create models
       const primaryModel = openaiProviderInstance('gpt-4o');
-      const fallbackModel = openrouterProviderInstance.chat('google/gemini-2.5-flash');
+      const fallbackModel = openrouterProviderInstance.chat('google/gemini-2.5-flash:online');
 
       return {
         primaryProvider: 'openai',
@@ -285,9 +273,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         primaryModel,
         fallbackModel,
         primaryModelName: 'gpt-4o',
-        fallbackModelName: 'google/gemini-2.5-flash',
-        webSearchProvider: 'openai',
-        webSearchModel: undefined,
+        fallbackModelName: 'google/gemini-2.5-flash:online',
         systemPrompt: '', // AI SDK compliance: empty string instead of undefined
         config: {
           temperature: 0.3,

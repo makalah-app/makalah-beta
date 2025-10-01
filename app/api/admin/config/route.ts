@@ -117,8 +117,7 @@ const UpdateConfigRequestSchema = z.object({
   
   apiKeys: z.object({
     openai: z.string().optional(),
-    openrouter: z.string().optional(),
-    perplexity: z.string().optional()
+    openrouter: z.string().optional()
   }).optional()
 });
 
@@ -382,14 +381,6 @@ export async function GET(request: NextRequest) {
             };
           }
 
-          if (process.env.PERPLEXITY_API_KEY) {
-            response.data.apiKeys.perplexity = {
-              value: includeSecrets ? process.env.PERPLEXITY_API_KEY : '***',
-              configured: true,
-              sensitive: true,
-              source: 'environment'
-            };
-          }
         }
 
       } catch (settingsError) {

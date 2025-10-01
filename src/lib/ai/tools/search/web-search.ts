@@ -14,7 +14,7 @@ export interface WebSearchOptions {
   maxResults?: number;
   language?: string;
   timeout?: number;
-  forceProvider?: 'native-openai' | 'perplexity' | 'duckduckgo';
+  forceProvider?: 'native-openai' | 'openrouter-online' | 'duckduckgo';
 }
 
 export interface WebSearchResponse {
@@ -69,7 +69,7 @@ export async function webSearch(
         if (textProvider === 'openai') {
           actualProvider = 'native-openai';
         } else if (textProvider === 'openrouter') {
-          actualProvider = 'perplexity';
+          actualProvider = 'openrouter-online';
         } else {
           actualProvider = 'duckduckgo';
         }
@@ -127,12 +127,12 @@ export async function searchWithOpenAI(query: string, maxResults = 8): Promise<S
 }
 
 /**
- * Quick search with Perplexity provider
+ * Quick search with OpenRouter :online provider
  */
-export async function searchWithPerplexity(query: string, maxResults = 8): Promise<SearchResult[]> {
+export async function searchWithOpenRouter(query: string, maxResults = 8): Promise<SearchResult[]> {
   const response = await webSearch(query, {
     maxResults,
-    forceProvider: 'perplexity'
+    forceProvider: 'openrouter-online'
   });
   return response.results;
 }

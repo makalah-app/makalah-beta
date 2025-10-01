@@ -37,7 +37,7 @@ export interface DynamicConfigData {
     } | null;
   };
   features: {
-    webSearchProvider: 'openai' | 'perplexity';
+    webSearchProvider: 'openai' | 'openrouter';
   };
 }
 

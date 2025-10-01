@@ -233,7 +233,7 @@ export async function POST(req: Request) {
   const isEarlyResearch = validatedMessages.length <= 5; // Phase 1-2 exploration
 
   const includeNativeWebSearch =
-    dynamicConfig.webSearchProvider === 'openai'
+    dynamicConfig.primaryProvider === 'openai'
       ? (
           userExplicitSearch || // Explicit "cari data...", "search for..."
           (!recentUsedNativeSearch && hasFactualTrigger && !isConceptualQuestion) || // Factual need, not conceptual
@@ -242,7 +242,7 @@ export async function POST(req: Request) {
       : false;
 
   const toolsForPrimary =
-    dynamicConfig.webSearchProvider === 'openai'
+    dynamicConfig.primaryProvider === 'openai'
       ? ({
           ...(includeNativeWebSearch
             ? {
@@ -255,33 +255,25 @@ export async function POST(req: Request) {
       : ({} as Record<string, any>);
 
   // Tools configuration completed
-
+  // ✅ SIMPLIFIED: No model switching - primaryModel already configured with :online suffix for OpenRouter
   let streamModel = dynamicConfig.primaryModel;
   let streamTools = toolsForPrimary;
-  let sendSources = false;
+  let sendSources = true; // Enable sources for all providers
 
-  if (dynamicConfig.webSearchProvider === 'openai') {
+  // For OpenAI, use responses API for native web search
+  if (dynamicConfig.primaryProvider === 'openai') {
     streamModel = (openai as any).responses(
       dynamicConfig.primaryModelName || process.env.OPENAI_MODEL || 'gpt-4o'
     );
     streamTools = toolsForPrimary;
-    sendSources = true; // OpenAI handles sources automatically
-  } else if (dynamicConfig.webSearchProvider === 'perplexity' && dynamicConfig.webSearchModel) {
-    streamModel = dynamicConfig.webSearchModel;
-    streamTools = {};
-    sendSources = false; // Perplexity uses manual source injection
-  } else {
-    streamModel = dynamicConfig.primaryModel;
-    streamTools = {};
   }
+  // For OpenRouter, primaryModel already has :online suffix - no changes needed
 
   // 🎓 MIDDLEWARE INTEGRATION: Wrap model dengan PhD advisor persona injection
-  const modelWithPersona = dynamicConfig.webSearchProvider === 'perplexity'
-    ? streamModel
-    : wrapLanguageModel({
-        model: streamModel,
-        middleware: phdAdvisorMiddleware,
-      });
+  const modelWithPersona = wrapLanguageModel({
+    model: streamModel,
+    middleware: phdAdvisorMiddleware,
+  });
 
   // PhD advisor middleware configuration completed
 
@@ -301,7 +293,7 @@ export async function POST(req: Request) {
             tools: streamTools,
             // 🛑 HITL FIX: Allow natural conversation flow - no forced tool execution
             // Agent should engage in discussion first, then naturally choose tools when appropriate
-            toolChoice: testMode && dynamicConfig.webSearchProvider === 'openai'
+            toolChoice: testMode && dynamicConfig.primaryProvider === 'openai'
               ? { type: 'tool', toolName: 'web_search_preview' } // Test mode only
               : undefined, // 🔧 HITL FIX: Let model decide naturally, enable proper approval flow for phase tools
             temperature: dynamicConfig.config.temperature,
@@ -328,17 +320,17 @@ export async function POST(req: Request) {
             }
           });
 
-          // Citations streaming disabled for stability; sources available via debug endpoint
+          // ✅ Sources enabled for OpenAI native & OpenRouter :online web search
 
           // 🔥 STEP 1: smoothStream at streamText level handles word-by-word chunking
           // 🔥 STEP 2: Official AI SDK streaming protocol with unified toUIMessageStream pattern
           try {
             if (!writerUsed) {
-              // 🔥 UNIFIED AI SDK PATTERN: Works for both OpenAI and Perplexity
+              // 🔥 UNIFIED AI SDK PATTERN: Works for OpenAI native + OpenRouter :online
               writer.merge(result.toUIMessageStream({
                 originalMessages: finalProcessedMessages,
                 sendFinish: true,
-                sendSources: true,  // ✅ Enable sources for all providers
+                sendSources: sendSources,  // ✅ Sources for all providers
               }));
               writerUsed = true;
             }

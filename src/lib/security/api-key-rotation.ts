@@ -61,15 +61,6 @@ export class ApiKeyRotationManager {
       warningDays: 15,
       supportedEnvironments: ['development', 'staging', 'production']
     },
-    perplexity: {
-      name: 'Perplexity',
-      apiEndpoint: 'https://api.perplexity.ai',
-      testEndpoint: '/models',
-      keyFormat: /^pplx-[A-Za-z0-9_-]+$/,
-      rotationIntervalDays: 90,
-      warningDays: 30,
-      supportedEnvironments: ['production']
-    },
     github: {
       name: 'GitHub',
       apiEndpoint: 'https://api.github.com',
@@ -502,7 +493,7 @@ export const checkAllRotations = async () => {
 };
 
 export const rotateKey = async (
-  provider: 'openai' | 'openrouter' | 'perplexity' | 'github',
+  provider: 'openai' | 'openrouter' | 'github',
   newKey: string,
   environment?: 'development' | 'staging' | 'production'
 ) => {
@@ -511,7 +502,7 @@ export const rotateKey = async (
 };
 
 export const rollbackKey = async (
-  provider: 'openai' | 'openrouter' | 'perplexity' | 'github',
+  provider: 'openai' | 'openrouter' | 'github',
   environment?: 'development' | 'staging' | 'production'
 ) => {
   const manager = getRotationManager();

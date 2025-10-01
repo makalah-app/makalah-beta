@@ -409,7 +409,7 @@ export const getSecretsManager = (): SecretsManager => {
 
 // Utility functions for common operations
 export const storeApiKey = async (
-  provider: 'openai' | 'openrouter' | 'perplexity' | 'github',
+  provider: 'openai' | 'openrouter' | 'github',
   apiKey: string,
   environment?: 'development' | 'staging' | 'production'
 ): Promise<string> => {
@@ -418,7 +418,7 @@ export const storeApiKey = async (
 };
 
 export const getApiKey = async (
-  provider: 'openai' | 'openrouter' | 'perplexity' | 'github',
+  provider: 'openai' | 'openrouter' | 'github',
   environment?: 'development' | 'staging' | 'production'
 ): Promise<string | null> => {
   const manager = getSecretsManager();
@@ -426,7 +426,7 @@ export const getApiKey = async (
 };
 
 export const rotateApiKey = async (
-  provider: 'openai' | 'openrouter' | 'perplexity' | 'github',
+  provider: 'openai' | 'openrouter' | 'github',
   newApiKey: string,
   environment?: 'development' | 'staging' | 'production'
 ): Promise<string> => {

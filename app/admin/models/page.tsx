@@ -50,7 +50,6 @@ interface ConfigData {
   apiKeys: {
     openai?: { value: string; configured: boolean };
     openrouter?: { value: string; configured: boolean };
-    perplexity?: { value: string; configured: boolean };
   };
 }
 
@@ -81,7 +80,6 @@ function AdminModelsContent() {
   // Form state
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [openrouterApiKey, setOpenrouterApiKey] = useState("");
-  const [perplexityApiKey, setPerplexityApiKey] = useState('');
 
   // SEPARATED state variables for Primary and Fallback models
   const [primaryOpenaiVersion, setPrimaryOpenaiVersion] = useState("gpt-4o");
@@ -119,7 +117,6 @@ function AdminModelsContent() {
   // API Key visibility state (admin security feature)
   const [showOpenaiKey, setShowOpenaiKey] = useState(false);
   const [showOpenrouterKey, setShowOpenrouterKey] = useState(false);
-  const [showPerplexityKey, setShowPerplexityKey] = useState(false);
 
   // Dynamic Provider State (for proper swap functionality)
   const [primaryProvider, setPrimaryProvider] = useState<'openai' | 'openrouter'>('openai');
@@ -254,16 +251,12 @@ function AdminModelsContent() {
           setOpenrouterApiKey(result.data.apiKeys.openrouter.value || '');
         }
 
-        if (result.data.apiKeys?.perplexity) {
-          setPerplexityApiKey(result.data.apiKeys.perplexity.value || '');
-        }
-
-        console.log('✅ Configuration loaded with auto-pairing:', {
+        console.log('✅ Configuration loaded with auto web search:', {
           primaryProvider: primaryProviderFromDB,
           fallbackProvider: fallbackProviderFromDB,
           primaryModel: result.data.models?.primary?.model,
           fallbackModel: result.data.models?.fallback?.model,
-          autoWebSearch: `${primaryProviderFromDB} → ${primaryProviderFromDB === 'openai' ? 'OpenAI Native' : 'Perplexity Sonar'}`
+          webSearch: `${primaryProviderFromDB} → ${primaryProviderFromDB === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'}`
         });
       }
 
@@ -486,8 +479,7 @@ function AdminModelsContent() {
         },
         apiKeys: {
           openai: openaiApiKey.trim() || undefined,
-          openrouter: openrouterApiKey.trim() || undefined,
-          perplexity: perplexityApiKey.trim() || undefined
+          openrouter: openrouterApiKey.trim() || undefined
         }
       };
 
@@ -987,57 +979,30 @@ function AdminModelsContent() {
               <div className="grid gap-3 md:grid-cols-2">
                 <div className={`rounded-[3px] border border-border bg-muted/20 p-4 ${primaryProvider === 'openai' ? 'ring-2 ring-primary/30' : ''}`}>
                   <p className="text-sm font-medium text-primary">OpenAI Models</p>
-                  <p className="text-xs text-muted-foreground mt-1 mb-2">Auto-paired dengan OpenAI Native WebSearch</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">Native web search via OpenAI Responses API</p>
                   <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
                     <li>GPT-4o, GPT-4o-mini</li>
-                    <li>Integrasi native dengan pencarian web</li>
+                    <li>Built-in webSearchPreview tool</li>
                     <li>Tidak perlu API tambahan</li>
                   </ul>
                 </div>
                 <div className={`rounded-[3px] border border-border bg-muted/20 p-4 ${primaryProvider === 'openrouter' ? 'ring-2 ring-primary/30' : ''}`}>
                   <p className="text-sm font-medium text-primary">OpenRouter Models</p>
-                  <p className="text-xs text-muted-foreground mt-1 mb-2">Auto-paired dengan Perplexity Sonar Pro</p>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">Automatic web search via :online suffix</p>
                   <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
                     <li>Gemini 2.5 Flash, Claude, dll</li>
-                    <li>Pencarian akademik dengan sitasi</li>
-                    <li>Backup API key tersedia di Advanced</li>
+                    <li>Model name + :online untuk web search</li>
+                    <li>Built-in grounding dan citations</li>
                   </ul>
                 </div>
               </div>
               <div className="rounded-[3px] border border-primary/20 bg-primary/5 p-3">
-                <p className="text-xs font-medium text-primary mb-1">Current Active Pairing:</p>
+                <p className="text-xs font-medium text-primary mb-1">Current Active Web Search:</p>
                 <p className="text-sm font-semibold">
-                  {primaryProvider === 'openai' ? 'OpenAI Models → OpenAI Native WebSearch' : 'OpenRouter Models → Perplexity Sonar Pro'}
+                  {primaryProvider === 'openai' ? 'OpenAI → Native WebSearch (Responses API)' : 'OpenRouter → :online suffix (built-in)'}
                 </p>
               </div>
 
-              {/* Perplexity API Key - Backup Configuration */}
-              <div className="space-y-2 pt-2 border-t">
-                <Label htmlFor="perplexity-key" className="text-xs font-medium text-muted-foreground">
-                  Perplexity API Key (Backup)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="perplexity-key"
-                    type={showPerplexityKey ? 'text' : 'password'}
-                    value={perplexityApiKey}
-                    onChange={(event) => setPerplexityApiKey(event.target.value)}
-                    placeholder="pplx-... (optional backup)"
-                    className="font-mono"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowPerplexityKey((prev) => !prev)}
-                  >
-                    {showPerplexityKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  API key cadangan untuk Perplexity. Environment key akan digunakan sebagai prioritas utama.
-                </p>
-              </div>
             </div>
           </div>
 

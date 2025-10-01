@@ -2,13 +2,12 @@
  * Search Provider Management
  * Multi-provider search dengan auto-pairing dan fallback mechanisms
  *
- * SIMPLIFIED: Direct auto-pairing - OpenAI models → OpenAI Native, OpenRouter models → Perplexity Sonar
+ * SIMPLIFIED: OpenAI models → OpenAI Native, OpenRouter models → :online suffix (no extra LLM needed)
  */
 
 import { SearchProvider, SearchResult } from './search-schemas';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { createPerplexity } from '@ai-sdk/perplexity';
 import { getDynamicModelConfig } from '../../dynamic-config';
 
 export interface ProviderConfig {
@@ -24,7 +23,7 @@ export class SearchProviderManager {
   /**
    * Auto-select search provider with simple direct pairing
    * OpenAI models → OpenAI Native WebSearch
-   * OpenRouter models → Perplexity Sonar Pro
+   * OpenRouter models → :online suffix (built-in web search, no extra LLM needed)
    */
   async searchWithAutoProvider(
     query: string,
@@ -38,8 +37,8 @@ export class SearchProviderManager {
       selectedProvider = 'native-openai';
       console.log('🔄 Auto-paired: OpenAI model → OpenAI native search');
     } else if (textProvider === 'openrouter') {
-      selectedProvider = 'perplexity';
-      console.log('🔄 Auto-paired: OpenRouter model → Perplexity Sonar search');
+      selectedProvider = 'openrouter-online';
+      console.log('🔄 Auto-paired: OpenRouter model → :online suffix (built-in web search)');
     } else {
       selectedProvider = 'duckduckgo';
       console.log('🔄 Fallback: Unknown provider → DuckDuckGo');
@@ -80,9 +79,11 @@ export class SearchProviderManager {
         // Native OpenAI web search via AI SDK Responses API + webSearch tool
         results = await this.searchNativeOpenAI(query, config);
         break;
-      case 'perplexity':
-        // Perplexity web search for OpenRouter text provider
-        results = await this.searchPerplexity(query, config);
+      case 'openrouter-online':
+        // OpenRouter :online suffix handles web search automatically
+        // No separate search implementation needed - handled by model itself
+        console.log('[SearchProviders] OpenRouter :online - web search handled by model');
+        results = [];  // Empty results - model handles search natively
         break;
       case 'sinta-kemdiktisaintek':
         results = await this.searchSintaKemdiktisaintek(query, config);
@@ -162,11 +163,12 @@ export class SearchProviderManager {
     }
   }
 
+  /* ❌ REMOVED: searchPerplexity method - OpenRouter :online handles web search automatically
   /**
    * Perplexity web search using AI SDK Perplexity provider
    * For use with OpenRouter text provider as companion search
    */
-  private async searchPerplexity(
+  /*private async searchPerplexity(
     query: string,
     config: ProviderConfig
   ): Promise<SearchResult[]> {
@@ -266,12 +268,13 @@ Provide ONLY credible scholarly and reputable sources with URLs, publication dat
       // Falling back to DuckDuckGo due to Perplexity error - silent handling for production
       return this.searchDuckDuckGo(query, config);
     }
-  }
+  }*/
 
+  /* ❌ REMOVED: extractPerplexityCitations method - no longer needed
   /**
    * Extract citations from Perplexity response text
    */
-  private extractPerplexityCitations(text: string): Array<{
+  /*private extractPerplexityCitations(text: string): Array<{
     title?: string;
     url: string;
     snippet?: string;
@@ -320,7 +323,7 @@ Provide ONLY credible scholarly and reputable sources with URLs, publication dat
     });
 
     return citations;
-  }
+  }*/
 
   /**
    * Enhanced DuckDuckGo search implementation dengan multiple data sources
@@ -688,7 +691,7 @@ Provide ONLY credible scholarly and reputable sources with URLs, publication dat
   private getProviderRateLimit(provider: SearchProvider): number {
     const limits: Record<SearchProvider, number> = {
       'native-openai': 1000,        // High limit for native search
-      'perplexity': 500,            // High limit for Perplexity search
+      'openrouter-online': 1000,    // High limit for OpenRouter :online search
       'sinta-kemdiktisaintek': 100, // Indonesian academic sources
       'garuda-kemdikbud': 100,      // Indonesian academic sources
       google: 100,                  // International sources

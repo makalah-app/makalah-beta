@@ -244,7 +244,7 @@ function AdminStatusContent() {
             <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">Web search</p>
               <p className="text-sm font-semibold text-foreground">
-                {configStatus.primaryProvider === 'openai' ? 'OpenAI Native' : 'Perplexity Sonar Pro'}
+                {configStatus.primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online'}
               </p>
               <p className="text-xs text-muted-foreground">
                 Auto-paired dengan {configStatus.primaryProvider === 'openai' ? 'OpenAI' : 'OpenRouter'} models
