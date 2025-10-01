@@ -10,7 +10,6 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  wrapLanguageModel,
   smoothStream,
   type UIMessage
 } from 'ai';
@@ -19,8 +18,8 @@ import type { AcademicMetadata } from '../../../src/components/chat/ChatContaine
 import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
-import { phdAdvisorMiddleware } from '../../../src/lib/ai/persona/phd-advisor-middleware';
 import { getProviderManager } from '../../../src/lib/ai/providers';
+import { academicTools } from '../../../src/lib/ai/tools/academic-tools';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -193,75 +192,8 @@ export async function POST(req: Request) {
   // "Tools yang ada hanyalah web search"
   // Removed unused availableTools and toolNames variables
 
-  // Build primary tools with guard to prevent repeated native web search loops
-  const recentAssistant = (() => {
-    try {
-      const assistants = validatedMessages.filter((m: any) => m.role === 'assistant');
-      return assistants[assistants.length - 1];
-    } catch { return undefined as any; }
-  })();
-  const recentAssistantBlob = JSON.stringify((recentAssistant as any)?.parts || (recentAssistant as any)?.content || '');
-  const recentUsedNativeSearch = /web_search_preview/i.test(recentAssistantBlob) || /web\s*search/i.test(recentAssistantBlob);
-  const lastUser = (() => {
-    try {
-      const users = validatedMessages.filter((m: any) => m.role === 'user');
-      return users[users.length - 1];
-    } catch { return undefined as any; }
-  })();
-  const lastUserText = (() => {
-    try {
-      if (!lastUser) return '';
-      if (typeof (lastUser as any).content === 'string') return ((lastUser as any).content as string) || '';
-      if (Array.isArray((lastUser as any).parts)) {
-        return (lastUser as any).parts.filter((p: any) => p?.type === 'text').map((p: any) => p.text).join('\n');
-      }
-      return '';
-    } catch { return ''; }
-  })().toLowerCase();
-
-  // ✅ SMART TRIGGER DETECTION: Only enable web search when truly needed
-  const FACTUAL_TRIGGERS = [
-    'cari', 'riset', 'temukan', 'data', 'statistik', 'penelitian',
-    'search', 'research', 'find', 'study', 'literature',
-    'sumber', 'referensi', 'jurnal', 'artikel', 'paper', 'publikasi'
-  ];
-
-  const CONCEPTUAL_BLOCKERS = [
-    'bagaimana cara', 'jelaskan', 'apa itu', 'mengapa', 'kenapa',
-    'how to', 'how do', 'explain', 'what is', 'why', 'define'
-  ];
-
-  const hasFactualTrigger = FACTUAL_TRIGGERS.some(keyword => lastUserText.includes(keyword));
-  const isConceptualQuestion = CONCEPTUAL_BLOCKERS.some(phrase => lastUserText.includes(phrase));
-  const userExplicitSearch = /cari\s+(data|info|sumber|literatur|statistik)|search\s+(for|about)|riset\s+tentang|temukan\s+data/i.test(lastUserText);
-  const isEarlyResearch = validatedMessages.length <= 5; // Phase 1-2 exploration
-
-  const includeNativeWebSearch =
-    dynamicConfig.primaryProvider === 'openai'
-      ? (
-          userExplicitSearch || // Explicit "cari data...", "search for..."
-          (!recentUsedNativeSearch && hasFactualTrigger && !isConceptualQuestion) || // Factual need, not conceptual
-          (!recentUsedNativeSearch && isEarlyResearch && hasFactualTrigger) // Early research phase
-        )
-      : false;
-
-  const toolsForPrimary =
-    dynamicConfig.primaryProvider === 'openai'
-      ? ({
-          ...(includeNativeWebSearch
-            ? {
-                web_search_preview: (openai as any).tools.webSearchPreview({
-                  searchContextSize: 'high',
-                }),
-              }
-            : {}),
-        } as Record<string, any>)
-      : ({} as Record<string, any>);
-
-  // Tools configuration completed
-  // ✅ SIMPLIFIED: No model switching - primaryModel already configured with :online suffix for OpenRouter
+  // ✅ AI SDK COMPLIANT: Prepare model based on provider
   let streamModel = dynamicConfig.primaryModel;
-  let streamTools = toolsForPrimary;
   let sendSources = true; // Enable sources for all providers
 
   // For OpenAI, use responses API for native web search
@@ -269,17 +201,9 @@ export async function POST(req: Request) {
     streamModel = (openai as any).responses(
       dynamicConfig.primaryModelName || process.env.OPENAI_MODEL || 'gpt-4o'
     );
-    streamTools = toolsForPrimary;
   }
-  // For OpenRouter, primaryModel already has :online suffix - no changes needed
-
-  // 🎓 MIDDLEWARE INTEGRATION: Wrap model dengan PhD advisor persona injection
-  const modelWithPersona = wrapLanguageModel({
-    model: streamModel,
-    middleware: phdAdvisorMiddleware,
-  });
-
-  // PhD advisor middleware configuration completed
+  // For OpenRouter with :online suffix, use NATIVE web search (no custom tools needed)
+  // Model with :online suffix has built-in Exa-powered web search
 
   // 🛑 ABORT HANDLING: Create abort controller untuk clean request cancellation
   const abortController = new AbortController();
@@ -292,54 +216,96 @@ export async function POST(req: Request) {
   // Track response time for health monitoring
   const responseStartTime = Date.now();
 
-  const result = streamText({
-            model: modelWithPersona,
-            messages: manualMessages,
-            system: systemPrompt,
-            // Dynamic tools based on conversation depth (HITL compliance)
-            tools: streamTools,
-            // 🛑 HITL FIX: Allow natural conversation flow - no forced tool execution
-            // Agent should engage in discussion first, then naturally choose tools when appropriate
-            toolChoice: testMode && dynamicConfig.primaryProvider === 'openai'
-              ? { type: 'tool', toolName: 'web_search_preview' } // Test mode only
-              : undefined, // 🔧 HITL FIX: Let model decide naturally, enable proper approval flow for phase tools
-            temperature: dynamicConfig.config.temperature,
-            maxOutputTokens: dynamicConfig.config.maxTokens,
-            topP: dynamicConfig.config.topP,
-            maxRetries: 3,
-            frequencyPenalty: dynamicConfig.config.frequencyPenalty,
-            presencePenalty: dynamicConfig.config.presencePenalty,
-            // 🎓 CONTEXT: Pass academic phase information to middleware
-            experimental_context: {
-              academicPhase: currentPhase,
-              userId: userId,
-              chatId: chatId
-            },
-            // 🔥 SMOOTH STREAMING: Enable smoothStream for regular OpenAI model
-            experimental_transform: smoothStream({
-              delayInMs: 35, // 35ms delay mendekati tempo ChatGPT
-              chunking: 'word' // Word-by-word chunking
-            }),
-            // 🛑 ABORT HANDLING: Pass abort signal dan register cleanup callback
-            abortSignal: abortController.signal,
-            onAbort: ({ steps }) => {
-              // Cleanup jika diperlukan - stream akan automatically close
-            }
-          });
+  // ✅ AI SDK COMPLIANT: Provider-specific parameters with proper typing
+  const result = dynamicConfig.primaryProvider === 'openai'
+    ? streamText({
+        // OpenAI responses API: Only supported parameters
+        model: streamModel,
+        messages: manualMessages,
+        system: systemPrompt,
+        tools: {
+          // OpenAI native web search
+          web_search_preview: (openai as any).tools.webSearchPreview({
+            searchContextSize: 'high',
+          }),
+        } as Record<string, any>,
+        toolChoice: testMode ? { type: 'tool' as const, toolName: 'web_search_preview' } : undefined,
+        temperature: dynamicConfig.config.temperature,
+        topP: dynamicConfig.config.topP,
+        maxOutputTokens: dynamicConfig.config.maxTokens,
+        maxRetries: 3,
+        experimental_context: {
+          academicPhase: currentPhase,
+          userId: userId,
+          chatId: chatId
+        },
+        experimental_transform: smoothStream({
+          delayInMs: 35,
+          chunking: 'word'
+        }),
+        abortSignal: abortController.signal,
+        onAbort: () => {
+          // Cleanup jika diperlukan - stream akan automatically close
+        }
+      })
+    : streamText({
+        // OpenRouter with :online suffix: Native web search (NO custom tools)
+        // :online suffix provides Exa-powered built-in web search
+        model: streamModel,
+        messages: manualMessages,
+        system: systemPrompt,
+        // ⚠️ CRITICAL: NO tools for :online models - they have native web search
+        // Passing tools would override native search with DuckDuckGo fallback
+        temperature: dynamicConfig.config.temperature,
+        topP: dynamicConfig.config.topP,
+        maxOutputTokens: dynamicConfig.config.maxTokens,
+        frequencyPenalty: dynamicConfig.config.frequencyPenalty,
+        presencePenalty: dynamicConfig.config.presencePenalty,
+        maxRetries: 3,
+        experimental_context: {
+          academicPhase: currentPhase,
+          userId: userId,
+          chatId: chatId
+        },
+        experimental_transform: smoothStream({
+          delayInMs: 35,
+          chunking: 'word'
+        }),
+        abortSignal: abortController.signal,
+        onAbort: () => {
+          // Cleanup jika diperlukan - stream akan automatically close
+        }
+      });
 
-          // ✅ Sources enabled for OpenAI native & OpenRouter :online web search
+          // ✅ Sources enabled for all providers (OpenAI native + OpenRouter :online native)
 
           // 🔥 STEP 1: smoothStream at streamText level handles word-by-word chunking
           // 🔥 STEP 2: Official AI SDK streaming protocol with unified toUIMessageStream pattern
           try {
             if (!writerUsed) {
-              // 🔥 UNIFIED AI SDK PATTERN: Works for OpenAI native + OpenRouter :online
+              // 🔥 UNIFIED AI SDK PATTERN: Works for all providers with web search
               writer.merge(result.toUIMessageStream({
                 originalMessages: finalProcessedMessages,
                 sendFinish: true,
                 sendSources: sendSources,  // ✅ Sources for all providers
               }));
               writerUsed = true;
+            }
+
+            // 🔍 DEBUG: Log full text after streaming for OpenRouter :online
+            if (dynamicConfig.primaryProvider === 'openrouter') {
+              console.log('[OpenRouter :online Debug] Waiting for full response...');
+
+              // Get full text by consuming text promise
+              const fullText = await result.text;
+              console.log('[OpenRouter :online Debug] Full text length:', fullText?.length || 0);
+              console.log('[OpenRouter :online Debug] Text preview (first 500 chars):',
+                fullText ? fullText.substring(0, 500) : 'NO TEXT'
+              );
+
+              if (!fullText || fullText.length === 0) {
+                console.error('[OpenRouter :online Debug] ⚠️ CRITICAL: Model returned no text!');
+              }
             }
 
             // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah

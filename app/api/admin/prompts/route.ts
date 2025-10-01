@@ -82,7 +82,7 @@ const getCryptoUUID = () => {
 
 // Request validation schemas
 const SavePromptRequestSchema = z.object({
-  content: z.string().min(100, 'System prompt harus minimal 100 karakter').max(15000, 'System prompt maksimal 15000 karakter'),
+  content: z.string().min(100, 'System prompt harus minimal 100 karakter').max(25000, 'System prompt maksimal 25000 karakter'),
   version: z.string().optional(),
   changeReason: z.string().optional().default('Admin dashboard update')
 });

@@ -152,7 +152,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     console.log('[DynamicConfig] 🔄 Provider configuration:', {
       primaryProvider,
       fallbackProvider,
-      webSearch: primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'
+      webSearch: primaryProvider === 'openai' ? 'OpenAI Native' : 'Tool-based (web_search)'
     });
 
     // Create provider instances with AI SDK v5 compliant patterns
@@ -175,15 +175,15 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     });
 
     // Create model instances with AI SDK v5 compliant patterns
-    // ✅ OpenRouter models use :online suffix for web search
+    // ✅ OpenRouter models use :online suffix for automatic built-in web search
     let primaryModel, fallbackModel;
 
     if (primaryProvider === 'openrouter') {
       const baseModelName = primaryConfig?.model_name || 'google/gemini-2.5-flash';
-      // ✅ Add :online suffix for web search capability
-      const primaryModelName = `${baseModelName}:online`;
+      // ✅ Add :online suffix for automatic web search (OpenRouter built-in feature)
+      const primaryModelName = baseModelName.includes(':online') ? baseModelName : `${baseModelName}:online`;
       primaryModel = openrouterProviderInstance.chat(primaryModelName);
-      console.log('[DynamicConfig] ✅ OpenRouter model with web search:', primaryModelName);
+      console.log('[DynamicConfig] ✅ OpenRouter model with automatic web search:', primaryModelName);
 
       const fallbackModelName = fallbackConfig?.model_name || 'gpt-4o';
       fallbackModel = customOpenAI(fallbackModelName);
@@ -192,15 +192,16 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       primaryModel = customOpenAI(primaryModelName);
 
       const baseFallbackName = fallbackConfig?.model_name || 'google/gemini-2.5-flash';
-      // ✅ Add :online suffix for fallback OpenRouter model too
-      const fallbackModelName = `${baseFallbackName}:online`;
+      // ✅ Add :online suffix for fallback OpenRouter models too
+      const fallbackModelName = baseFallbackName.includes(':online') ? baseFallbackName : `${baseFallbackName}:online`;
       fallbackModel = openrouterProviderInstance.chat(fallbackModelName);
+      console.log('[DynamicConfig] ✅ OpenRouter fallback with automatic web search:', fallbackModelName);
     }
 
     // Get config values from the active primary model config
     const temperature = primaryConfig?.temperature || 0.3;
     const maxTokens = primaryConfig?.max_tokens || 12288;
-    const topP = primaryConfig?.parameters?.topP || 0.9;
+    const topP = primaryConfig?.parameters?.topP ?? 0.9; // Use nullish coalescing to allow 0 value
 
     const config: DynamicModelConfig = {
       primaryProvider,
@@ -208,10 +209,10 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       primaryModel,
       fallbackModel,
       primaryModelName: primaryProvider === 'openrouter'
-        ? `${primaryConfig?.model_name || 'google/gemini-2.5-flash'}:online`
+        ? primaryConfig?.model_name || 'google/gemini-2.5-flash'
         : primaryConfig?.model_name || 'gpt-4o',
       fallbackModelName: fallbackProvider === 'openrouter'
-        ? `${fallbackConfig?.model_name || 'google/gemini-2.5-flash'}:online`
+        ? fallbackConfig?.model_name || 'google/gemini-2.5-flash'
         : fallbackConfig?.model_name || 'gpt-4o',
       systemPrompt: systemPromptContent || '',
       config: {
@@ -260,7 +261,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       primaryProvider === 'openrouter' ? 'System Prompt OpenRouter (untuk Gemini)' : 'System Prompt OpenAI (untuk GPT)'
     );
     console.log('   Web search method:',
-      primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'
+      primaryProvider === 'openai' ? 'OpenAI Native' : 'Tool-based (web_search)'
     );
     console.log('========================================\n');
 
@@ -295,7 +296,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
       // Create models
       const primaryModel = openaiProviderInstance('gpt-4o');
-      const fallbackModel = openrouterProviderInstance.chat('google/gemini-2.5-flash:online');
+      const fallbackModel = openrouterProviderInstance.chat('google/gemini-2.5-flash');
 
       // ⚠️ EMERGENCY FALLBACK PROMPT when database fails
       const dbError = error instanceof Error ? error.message : 'Unknown database connection error';
@@ -320,7 +321,7 @@ You are Makalah AI operating in emergency mode. Basic academic writing assistanc
         primaryModel,
         fallbackModel,
         primaryModelName: 'gpt-4o',
-        fallbackModelName: 'google/gemini-2.5-flash:online',
+        fallbackModelName: 'google/gemini-2.5-flash',
         systemPrompt: EMERGENCY_FALLBACK_SYSTEM_PROMPT,
         config: {
           temperature: 0.3,

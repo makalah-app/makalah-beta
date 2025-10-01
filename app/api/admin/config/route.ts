@@ -80,6 +80,7 @@ const UpdateConfigRequestSchema = z.object({
       model: z.string().optional(),
       temperature: z.number().min(0).max(2).optional(),
       maxTokens: z.number().min(1).max(100000).optional(),
+      topP: z.number().min(0).max(1).optional(),
       isActive: z.boolean().optional()
     }).optional(),
     fallback: z.object({
@@ -87,6 +88,7 @@ const UpdateConfigRequestSchema = z.object({
       model: z.string().optional(),
       temperature: z.number().min(0).max(2).optional(),
       maxTokens: z.number().min(1).max(100000).optional(),
+      topP: z.number().min(0).max(1).optional(),
       isActive: z.boolean().optional()
     }).optional()
   }).optional(),
@@ -265,6 +267,7 @@ export async function GET(request: NextRequest) {
                   model: primaryData.model_name,
                   temperature: primaryData.temperature,
                   maxTokens: primaryData.max_tokens,
+                  topP: (primaryData as any).parameters?.topP || 0.9,
                   isActive: primaryData.is_active
                 },
                 fallback: fallbackData ? {
@@ -272,6 +275,7 @@ export async function GET(request: NextRequest) {
                   model: fallbackData.model_name,
                   temperature: fallbackData.temperature,
                   maxTokens: fallbackData.max_tokens,
+                  topP: (fallbackData as any).parameters?.topP || 0.9,
                   isActive: fallbackData.is_active
                 } : fallbackModels.fallback
               };
@@ -490,6 +494,7 @@ export async function POST(request: NextRequest) {
             model_name: primaryData.model,
             temperature: primaryData.temperature ?? 0.1,
             max_tokens: primaryData.maxTokens ?? 4096,
+            parameters: { topP: primaryData.topP ?? 0.9 },
             is_active: primaryData.isActive ?? true,
             is_default: true,
             created_by: adminUserId,
@@ -519,6 +524,7 @@ export async function POST(request: NextRequest) {
             model_name: fallbackData.model,
             temperature: fallbackData.temperature ?? 0.1,
             max_tokens: fallbackData.maxTokens ?? 4096,
+            parameters: { topP: fallbackData.topP ?? 0.9 },
             is_active: fallbackData.isActive ?? true,
             is_default: true, // Allow fallback to become primary in swaps
             created_by: adminUserId,

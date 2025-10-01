@@ -85,7 +85,7 @@ const getCryptoUUID = () => {
 const CreateTemplateRequestSchema = z.object({
   modelSlug: z.string().min(1, 'Model slug is required'),
   templateName: z.string().min(1, 'Template name is required'),
-  templateContent: z.string().min(100, 'Template content must be at least 100 characters').max(15000, 'Template content must be at most 15000 characters'),
+  templateContent: z.string().min(100, 'Template content must be at least 100 characters').max(25000, 'Template content must be at most 25000 characters'),
   isDefault: z.boolean().optional().default(false)
 });
 
