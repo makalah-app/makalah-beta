@@ -49,11 +49,11 @@ node scripts/update-prompts.mjs
 ## Architecture Overview
 
 ### Codebase Scale
-- **~70,000 lines** of TypeScript/TSX code (cleaned 24.7% deadcode Oct 2025)
+- **~67,500 lines** of TypeScript/TSX code (cleaned 27.3% deadcode Oct 2025)
 - **95 React components** organized in modular architecture
 - **36 database migrations** with comprehensive RLS policies
 - **10 API route groups** for various features
-- **Cleanup History**: 22,979 lines removed (Phase 1: 16,622 + Phase 2: 6,357 - both executed)
+- **Cleanup History**: 25,418 lines removed (Phase 1: 16,622 + Phase 2: 6,357 + Phase 3: 2,439 - all executed)
 
 ### AI System (Vercel AI SDK v5)
 - **Dual Provider**: OpenAI GPT-4o primary, OpenRouter Gemini 2.5 Flash fallback (Perplexity removed Oct 1, 2025)
@@ -662,6 +662,51 @@ grep -r "from.*<module>|import.*<module>" app/ src/ \
 
 ---
 
+#### Phase 3: Hybrid Architecture Remnants (2,439 lines)
+**Deleted Oct 2, 2025** - Commit: 29ebfda
+
+1. **Deprecated Hybrid Endpoint (39 lines)** - Already returning 410 Gone
+   - `app/api/admin/config/hybrid/route.ts`
+   - All HTTP methods return deprecation error
+   - Header comment: "HYBRID SYSTEM REMOVED - replaced with Primary/Fallback architecture"
+   - Verification: ZERO calls to `/api/admin/config/hybrid` (grep confirmed)
+
+2. **Admin Page Backup (1,862 lines)** - Unused backup file
+   - `app/admin/page-backup.tsx`
+   - Old hybrid provider UI components
+   - Never imported anywhere in production
+   - Current admin page: `page.tsx` (20 lines simple implementation)
+
+3. **Hybrid Type Definitions (39 lines removed from provider-adapter.ts)**
+   - `HybridProviderConfig` interface (lines 16-27)
+   - `HybridConfiguration` interface (lines 40-54)
+   - Types defined but NEVER instantiated
+   - ZERO production usage (only in commented schemas)
+
+4. **Config Route Hybrid Remnants (499 lines cleaned)**
+   - `app/api/admin/config/route.ts` - Removed:
+     * Hybrid architecture from header documentation
+     * `hybrid` from scope enum
+     * `hybridDetails` parameter
+     * `HybridProviderConfigSchema` (12 lines)
+     * `hybrid` object from UpdateConfigRequestSchema (14 lines)
+     * Commented-out hybrid configuration blocks
+     * Empty `hybrid: {}` objects
+     * `hybridEnabled` metadata field
+   - Final verification: `grep -r "hybrid" → 0 matches`
+
+**Why Deprecated:**
+- Hybrid system (text generation + per-tool provider assignment) replaced with simple Primary/Fallback architecture
+- Multi-provider complexity unnecessary with dynamic-config.ts
+- Aligns with Phase 1 & 2 learnings: "Trust Native Solutions"
+
+**Type-Check**: ✅ Clean build (no errors - zero hybrid usage verified)
+
+**Files Deleted**: 2 files (1,901 lines)
+**Files Cleaned**: 2 files (538 lines of remnants removed)
+
+---
+
 #### 🎓 Key Learnings from Cleanup
 
 **❌ Anti-Patterns Identified:**
@@ -678,9 +723,10 @@ grep -r "from.*<module>|import.*<module>" app/ src/ \
    - utils/ reinvents wheels already in Vercel AI SDK
 
 3. **Build First, Integrate Never**
-   - 22,979 lines built without integration plan
+   - 25,418 lines built without integration plan
    - No test coverage for unused code
    - Documentation gap (health route in docs, never called)
+   - Deprecated endpoints left in codebase (hybrid returning 410)
 
 4. **Over-Engineering Without Validation**
    - Multi-provider search abstraction (709 lines) vs simple domain hints
@@ -701,10 +747,11 @@ grep -r "from.*<module>|import.*<module>" app/ src/ \
    - Database-driven config > template versioning framework
 
 3. **Delete Aggressively**
-   - Phase 1: 16,622 lines (18% of original codebase)
-   - Phase 2: 6,357 lines (7% of original codebase)
-   - **Total: 22,979 lines removed (24.7% reduction)**
-   - **Result: Leaner, focused 70K codebase** vs bloated 93K
+   - Phase 1: 16,622 lines (17.9% of original codebase)
+   - Phase 2: 6,357 lines (6.8% of original codebase)
+   - Phase 3: 2,439 lines (2.6% of original codebase)
+   - **Total: 25,418 lines removed (27.3% reduction)**
+   - **Result: Leaner, focused 67.5K codebase** vs bloated 93K
 
 4. **Build When Needed**
    - Don't build abstractions before first use case
@@ -713,13 +760,14 @@ grep -r "from.*<module>|import.*<module>" app/ src/ \
 
 **Impact on Codebase Scale:**
 - **Before Cleanup**: ~93,000 lines TypeScript/TSX
-- **After Cleanup**: ~70,000 lines TypeScript/TSX (24.7% reduction)
-- **Deadcode Removed**: 22,979 lines across 36 files
+- **After Cleanup**: ~67,500 lines TypeScript/TSX (27.3% reduction)
+- **Deadcode Removed**: 25,418 lines across 40 files
 - **Type Safety**: Maintained (clean builds throughout)
 
 **Documentation References:**
 - Phase 1 Audit: `__references__/deadcodes_cleanup.md`
 - Phase 2 Audit: `__references__/deadcodes_cleanup_phase2.md`
+- Phase 3 Audit: `__references__/hybrid_deadcode_audit.md`
 - Search Tool Reset: `__references__/delete_rebuild_search.md`
 - New Search Spec: `__references__/workflow_tools/search_tool.md`
 
