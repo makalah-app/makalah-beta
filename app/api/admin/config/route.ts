@@ -1,18 +1,15 @@
 /**
  * Enhanced Admin Configuration Management API Endpoint
- * 
- * Handles model configurations, system prompts, and admin settings with hybrid provider architecture.
+ *
+ * Handles model configurations, system prompts, and admin settings.
  * Restricted to admin access only (makalah.app@gmail.com).
- * 
+ *
  * Features:
- * - Hybrid provider architecture support (text generation + tool execution)
- * - Model configuration management with separate text/tool providers
+ * - Model configuration management (Primary/Fallback architecture)
  * - System prompts management with versioning
  * - Encrypted API key storage and retrieval
  * - Configuration validation and health checking
- * - Integration with HybridProviderManager and AI SDK infrastructure
- * 
- * Task 4: Admin Configuration API Enhancement - Hybrid Provider Architecture Integration
+ * - Integration with dynamic-config.ts and AI SDK infrastructure
  */
 
 import { NextRequest } from 'next/server';
@@ -40,26 +37,12 @@ try {
   };
 }
 
-// Enhanced request validation schemas with hybrid architecture support
+// Request validation schemas
 const GetConfigRequestSchema = z.object({
-  scope: z.enum(['all', 'models', 'prompts', 'settings', 'keys', 'hybrid', 'health']).default('all'),
+  scope: z.enum(['all', 'models', 'prompts', 'settings', 'keys', 'health']).default('all'),
   includeSecrets: z.boolean().default(false),
   includeStats: z.boolean().default(true),
-  includeHealth: z.boolean().default(true),
-  hybridDetails: z.boolean().default(false)
-});
-
-// Hybrid provider configuration schema
-const HybridProviderConfigSchema = z.object({
-  provider: z.enum(['openai', 'openrouter']),
-  model: z.string().min(1),
-  temperature: z.number().min(0).max(2),
-  maxTokens: z.number().min(1).max(100000),
-  isActive: z.boolean(),
-  isDefault: z.boolean().optional(),
-  role: z.enum(['primary', 'fallback']).optional(),
-  apiKey: z.string().optional(),
-  priority: z.number().optional()
+  includeHealth: z.boolean().default(true)
 });
 
 const ToolProviderConfigSchema = z.object({
@@ -92,22 +75,7 @@ const UpdateConfigRequestSchema = z.object({
       isActive: z.boolean().optional()
     }).optional()
   }).optional(),
-  
-  // Enhanced hybrid configuration
-  hybrid: z.object({
-    textGeneration: z.object({
-      primary: HybridProviderConfigSchema,
-      fallback: z.array(HybridProviderConfigSchema).optional(),
-      systemPrompt: z.string().optional()
-    }).optional(),
-    toolExecution: z.record(z.string(), ToolProviderConfigSchema).optional(),
-    healthMonitoring: z.object({
-      enabled: z.boolean(),
-      intervalMs: z.number().min(60000).max(3600000), // 1 minute to 1 hour
-      timeoutMs: z.number().min(5000).max(120000) // 5 seconds to 2 minutes
-    }).optional()
-  }).optional(),
-  
+
   prompts: z.object({
     systemInstructions: z.object({
       content: z.string().min(1),
@@ -188,7 +156,7 @@ export async function GET(request: NextRequest) {
     };
 
     const validatedRequest: GetConfigRequest = GetConfigRequestSchema.parse(parsedParams);
-    const { scope, includeSecrets, includeStats, includeHealth, hybridDetails } = validatedRequest;
+    const { scope, includeSecrets, includeStats, includeHealth } = validatedRequest;
 
 
     const response: any = {
@@ -198,8 +166,7 @@ export async function GET(request: NextRequest) {
         generatedAt: new Date().toISOString(),
         scope,
         includesSecrets: includeSecrets,
-        includesHealth: includeHealth,
-        hybridDetailsEnabled: hybridDetails
+        includesHealth: includeHealth
       }
     };
 
@@ -395,9 +362,6 @@ export async function GET(request: NextRequest) {
 
     // Features configuration removed - using auto-pairing instead
 
-    // Hybrid configuration block disabled for now to stabilize type-check/build.
-    // (kept intentionally empty)
-
     // Provider health status block disabled for now to stabilize type-check/build.
 
     // Add enhanced statistics if requested
@@ -406,7 +370,6 @@ export async function GET(request: NextRequest) {
         configsLoaded: Object.keys(response.data).length,
         lastUpdated: new Date().toISOString(),
         adminEmail: ADMIN_EMAIL,
-        hybridEnabled: !!response.data.hybrid,
         healthMonitored: !!response.data.health
       };
     }
@@ -457,8 +420,7 @@ export async function POST(request: NextRequest) {
 
     const results: any = {
       updated: {},
-      timestamps: {},
-      hybrid: {}
+      timestamps: {}
     };
 
     // Update model configurations with dynamic provider swap support
@@ -580,8 +542,6 @@ export async function POST(request: NextRequest) {
       } else {
       }
     }
-
-    /* Hybrid configuration update disabled temporarily to reduce TS errors and stabilize build. */
 
     // Update API keys (legacy support)
     if (apiKeys) {
