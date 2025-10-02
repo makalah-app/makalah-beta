@@ -753,7 +753,7 @@ export function createDefaultConfig(): AiConfig {
             validation: { minTokens: 200, maxTokens: 2000, requiredElements: ['feedback'] }
           },
           quality_review: {
-            templates: ['quality-review', 'academic-validation'],
+            templates: ['quality-review'], // Removed 'academic-validation' (deleted with qa/ directory)
             defaultTemplate: 'quality-review',
             validation: { minTokens: 200, maxTokens: 2000, requiredElements: ['feedback'] }
           },

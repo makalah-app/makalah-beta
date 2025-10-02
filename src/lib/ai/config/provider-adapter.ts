@@ -13,19 +13,6 @@ export type ProviderStrategy = 'primary-first' | 'health-based' | 'round-robin' 
 export type TextProvider = 'openai' | 'openrouter';
 export type ToolProvider = 'openai' | 'openrouter';
 
-export interface HybridProviderConfig {
-  provider: TextProvider;
-  model: string;
-  temperature: number;
-  maxTokens: number;
-  isActive: boolean;
-  isDefault: boolean;
-  role: 'primary' | 'fallback';
-  apiKeyEncrypted?: string;
-  apiKeyHint?: string;
-  priority: number;
-}
-
 export interface ToolProviderConfig {
   toolName: string;
   provider: ToolProvider;
@@ -35,22 +22,6 @@ export interface ToolProviderConfig {
   isActive: boolean;
   fallbackProvider?: ToolProvider;
   fallbackModel?: string;
-}
-
-export interface HybridConfiguration {
-  textGeneration: {
-    primary: HybridProviderConfig;
-    fallback: HybridProviderConfig[];
-    systemPrompt?: string;
-  };
-  toolExecution: {
-    [toolName: string]: ToolProviderConfig;
-  };
-  healthMonitoring: {
-    enabled: boolean;
-    intervalMs: number;
-    timeoutMs: number;
-  };
 }
 
 export interface ProviderSelection {

@@ -1,14 +1,20 @@
 /**
- * Tools Module - Simplified for Natural LLM Intelligence
- * Only exports web search functionality, trusting LLM intelligence for conversation flow
+ * Tools Module - PENDING REBUILD
  *
- * Based on cleanup philosophy: Remove programmatic control, enable natural conversation
+ * Old search implementation removed (Oct 2025):
+ * - academic-tools.ts (generic web_search)
+ * - search/ directory (multi-provider abstraction)
+ *
+ * Awaiting new implementation:
+ * - search_literature (specialized academic search with quality control)
+ * - Based on spec: __references__/workflow_tools/search_tool.md
+ *
+ * For now, chat API uses native provider tools:
+ * - OpenAI: web_search_preview (native)
+ * - OpenRouter: :online suffix (native)
  */
 
-// Export only web search functionality
-export { academicTools } from './academic-tools';
-export { webSearch } from './search/web-search';
+// No exports currently - tools directory under reconstruction
+// TODO: Implement search_literature tool based on new spec
 
-// Export search types and utilities
-export type { SearchProvider, SearchResult } from './search/search-schemas';
-export { SearchProviderManager } from './search/search-providers';
+export {};
