@@ -38,6 +38,30 @@ export interface DynamicModelConfig {
 }
 
 /**
+ * Generate emergency fallback system prompt with error context
+ */
+function generateEmergencyFallback(reason: 'empty_content' | 'database_error', errorDetails?: string): string {
+  const errorContext = reason === 'database_error'
+    ? `Database Error: ${errorDetails || 'Unknown error'}`
+    : 'Database query succeeded but returned empty/null content';
+
+  return `⚠️ MAKALAH AI - EMERGENCY FALLBACK MODE
+
+🚨 CRITICAL ALERT: Database system prompt failed to load. Using emergency configuration.
+
+**PLEASE INFORM USER IMMEDIATELY:**
+"Terjadi masalah konfigurasi system prompt. Silakan hubungi administrator segera. Sistem menggunakan prompt darurat dengan fungsi terbatas."
+
+**Technical Context:**
+- Expected Prompt Source: openai_system_prompts atau openrouter_system_prompts (from database)
+- Actual Source: HARDCODED EMERGENCY FALLBACK
+- Reason: ${errorContext}
+
+**LIMITED CAPABILITIES:**
+You are Makalah AI operating in emergency mode. Basic academic writing assistance available in Bahasa Indonesia, but full 7-phase methodology may be unavailable. Prioritize informing user about system status.`;
+}
+
+/**
  * Get dynamic model configuration based on current database state
  */
 export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
@@ -214,7 +238,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       fallbackModelName: fallbackProvider === 'openrouter'
         ? fallbackConfig?.model_name || 'google/gemini-2.5-flash'
         : fallbackConfig?.model_name || 'gpt-4o',
-      systemPrompt: systemPromptContent || '',
+      systemPrompt: systemPromptContent || generateEmergencyFallback('empty_content'),
       config: {
         temperature,
         maxTokens,
@@ -226,7 +250,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
     // AI SDK compliance: Warn when no system prompt available
     if (!systemPromptContent) {
-      console.warn('[DynamicConfig] ⚠️ No system prompt or template found - using AI SDK defaults');
+      console.error('[DynamicConfig] 🚨 EMERGENCY FALLBACK: No system prompt found in database - using emergency mode');
     } else {
       console.log('[DynamicConfig] ✅ Final system prompt loaded, length:', systemPromptContent.length, 'chars');
       // Check if it's Moka or Makalah AI
@@ -300,20 +324,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
       // ⚠️ EMERGENCY FALLBACK PROMPT when database fails
       const dbError = error instanceof Error ? error.message : 'Unknown database connection error';
-      const EMERGENCY_FALLBACK_SYSTEM_PROMPT = `⚠️ MAKALAH AI - EMERGENCY FALLBACK MODE
-
-🚨 CRITICAL ALERT: Database system prompt failed to load. Using emergency configuration.
-
-**PLEASE INFORM USER IMMEDIATELY:**
-"Terjadi masalah konfigurasi system prompt. Silakan hubungi administrator segera. Sistem menggunakan prompt darurat dengan fungsi terbatas."
-
-**Technical Context:**
-- Expected Prompt Source: openai_system_prompts atau openrouter_system_prompts (from database)
-- Actual Source: HARDCODED EMERGENCY FALLBACK
-- Database Error: ${dbError}
-
-**LIMITED CAPABILITIES:**
-You are Makalah AI operating in emergency mode. Basic academic writing assistance available in Bahasa Indonesia, but full 7-phase methodology may be unavailable. Prioritize informing user about system status.`;
+      const emergencyPrompt = generateEmergencyFallback('database_error', dbError);
 
       return {
         primaryProvider: 'openai',
@@ -322,7 +333,7 @@ You are Makalah AI operating in emergency mode. Basic academic writing assistanc
         fallbackModel,
         primaryModelName: 'gpt-4o',
         fallbackModelName: 'google/gemini-2.5-flash',
-        systemPrompt: EMERGENCY_FALLBACK_SYSTEM_PROMPT,
+        systemPrompt: emergencyPrompt,
         config: {
           temperature: 0.3,
           maxTokens: 12288,
