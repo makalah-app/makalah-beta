@@ -49,11 +49,11 @@ node scripts/update-prompts.mjs
 ## Architecture Overview
 
 ### Codebase Scale
-- **~64,000 lines** of TypeScript/TSX code (cleaned 31.1% deadcode Oct 2025)
+- **~63,200 lines** of TypeScript/TSX code (cleaned 31.9% deadcode Oct 2025)
 - **95 React components** organized in modular architecture
 - **36 database migrations** with comprehensive RLS policies
 - **10 API route groups** for various features
-- **Cleanup History**: 28,910 lines removed (Phase 1: 16,622 + Phase 2: 6,357 + Phase 3: 2,439 + Phase 4: 3,492 - all executed)
+- **Cleanup History**: 29,661 lines removed (Phase 1: 16,622 + Phase 2: 6,357 + Phase 3: 2,439 + Phase 4: 3,492 + Phase 5: 751 - all executed)
 
 ### AI System (Vercel AI SDK v5)
 - **Dual Provider**: OpenAI GPT-4o primary, OpenRouter Gemini 2.5 Flash fallback (Perplexity removed Oct 1, 2025)
@@ -762,6 +762,53 @@ User → app/api/chat/route.ts:145
 - ✅ LLM can infer workflow naturally from system prompt prose
 - Lesson: Don't template what LLM can guide adaptively
 
+**Bug Fix (Oct 2, 2025)**: Emergency Fallback for Empty Content
+- **Commit**: ac1724d - "fix(ai): add emergency fallback for empty system prompt content"
+- **Problem**: Database query succeeds but returns empty/null → system used empty string as system prompt → silent failure
+- **Solution**: Created `generateEmergencyFallback()` function, changed line 241 to use emergency fallback for empty content
+- **Impact**: Prevents silent failure, warns user properly via console.error
+- **File**: `src/lib/ai/dynamic-config.ts:40-62` (new function), line 241 (bug fix), line 327 (refactored catch block)
+
+---
+
+#### Phase 5: Orphaned model_prompt_templates Route (751 lines)
+**Deleted Oct 2, 2025** - Commit: ec15bad
+
+1. **Admin Templates Route (751 lines)** - CRUD for unused table
+   - `app/api/admin/templates/route.ts`
+     * GET /api/admin/templates - Template retrieval for model_prompt_templates
+     * POST /api/admin/templates - Template creation + default generation
+     * PUT /api/admin/templates - Template activation
+     * DELETE /api/admin/templates - Custom template deletion
+     * `generateDefaultTemplateContent()` - Hardcoded 7-phase workflow (lines 144-201)
+   - Verification: `grep -r "model_prompt_templates"` → ZERO usage in dynamic-config, chat API, or components
+
+**Why Deleted:**
+- **Table Never Used**: `model_prompt_templates` table NEVER queried by production code
+- **Architectural Confusion**: Separate from `system_prompts` table (which IS used)
+- **Redundant Infrastructure**: Admin route exposes CRUD but no UI consumes it
+- **Hardcoded Content**: Template generator has 7-phase workflow but unused
+
+**Current Reality (Verified)**:
+```
+Production Flow:
+- OpenAI → system_prompts table (phase: 'system_instructions')
+- OpenRouter → openrouter_system_prompts table
+- NO reference to model_prompt_templates anywhere
+```
+
+**Verification:**
+- `grep -r "api/admin/templates"` → Only route file itself (NO actual usage)
+- dynamic-config.ts does NOT query model_prompt_templates
+- chat/route.ts does NOT use model_prompt_templates
+
+**Type-Check**: ✅ Clean build (ZERO production dependencies verified)
+
+**Anti-Pattern Identified**: "Build Infrastructure Without Integration"
+- ❌ Created table and full CRUD API without production integration
+- ✅ system_prompts + openrouter_system_prompts handle all prompt needs
+- Lesson: Verify integration before building management infrastructure
+
 ---
 
 #### 🎓 Key Learnings from Cleanup
@@ -796,6 +843,12 @@ User → app/api/chat/route.ts:145
    - Template-driven approach (rigid) vs LLM-native guidance (adaptive)
    - Built entire conversation infrastructure never connected to chat API
 
+6. **Build Infrastructure Without Integration** (Phase 5)
+   - model_prompt_templates table + full CRUD API (751 lines) never used
+   - Template management system with zero production integration
+   - Redundant with existing system_prompts table
+   - Built management layer before verifying integration need
+
 **✅ Correct Approach (Adopted):**
 
 1. **Cleanup Before Build**
@@ -814,8 +867,9 @@ User → app/api/chat/route.ts:145
    - Phase 2: 6,357 lines (6.8% of original codebase)
    - Phase 3: 2,439 lines (2.6% of original codebase)
    - Phase 4: 3,492 lines (3.8% of original codebase)
-   - **Total: 28,910 lines removed (31.1% reduction)**
-   - **Result: Leaner, focused 64K codebase** vs bloated 93K
+   - Phase 5: 751 lines (0.8% of original codebase)
+   - **Total: 29,661 lines removed (31.9% reduction)**
+   - **Result: Leaner, focused 63.2K codebase** vs bloated 93K
 
 4. **Build When Needed**
    - Don't build abstractions before first use case
@@ -824,15 +878,16 @@ User → app/api/chat/route.ts:145
 
 **Impact on Codebase Scale:**
 - **Before Cleanup**: ~93,000 lines TypeScript/TSX
-- **After Cleanup**: ~64,000 lines TypeScript/TSX (31.1% reduction)
-- **Deadcode Removed**: 28,910 lines across 46 files
-- **Type Safety**: Maintained (clean builds throughout all 4 phases)
+- **After Cleanup**: ~63,200 lines TypeScript/TSX (31.9% reduction)
+- **Deadcode Removed**: 29,661 lines across 47 files
+- **Type Safety**: Maintained (clean builds throughout all 5 phases)
 
 **Documentation References:**
 - Phase 1 Audit: `__references__/deadcodes_cleanup.md`
 - Phase 2 Audit: `__references__/deadcodes_cleanup_phase2.md`
 - Phase 3 Audit: `__references__/hybrid_deadcode_audit.md`
 - Phase 4 Audit: `__references__/conversation_workflow_deadcode_audit.md`
+- Phase 5 Investigation: `/tmp/hardcode_investigation.md`
 - Search Tool Reset: `__references__/delete_rebuild_search.md`
 - New Search Spec: `__references__/workflow_tools/search_tool.md`
 
