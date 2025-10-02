@@ -19,7 +19,7 @@ import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
-import { academicTools } from '../../../src/lib/ai/tools/academic-tools';
+// Removed: academicTools import - search tools deleted for rebuild with search_literature
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
