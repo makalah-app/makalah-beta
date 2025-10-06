@@ -29,6 +29,7 @@ import {
   getToolName
 } from 'ai';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
+import { CitationMarker } from '../ui/CitationMarker';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { RefreshCw, Copy, Edit, BookOpen, ChevronDown, Clock } from 'lucide-react';
@@ -211,11 +212,15 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
   const citationTargets = React.useMemo(() => {
     // Always process, return empty object if no sources
-    const targets: Record<number, string | undefined> = {};
+    const targets: Record<number, { url?: string; title?: string; snippet?: string }> = {};
 
     uniqueSourceParts.forEach((source, idx) => {
       const index = idx + 1;
-      targets[index] = source.url;
+      targets[index] = {
+        url: source.url,
+        title: source.title,
+        snippet: source.snippet,
+      };
     });
 
     return targets;
@@ -514,17 +519,27 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                             {/* Title line dengan bullet */}
                             <div>• {source.title || 'Untitled'}</div>
 
-                            {/* Source info line dengan indent */}
-                            <div className="ml-3 mt-0.5">
+                            {/* Source info line dengan indent + hover preview */}
+                            <div className="ml-3 mt-0.5 inline-flex items-center gap-1">
                               {source.url ? (
-                                <a
-                                  href={source.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                >
-                                  {hostname}
-                                </a>
+                                <>
+                                  <CitationMarker
+                                    index={index + 1}
+                                    href={source.url}
+                                    title={source.title}
+                                    description={source.snippet}
+                                    className="ml-0"
+                                  />
+                                  <a
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                    style={{ color: 'var(--source-link)' }}
+                                  >
+                                    {hostname}
+                                  </a>
+                                </>
                               ) : (
                                 <span>{hostname}</span>
                               )}

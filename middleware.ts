@@ -15,12 +15,15 @@ export async function middleware(req: NextRequest) {
             return req.cookies.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
-            // Extend cookie lifetime to 7 days for better session persistence
+            // Extend cookie lifetime to 30 days to match refresh token lifetime
             res.cookies.set({
               name,
               value,
               ...options,
-              maxAge: options.maxAge || 60 * 60 * 24 * 7, // 7 days default
+              maxAge: options.maxAge || 60 * 60 * 24 * 30, // 30 days default
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax'
             });
           },
           remove(name: string, options: CookieOptions) {
@@ -30,8 +33,19 @@ export async function middleware(req: NextRequest) {
       }
     );
 
-    // Touch session to refresh cookies if needed
-    await supabase.auth.getUser();
+    // Proactive token refresh before expiry
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (session && !error) {
+      const expiresAt = session.expires_at || 0;
+      const now = Math.floor(Date.now() / 1000);
+      const timeUntilExpiry = expiresAt - now;
+
+      // Refresh if token expires within 5 minutes (300 seconds)
+      if (timeUntilExpiry < 300) {
+        await supabase.auth.refreshSession();
+      }
+    }
   } catch {
     // ignore
   }

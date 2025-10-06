@@ -4,14 +4,13 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
-import { LinkWithPreview } from "./LinkWithPreview";
 import { CitationMarker } from "./CitationMarker";
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
   citationMap?: Record<string, { index: number }>;
-  citationTargets?: Record<number, string | undefined>;
+  citationTargets?: Record<number, { url?: string; title?: string; snippet?: string }>;
 }
 
 /**
@@ -38,6 +37,36 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   const hasCitationMap = citationMap && Object.keys(citationMap).length > 0;
   let paragraphCounter = 0;
 
+  /**
+   * Extract text content from React children
+   * Handles strings, arrays, and React elements properly
+   */
+  const extractTextContent = (children: React.ReactNode): string => {
+    if (!children) return '';
+
+    // If it's a string, return it
+    if (typeof children === 'string') return children;
+
+    // If it's a number, convert to string
+    if (typeof children === 'number') return String(children);
+
+    // If it's an array, process each child recursively
+    if (Array.isArray(children)) {
+      return children.map(extractTextContent).join('');
+    }
+
+    // If it's a React element, try to extract from props.children
+    if (typeof children === 'object' && children !== null) {
+      const element = children as any;
+      if (element.props?.children) {
+        return extractTextContent(element.props.children);
+      }
+    }
+
+    // Fallback to empty string for other types
+    return '';
+  };
+
   const transformTextWithCitations = (text: string, keySeed: string): React.ReactNode[] => {
     if (!hasCitationMap) return [text];
     if (!text.includes('{{citation:')) return [text];
@@ -56,13 +85,15 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       }
 
       const index = Number.parseInt(match[1], 10);
-      const href = citationTargets?.[index];
+      const citationData = citationTargets?.[index];
 
       nodes.push(
         <CitationMarker
           key={`citation-${keySeed}-${index}-${start}`}
           index={index}
-          href={href}
+          href={citationData?.url}
+          title={citationData?.title}
+          description={citationData?.snippet}
         />
       );
 
@@ -110,34 +141,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          // Enhanced link component untuk security dan UX
+          // Standard link rendering with security
           a: ({ node, href, children, ...props }) => {
-            // Extract link text and check if it's a source link
-            const linkText = children?.toString() || '';
-            const isSourceLink =
-              linkText.includes('.com') ||
-              linkText.includes('.org') ||
-              linkText.includes('.net') ||
-              linkText.match(/^\(.*\)$/) || // Text in parentheses
-              href?.includes('reuters') ||
-              href?.includes('bloomberg') ||
-              href?.includes('cnbc');
-
-            // Use LinkWithPreview for source links
-            if (isSourceLink && href) {
-              // Clean link text (remove parentheses if present)
-              const cleanText = linkText.replace(/[()]/g, '');
-              return (
-                <LinkWithPreview
-                  href={href}
-                  className={props.className}
-                >
-                  {cleanText}
-                </LinkWithPreview>
-              );
-            }
-
-            // Default link rendering for non-source links
             return (
               <a
                 {...props}

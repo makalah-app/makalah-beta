@@ -157,8 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: session.user.email || '',
       name: emailName,
       fullName: emailName,
-      role: 'user' as UserRole,
-      institution: undefined,
+      role: (session.user.user_metadata?.role || 'student') as UserRole,
+      institution: session.user.user_metadata?.institution || undefined,
       isVerified: !!session.user.email_confirmed,
       createdAt: session.user.created_at || new Date().toISOString(),
       lastLogin: new Date().toISOString(),
@@ -241,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `)
           .eq('id', session.user.id)
           .maybeSingle(),
-        3000,
+        5000,
         async () => ({ data: null, error: { message: 'profile timeout' } } as any)
       );
       const { data: userProfile, error: profileError } = profileResult as any;
@@ -420,29 +420,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasInitializedRef.current = false; // Reset initialization flag
     };
   }, []); // NO DEPENDENCIES - run only once on mount
-
-  // ✅ CRITICAL FIX: Completely disable auto token refresh to prevent infinite loops
-  // Token refresh will be handled manually on API calls instead of timer-based
-  const tokenRefreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    // Clear any existing timeout to prevent multiple timers
-    if (tokenRefreshTimeoutRef.current) {
-      clearTimeout(tokenRefreshTimeoutRef.current);
-      tokenRefreshTimeoutRef.current = null;
-    }
-
-    // ✅ DISABLE: Auto token refresh timer - causes infinite loop
-    // Token refresh will be handled on-demand when API calls fail with 401
-
-    return () => {
-      if (tokenRefreshTimeoutRef.current) {
-        clearTimeout(tokenRefreshTimeoutRef.current);
-        tokenRefreshTimeoutRef.current = null;
-      }
-    };
-  }, []); // ✅ CRITICAL FIX: No dependencies - run only once
-
 
   /**
    * Login user with credentials
@@ -1047,6 +1024,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const bufferTime = bufferMinutes * 60 * 1000;
     return Date.now() > (authState.session.expiresAt - bufferTime);
   }, [authState.session?.expiresAt]); // ✅ CRITICAL FIX: Depend only on expiresAt value, not full session
+
+  // Auto token refresh timer to keep session alive
+  useEffect(() => {
+    if (!authState.isAuthenticated || !authState.session) return;
+
+    const checkAndRefreshToken = async () => {
+      const expiresAt = authState.session?.expiresAt;
+      if (!expiresAt) return;
+
+      const now = Date.now();
+      const timeUntilExpiry = expiresAt - now;
+
+      // Refresh if token expires within 5 minutes (300,000 ms)
+      if (timeUntilExpiry < 5 * 60 * 1000) {
+        await refreshToken();
+      }
+    };
+
+    // Check immediately
+    checkAndRefreshToken();
+
+    // Check every 4 minutes (240,000 ms)
+    const interval = setInterval(checkAndRefreshToken, 4 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [authState.isAuthenticated, authState.session?.expiresAt, refreshToken]);
 
   // Context value
   const contextValue: AuthContextType = {
