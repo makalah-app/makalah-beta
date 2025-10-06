@@ -167,6 +167,7 @@ function ChatPageContent() {
   const { user, logout, isLoading } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
+  const [appVersion, setAppVersion] = useState('Beta 0.1');
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -268,6 +269,24 @@ function ChatPageContent() {
       console.warn('[ChatPage] URL sync failed:', error);
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
+
+  // ✅ SIDE EFFECT: Fetch app version from database
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await fetch('/api/public/app-version');
+        const result = await response.json();
+
+        if (result.success && result.version) {
+          setAppVersion(result.version);
+        }
+      } catch (error) {
+        console.error('Failed to fetch app version:', error);
+      }
+    };
+
+    fetchVersion();
+  }, []);
 
   // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)
   const getActiveConversationId = (): string | null => {
@@ -457,7 +476,7 @@ function ChatPageContent() {
                   />
                   <div className="flex flex-col">
                     <div className="text-sm font-medium text-foreground">Makalah AI</div>
-                    <div className="text-xs font-light text-muted-foreground">Versi Beta 0.1</div>
+                    <div className="text-xs font-light text-muted-foreground">Versi {appVersion}</div>
                   </div>
                 </a>
               </div>
