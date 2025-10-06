@@ -42,8 +42,6 @@ export async function GET(request: NextRequest) {
     const validatedRequest: ValidateRequest = ValidateRequestSchema.parse(parsedParams);
     const { email, checkSession } = validatedRequest;
 
-    console.log('🔐 Admin validation request:', { email, checkSession });
-
     // Get current session from Supabase if checkSession is enabled
     if (checkSession) {
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
@@ -62,7 +60,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (!session?.user) {
-        console.log('❌ No active session found');
+        
         return Response.json({
           success: false,
           isAdmin: false,
@@ -77,12 +75,6 @@ export async function GET(request: NextRequest) {
       // Check if session user is admin
       const sessionEmail = session.user.email;
       const isAdmin = sessionEmail === ADMIN_EMAIL;
-
-      console.log('✅ Session validation:', { 
-        sessionEmail, 
-        isAdmin,
-        userId: session.user.id 
-      });
 
       return Response.json({
         success: true,
@@ -100,8 +92,6 @@ export async function GET(request: NextRequest) {
     // Email-only validation if provided
     if (email) {
       const isAdmin = email === ADMIN_EMAIL;
-      
-      console.log('✅ Email validation:', { email, isAdmin });
 
       return Response.json({
         success: true,
@@ -153,8 +143,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, accessToken } = body;
 
-    console.log('🔐 Admin POST validation:', { email, hasToken: !!accessToken });
-
     // Validate input
     if (!email || !accessToken) {
       return Response.json({
@@ -171,7 +159,7 @@ export async function POST(request: NextRequest) {
     // Check admin email
     const isAdminEmail = email === ADMIN_EMAIL;
     if (!isAdminEmail) {
-      console.log('❌ Non-admin email attempted access:', email);
+      
       return Response.json({
         success: true,
         isAdmin: false,
@@ -203,7 +191,7 @@ export async function POST(request: NextRequest) {
       // Verify token user matches email
       const tokenEmail = data.user.email;
       if (tokenEmail !== email) {
-        console.log('❌ Token email mismatch:', { tokenEmail, requestEmail: email });
+        
         return Response.json({
           success: false,
           isAdmin: false,
@@ -216,10 +204,6 @@ export async function POST(request: NextRequest) {
       }
 
       // All validations passed for admin
-      console.log('✅ Admin validation successful:', {
-        email: tokenEmail,
-        userId: data.user.id
-      });
 
       return Response.json({
         success: true,

@@ -70,14 +70,12 @@ export async function POST(request: NextRequest) {
     
     const { model, apiKey, timeout } = validatedRequest;
 
-    console.log(`🔍 OpenRouter health check - Model: ${model}`);
-    console.log(`🔑 OpenRouter API Key available: ${!!(apiKey || process.env.OPENROUTER_API_KEY)}`);
-    console.log(`🔑 Provided key length: ${apiKey?.length || 0}, Env key length: ${process.env.OPENROUTER_API_KEY?.length || 0}`);
+    }`);
 
     // Create OpenRouter provider with the provided or environment API key
     // Prioritize environment variable for security, unless specific key provided
     const finalApiKey = process.env.OPENROUTER_API_KEY || apiKey;
-    console.log(`🔑 Final API Key selected: ${finalApiKey?.substring(0, 10)}... (length: ${finalApiKey?.length})`);
+    }... (length: ${finalApiKey?.length})`);
     const provider: any = createOpenRouter({
       apiKey: finalApiKey,
       baseURL: 'https://openrouter.ai/api/v1',
@@ -107,8 +105,6 @@ export async function POST(request: NextRequest) {
 
       clearTimeout(timeoutId);
       const responseTimeMs = Date.now() - startTime;
-
-      console.log(`✅ OpenRouter health check passed - ${responseTimeMs}ms`);
 
       return Response.json({
         success: true,

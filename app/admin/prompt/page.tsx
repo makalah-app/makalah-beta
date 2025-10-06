@@ -60,7 +60,6 @@ function AdminPromptContent() {
   const [originalPrompt, setOriginalPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-
   // Fallback prompt management state
   const [fallbackPrompt, setFallbackPrompt] = useState<any | null>(null);
   const [fallbackContent, setFallbackContent] = useState('');
@@ -104,7 +103,6 @@ function AdminPromptContent() {
 
     // Handle 403 with retry logic (max 1 retry)
     if (response.status === 403 && retryCount === 0) {
-      console.log('[authenticatedFetch] Got 403, attempting token refresh...');
 
       // Circuit breaker: Check if we're in cooldown period
       const now = Date.now();
@@ -130,7 +128,7 @@ function AdminPromptContent() {
       if (refreshed) {
         // Reset circuit breaker on successful refresh
         setRefreshAttempts(0);
-        console.log('[authenticatedFetch] 403 token refresh successful, circuit breaker reset');
+        
         return authenticatedFetch(url, options, retryCount + 1);
       }
     }
@@ -171,10 +169,6 @@ function AdminPromptContent() {
           setPromptHistory(defaultPromptHistory);
         }
 
-        console.log('✅ Prompt data loaded:', {
-          currentVersion: result.data.current?.version,
-          historyCount: result.data.history?.length || 0
-        });
       }
 
     } catch (err) {
@@ -186,7 +180,6 @@ function AdminPromptContent() {
       setLoading(false);
     }
   }, [authenticatedFetch]);
-
 
   // Load fallback prompt
   const loadFallbackPrompt = useCallback(async () => {
@@ -206,11 +199,11 @@ function AdminPromptContent() {
       if (result.success && result.data.prompt) {
         setFallbackPrompt(result.data.prompt);
         setFallbackContent(result.data.prompt.content || '');
-        console.log('✅ Fallback prompt loaded');
+        
       } else {
         // No fallback prompt - use default
         setFallbackContent(DEFAULT_SYSTEM_PROMPT);
-        console.log('ℹ️ No fallback prompt found, using default');
+        
       }
     } catch (err) {
       console.error('Error loading fallback prompt:', err);
@@ -248,7 +241,7 @@ function AdminPromptContent() {
         setFallbackPrompt(result.data.prompt);
         setFallbackSuccess(true);
         setTimeout(() => setFallbackSuccess(false), 3000);
-        console.log('✅ Fallback prompt saved');
+        
       }
     } catch (err) {
       console.error('Error saving fallback prompt:', err);
@@ -285,7 +278,6 @@ function AdminPromptContent() {
           setCurrentModelName('Gemini 2.5');
         }
 
-        console.log('✅ Primary provider loaded:', currentProvider, '- Model:', currentModel);
       }
     } catch (err) {
       console.error('Error loading provider status:', err);
@@ -295,7 +287,6 @@ function AdminPromptContent() {
       setProviderStatusLoading(false);
     }
   }, [session?.accessToken, authenticatedFetch]);
-
 
   // Load prompt data on mount
   useEffect(() => {
@@ -326,11 +317,6 @@ function AdminPromptContent() {
         version: String(promptVersion || 'v2.1'),
         changeReason: 'Admin dashboard update'
       };
-
-      console.log('🔄 Saving system prompt:', {
-        contentLength: promptUpdateData.content?.length,
-        version: promptUpdateData.version
-      });
 
       const promptResponse = await authenticatedFetch('/api/admin/prompts', {
         method: 'POST',

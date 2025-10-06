@@ -361,7 +361,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
       return;
     }
 
-    console.log(`\n💾 [CLIENT PERSIST] Initiating chat persistence for ${chatId.substring(0, 8)}... (${messages.length} messages)`);
+    }... (${messages.length} messages)`);
 
     const effectiveUserId = getUserId(); // Use consistent user ID extraction
     const timestamp = new Date().toISOString();
@@ -425,7 +425,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         }
 
         clearTimeout(timeout);
-        console.log(`✅ [CLIENT PERSIST] Successfully synced to server`);
+        
         return true;
       } catch (error: any) {
         clearTimeout(timeout);

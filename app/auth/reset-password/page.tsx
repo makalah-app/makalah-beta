@@ -22,18 +22,14 @@ export default function ResetPasswordPage() {
     let mounted = true;
 
     const handlePasswordRecovery = async () => {
-      console.log('Starting password recovery - simple approach');
-      console.log('URL:', window.location.href);
-      
+
       // Let Supabase handle magic link processing with onAuthStateChange
       const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
         async (event, session) => {
           if (!mounted) return;
-          
-          console.log('Auth event:', event, 'Session:', !!session);
-          
+
           if (event === 'PASSWORD_RECOVERY') {
-            console.log('PASSWORD_RECOVERY event - ready to reset password');
+            
             setError('');
             setSessionValid(true);
             setAuthLoading(false);
@@ -41,7 +37,7 @@ export default function ResetPasswordPage() {
             // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (event === 'SIGNED_IN' && session) {
-            console.log('SIGNED_IN event with session');
+            
             setError('');
             setSessionValid(true);
             setAuthLoading(false);
@@ -49,7 +45,7 @@ export default function ResetPasswordPage() {
             // Clean URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (event === 'SIGNED_OUT') {
-            console.log('SIGNED_OUT event');
+            
             setSessionValid(false);
             setAuthLoading(false);
             setError('Session expired. Please request a new password reset.');
@@ -60,7 +56,7 @@ export default function ResetPasswordPage() {
       // Check current session
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
-        console.log('Existing valid session found');
+        
         setSessionValid(true);
         setError('');
         setAuthLoading(false);
@@ -128,7 +124,7 @@ export default function ResetPasswordPage() {
         
         // SECURITY: Sign out user to force fresh login with new password
         setTimeout(async () => {
-          console.log('Signing out user to force fresh login...');
+          
           await supabaseClient.auth.signOut();
           
           // Redirect to login page

@@ -294,12 +294,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // ❌ REMOVED: Debug logging with artifact filtering - 21 lines of rigid artifact tracking
   // Natural LLM flow doesn't need complex debug logging for artifacts
   if (debugMode) {
-    console.log('[MessageDisplay] Message structure:', {
-      id: message.id,
-      role: message.role,
-      partsCount: messageParts.length,
-      textPartsCount: textParts.length
-    });
+    
   }
 
   return (

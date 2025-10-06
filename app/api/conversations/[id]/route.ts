@@ -45,7 +45,7 @@ export async function GET(
       }, { status: 400 });
     }
 
-    console.log(`[Conversation API] Loading conversation ${id} (messages: ${includeMessages})`);
+    `);
     
     // Load complete conversation details
     const conversationDetails = await getConversationDetails(id);
@@ -72,9 +72,7 @@ export async function GET(
     if (includeMessages) {
       response.messages = conversationDetails.messages;
     }
-    
-    console.log(`[Conversation API] Successfully loaded conversation ${id} with ${conversationDetails.messages.length} messages`);
-    
+
     return NextResponse.json(response);
     
   } catch (error) {
@@ -124,8 +122,6 @@ export async function PUT(
       }, { status: 400 });
     }
 
-    console.log(`[Conversation API] Updating conversation ${id}`);
-    
     // Prepare update object
     const updates: any = {
       updated_at: new Date().toISOString()
@@ -172,9 +168,7 @@ export async function PUT(
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Conversation API] Successfully updated conversation ${id}`);
-    
+
     return NextResponse.json(response);
     
   } catch (error) {
@@ -210,8 +204,6 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    console.log(`[Conversation API] ${permanent ? 'Permanently deleting' : 'Archiving'} conversation ${id}`);
-    
     if (permanent) {
       // Permanent deletion - remove from database
       // First, delete associated messages
@@ -260,9 +252,7 @@ export async function DELETE(
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Conversation API] Successfully ${permanent ? 'deleted' : 'archived'} conversation ${id}`);
-    
+
     return NextResponse.json(response);
     
   } catch (error) {

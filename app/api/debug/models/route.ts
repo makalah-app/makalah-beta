@@ -14,7 +14,7 @@ export async function GET() {
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[DEBUG-MODELS] Fetching model configs from database...');
+      
     }
 
     const { data: models, error } = await supabaseAdmin
@@ -31,7 +31,7 @@ export async function GET() {
     }
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('[DEBUG-MODELS] Found models:', models);
+      
     }
 
     return NextResponse.json({

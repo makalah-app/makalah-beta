@@ -311,8 +311,6 @@ export async function PUT(request: NextRequest) {
     
     const { provider, model, parameters, testPrompt, timeout } = validatedRequest;
 
-    console.log('🧪 Testing configuration:', { provider, model, parameters });
-
     // Get provider manager and test configuration
     const providerManager = getProviderManager();
     

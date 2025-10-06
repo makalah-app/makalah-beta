@@ -81,7 +81,7 @@ export default function RoleBasedRoute({
         // ✅ CRITICAL FIX: Immediate redirect to prevent stuck state
         if (redirectTo) {
           const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-          console.log('[RoleBasedRoute] Redirecting to auth:', `${redirectTo}?returnUrl=${returnUrl}`);
+          
           try {
             router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
           } catch {

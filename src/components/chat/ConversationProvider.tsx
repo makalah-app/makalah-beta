@@ -91,12 +91,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       setIsLoading(true);
       setError(undefined);
 
-      console.log(`[ConversationProvider] Creating new conversation for user ${userId}`);
-      
       const conversationId = await createChat(userId, 'New Academic Chat');
-      
-      console.log(`[ConversationProvider] Created conversation ${conversationId}`);
-      
+
       // Refresh conversation list
       await loadUserConversations();
       
@@ -120,13 +116,9 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       setIsLoading(true);
       setError(undefined);
 
-      console.log(`[ConversationProvider] Loading conversation ${conversationId}`);
-      
       // Load messages using AI SDK compliant loadChat function
       const messages = await loadChat(conversationId);
-      
-      console.log(`[ConversationProvider] Loaded ${messages.length} messages for conversation ${conversationId}`);
-      
+
       // Load full conversation details
       const details = await getConversationDetails(conversationId);
       
@@ -153,15 +145,11 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
   const loadUserConversations = useCallback(async (): Promise<void> => {
     try {
       setLoadingConversations(true);
-      
-      console.log(`[ConversationProvider] Loading conversations for user ${userId}`);
-      
+
       const userConversations = await getUserConversations(userId);
       
       setConversations(userConversations);
-      
-      console.log(`[ConversationProvider] Loaded ${userConversations.length} conversations`);
-      
+
     } catch (error) {
       console.error('[ConversationProvider] Load conversations error:', error);
       setConversations([]); // Fallback to empty array
@@ -192,8 +180,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
    */
   const deleteConversation = useCallback(async (conversationId: string): Promise<void> => {
     try {
-      console.log(`[ConversationProvider] Delete conversation ${conversationId} (not implemented)`);
-      
+
       // TODO: Implement conversation deletion
       // For now, we'll archive it
       await archiveConversation(conversationId);
@@ -209,8 +196,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
    */
   const archiveConversation = useCallback(async (conversationId: string): Promise<void> => {
     try {
-      console.log(`[ConversationProvider] Archive conversation ${conversationId} (placeholder)`);
-      
+
       // TODO: Implement conversation archiving via API
       // This would set archived = true in the conversations table
       

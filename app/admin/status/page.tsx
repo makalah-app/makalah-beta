@@ -61,7 +61,7 @@ function AdminStatusContent() {
 
     // Handle 403 with retry logic (max 1 retry)
     if (response.status === 403 && retryCount === 0) {
-      console.log('[authenticatedFetch] Got 403, attempting token refresh...');
+      
 
       // Circuit breaker: Check if we're in cooldown period
       const now = Date.now();
@@ -87,7 +87,7 @@ function AdminStatusContent() {
       if (refreshed) {
         // Reset circuit breaker on successful refresh
         setRefreshAttempts(0);
-        console.log('[authenticatedFetch] 403 token refresh successful, circuit breaker reset');
+        
         return authenticatedFetch(url, options, retryCount + 1);
       }
     }
@@ -156,28 +156,6 @@ function AdminStatusContent() {
           promptVersion: activePromptVersion,
           appVersion: result.data.settings?.app_version || 'Beta 0.1'
         });
-
-        console.log('\n========================================');
-        console.log('📊 ADMIN STATUS - CONFIGURATION LOADED');
-        console.log('========================================');
-        console.log('🤖 Model yang sedang aktif:',
-          primaryProvider.toUpperCase(),
-          '·',
-          result.data.models?.primary?.model
-        );
-        console.log('📄 System prompt yang berlaku:',
-          primaryProvider === 'openrouter'
-            ? '🟡 System Prompt OpenRouter (untuk Gemini)'
-            : '🟢 System Prompt OpenAI (untuk GPT)'
-        );
-        console.log('📏 Prompt length:', activePromptCharCount, 'characters');
-        console.log('🔖 Prompt version:', activePromptVersion);
-        console.log('🔄 Fallback model:',
-          result.data.models?.fallback?.provider?.toUpperCase(),
-          '·',
-          result.data.models?.fallback?.model
-        );
-        console.log('========================================\n');
       }
     } catch (err) {
       console.error('Failed to load config status:', err);

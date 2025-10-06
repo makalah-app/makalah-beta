@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[Conversations API] Loading conversations for user ${userId} (limit: ${limit}, archived: ${includeArchived})`);
+    `);
     
     // Load user conversations with enhanced filtering
     const conversations = await getUserConversations(userId);
@@ -75,9 +75,7 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Conversations API] Successfully returned ${limitedConversations.length} conversations`);
-    
+
     return NextResponse.json(response);
     
   } catch (error) {
@@ -128,8 +126,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[Conversations API] Creating new conversation for user ${userId}`);
-    
     // Create new conversation with AI SDK compliant pattern
     const conversationId = await createChat(
       userId, 
@@ -162,8 +158,7 @@ export async function POST(request: NextRequest) {
         chatId: conversationId,
         messages: [initialUIMessage]
       });
-      
-      console.log(`[Conversations API] Saved initial message for conversation ${conversationId}`);
+
     }
     
     // Load created conversation details for response
@@ -181,9 +176,7 @@ export async function POST(request: NextRequest) {
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Conversations API] Successfully created conversation ${conversationId}`);
-    
+
     return NextResponse.json(response, { status: 201 });
     
   } catch (error) {

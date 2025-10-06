@@ -320,7 +320,7 @@ export type CryptoImplementation = 'web-crypto' | 'node-crypto' | 'uuid-library'
  * 
  * // Environment detection
  * import { getEnvironmentInfo } from './crypto-polyfill';
- * console.log(getEnvironmentInfo());
+ * );
  * 
  * // Random bytes
  * import { getRandomBytes } from './crypto-polyfill';
@@ -328,5 +328,5 @@ export type CryptoImplementation = 'web-crypto' | 'node-crypto' | 'uuid-library'
  * 
  * // Testing
  * import { testCryptoPolyfill } from './crypto-polyfill';
- * console.log(testCryptoPolyfill());
+ * );
  */

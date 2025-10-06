@@ -173,7 +173,6 @@ export async function GET(request: NextRequest) {
     // Handle different actions
     if (action === 'list-all') {
       // Get all system prompts from database for management
-      console.log('🔍 Getting all system prompts for management');
 
       const { data: allPrompts, error: listError } = await (supabaseAdmin as any)
         .from('system_prompts')
@@ -196,8 +195,6 @@ export async function GET(request: NextRequest) {
         }
       });
     }
-
-    console.log('🔍 Getting current system prompt and history');
 
     // Get current active prompt
     const { data: currentPrompt, error: currentError } = await (supabaseAdmin as any)
@@ -298,8 +295,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    console.log('🔍 [SERVER] Received system prompt save request:', {
-      bodyKeys: Object.keys(body),
+    ,
       contentLength: body.content?.length,
       contentType: typeof body.content,
       version: body.version,
@@ -311,12 +307,6 @@ export async function POST(request: NextRequest) {
     
     const validatedRequest: SavePromptRequest = SavePromptRequestSchema.parse(body);
     const { content, version, changeReason } = validatedRequest;
-
-    console.log('💾 Saving system prompt:', {
-      contentLength: content.length,
-      version,
-      changeReason
-    });
 
     // Get current prompt to determine next version
     const { data: currentPrompt } = await (supabaseAdmin as any)
@@ -383,7 +373,7 @@ export async function POST(request: NextRequest) {
     try {
       const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
       clearDynamicConfigCache();
-      console.log('⚡ Dynamic config cache cleared after system prompt update');
+      
     } catch (cacheError) {
       console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
       // Don't fail the operation for cache clearing issues
@@ -459,8 +449,6 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('📝 Updating system prompt:', { id, name });
-
     // If setting as active, deactivate other prompts
     if (isActive) {
       await (supabaseAdmin as any)
@@ -497,7 +485,7 @@ export async function PUT(request: NextRequest) {
     try {
       const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
       clearDynamicConfigCache();
-      console.log('⚡ Dynamic config cache cleared after system prompt update');
+      
     } catch (cacheError) {
       console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
     }
@@ -556,8 +544,6 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('🗑️ Deleting system prompt:', { promptId });
-
     // Check if prompt exists and is not the only active prompt
     const { data: prompt } = await (supabaseAdmin as any)
       .from('system_prompts')
@@ -611,7 +597,7 @@ export async function DELETE(request: NextRequest) {
       try {
         const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
         clearDynamicConfigCache();
-        console.log('⚡ Dynamic config cache cleared after active prompt deletion');
+        
       } catch (cacheError) {
         console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
       }

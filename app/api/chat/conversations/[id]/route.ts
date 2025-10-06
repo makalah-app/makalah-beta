@@ -21,7 +21,7 @@ export async function DELETE(
     const { userId: sessionUserId } = await getServerSessionUserId();
     if (sessionUserId) {
       userId = sessionUserId;
-      console.log('[DELETE] Auth via server session:', userId);
+      
     }
 
     // Approach 2: Fallback to request headers if no session
@@ -33,7 +33,7 @@ export async function DELETE(
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (uuidRegex.test(headerUserId)) {
           userId = headerUserId;
-          console.log('[DELETE] Auth via header fallback:', userId);
+          
         }
       }
     }
@@ -46,7 +46,7 @@ export async function DELETE(
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (uuidRegex.test(queryUserId)) {
           userId = queryUserId;
-          console.log('[DELETE] Auth via query param fallback:', userId);
+          
         }
       }
     }
@@ -98,7 +98,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to delete conversation' }, { status: 500 });
     }
 
-    console.log('[DELETE] Successfully deleted conversation:', conversationId);
     return NextResponse.json({ id: conversationId, deleted: true });
 
   } catch (error) {

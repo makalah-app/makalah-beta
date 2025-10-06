@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
       }
-      console.log(`[Chat History API] AI SDK v5 pattern: Loading messages for chat ${chatId}`);
+      
       try {
         // verify ownership first
         const { data: conv, error: convErr } = await supabase
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Forbidden', code: 'FORBIDDEN' }, { status: 403 });
         }
         const messages = await loadChat(chatId, supabase);
-        console.log(`[Chat History API] Successfully loaded ${messages.length} messages for chat ${chatId}`);
+        
         return NextResponse.json(messages); // Return UIMessage[] directly for AI SDK compatibility
       } catch (error) {
         console.error(`[Chat History API] Failed to load chat ${chatId}:`, error);
@@ -112,16 +112,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    console.log(`[Chat History API] Loading history for user ${userId || qpUserId}`, {
-      conversationId,
-      limit,
-      offset,
-      phase,
-      dateFrom,
-      dateTo,
-      messageType
-    });
-    
     // If specific conversation requested, load its messages
     if (conversationId) {
       // verify ownership
@@ -189,8 +179,7 @@ export async function GET(request: NextRequest) {
           timestamp: Date.now()
         }
       };
-      
-      console.log(`[Chat History API] Returning ${paginatedMessages.length} messages from conversation ${conversationId}`);
+
       return NextResponse.json(response);
     }
     
@@ -264,7 +253,7 @@ export async function GET(request: NextRequest) {
       if (!userId) {
         const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
         clientForMessages = supabaseAdmin as any;
-        console.log('[Chat History API][AuthDebug] Fetching messages via admin client (no session)');
+        ');
       }
 
       const { data: allMessages, error: messagesError } = await clientForMessages
@@ -460,8 +449,7 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Chat History API] Returning ${paginatedConversations.length} conversations for user ${userId}`);
+
     return NextResponse.json(response);
     
   } catch (error) {
@@ -518,15 +506,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`[Chat History Search API] Searching for "${query}" for user ${userId}`, {
-      conversationIds,
-      limit,
-      searchInContent,
-      searchInMetadata,
-      phase,
-      messageType
-    });
-    
     // Build search conditions
     const supabase = createSupabaseServerClient();
     let searchQuery = supabase
@@ -636,8 +615,7 @@ export async function POST(request: NextRequest) {
         timestamp: Date.now()
       }
     };
-    
-    console.log(`[Chat History Search API] Found ${enhancedResults.length} results for query "${query}"`);
+
     return NextResponse.json(response);
     
   } catch (error) {

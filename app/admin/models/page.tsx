@@ -145,7 +145,6 @@ function AdminModelsContent() {
 
     // Handle 403 with retry logic (max 1 retry)
     if (response.status === 403 && retryCount === 0) {
-      console.log('[authenticatedFetch] Got 403, attempting token refresh...');
 
       // Circuit breaker: Check if we're in cooldown period
       const now = Date.now();
@@ -171,7 +170,7 @@ function AdminModelsContent() {
       if (refreshed) {
         // Reset circuit breaker on successful refresh
         setRefreshAttempts(0);
-        console.log('[authenticatedFetch] 403 token refresh successful, circuit breaker reset');
+        
         return authenticatedFetch(url, options, retryCount + 1);
       }
     }
@@ -251,13 +250,6 @@ function AdminModelsContent() {
           setOpenrouterApiKey(result.data.apiKeys.openrouter.value || '');
         }
 
-        console.log('✅ Configuration loaded with auto web search:', {
-          primaryProvider: primaryProviderFromDB,
-          fallbackProvider: fallbackProviderFromDB,
-          primaryModel: result.data.models?.primary?.model,
-          fallbackModel: result.data.models?.fallback?.model,
-          webSearch: `${primaryProviderFromDB} → ${primaryProviderFromDB === 'openai' ? 'OpenAI Native' : 'OpenRouter :online suffix'}`
-        });
       }
 
     } catch (err) {
@@ -355,7 +347,6 @@ function AdminModelsContent() {
   }, [configData, loading, performHealthCheck]);
 
   const handleSwapModels = async () => {
-    console.log('🔄 Starting provider swap...');
 
     const currentPrimary = {
       provider: primaryProvider,
@@ -482,13 +473,6 @@ function AdminModelsContent() {
           openrouter: openrouterApiKey.trim() || undefined
         }
       };
-
-      console.log('🔄 Saving configuration with dynamic provider mapping:', {
-        primaryProvider,
-        fallbackProvider,
-        primaryModel: primaryConfig.model,
-        fallbackModel: fallbackConfig.model
-      });
 
       const configResponse = await authenticatedFetch('/api/admin/config', {
         method: 'POST',

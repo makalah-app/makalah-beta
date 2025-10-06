@@ -69,12 +69,8 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    console.log('🔍 Getting provider failover status');
-
     const providerManager = getProviderManager();
     const failoverState = providerManager.getFailoverState();
-
-    console.log('✅ Provider status loaded:', failoverState);
 
     return Response.json({
       success: true,

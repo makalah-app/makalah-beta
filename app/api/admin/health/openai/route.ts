@@ -70,8 +70,6 @@ export async function POST(request: NextRequest) {
     
     const { model, apiKey, timeout } = validatedRequest;
 
-    console.log(`🔍 OpenAI health check - Model: ${model}`);
-
     // Create OpenAI provider with explicit API key
     // Prioritize environment variable for security
     const finalApiKey = process.env.OPENAI_API_KEY || apiKey;
@@ -97,8 +95,6 @@ export async function POST(request: NextRequest) {
 
       clearTimeout(timeoutId);
       const responseTimeMs = Date.now() - startTime;
-
-      console.log(`✅ OpenAI health check passed - ${responseTimeMs}ms`);
 
       return Response.json({
         success: true,

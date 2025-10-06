@@ -67,9 +67,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
 
       if (result.success && result.data) {
         setPrompts(result.data.prompts || []);
-        console.log('✅ Database prompts loaded:', {
-          count: result.data.prompts?.length || 0
-        });
+        
       }
     } catch (err) {
       console.error('Error loading database prompts:', err);

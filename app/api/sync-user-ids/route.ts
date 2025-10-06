@@ -4,9 +4,7 @@ import { supabaseAdmin } from '../../../src/lib/database/supabase-client';
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
-    
-    console.log('[SYNC-USER-IDS] Starting sync for email:', email);
-    
+
     // Get current auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers();
     const authUser = authData.users?.find(u => u.email === email);
@@ -33,9 +31,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString()
       }, { status: 500 });
     }
-    
-    console.log('[SYNC-USER-IDS] Updated users table:', updateResult);
-    
+
     return NextResponse.json({
       success: true,
       message: 'User IDs synchronized successfully',

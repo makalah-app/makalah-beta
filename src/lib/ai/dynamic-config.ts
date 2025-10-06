@@ -80,13 +80,8 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     // ⚡ PERFORMANCE: Check cache first
     const now = Date.now();
     if (CONFIG_CACHE.data && (now - CONFIG_CACHE.timestamp) < CONFIG_CACHE.TTL) {
-      // Silent cache hit - no logging to reduce terminal noise
       return CONFIG_CACHE.data;
     }
-
-    // 🔍 CACHE MISS: Only log when actually querying database
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const shouldLog = isDevelopment; // Can be toggled for debugging
 
     // Get model configurations from model_configs table
     const { data: modelConfigs, error: modelError } = await supabaseAdmin
@@ -129,13 +124,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
       primaryConfig = sortedConfigs[0];  // Most recent = Primary
       fallbackConfig = sortedConfigs[1] || null;  // Second most recent = Fallback
-
-      if (shouldLog) {
-        console.log('[DynamicConfig] 📌 Model configs loaded:', {
-          primary: primaryConfig?.model_name || 'none',
-          fallback: fallbackConfig?.model_name || 'none'
-        });
-      }
     }
 
     // Get system prompt based on provider (simple 2-source logic)
@@ -146,8 +134,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
 
     if (primaryProvider === 'openrouter') {
       // OpenRouter always uses openrouter_system_prompts (optimized for Gemini)
-      if (shouldLog) console.log('[DynamicConfig] 🔍 Loading OpenRouter (Gemini) system prompt');
-
       const { data: openrouterPrompt, error: openrouterError } = await supabaseAdmin
         .from('openrouter_system_prompts')
         .select('content')
@@ -157,10 +143,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       if (openrouterPrompt?.content && !openrouterError) {
         systemPromptContent = openrouterPrompt.content;
         promptSource = 'openrouter_system_prompts';
-        if (shouldLog) {
-          console.log('[DynamicConfig] ✅ Using OPENROUTER prompt for Gemini models');
-          console.log('[DynamicConfig] 📝 OpenRouter prompt preview:', systemPromptContent.substring(0, 100) + '...');
-        }
       } else if (openrouterError) {
         console.error('[DynamicConfig] ⚠️ OpenRouter prompt error:', openrouterError);
       } else {
@@ -168,8 +150,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       }
     } else {
       // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
-      if (shouldLog) console.log('[DynamicConfig] 🔍 Loading OpenAI system prompt');
-
       const { data: openaiPrompt, error: openaiError } = await supabaseAdmin
         .from('system_prompts')
         .select('content')
@@ -181,10 +161,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       if (openaiPrompt?.content && !openaiError) {
         systemPromptContent = openaiPrompt.content;
         promptSource = 'openai_system_prompts';
-        if (shouldLog) {
-          console.log('[DynamicConfig] ✅ Using OPENAI prompt for GPT models');
-          console.log('[DynamicConfig] 📝 OpenAI prompt preview:', systemPromptContent.substring(0, 100) + '...');
-        }
       } else if (openaiError) {
         console.error('[DynamicConfig] ⚠️ OpenAI prompt error:', openaiError);
       } else {
@@ -193,14 +169,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     }
 
     const fallbackProvider: 'openai' | 'openrouter' = fallbackConfig?.provider || 'openrouter';
-
-    if (shouldLog) {
-      console.log('[DynamicConfig] 🔄 Provider configuration:', {
-        primaryProvider,
-        fallbackProvider,
-        webSearch: primaryProvider === 'openai' ? 'OpenAI Native' : 'Tool-based (web_search)'
-      });
-    }
 
     // Create provider instances with AI SDK v5 compliant patterns
     // FIX: Prioritize environment keys over potentially corrupted database keys
@@ -230,7 +198,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       // ✅ Add :online suffix for automatic web search (OpenRouter built-in feature)
       const primaryModelName = baseModelName.includes(':online') ? baseModelName : `${baseModelName}:online`;
       primaryModel = openrouterProviderInstance.chat(primaryModelName);
-      if (shouldLog) console.log('[DynamicConfig] ✅ OpenRouter model with automatic web search:', primaryModelName);
 
       const fallbackModelName = fallbackConfig?.model_name || 'gpt-4o';
       fallbackModel = customOpenAI(fallbackModelName);
@@ -242,7 +209,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       // ✅ Add :online suffix for fallback OpenRouter models too
       const fallbackModelName = baseFallbackName.includes(':online') ? baseFallbackName : `${baseFallbackName}:online`;
       fallbackModel = openrouterProviderInstance.chat(fallbackModelName);
-      if (shouldLog) console.log('[DynamicConfig] ✅ OpenRouter fallback with automatic web search:', fallbackModelName);
     }
 
     // Get config values from the active primary model config
@@ -274,44 +240,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     // AI SDK compliance: Warn when no system prompt available
     if (!systemPromptContent) {
       console.error('[DynamicConfig] 🚨 EMERGENCY FALLBACK: No system prompt found in database - using emergency mode');
-    } else if (shouldLog) {
-      console.log('[DynamicConfig] ✅ Final system prompt loaded, length:', systemPromptContent.length, 'chars');
-      // Check if it's Moka or Makalah AI
-      const isUsingMoka = systemPromptContent.includes('You are Moka');
-      const isUsingMakalah = systemPromptContent.includes('You are Makalah AI');
-      console.log('[DynamicConfig] 🤖 AI Identity:', {
-        isMoka: isUsingMoka,
-        isMakalahAI: isUsingMakalah,
-        preview: systemPromptContent.substring(0, 50) + '...'
-      });
-    }
-
-    // 🔍 COMPREHENSIVE LOGGING: Show active configuration (only in development)
-    if (shouldLog) {
-      console.log('\n========================================');
-      console.log('📊 ACTIVE AI CONFIGURATION');
-      console.log('========================================');
-      console.log('🤖 Primary Provider:', primaryProvider.toUpperCase());
-      console.log('📝 Primary Model:', config.primaryModelName);
-      console.log('🔄 Fallback Provider:', fallbackProvider.toUpperCase());
-      console.log('📝 Fallback Model:', config.fallbackModelName);
-      console.log('📄 System Prompt Source:',
-        promptSource === 'openrouter_system_prompts' ? '🟡 OPENROUTER_SYSTEM_PROMPTS (Gemini)' :
-        promptSource === 'openai_system_prompts' ? '🟢 OPENAI_SYSTEM_PROMPTS' :
-        '⚫ NONE (Emergency Fallback)'
-      );
-      console.log('📏 Prompt Length:', systemPromptContent.length, 'characters');
-      console.log('========================================');
-      console.log('');
-      console.log('✅ ACTIVE CONFIGURATION SUMMARY:');
-      console.log('   Model yang sedang aktif:', config.primaryModelName);
-      console.log('   System prompt yang berlaku:',
-        primaryProvider === 'openrouter' ? 'System Prompt OpenRouter (untuk Gemini)' : 'System Prompt OpenAI (untuk GPT)'
-      );
-      console.log('   Web search method:',
-        primaryProvider === 'openai' ? 'OpenAI Native' : 'Tool-based (web_search)'
-      );
-      console.log('========================================\n');
     }
 
     // ⚡ PERFORMANCE: Cache the result

@@ -164,7 +164,7 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
       // Fire-and-forget title generation to avoid blocking save
       process.nextTick(async () => {
         try {
-          console.log(`🎯 [SMART TITLE] Generating title for chatId: ${chatId.substring(0, 8)}... (current: "${currentTitle}")`);
+          
           const smartTitle = await generateSmartTitleFromMessages(messages);
           if (smartTitle && smartTitle !== currentTitle) {
             await (supabaseAdmin as any)
@@ -179,8 +179,6 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
               })
               .eq('id', chatId);
 
-            console.log(`✅ [SMART TITLE] Generated and saved: "${smartTitle}" (chatId: ${chatId.substring(0, 8)}...)`);
-
             // Send notification to UI about smart title generation
             if (typeof window !== 'undefined') {
               window.postMessage({
@@ -191,7 +189,7 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
               }, '*');
             }
           } else {
-            console.log(`⚠️ [SMART TITLE] No title change (generated: "${smartTitle}", current: "${currentTitle}")`);
+            
           }
         } catch (error) {
             console.error(`❌ [SMART TITLE] Generation failed for chatId: ${chatId.substring(0, 8)}...`);
@@ -221,7 +219,6 @@ export async function saveChat({
   const startTime = Date.now();
 
   try {
-    console.log(`\n🔵 [SAVE CHAT] Starting save for chatId: ${chatId.substring(0, 8)}... with ${messages.length} messages`);
 
     // DATABASE FALLBACK: Check if database is available
     const health = await checkDatabaseHealth();
@@ -257,7 +254,6 @@ export async function saveChat({
     ]);
 
     const saveTime = Date.now() - startTime;
-    console.log(`✅ [SAVE CHAT] Successfully saved ${messages.length} messages in ${saveTime}ms (chatId: ${chatId.substring(0, 8)}...)`);
 
   } catch (error) {
     const saveTime = Date.now() - startTime;
@@ -647,7 +643,6 @@ function extractUserIdFromMessages(messages: UIMessage[]): string | null {
   return null;
 }
 
-
 /**
  * Generate conversation title from messages
  */
@@ -691,11 +686,9 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
     }
 
     if (userTexts.length === 0) {
-      console.log(`⚠️ [SMART TITLE] No user texts extracted from ${messages.length} messages - using fallback`);
+      
       return 'New Academic Chat';
     }
-
-    console.log(`🔍 [SMART TITLE] Extracted ${userTexts.length} user texts:`, userTexts.map(t => t.substring(0, 50) + '...'));
 
     // Build concise prompt for title generation
     const prompt = [
@@ -880,8 +873,7 @@ export async function measureChatPerformance<T>(
   try {
     const result = await fn();
     const time = Date.now() - startTime;
-    
-    
+
     return {
       result,
       performance: { time, operation }

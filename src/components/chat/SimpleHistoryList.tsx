@@ -19,14 +19,14 @@ export const SimpleHistoryList: React.FC<SimpleHistoryListProps> = ({ onRefresh 
   }, []);
 
   const loadConversations = async () => {
-    console.log('[SimpleHistoryList] Loading conversations...');
+    
     const data = await getAllConversations();
     setConversations(data);
   };
 
   // Handle conversation click - navigate to conversation
   const handleConversationClick = (conversationId: string) => {
-    console.log(`[SimpleHistoryList] Switching to conversation: ${conversationId}`);
+    
     window.location.href = `/?chatId=${conversationId}`;
   };
 

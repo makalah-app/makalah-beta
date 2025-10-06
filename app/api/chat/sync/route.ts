@@ -642,8 +642,7 @@ export async function PUT(req: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`\n📥 [SYNC ENDPOINT] PUT request received for chatId: ${conversationId.substring(0, 8)}...`);
-    console.log(`   Messages count: ${messages?.length || 0}, forceSync: ${forceSync}`);
+    }...`);
 
     // Load current messages from database
     const currentMessages = await loadChat(conversationId);
@@ -657,9 +656,9 @@ export async function PUT(req: NextRequest) {
     // Force sync if requested or no conflicts
     if (forceSync || conflicts.length === 0) {
       if (messages) {
-        console.log(`🔄 [SYNC ENDPOINT] Calling saveChat with ${messages.length} messages...`);
+        
         await saveChat({ chatId: conversationId, messages });
-        console.log(`✅ [SYNC ENDPOINT] saveChat completed successfully`);
+        
       }
 
       return NextResponse.json({

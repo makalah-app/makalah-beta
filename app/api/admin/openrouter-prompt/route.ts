@@ -81,8 +81,6 @@ export async function GET(request: NextRequest) {
       }, { status: 403 });
     }
 
-    console.log('🔍 Getting active OpenRouter system prompt');
-
     const { data: prompt, error } = await (supabaseAdmin as any)
       .from('openrouter_system_prompts')
       .select('*')
@@ -97,8 +95,6 @@ export async function GET(request: NextRequest) {
     const message = prompt
       ? 'OpenRouter prompt loaded successfully'
       : 'No active OpenRouter prompt found';
-
-    console.log(prompt ? '✅ OpenRouter prompt loaded' : 'ℹ️ No OpenRouter prompt found');
 
     return Response.json({
       success: true,
@@ -145,11 +141,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validated: UpdateOpenRouterPromptRequest = UpdateOpenRouterPromptSchema.parse(body);
 
-    console.log('💾 Updating OpenRouter system prompt', {
-      contentLength: validated.content.length,
-      version: validated.version
-    });
-
     // Get current active prompt
     const { data: currentPrompt } = await (supabaseAdmin as any)
       .from('openrouter_system_prompts')
@@ -159,7 +150,7 @@ export async function PUT(request: NextRequest) {
 
     if (!currentPrompt) {
       // Create new if none exists
-      console.log('📝 Creating new OpenRouter prompt (none exists)');
+      ');
 
       const { data: newPrompt, error: insertError } = await (supabaseAdmin as any)
         .from('openrouter_system_prompts')
@@ -180,8 +171,6 @@ export async function PUT(request: NextRequest) {
         throw new Error('Failed to create OpenRouter prompt');
       }
 
-      console.log('✅ OpenRouter prompt created successfully');
-
       return Response.json({
         success: true,
         data: { prompt: newPrompt },
@@ -194,7 +183,6 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update existing prompt
-    console.log('📝 Updating existing OpenRouter prompt:', currentPrompt.id);
 
     const { data: updatedPrompt, error: updateError } = await (supabaseAdmin as any)
       .from('openrouter_system_prompts')
@@ -213,8 +201,6 @@ export async function PUT(request: NextRequest) {
       console.error('❌ Error updating OpenRouter prompt:', updateError);
       throw new Error('Failed to update OpenRouter prompt');
     }
-
-    console.log('✅ OpenRouter prompt updated successfully');
 
     return Response.json({
       success: true,

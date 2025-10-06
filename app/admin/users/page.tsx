@@ -46,7 +46,6 @@ function AdminUsersContent() {
 
     // Handle 403 with retry logic (max 1 retry)
     if (response.status === 403 && retryCount === 0) {
-      console.log('[authenticatedFetch] Got 403, attempting token refresh...');
 
       // Circuit breaker: Check if we're in cooldown period
       const now = Date.now();
@@ -72,7 +71,7 @@ function AdminUsersContent() {
       if (refreshed) {
         // Reset circuit breaker on successful refresh
         setRefreshAttempts(0);
-        console.log('[authenticatedFetch] 403 token refresh successful, circuit breaker reset');
+        
         return authenticatedFetch(url, options, retryCount + 1);
       }
     }
@@ -100,7 +99,7 @@ function AdminUsersContent() {
 
       if (result.success && result.data?.statistics) {
         setUserStats(result.data.statistics);
-        console.log('✅ User statistics loaded:', result.data.statistics);
+        
       }
 
     } catch (err) {

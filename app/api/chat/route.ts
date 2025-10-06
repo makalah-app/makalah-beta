@@ -29,8 +29,6 @@ export type AcademicUIMessage = UIMessage & {
   metadata?: AcademicMetadata;
 };
 
-
-
 export async function POST(req: Request) {
   try {
     // Extract chatId from headers for persistence
@@ -284,12 +282,11 @@ export async function POST(req: Request) {
 
             // 🔍 DEBUG: Log full text after streaming for OpenRouter :online
             if (dynamicConfig.primaryProvider === 'openrouter') {
-              console.log('[OpenRouter :online Debug] Waiting for full response...');
 
               // Get full text by consuming text promise
               const fullText = await result.text;
-              console.log('[OpenRouter :online Debug] Full text length:', fullText?.length || 0);
-              console.log('[OpenRouter :online Debug] Text preview (first 500 chars):',
+              
+              :',
                 fullText ? fullText.substring(0, 500) : 'NO TEXT'
               );
 
@@ -374,7 +371,6 @@ export async function POST(req: Request) {
               isRetryable = false;
               userMessage = 'Format pesan tidak valid. Silakan coba dengan pesan berbeda.';
             }
-
 
             // Write error to stream if not yet written
             if (!writerUsed) {

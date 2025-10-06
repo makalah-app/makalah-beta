@@ -53,8 +53,6 @@ export async function GET(req: NextRequest) {
       }
     };
 
-    console.log('[Title Monitoring] Stats generated:', response);
-
     return NextResponse.json(response);
 
   } catch (error) {
