@@ -362,24 +362,26 @@ export async function GET(request: NextRequest) {
 
     // Get app_version from admin_settings (application category)
     if (scope === 'all' || scope === 'settings') {
+      if (!response.data.settings) {
+        response.data.settings = {};
+      }
+
       try {
-        const { data: appVersionData } = await supabaseAdmin
+        const versionResult = await supabaseAdmin
           .from('admin_settings')
           .select('setting_value')
           .eq('setting_key', 'app_version')
           .single();
 
-        if (appVersionData) {
-          if (!response.data.settings) {
-            response.data.settings = {};
-          }
-          response.data.settings.app_version = appVersionData.setting_value || 'Beta 0.1';
+        const versionData = versionResult.data as { setting_value: string } | null;
+
+        if (versionData && versionData.setting_value) {
+          response.data.settings.app_version = versionData.setting_value;
+        } else {
+          response.data.settings.app_version = 'Beta 0.1';
         }
       } catch (versionError) {
         // Silently fail, app_version is optional
-        if (!response.data.settings) {
-          response.data.settings = {};
-        }
         response.data.settings.app_version = 'Beta 0.1'; // Fallback default
       }
     }
@@ -608,19 +610,21 @@ export async function POST(request: NextRequest) {
     if (appVersion) {
       try {
         // Use RPC function to bypass trigger validation
-        const { data: versionResult, error: versionError } = await supabaseAdmin
-          .rpc('update_app_version', {
-            new_version: appVersion,
-            user_id: adminUserId
-          });
+        // @ts-expect-error - RPC function types not properly inferred from database
+        const versionRpcCall = supabaseAdmin.rpc('update_app_version', {
+          new_version: appVersion,
+          user_id: adminUserId
+        });
+        const { data: versionResult, error: versionError } = await versionRpcCall;
 
         if (versionError) {
           console.error('[Admin Config] App version update error:', versionError);
           throw new Error(`Failed to update app version: ${versionError.message || JSON.stringify(versionError)}`);
         }
 
-        if (versionResult && versionResult.length > 0) {
-          results.updated.appVersion = versionResult[0];
+        const resultArray = versionResult as any[];
+        if (resultArray && Array.isArray(resultArray) && resultArray.length > 0) {
+          results.updated.appVersion = resultArray[0];
           results.timestamps.appVersion = new Date().toISOString();
         }
       } catch (versionError) {

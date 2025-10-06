@@ -33,7 +33,7 @@ export interface PromptInputMessage {
 }
 
 interface ChatInputProps {
-  sendMessage: (message: { text: string }) => void; // AI SDK v5 pattern - CreateUIMessage object
+  sendMessage: (message: { text: string; metadata?: { timestamp?: number } }) => void; // AI SDK v5 pattern - CreateUIMessage object
   disabled?: boolean;
   status?: 'ready' | 'submitted' | 'streaming' | 'error';
   placeholder?: string;

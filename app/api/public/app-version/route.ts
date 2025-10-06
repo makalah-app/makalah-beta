@@ -30,7 +30,7 @@ export async function GET() {
       });
     }
 
-    const version = data?.setting_value || 'Beta 0.1';
+    const version = (data as { setting_value: string } | null)?.setting_value || 'Beta 0.1';
 
     return NextResponse.json({
       success: true,

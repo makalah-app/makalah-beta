@@ -415,7 +415,7 @@ function AdminStatusContent() {
           <DialogHeader>
             <DialogTitle>Edit App Version</DialogTitle>
             <DialogDescription>
-              Ubah versi aplikasi yang ditampilkan di header. Format: "Beta 0.1", "v1.0", dll.
+              Ubah versi aplikasi yang ditampilkan di header. Format: &quot;Beta 0.1&quot;, &quot;v1.0&quot;, dll.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
