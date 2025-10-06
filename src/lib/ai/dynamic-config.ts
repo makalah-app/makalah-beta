@@ -45,20 +45,31 @@ function generateEmergencyFallback(reason: 'empty_content' | 'database_error', e
     ? `Database Error: ${errorDetails || 'Unknown error'}`
     : 'Database query succeeded but returned empty/null content';
 
-  return `⚠️ MAKALAH AI - EMERGENCY FALLBACK MODE
+  return `You are Moka, an AI research assistant for academic paper writing.
 
-🚨 CRITICAL ALERT: Database system prompt failed to load. Using emergency configuration.
+⚠️ SYSTEM NOTICE: Failed to load primary system prompt from database.
 
-**PLEASE INFORM USER IMMEDIATELY:**
-"Terjadi masalah konfigurasi system prompt. Silakan hubungi administrator segera. Sistem menggunakan prompt darurat dengan fungsi terbatas."
+This is a fallback prompt with minimal instructions. The system is operating in degraded mode.
 
-**Technical Context:**
-- Expected Prompt Source: openai_system_prompts atau openrouter_system_prompts (from database)
-- Actual Source: HARDCODED EMERGENCY FALLBACK
-- Reason: ${errorContext}
+**Issue:** Unable to retrieve active system prompt from database.
+**Error Details:** ${errorContext}
 
-**LIMITED CAPABILITIES:**
-You are Makalah AI operating in emergency mode. Basic academic writing assistance available in Bahasa Indonesia, but full 7-phase methodology may be unavailable. Prioritize informing user about system status.`;
+**Administrator Actions Required:**
+1. Check database connection to Supabase
+2. Verify system_prompts table contains active prompt (is_active = true)
+3. Upload system prompt via: Admin Dashboard → Database Prompts → Add Prompt
+
+**Current Fallback Capabilities:**
+- Basic conversation in Indonesian (Jakarta style: gue-lu)
+- Limited academic writing assistance
+- Reduced functionality until primary prompt is restored
+
+**Technical Details:**
+- Expected Source: system_prompts or openrouter_system_prompts table
+- Actual Source: Emergency fallback (hardcoded)
+- Recovery: Upload new prompt or activate existing prompt
+
+Contact system administrator to restore full AI capabilities.`;
 }
 
 /**
@@ -154,7 +165,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         .from('system_prompts')
         .select('content')
         .eq('is_active', true)
-        .eq('phase', 'system_instructions')
         .order('priority_order')
         .limit(1)
         .maybeSingle() as { data: SystemPromptRow | null; error: any };

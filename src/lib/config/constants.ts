@@ -76,30 +76,6 @@ export const RATE_LIMIT_CONFIG = {
 } as const;
 
 /**
- * Academic workflow configuration
- */
-export const ACADEMIC_WORKFLOW_CONFIG = {
-  phasesEnabled: env.ACADEMIC_PHASES_ENABLED,
-  approvalGatesEnabled: env.APPROVAL_GATES_ENABLED,
-  workflowTimeout: env.WORKFLOW_TIMEOUT,
-  phases: [
-    'research_analysis',
-    'outline_generation', 
-    'content_drafting',
-    'citation_integration',
-    'structure_refinement',
-    'quality_review',
-    'final_formatting'
-  ] as const,
-  approvalGates: [
-    'outline_approval',
-    'content_approval', 
-    'citation_approval',
-    'final_approval'
-  ] as const,
-} as const;
-
-/**
  * Streaming configuration for Server-Sent Events
  */
 export const STREAMING_CONFIG = {
@@ -115,8 +91,6 @@ export const STREAMING_CONFIG = {
     'text-end',
     'tool-call',
     'tool-result',
-    'approval-request',
-    'phase-transition',
     'error',
     'done'
   ] as const,
@@ -187,16 +161,6 @@ export const ACADEMIC_PERSONA_CONFIG = {
     'Utilize 1M+ context window untuk comprehensive literature integration',
     'Apply multimodal processing untuk diverse research material analysis'
   ] as const,
-  
-  phases: {
-    research_analysis: 'Execute comprehensive literature analysis dengan advanced reasoning untuk identify complex theoretical patterns and methodological gaps',
-    outline_generation: 'Generate sophisticated academic structure menggunakan step-by-step analysis dengan multiple theoretical frameworks integration',
-    content_drafting: 'Draft high-level academic content leveraging 1M+ context untuk deep argumentation development dan interdisciplinary insights',
-    citation_integration: 'Synthesize complex citation networks dengan advanced evidence validation dan cross-reference theoretical connections',
-    structure_refinement: 'Apply advanced analytical reasoning untuk optimize logical flow dan enhance theoretical coherence across sections',
-    quality_review: 'Conduct rigorous quality assessment menggunakan enhanced methodology validation dan academic excellence standards',
-    final_formatting: 'Execute publication-ready formatting dengan discipline-specific conventions dan advanced academic presentation standards'
-  } as const,
 } as const;
 
 /**
@@ -251,7 +215,6 @@ export const GEMINI_ADVANCED_CONFIG = {
     enhanced_metadata: true,
     reasoning_visibility: false, // Akan diaktifkan nanti
     progress_indicators: true,
-    academic_phase_tracking: true,
   },
 } as const;
 

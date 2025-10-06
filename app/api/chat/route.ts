@@ -39,16 +39,14 @@ export async function POST(req: Request) {
     // Extract user ID from authenticated session - NO FALLBACK to 'system'
     let userId = await getUserIdWithSystemFallback();
     
-    // Parse request body with additional academic workflow parameters
+    // Parse request body
     const rawPayload: any = await req.json();
-    const { 
-      messages, 
-      phase = 1,
+    const {
+      messages,
       testMode = false,
       userId: clientUserId
-    }: { 
+    }: {
       messages: AcademicUIMessage[];
-      phase?: number;
       testMode?: boolean;
       customKey?: string;
       userId?: string;
@@ -73,9 +71,6 @@ export async function POST(req: Request) {
         message: 'Valid user authentication required for all chat operations',
       }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
-
-    // Natural 7-phase workflow - simple phase tracking
-    let currentPhase = phase;
 
     // Validate and ensure messages have proper structure
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -102,9 +97,6 @@ export async function POST(req: Request) {
         metadata: msg.metadata
       } as AcademicUIMessage;
     });
-
-    // Simple phase assignment - trust LLM intelligence
-    currentPhase = Math.max(1, Math.min(phase || 1, 7));
 
     // Use simple validated messages - trust LLM intelligence
 
@@ -235,7 +227,6 @@ export async function POST(req: Request) {
         maxOutputTokens: dynamicConfig.config.maxTokens,
         maxRetries: 3,
         experimental_context: {
-          academicPhase: currentPhase,
           userId: userId,
           chatId: chatId
         },
@@ -263,7 +254,6 @@ export async function POST(req: Request) {
         presencePenalty: dynamicConfig.config.presencePenalty,
         maxRetries: 3,
         experimental_context: {
-          academicPhase: currentPhase,
           userId: userId,
           chatId: chatId
         },
@@ -426,7 +416,6 @@ export async function POST(req: Request) {
       stream,
       headers: {
         'X-Chat-Id': chatId || '',
-        'X-Phase': String(currentPhase),
         'Cache-Control': 'no-cache',
         // Required header for AI SDK UI Message Stream Protocol
         'x-vercel-ai-ui-message-stream': 'v1'

@@ -1,17 +1,14 @@
 /* @ts-nocheck */
 /**
  * Admin System Prompt Management API Endpoint
- * 
+ *
  * Handles system prompt CRUD operations with version tracking.
- * Features enhanced academic content management and Indonesian language support.
  * Restricted to admin access only.
- * 
+ *
  * Features:
  * - System prompt versioning with history tracking
- * - Academic content validation and Indonesian language preservation
  * - Character count validation and version incrementation
  * - Prompt history retrieval with change descriptions
- * - Reset functionality to default academic prompt
  */
 
 import { NextRequest } from 'next/server';
@@ -82,7 +79,7 @@ const getCryptoUUID = () => {
 
 // Request validation schemas
 const SavePromptRequestSchema = z.object({
-  content: z.string().min(100, 'System prompt harus minimal 100 karakter').max(25000, 'System prompt maksimal 25000 karakter'),
+  content: z.string().min(100, 'System prompt harus minimal 100 karakter').max(15000, 'System prompt maksimal 15000 karakter'),
   version: z.string().optional(),
   changeReason: z.string().optional().default('Admin dashboard update')
 });
@@ -126,61 +123,6 @@ async function validateAdminAccess(request: NextRequest): Promise<{ valid: boole
   } catch (error) {
     return { valid: false, error: 'Auth validation failed' };
   }
-}
-
-/**
- * Validate academic content for Indonesian language and structure
- */
-function validateAcademicContent(content: string): { valid: boolean; issues: string[] } {
-  const issues: string[] = [];
-
-  // Check for 7-phase methodology keywords - updated to match actual system prompt
-  const phasePatterns = [
-    /phase\s*[1-7]/i,           // "Phase 1", "Phase 2", etc
-    /fase\s*[1-7]/i,            // "Fase 1", "Fase 2", etc
-    /7-phase/i,                  // "7-phase"
-    /7-fase/i,                   // "7-fase"
-    /metodologi.*7.*fase/i,      // "metodologi 7-fase"
-    /7.*phase.*methodology/i,    // "7-phase methodology"
-    /phase\s*1.*phase\s*7/si   // "Phase 1" to "Phase 7" mentioned
-  ];
-
-  // Also check for Indonesian phase keywords as fallback
-  const phaseKeywords = ['klarifikasi', 'riset', 'kerangka', 'pengembangan', 'sintesis', 'review', 'finalisasi'];
-
-  const hasPhasePatterns = phasePatterns.some(pattern => pattern.test(content));
-  const foundKeywords = phaseKeywords.filter(keyword =>
-    content.toLowerCase().includes(keyword)
-  ).length;
-
-  if (!hasPhasePatterns && foundKeywords < 3) {
-    issues.push('Prompt tidak mengandung cukup referensi ke metodologi 7-fase');
-  }
-
-  // Check for Indonesian academic keywords
-  const academicKeywords = ['akademik', 'penelitian', 'analisis', 'makalah', 'ilmiah'];
-  const foundAcademic = academicKeywords.filter(keyword => 
-    content.toLowerCase().includes(keyword)
-  ).length;
-
-  if (foundAcademic < 2) {
-    issues.push('Prompt kurang mengandung terminologi akademik Indonesia');
-  }
-
-  // Check for Indonesian language indicators
-  const indonesianIndicators = ['anda', 'yang', 'dan', 'dengan', 'untuk', 'dalam'];
-  const foundIndonesian = indonesianIndicators.filter(word => 
-    content.toLowerCase().includes(word)
-  ).length;
-
-  if (foundIndonesian < 4) {
-    issues.push('Prompt mungkin tidak menggunakan bahasa Indonesia yang memadai');
-  }
-
-  return {
-    valid: issues.length === 0,
-    issues
-  };
 }
 
 /**
@@ -260,9 +202,8 @@ export async function GET(request: NextRequest) {
     // Get current active prompt
     const { data: currentPrompt, error: currentError } = await (supabaseAdmin as any)
       .from('system_prompts')
-      .select('id, content, version, created_at, updated_at, priority_order, phase')
+      .select('id, content, version, created_at, updated_at, priority_order')
       .eq('is_active', true)
-      .eq('phase', 'system_instructions')
       .order('priority_order')
       .limit(1)
       .maybeSingle();
@@ -305,7 +246,6 @@ export async function GET(request: NextRequest) {
           content: currentPrompt.content,
           version: currentPrompt.version,
           charCount: currentPrompt.content?.length || 0,
-          phase: currentPrompt.phase || 'system_instructions',
           priority: currentPrompt.priority_order || 1,
           createdAt: currentPrompt.created_at,
           updatedAt: currentPrompt.updated_at
@@ -378,19 +318,11 @@ export async function POST(request: NextRequest) {
       changeReason
     });
 
-    // Validate academic content
-    const contentValidation = validateAcademicContent(content);
-    if (!contentValidation.valid) {
-      console.warn('⚠️ Academic content validation issues:', contentValidation.issues);
-      // Note: We warn but don't block - admin might have specific requirements
-    }
-
     // Get current prompt to determine next version
     const { data: currentPrompt } = await (supabaseAdmin as any)
       .from('system_prompts')
       .select('id, version')
       .eq('is_active', true)
-      .eq('phase', 'system_instructions')
       .order('priority_order')
       .limit(1)
       .maybeSingle();
@@ -413,7 +345,6 @@ export async function POST(request: NextRequest) {
         id: newPromptId,
         name: `System Instructions v${nextVersion}`,
         content,
-        phase: 'system_instructions',
         version: parseInt(nextVersion.replace('v', '').replace('.', '')) || 21,
         priority_order: 1,
         is_active: true,
@@ -463,8 +394,7 @@ export async function POST(request: NextRequest) {
       data: {
         prompt: newPrompt,
         version: parseInt(nextVersion.replace('v', '').replace('.', '')) || 21,
-        charCount: content.length,
-        contentValidation: contentValidation
+        charCount: content.length
       },
       message: 'System prompt saved successfully',
       savedAt: new Date().toISOString()
@@ -516,7 +446,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, content, phase, isActive, priorityOrder, metadata } = body;
+    const { id, name, content, isActive, priorityOrder, metadata } = body;
 
     if (!id) {
       return Response.json({
@@ -529,14 +459,13 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('📝 Updating system prompt:', { id, name, phase });
+    console.log('📝 Updating system prompt:', { id, name });
 
-    // If setting as active, deactivate other prompts in same phase
+    // If setting as active, deactivate other prompts
     if (isActive) {
       await (supabaseAdmin as any)
         .from('system_prompts')
         .update({ is_active: false })
-        .eq('phase', phase)
         .neq('id', id);
     }
 
@@ -548,7 +477,6 @@ export async function PUT(request: NextRequest) {
 
     if (name !== undefined) updateData.name = name;
     if (content !== undefined) updateData.content = content;
-    if (phase !== undefined) updateData.phase = phase;
     if (isActive !== undefined) updateData.is_active = isActive;
     if (priorityOrder !== undefined) updateData.priority_order = priorityOrder;
     if (metadata !== undefined) updateData.metadata = metadata;
@@ -648,18 +576,18 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Prevent deletion of the only active system_instructions prompt
-    if (prompt.is_active && prompt.phase === 'system_instructions') {
+    // Prevent deletion of the only active prompt
+    if (prompt.is_active) {
       const { count } = await (supabaseAdmin as any)
         .from('system_prompts')
         .select('id', { count: 'exact', head: true })
-        .eq('phase', 'system_instructions');
+        .eq('is_active', true);
 
       if (count <= 1) {
         return Response.json({
           success: false,
           error: {
-            message: 'Cannot delete the only system instructions prompt',
+            message: 'Cannot delete the only active system prompt',
             type: 'validation_error',
             code: 'LAST_PROMPT_PROTECTION'
           }

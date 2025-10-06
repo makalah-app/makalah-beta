@@ -79,7 +79,6 @@ const UpdateConfigRequestSchema = z.object({
   prompts: z.object({
     systemInstructions: z.object({
       content: z.string().min(1),
-      phase: z.string().default('research_analysis'),  // Using first phase as placeholder
       version: z.string().optional(),
       priority: z.number().default(1)
     }).optional()
@@ -269,9 +268,8 @@ export async function GET(request: NextRequest) {
       try {
         const { data: promptData } = await supabaseAdmin
           .from('system_prompts')
-          .select('content, version, created_at, updated_at, priority_order, phase')
+          .select('content, version, created_at, updated_at, priority_order')
           .eq('is_active', true)
-          .eq('phase', 'system_instructions')
           .order('priority_order')
           .limit(1)
           .maybeSingle();
@@ -282,7 +280,6 @@ export async function GET(request: NextRequest) {
             content: systemPrompt.content,
             version: systemPrompt.version,
             charCount: systemPrompt.content?.length || 0,
-            phase: systemPrompt.phase,
             priority: systemPrompt.priority_order,
             createdAt: systemPrompt.created_at,
             updatedAt: systemPrompt.updated_at
@@ -526,14 +523,13 @@ export async function POST(request: NextRequest) {
         .upsert({
           id: crypto.randomUUID(),
           content: promptData.content,
-          phase: promptData.phase || 'system_instructions',
           version: promptData.version || '1.0.0',
           priority_order: promptData.priority || 1,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         } as any)
-        .select('id, phase, version')
+        .select('id, version')
         .maybeSingle();
 
       if (!promptError && promptResult) {

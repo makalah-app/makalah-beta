@@ -48,7 +48,6 @@ import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 
 // Enhanced academic metadata type - simplified for native OpenAI web search
 export interface AcademicMetadata {
-  phase?: number;
   timestamp?: number;
   model?: string;
   tokens?: number;
@@ -166,15 +165,15 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     // Event handlers from documentation patterns
     onFinish: (arg: any) => {
       const message = (arg && arg.message) ? arg.message : arg;
-      
+
       // ❌ REMOVED: Phase information extraction - 4 lines of rigid phase control
       // Natural LLM conversation doesn't need phase metadata tracking
-      
+
       // Notify external handlers
       if (onMessageStream && message) {
         onMessageStream(message as any);
       }
-      
+
       // Refresh chat history shortly after stream completes to surface new item with smart title
       try {
         if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
@@ -361,6 +360,9 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     if (isPersistingRef.current) {
       return;
     }
+
+    console.log(`\n💾 [CLIENT PERSIST] Initiating chat persistence for ${chatId.substring(0, 8)}... (${messages.length} messages)`);
+
     const effectiveUserId = getUserId(); // Use consistent user ID extraction
     const timestamp = new Date().toISOString();
 
@@ -386,7 +388,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         metadata: {
           ...baseMetadata,
           userId: baseMetadata?.userId || effectiveUserId,
-          phase: typeof baseMetadata?.phase === 'number' ? baseMetadata.phase : 1,
           sequenceNumber: index,
           persistedAt: timestamp,
         },
@@ -419,10 +420,12 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => '');
+          console.error(`❌ [CLIENT PERSIST] Sync failed with status ${response.status}: ${errorText}`);
           throw new Error(`Chat sync failed (${response.status}): ${errorText}`);
         }
 
         clearTimeout(timeout);
+        console.log(`✅ [CLIENT PERSIST] Successfully synced to server`);
         return true;
       } catch (error: any) {
         clearTimeout(timeout);

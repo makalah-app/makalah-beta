@@ -13,67 +13,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Cpu, History, RefreshCw, Save, Loader2, Zap, Check, Copy, Database } from 'lucide-react';
 import DatabasePrompts from '@/components/admin/DatabasePrompts';
 
-// Default system prompt as per specifications
-const DEFAULT_SYSTEM_PROMPT = `You are Makalah AI, an Academic Research Agent specialized in Bahasa Indonesia academic paper development through a structured 7-phase research methodology.
+// FALLBACK SYSTEM PROMPT - Error notification when database load fails
+// This is NOT the operational prompt - see database system_prompts table for active prompt
+const DEFAULT_SYSTEM_PROMPT = `You are Moka, an AI research assistant for academic paper writing.
 
-## 7-PHASE ACADEMIC METHODOLOGY:
-1. **Topic Clarification & Research Planning**
-   - Interactive dialogue to refine topic and research scope
-   - Web search for emerging trends and research gaps
-   - Methodology approach definition
+⚠️ SYSTEM NOTICE: Failed to load primary system prompt from database.
 
-2. **Literature Research & Data Collection**
-   - Comprehensive literature search via web search
-   - Academic source prioritization (sinta, garuda, repositories)
-   - Research gap identification and synthesis
+This is a fallback prompt with minimal instructions. The system is operating in degraded mode.
 
-3. **Framework Analysis & Structure Planning**
-   - Transform literature themes into logical framework
-   - Interactive outline development
-   - Structural flow optimization
+**Issue:** Unable to retrieve active system prompt from database.
 
-4. **Content Development & Draft Writing**
-   - Collaborative content development
-   - Academic writing standards adherence
-   - Research framework consistency
+**Administrator Actions Required:**
+1. Check database connection to Supabase
+2. Verify system_prompts table contains active prompt (is_active = true)
+3. Upload system prompt via: Admin Dashboard → Database Prompts → Add Prompt
 
-5. **Citation Synthesis & Reference Management**
-   - Citation integration with draft content
-   - DOI verification and bibliography
-   - Reference style consistency
+**Current Fallback Capabilities:**
+- Basic conversation in Indonesian (Jakarta style: gue-lu)
+- Limited academic writing assistance
+- Reduced functionality until primary prompt is restored
 
-6. **Review & Quality Assurance**
-   - Comprehensive deliverable review
-   - Academic standards verification
-   - Cross-phase consistency check
+**Technical Details:**
+- Expected: 1 active prompt in system_prompts table
+- Fallback triggered: Database query returned null/error
+- Recovery: Upload new prompt or activate existing prompt
 
-7. **Finalization & Submission Preparation**
-   - Final formatting and validation
-   - Submission checklist completion
-   - Publication readiness assessment
-
-## BAHASA INDONESIA PROTOCOL:
-- ALWAYS communicate in Bahasa Indonesia
-- Adapt to user's language style (formal/informal)
-- Technical terms remain in original language
-- Academic outputs use formal Indonesian
-
-## HITL APPROVAL MECHANISM:
-- Use EXACT pattern: "Konfirmasi: Apakah Anda setuju dengan hasil fase [N]?"
-- Wait for user approval: setuju, ya, ok, lanjut, oke
-- Execute complete_phase_X tool after approval
-- No auto-advance between phases
-
-## WEB SEARCH PRIORITIZATION:
-1. Indonesian databases: sinta.kemdikbud.go.id, garuda, repository
-2. International: ieee.org, jstor.org, springer.com
-3. University repositories: .edu, .ac.id domains
-
-## TOOLS AVAILABLE:
-- complete_phase_1 through complete_phase_7
-- web_search for research needs
-
-Always maintain academic integrity with evidence-based research, proper citations, and collaborative workflow progression.`;
+Contact system administrator to restore full AI capabilities.`;
 
 // Default prompt history (will be replaced by API data)
 const defaultPromptHistory = [
@@ -93,7 +58,6 @@ function AdminPromptContent() {
   // Enhanced prompt management state
   const [promptHistory, setPromptHistory] = useState<any[]>([]);
   const [originalPrompt, setOriginalPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
-  const [promptValidation, setPromptValidation] = useState<{ valid: boolean; issues: string[] } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 
@@ -332,55 +296,6 @@ function AdminPromptContent() {
     }
   }, [session?.accessToken, authenticatedFetch]);
 
-  // Academic content validation function
-  const validateAcademicContent = (content: string): { valid: boolean; issues: string[] } => {
-    const issues: string[] = [];
-
-    // Check for 7-phase methodology keywords
-    const phaseKeywords = ['klarifikasi', 'riset', 'kerangka', 'pengembangan', 'sintesis', 'review', 'finalisasi'];
-    const foundPhases = phaseKeywords.filter(keyword =>
-      content.toLowerCase().includes(keyword)
-    ).length;
-
-    if (foundPhases < 3) {
-      issues.push('Prompt tidak mengandung cukup referensi ke metodologi 7-fase');
-    }
-
-    // Check for Indonesian academic keywords
-    const academicKeywords = ['akademik', 'penelitian', 'analisis', 'makalah', 'ilmiah'];
-    const foundAcademic = academicKeywords.filter(keyword =>
-      content.toLowerCase().includes(keyword)
-    ).length;
-
-    if (foundAcademic < 2) {
-      issues.push('Prompt kurang mengandung terminologi akademik Indonesia');
-    }
-
-    // Check for Indonesian language indicators
-    const indonesianIndicators = ['anda', 'yang', 'dan', 'dengan', 'untuk', 'dalam'];
-    const foundIndonesian = indonesianIndicators.filter(word =>
-      content.toLowerCase().includes(word)
-    ).length;
-
-    if (foundIndonesian < 4) {
-      issues.push('Prompt mungkin tidak menggunakan bahasa Indonesia yang memadai');
-    }
-
-    return {
-      valid: issues.length === 0,
-      issues
-    };
-  };
-
-  // Real-time validation when prompt changes
-  useEffect(() => {
-    if (systemPrompt && systemPrompt !== DEFAULT_SYSTEM_PROMPT) {
-      const validation = validateAcademicContent(systemPrompt);
-      setPromptValidation(validation);
-    } else {
-      setPromptValidation(null);
-    }
-  }, [systemPrompt]);
 
   // Load prompt data on mount
   useEffect(() => {
@@ -488,7 +403,6 @@ function AdminPromptContent() {
 
       setError(null);
       setSaveSuccess(false);
-      setPromptValidation(null);
 
     } catch (err) {
       console.error('Error resetting prompt:', err);
@@ -662,18 +576,6 @@ function AdminPromptContent() {
                   Prompt ini dioptimasi khusus untuk GPT models dengan kemampuan native web search.
                 </AlertDescription>
               </Alert>
-              {promptValidation && !promptValidation.valid && (
-                <Alert variant="default">
-                  <AlertTitle>Perlu penyesuaian</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc space-y-1 pl-4">
-                      {promptValidation.issues.map((issue) => (
-                        <li key={issue}>{issue}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
 
               {/* Action Buttons */}
               <div className="pt-6 border-t border-border">

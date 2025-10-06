@@ -37,12 +37,7 @@ const envSchema = z.object({
   RATE_LIMIT_REQUESTS_PER_MINUTE: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_TOKENS_PER_MINUTE: z.coerce.number().int().positive().default(100000),
   RATE_LIMIT_BURST_SIZE: z.coerce.number().int().positive().default(10),
-  
-  // Academic Workflow Configuration
-  ACADEMIC_PHASES_ENABLED: z.coerce.boolean().default(true),
-  APPROVAL_GATES_ENABLED: z.coerce.boolean().default(true),
-  WORKFLOW_TIMEOUT: z.coerce.number().int().positive().default(300000),
-  
+
   // Redis Upstash Configuration
   UPSTASH_REDIS_REST_URL: z.string().url('Invalid Redis REST URL format'),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1, 'Redis REST token is required'),

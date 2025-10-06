@@ -25,8 +25,6 @@ import type { UIMessage } from 'ai';
  */
 export interface HistoryFilters {
   userId?: string;
-  phase?: number;
-  workflowId?: string;
   dateRange?: {
     startDate: string;
     endDate: string;
@@ -37,7 +35,7 @@ export interface HistoryFilters {
     max?: number;
   };
   status?: 'active' | 'archived' | 'completed';
-  orderBy?: 'created_at' | 'updated_at' | 'message_count' | 'current_phase';
+  orderBy?: 'created_at' | 'updated_at' | 'message_count';
   orderDirection?: 'asc' | 'desc';
 }
 
@@ -108,9 +106,7 @@ export async function getConversationHistory(
         title,
         description,
         user_id,
-        current_phase,
         message_count,
-        workflow_id,
         metadata,
         created_at,
         updated_at,
@@ -121,22 +117,13 @@ export async function getConversationHistory(
     if (filters.userId) {
       query = query.eq('user_id', filters.userId);
     }
-    
-    if (filters.phase) {
-      query = query.eq('current_phase', filters.phase);
-    }
-    
-    if (filters.workflowId) {
-      query = query.eq('workflow_id', filters.workflowId);
-    }
-    
+
     if (filters.status) {
       if (filters.status === 'archived') {
         query = query.eq('archived', true);
-      } else if (filters.status === 'completed') {
-        query = query.eq('current_phase', 7).eq('archived', false);
-      } else if (filters.status === 'active') {
-        query = query.lt('current_phase', 7).eq('archived', false);
+      } else if (filters.status === 'completed' || filters.status === 'active') {
+        // Note: completed/active status can't be filtered without phase tracking
+        query = query.eq('archived', false);
       }
     } else {
       // Default: exclude archived
@@ -192,8 +179,6 @@ export async function getConversationHistory(
         title: convData.title || 'Untitled Chat',
         messageCount: convData.message_count,
         lastActivity: convData.updated_at,
-        currentPhase: convData.current_phase,
-        workflowId: convData.workflow_id,
         archived: convData.archived,
         metadata: convData.metadata
       };

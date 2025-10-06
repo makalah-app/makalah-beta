@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { ACADEMIC_WORKFLOW_CONFIG, TOOL_CONFIG } from './constants';
+import { TOOL_CONFIG } from './constants';
 
 /**
  * Base message validation schema
@@ -26,21 +26,10 @@ export const messageSchema = z.object({
 export const messagesSchema = z.array(messageSchema).min(1, 'At least one message is required');
 
 /**
- * Academic phase validation schema
- */
-export const academicPhaseSchema = z.enum(ACADEMIC_WORKFLOW_CONFIG.phases);
-
-/**
- * Approval gate validation schema  
- */
-export const approvalGateSchema = z.enum(ACADEMIC_WORKFLOW_CONFIG.approvalGates);
-
-/**
  * Streaming text request validation schema
  */
 export const streamTextRequestSchema = z.object({
   messages: messagesSchema,
-  phase: academicPhaseSchema.optional(),
   maxTokens: z.number().int().positive().max(16384).optional(),
   temperature: z.number().min(0).max(2).optional(),
   tools: z.record(z.any()).optional(),
@@ -48,7 +37,6 @@ export const streamTextRequestSchema = z.object({
   abortSignal: z.instanceof(AbortSignal).optional(),
   userId: z.string().optional(),
   sessionId: z.string().optional(),
-  workflowId: z.string().optional(),
 });
 
 /**
@@ -85,19 +73,6 @@ export const providerConfigSchema = z.object({
   temperature: z.number().min(0).max(2),
   timeout: z.number().int().positive().optional(),
   retryAttempts: z.number().int().min(0).max(10).optional(),
-});
-
-/**
- * Academic workflow state validation schema
- */
-export const workflowStateSchema = z.object({
-  workflowId: z.string(),
-  currentPhase: academicPhaseSchema,
-  completedPhases: z.array(academicPhaseSchema),
-  pendingApproval: approvalGateSchema.optional(),
-  metadata: z.record(z.unknown()).optional(),
-  startedAt: z.date(),
-  updatedAt: z.date(),
 });
 
 /**
@@ -173,24 +148,10 @@ export const validateInput = {
   },
 
   /**
-   * Validate academic phase
-   */
-  academicPhase: (input: unknown) => {
-    return academicPhaseSchema.parse(input);
-  },
-
-  /**
    * Validate provider configuration
    */
   providerConfig: (input: unknown) => {
     return providerConfigSchema.parse(input);
-  },
-
-  /**
-   * Validate workflow state
-   */
-  workflowState: (input: unknown) => {
-    return workflowStateSchema.parse(input);
   },
 
   /**
@@ -231,12 +192,5 @@ export const safeValidate = {
    */
   providerConfig: (input: unknown) => {
     return providerConfigSchema.safeParse(input);
-  },
-
-  /**
-   * Safe workflow state validation
-   */
-  workflowState: (input: unknown) => {
-    return workflowStateSchema.safeParse(input);
   },
 };

@@ -101,7 +101,6 @@ async function updateConversationMetadata(
   conversation: any
 ): Promise<void> {
   const latestMessage = messages[messages.length - 1];
-  const currentPhase = extractPhaseFromMessages(messages);
 
   // Ensure we always work with a plain object to avoid spread errors when metadata is null
   const baseMetadata =
@@ -124,7 +123,6 @@ async function updateConversationMetadata(
     .from('conversations')
     .update({
       message_count: messageCount,
-      current_phase: currentPhase,
       updated_at: new Date().toISOString(),
       metadata: {
         ...baseMetadata,
@@ -166,6 +164,7 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
       // Fire-and-forget title generation to avoid blocking save
       process.nextTick(async () => {
         try {
+          console.log(`🎯 [SMART TITLE] Generating title for chatId: ${chatId.substring(0, 8)}... (current: "${currentTitle}")`);
           const smartTitle = await generateSmartTitleFromMessages(messages);
           if (smartTitle && smartTitle !== currentTitle) {
             await (supabaseAdmin as any)
@@ -180,6 +179,8 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
               })
               .eq('id', chatId);
 
+            console.log(`✅ [SMART TITLE] Generated and saved: "${smartTitle}" (chatId: ${chatId.substring(0, 8)}...)`);
+
             // Send notification to UI about smart title generation
             if (typeof window !== 'undefined') {
               window.postMessage({
@@ -189,8 +190,12 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
                 timestamp: new Date().toISOString()
               }, '*');
             }
+          } else {
+            console.log(`⚠️ [SMART TITLE] No title change (generated: "${smartTitle}", current: "${currentTitle}")`);
           }
         } catch (error) {
+            console.error(`❌ [SMART TITLE] Generation failed for chatId: ${chatId.substring(0, 8)}...`);
+            console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
           }
       });
     }
@@ -216,6 +221,7 @@ export async function saveChat({
   const startTime = Date.now();
 
   try {
+    console.log(`\n🔵 [SAVE CHAT] Starting save for chatId: ${chatId.substring(0, 8)}... with ${messages.length} messages`);
 
     // DATABASE FALLBACK: Check if database is available
     const health = await checkDatabaseHealth();
@@ -251,10 +257,13 @@ export async function saveChat({
     ]);
 
     const saveTime = Date.now() - startTime;
+    console.log(`✅ [SAVE CHAT] Successfully saved ${messages.length} messages in ${saveTime}ms (chatId: ${chatId.substring(0, 8)}...)`);
 
   } catch (error) {
     const saveTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`❌ [SAVE CHAT] Failed after ${saveTime}ms (chatId: ${chatId.substring(0, 8)}...):`);
+    console.error(`   Error: ${errorMessage}`);
 
     // 🔍 ENHANCED ERROR CLASSIFICATION for better UI feedback
     const isConstraintError = errorMessage.includes('foreign key constraint') || errorMessage.includes('violates foreign key');
@@ -408,7 +417,6 @@ export async function createChat(userId?: string, title?: string): Promise<strin
         user_id: actualUserId,
         title: title || 'New Chat',
         description: 'AI-powered academic writing session',
-        current_phase: 1,
         message_count: 0,
         metadata: {
           created_via: 'ai_sdk',
@@ -448,7 +456,6 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
         id,
         title,
         message_count,
-        current_phase,
         updated_at,
         metadata
       `)
@@ -466,8 +473,6 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       title: conv.title || 'Untitled Chat',
       messageCount: conv.message_count,
       lastActivity: conv.updated_at,
-      currentPhase: conv.current_phase,
-      workflowId: null // Remove workflow reference as it's been cleaned up
     }));
 
     return summaries;
@@ -541,7 +546,6 @@ async function ensureConversationExists(
   
   // Create new conversation with fast fallback title first (non-blocking)
   const fallbackTitle = generateTitleFromMessages(messages); // Fast heuristic title
-  const currentPhase = extractPhaseFromMessages(messages);
 
   const { data: newConversation, error } = await (supabaseAdmin as any)
     .from('conversations')
@@ -549,7 +553,6 @@ async function ensureConversationExists(
       id: chatId,
       user_id: userId,
       title: fallbackTitle,
-      current_phase: currentPhase,
       message_count: 0,
       metadata: {
         created_via: 'ai_sdk',
@@ -561,39 +564,40 @@ async function ensureConversationExists(
     .select()
     .single();
 
-  // Fire-and-forget smart title generation (tidak blocking save operation)
+  // 🔧 CRITICAL FIX: Direct execution instead of fire-and-forget
+  // setImmediate() doesn't work in Vercel serverless - function terminates before callback executes
+  // Smart title generation now completes before function returns
   if (!error && newConversation) {
-    setImmediate(async () => {
-      try {
-        const smartTitle = await generateSmartTitleFromMessages(messages);
+    try {
+      const smartTitle = await generateSmartTitleFromMessages(messages);
 
-        if (smartTitle && smartTitle !== fallbackTitle) {
-          await (supabaseAdmin as any)
-            .from('conversations')
-            .update({
-              title: smartTitle,
-              metadata: {
-                ...newConversation.metadata,
-                smart_title_generated: true,
-                smart_title_generated_at: new Date().toISOString(),
-                smart_title_pending: false
-              }
-            })
-            .eq('id', chatId);
+      if (smartTitle && smartTitle !== fallbackTitle) {
+        await (supabaseAdmin as any)
+          .from('conversations')
+          .update({
+            title: smartTitle,
+            metadata: {
+              ...newConversation.metadata,
+              smart_title_generated: true,
+              smart_title_generated_at: new Date().toISOString(),
+              smart_title_pending: false
+            }
+          })
+          .eq('id', chatId);
 
-
-          // Send notification to UI about smart title generation
-          if (typeof window !== 'undefined') {
-            window.postMessage({
-              type: 'smart-title-generated',
-              chatId,
-              title: smartTitle,
-              timestamp: new Date().toISOString()
-            }, '*');
-          }
+        // Send notification to UI about smart title generation
+        if (typeof window !== 'undefined') {
+          window.postMessage({
+            type: 'smart-title-generated',
+            chatId,
+            title: smartTitle,
+            timestamp: new Date().toISOString()
+          }, '*');
         }
-      } catch (titleError) {
-        // Update metadata to indicate failure but keep fallback title
+      }
+    } catch (titleError) {
+      // Update metadata to indicate failure but keep fallback title
+      try {
         await (supabaseAdmin as any)
           .from('conversations')
           .update({
@@ -604,8 +608,10 @@ async function ensureConversationExists(
             }
           })
           .eq('id', chatId);
+      } catch (metadataError) {
+        // Silent failure - don't block conversation creation if metadata update fails
       }
-    });
+    }
   }
   
   if (error) {
@@ -641,19 +647,6 @@ function extractUserIdFromMessages(messages: UIMessage[]): string | null {
   return null;
 }
 
-/**
- * Extract current phase from message metadata
- */
-function extractPhaseFromMessages(messages: UIMessage[]): number {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const metadata = messages[i].metadata;
-    if (metadata && typeof metadata === 'object' && 'phase' in metadata) {
-      const phase = Number(metadata.phase);
-      return !isNaN(phase) ? phase : 1;
-    }
-  }
-  return 1; // Default to phase 1
-}
 
 /**
  * Generate conversation title from messages
@@ -697,7 +690,12 @@ async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<st
       if (userTexts.length >= 3) break;
     }
 
-    if (userTexts.length === 0) return 'New Academic Chat';
+    if (userTexts.length === 0) {
+      console.log(`⚠️ [SMART TITLE] No user texts extracted from ${messages.length} messages - using fallback`);
+      return 'New Academic Chat';
+    }
+
+    console.log(`🔍 [SMART TITLE] Extracted ${userTexts.length} user texts:`, userTexts.map(t => t.substring(0, 50) + '...'));
 
     // Build concise prompt for title generation
     const prompt = [

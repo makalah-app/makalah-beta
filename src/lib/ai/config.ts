@@ -184,7 +184,6 @@ export function getDefaultModelConfig() {
 export function getAcademicWritingGuidelines() {
   return {
     guidelines: ACADEMIC_PERSONA_CONFIG.writingGuidelines,
-    phases: ACADEMIC_PERSONA_CONFIG.phases,
   };
 }
 

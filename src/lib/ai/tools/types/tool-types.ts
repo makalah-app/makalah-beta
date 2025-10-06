@@ -11,9 +11,3 @@ import type { ToolSet } from 'ai';
  * Re-export simplified types from main types file
  */
 export type { ToolCategory, AcademicTools } from '../types';
-
-/**
- * Re-export search types
- */
-export type { SearchProvider, SearchResult } from '../search/search-schemas';
-export type { ProviderConfig } from '../search/search-providers';

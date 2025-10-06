@@ -25,10 +25,9 @@ export const maxDuration = 30;
 
 /**
  * GET /api/conversations/[id] - Get conversation details
- * 
+ *
  * Query Parameters:
  * - includeMessages: Include message history (optional, default: true)
- * - includeWorkflow: Include workflow data (optional, default: true)
  */
 export async function GET(
   request: NextRequest,
@@ -38,7 +37,6 @@ export async function GET(
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const includeMessages = searchParams.get('includeMessages') !== 'false';
-    const includeWorkflow = searchParams.get('includeWorkflow') !== 'false';
     
     if (!id) {
       return NextResponse.json({
@@ -47,7 +45,7 @@ export async function GET(
       }, { status: 400 });
     }
 
-    console.log(`[Conversation API] Loading conversation ${id} (messages: ${includeMessages}, workflow: ${includeWorkflow})`);
+    console.log(`[Conversation API] Loading conversation ${id} (messages: ${includeMessages})`);
     
     // Load complete conversation details
     const conversationDetails = await getConversationDetails(id);
@@ -66,19 +64,13 @@ export async function GET(
       metadata: {
         conversationId: id,
         messageCount: conversationDetails.messages.length,
-        hasWorkflow: !!conversationDetails.workflow,
         includeMessages,
-        includeWorkflow,
         timestamp: Date.now()
       }
     };
-    
+
     if (includeMessages) {
       response.messages = conversationDetails.messages;
-    }
-    
-    if (includeWorkflow && conversationDetails.workflow) {
-      response.workflow = conversationDetails.workflow;
     }
     
     console.log(`[Conversation API] Successfully loaded conversation ${id} with ${conversationDetails.messages.length} messages`);
@@ -113,16 +105,14 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { 
-      title, 
-      description, 
-      currentPhase, 
+    const {
+      title,
+      description,
       archived,
-      metadata 
+      metadata
     }: {
       title?: string;
       description?: string;
-      currentPhase?: number;
       archived?: boolean;
       metadata?: any;
     } = body;
@@ -143,7 +133,6 @@ export async function PUT(
     
     if (title !== undefined) updates.title = title;
     if (description !== undefined) updates.description = description;
-    if (currentPhase !== undefined) updates.current_phase = currentPhase;
     if (archived !== undefined) updates.archived = archived;
     if (metadata !== undefined) {
       // Merge with existing metadata

@@ -19,7 +19,6 @@ import { id as idLocale } from 'date-fns/locale';
 interface SystemPrompt {
   id: string;
   name: string;
-  phase: string;
   content: string;
   is_active: boolean;
   version: number;
@@ -36,18 +35,6 @@ interface DatabasePromptsProps {
   session: any;
   authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
-
-const PHASE_OPTIONS = [
-  { value: 'system_instructions', label: 'System Instructions' },
-  { value: 'research_analysis', label: 'Research Analysis' },
-  { value: 'phase_1', label: 'Phase 1 - Topic Clarification' },
-  { value: 'phase_2', label: 'Phase 2 - Literature Research' },
-  { value: 'phase_3', label: 'Phase 3 - Framework Analysis' },
-  { value: 'phase_4', label: 'Phase 4 - Content Development' },
-  { value: 'phase_5', label: 'Phase 5 - Citation Synthesis' },
-  { value: 'phase_6', label: 'Phase 6 - Quality Review' },
-  { value: 'phase_7', label: 'Phase 7 - Finalization' },
-];
 
 export default function DatabasePrompts({ session, authenticatedFetch }: DatabasePromptsProps) {
   const [prompts, setPrompts] = useState<SystemPrompt[]>([]);
@@ -112,7 +99,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
         id: editingPrompt.id,
         name: formData.name || editingPrompt.name,
         content: formData.content || editingPrompt.content,
-        phase: formData.phase || editingPrompt.phase,
         isActive: formData.is_active ?? editingPrompt.is_active,
         priorityOrder: formData.priority_order ?? editingPrompt.priority_order,
         metadata: formData.metadata || editingPrompt.metadata
@@ -194,8 +180,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
         method: 'PUT',
         body: JSON.stringify({
           id: prompt.id,
-          isActive: !prompt.is_active,
-          phase: prompt.phase
+          isActive: !prompt.is_active
         })
       });
 
@@ -212,19 +197,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       console.error('Error toggling active status:', err);
       setError(err instanceof Error ? err.message : 'Failed to toggle active status');
     }
-  };
-
-  // Get phase label
-  const getPhaseLabel = (phase: string) => {
-    return PHASE_OPTIONS.find(p => p.value === phase)?.label || phase;
-  };
-
-  // Get phase color
-  const getPhaseColor = (phase: string) => {
-    if (phase === 'system_instructions') return 'default';
-    if (phase === 'research_analysis') return 'secondary';
-    if (phase.startsWith('phase_')) return 'outline';
-    return 'secondary';
   };
 
   if (loading) {
@@ -253,7 +225,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
             setCreatingPrompt(true);
             setFormData({
               name: 'New System Prompt',
-              phase: 'system_instructions',
               content: '',
               is_active: false,
               priority_order: 1,
@@ -298,9 +269,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm truncate">{prompt.name}</h4>
-                    <Badge variant={getPhaseColor(prompt.phase) as any} className="mt-1">
-                      {getPhaseLabel(prompt.phase)}
-                    </Badge>
                   </div>
                   {prompt.is_active && (
                     <Badge variant="default" className="ml-2 text-xs">Active</Badge>
@@ -372,7 +340,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="p-3 text-left text-sm font-medium">Name</th>
-                <th className="p-3 text-left text-sm font-medium">Phase</th>
                 <th className="p-3 text-center text-sm font-medium">Version</th>
                 <th className="p-3 text-center text-sm font-medium">Priority</th>
                 <th className="p-3 text-center text-sm font-medium">Active</th>
@@ -383,7 +350,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
             <tbody>
               {prompts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
                     No prompts found in database
                   </td>
                 </tr>
@@ -400,11 +367,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={getPhaseColor(prompt.phase) as any}>
-                        {getPhaseLabel(prompt.phase)}
-                      </Badge>
                     </td>
                     <td className="p-3 text-center">
                       <Badge variant="outline">v{prompt.version}</Badge>
@@ -483,9 +445,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
             </DialogTitle>
             <DialogDescription>
               <div className="flex items-center gap-4 mt-2">
-                <Badge variant={getPhaseColor(previewPrompt?.phase || '') as any}>
-                  {getPhaseLabel(previewPrompt?.phase || '')}
-                </Badge>
                 <Badge variant="outline">v{previewPrompt?.version}</Badge>
                 {previewPrompt?.is_active && (
                   <Badge variant="default">Active</Badge>
@@ -531,34 +490,14 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="System prompt name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phase">Phase</Label>
-                <Select
-                  value={formData.phase || 'system_instructions'}
-                  onValueChange={(value) => setFormData({ ...formData, phase: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PHASE_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={formData.name || ''}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="System prompt name"
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4">

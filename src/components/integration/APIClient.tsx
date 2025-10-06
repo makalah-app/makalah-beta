@@ -43,9 +43,8 @@ interface APIClientContextType {
   // Core API methods
   sendMessage: (message: string, options?: RequestInit) => Promise<APIResponse<AcademicUIMessage>>;
   streamMessage: (message: string, options?: StreamingOptions) => Promise<ReadableStream>;
-  
+
   // Academic workflow specific endpoints
-  executePhaseTransition: (phase: number, data: any) => Promise<APIResponse>;
   searchSources: (query: string, filters?: any) => Promise<APIResponse>;
   
   // System endpoints
@@ -274,16 +273,6 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
   }, [makeStreamingRequest]);
 
   // Academic workflow methods
-  const executePhaseTransition = useCallback(async (
-    phase: number,
-    data: any
-  ): Promise<APIResponse> => {
-    return makeRequest('/workflow/phase/transition', {
-      method: 'POST',
-      body: JSON.stringify({ phase, data }),
-    });
-  }, [makeRequest]);
-
   const searchSources = useCallback(async (
     query: string,
     filters: any = {}
@@ -308,19 +297,18 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
   const contextValue: APIClientContextType = {
     config,
     updateConfig,
-    
+
     // Core methods
     sendMessage,
     streamMessage,
-    
+
     // Academic workflow methods
-    executePhaseTransition,
     searchSources,
-    
+
     // System methods
     getHealthStatus,
     getMetrics,
-    
+
     // State
     isOnline,
     lastError,

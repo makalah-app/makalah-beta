@@ -77,8 +77,6 @@ export interface Database {
           user_id: string;
           title?: string;
           description?: string;
-          workflow_id?: string;
-          current_phase: number;
           message_count: number;
           metadata: any;
           created_at: string;
@@ -98,7 +96,7 @@ export interface Database {
           role: 'user' | 'assistant' | 'system';
           content: any; // UIMessage content structure
           parts: any; // UIMessage parts array
-          metadata: any; // Academic metadata (phase, tokens, model, etc.)
+          metadata: any; // Academic metadata (tokens, model, userId, etc.)
           sequence_number: number;
           created_at: string;
           updated_at: string;
@@ -120,102 +118,6 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['chat_sessions']['Row'], 'id'>;
         Update: Partial<Database['public']['Tables']['chat_sessions']['Insert']>;
       };
-      
-      // ==================== WORKFLOW MANAGEMENT ====================
-      workflows: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          description?: string;
-          topic: string;
-          research_scope?: string;
-          current_phase: number;
-          total_phases: number;
-          status: 'draft' | 'active' | 'completed' | 'archived';
-          metadata: any;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['workflows']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['workflows']['Insert']>;
-      };
-      
-      workflow_phases: {
-        Row: {
-          id: string;
-          workflow_id: string;
-          phase_number: number;
-          name: string;
-          description?: string;
-          status: 'pending' | 'in_progress' | 'completed' | 'approved' | 'revision_requested';
-          phase_data: any;
-          deliverables: any;
-          completion_criteria: any;
-          started_at?: string;
-          completed_at?: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['workflow_phases']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['workflow_phases']['Insert']>;
-      };
-      
-      approval_gates: {
-        Row: {
-          id: string;
-          workflow_id: string;
-          phase_id: string;
-          conversation_id?: string;
-          gate_type: string;
-          status: 'pending' | 'approved' | 'rejected' | 'revision_requested';
-          approval_data: any;
-          feedback?: string;
-          approved_by?: string;
-          approved_at?: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['approval_gates']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['approval_gates']['Insert']>;
-      };
-      
-      // ==================== ARTIFACT MANAGEMENT ====================
-      artifacts: {
-        Row: {
-          id: string;
-          workflow_id?: string;
-          conversation_id?: string;
-          title: string;
-          type: string;
-          content: any;
-          format: 'markdown' | 'html' | 'pdf' | 'docx' | 'txt';
-          file_path?: string;
-          file_size?: number;
-          metadata: any;
-          created_by: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['artifacts']['Row'], 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Database['public']['Tables']['artifacts']['Insert']>;
-      };
-      
-      artifact_versions: {
-        Row: {
-          id: string;
-          artifact_id: string;
-          version_number: number;
-          title: string;
-          content: any;
-          changes_summary?: string;
-          created_by: string;
-          created_at: string;
-        };
-        Insert: Omit<Database['public']['Tables']['artifact_versions']['Row'], 'id' | 'created_at'>;
-        Update: Partial<Database['public']['Tables']['artifact_versions']['Insert']>;
-      };
-      
       // ==================== ADMIN CONFIGURATION ====================
       model_configs: {
         Row: {
@@ -254,7 +156,6 @@ export interface Database {
       system_prompts: {
         Row: {
           id: string;
-          phase: string;
           content: string;
           description?: string;
           priority_order: number;
@@ -357,12 +258,10 @@ export interface Database {
         Returns: Database['public']['Tables']['chat_messages']['Row'][];
       };
     };
-    
+
     Enums: {
       user_role: 'user' | 'admin' | 'researcher';
-      workflow_status: 'draft' | 'active' | 'completed' | 'archived';
       approval_status: 'pending' | 'approved' | 'rejected' | 'revision_requested';
-      artifact_format: 'markdown' | 'html' | 'pdf' | 'docx' | 'txt';
     };
   };
 }
@@ -373,14 +272,10 @@ export interface Database {
  */
 export interface DatabaseUIMessage extends UIMessage {
   metadata?: {
-    phase?: number;
     timestamp?: number;
     model?: string;
     tokens?: number;
-    artifacts?: string[];
     conversationId?: string;
-    workflowId?: string;
-    approvalRequired?: boolean;
   };
 }
 
@@ -392,16 +287,12 @@ export interface ConversationSummary {
   title: string;
   messageCount: number;
   lastActivity: string;
-  currentPhase: number;
-  workflowId?: string;
   archived?: boolean;
 }
 
 export interface ConversationDetails {
   conversation: Database['public']['Tables']['conversations']['Row'];
   messages: DatabaseUIMessage[];
-  workflow?: Database['public']['Tables']['workflows']['Row'];
-  currentPhase?: Database['public']['Tables']['workflow_phases']['Row'];
 }
 
 /**
@@ -416,7 +307,6 @@ export interface ActiveChatSession {
   activityData: {
     lastMessageAt?: string;
     messagesCount: number;
-    currentPhase: number;
   };
 }
 
@@ -436,7 +326,7 @@ export interface ChatPerformanceMetrics {
  */
 export interface RealtimeChatEvent {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  table: 'chat_messages' | 'conversations' | 'workflow_phases';
+  table: 'chat_messages' | 'conversations';
   new?: any;
   old?: any;
 }
@@ -467,8 +357,6 @@ export interface DatabaseResponse<T> {
 // Export utility types
 export type ConversationRow = Database['public']['Tables']['conversations']['Row'];
 export type ChatMessageRow = Database['public']['Tables']['chat_messages']['Row'];
-export type WorkflowRow = Database['public']['Tables']['workflows']['Row'];
-export type ArtifactRow = Database['public']['Tables']['artifacts']['Row'];
 export type UserRow = Database['public']['Tables']['users']['Row'];
 export type ModelConfigRow = Database['public']['Tables']['model_configs']['Row'];
 export type AdminSettingRow = Database['public']['Tables']['admin_settings']['Row'];
