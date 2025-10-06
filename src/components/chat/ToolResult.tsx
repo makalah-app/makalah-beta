@@ -23,14 +23,17 @@ interface ToolResultProps {
   result: any;
   status?: 'success' | 'error' | 'pending';
   className?: string;
+  isHistorical?: boolean; // Flag to indicate this is from loaded history
 }
 
 export const ToolResult = ({
   result,
   status = 'success',
-  className
+  className,
+  isHistorical = false
 }: ToolResultProps) => {
-  const [shouldHide, setShouldHide] = useState(false);
+  // Historical results should be hidden immediately
+  const [shouldHide, setShouldHide] = useState(isHistorical);
 
   const statusConfig = {
     success: {

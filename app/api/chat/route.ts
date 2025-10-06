@@ -215,11 +215,11 @@ export async function POST(req: Request) {
         system: systemPrompt,
         tools: {
           // OpenAI native web search
-          web_search_preview: (openai as any).tools.webSearchPreview({
+          web_search: (openai as any).tools.webSearch({
             searchContextSize: 'high',
           }),
         } as Record<string, any>,
-        toolChoice: testMode ? { type: 'tool' as const, toolName: 'web_search_preview' } : undefined,
+        toolChoice: testMode ? { type: 'tool' as const, toolName: 'web_search' } : undefined,
         temperature: dynamicConfig.config.temperature,
         topP: dynamicConfig.config.topP,
         maxOutputTokens: dynamicConfig.config.maxTokens,

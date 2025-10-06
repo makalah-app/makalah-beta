@@ -566,12 +566,25 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         const loadedChatMessages = await loadChat(chatId, supabaseChatClient as any);
 
         if (loadedChatMessages.length > 0) {
-          setLoadedMessages(loadedChatMessages as AcademicUIMessage[]);
+          // ✅ FIX: Filter out tool-call parts from historical messages to prevent re-execution
+          // Keep tool-result parts to show search results, but remove tool-call parts that trigger execution
+          const historicalMessages = loadedChatMessages.map((msg: AcademicUIMessage) => {
+            if (msg.role === 'assistant' && msg.parts) {
+              // Keep only non-tool-call parts (text, source-url, tool-result)
+              const filteredParts = msg.parts.filter(part =>
+                part.type !== 'tool-call'
+              );
+              return { ...msg, parts: filteredParts };
+            }
+            return msg;
+          });
+
+          setLoadedMessages(historicalMessages as AcademicUIMessage[]);
           // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop that causes infinite re-renders
           setTimeout(() => {
-            setMessages(loadedChatMessages as AcademicUIMessage[]);
+            setMessages(historicalMessages as AcademicUIMessage[]);
           }, 0);
-          lastPersistedCountRef.current = loadedChatMessages.length;
+          lastPersistedCountRef.current = historicalMessages.length;
         } else {
           // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop
           setTimeout(() => {

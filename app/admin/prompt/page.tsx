@@ -307,8 +307,7 @@ function AdminPromptContent() {
 
       const promptUpdateData = {
         content: systemPrompt,
-        version: String(promptVersion || 'v2.1'),
-        changeReason: 'Admin dashboard update'
+        changeReason: 'System Prompt Update'
       };
 
       const promptResponse = await authenticatedFetch('/api/admin/prompts', {

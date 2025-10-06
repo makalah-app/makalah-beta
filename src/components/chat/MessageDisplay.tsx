@@ -440,11 +440,18 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
                 // ✅ Display tool execution results using clean component
                 if (part.state === 'output-available' && toolCallId) {
+                  // Check if this is a historical message (created more than 5 seconds ago)
+                  const messageAge = message.createdAt
+                    ? Date.now() - new Date(message.createdAt).getTime()
+                    : 0;
+                  const isHistorical = messageAge > 5000; // More than 5 seconds old
+
                   return (
                     <ToolResult
                       key={`tool-result-${toolCallId}`}
                       result={(part as any).result}
                       status="success"
+                      isHistorical={isHistorical}
                     />
                   );
                 }

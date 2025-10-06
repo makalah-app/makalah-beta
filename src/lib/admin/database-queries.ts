@@ -407,7 +407,7 @@ export async function getCurrentSystemPrompt(): Promise<DatabaseQueryResponse<Sy
 export async function updateSystemPrompt(
   content: string,
   updatedBy: string,
-  changeReason: string = 'Admin dashboard update'
+  changeReason: string = 'System Prompt Update'
 ): Promise<DatabaseQueryResponse<SystemPromptData>> {
   try {
     // Validate input

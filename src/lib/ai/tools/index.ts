@@ -10,7 +10,7 @@
  * - Based on spec: __references__/workflow_tools/search_tool.md
  *
  * For now, chat API uses native provider tools:
- * - OpenAI: web_search_preview (native)
+ * - OpenAI: web_search (native)
  * - OpenRouter: :online suffix (native)
  */
 

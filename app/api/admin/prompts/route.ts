@@ -80,7 +80,7 @@ const getCryptoUUID = () => {
 const SavePromptRequestSchema = z.object({
   content: z.string().min(100, 'System prompt harus minimal 100 karakter').max(15000, 'System prompt maksimal 15000 karakter'),
   version: z.string().optional(),
-  changeReason: z.string().optional().default('Admin dashboard update')
+  changeReason: z.string().optional().default('System Prompt Update')
 });
 
 const GetPromptHistoryRequestSchema = z.object({
@@ -130,21 +130,40 @@ async function validateAdminAccess(request: NextRequest): Promise<{ valid: boole
 function generateNextVersion(currentVersion: string): string {
   // Parse version like v2.1 or 2.1.0
   const versionMatch = currentVersion.match(/v?(\d+)\.(\d+)(?:\.(\d+))?/);
-  
+
   if (versionMatch) {
     const major = parseInt(versionMatch[1]);
     const minor = parseInt(versionMatch[2]);
     const patch = parseInt(versionMatch[3] || '0');
-    
+
     // Increment minor version for content changes
     return `v${major}.${minor + 1}`;
   }
-  
+
   // Fallback to incrementing based on current date
   const today = new Date();
   const month = today.getMonth() + 1;
   const day = today.getDate();
   return `v${month}.${day}`;
+}
+
+/**
+ * Generate prompt name with timestamp and description
+ */
+function generatePromptName(description?: string): string {
+  const now = new Date();
+
+  // Format: YYMMDD-HHmm
+  const yy = now.getFullYear().toString().slice(-2);
+  const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+  const dd = now.getDate().toString().padStart(2, '0');
+  const HH = now.getHours().toString().padStart(2, '0');
+  const MM = now.getMinutes().toString().padStart(2, '0');
+
+  const timestamp = `${yy}${mm}${dd}-${HH}${MM}`;
+  const desc = description || 'System Prompt Update';
+
+  return `${timestamp}: ${desc}`;
 }
 
 /**
@@ -303,7 +322,16 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    const nextVersion = version || generateNextVersion(currentPrompt?.version || 'v2.0');
+    // Auto-increment version number as INTEGER
+    let nextVersionNumber: number;
+    if (currentPrompt?.version) {
+      nextVersionNumber = currentPrompt.version + 1;
+    } else {
+      nextVersionNumber = 1;
+    }
+
+    // Generate prompt name with timestamp
+    const promptName = generatePromptName(changeReason);
 
     // Deactivate current prompt
     if (currentPrompt) {
@@ -319,9 +347,9 @@ export async function POST(request: NextRequest) {
       .from('system_prompts')
       .insert({
         id: newPromptId,
-        name: `System Instructions v${nextVersion}`,
+        name: promptName,
         content,
-        version: parseInt(nextVersion.replace('v', '').replace('.', '')) || 21,
+        version: nextVersionNumber,
         priority_order: 1,
         is_active: true,
         created_by: adminCheck.userId,
@@ -329,7 +357,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       } as any)
-      .select('id, content, version')
+      .select('id, name, content, version')
       .single();
 
     if (promptError) {
@@ -342,7 +370,7 @@ export async function POST(request: NextRequest) {
       .insert({
         id: getCryptoUUID(),
         prompt_id: newPromptId,
-        version_number: parseInt(nextVersion.replace('v', '').replace('.', '')) || 21,
+        version_number: nextVersionNumber,
         content,
         change_description: changeReason,
         changed_by: adminCheck.userId,
@@ -366,7 +394,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         prompt: newPrompt,
-        version: parseInt(nextVersion.replace('v', '').replace('.', '')) || 21,
+        version: nextVersionNumber,
         charCount: content.length
       },
       message: 'System prompt saved successfully',

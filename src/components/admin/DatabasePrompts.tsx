@@ -102,7 +102,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       } : {
         content: formData.content || '',
         version: formData.version || '1',
-        changeReason: 'Created from admin dashboard'
+        changeReason: 'System Prompt Update'
       };
 
       const response = await authenticatedFetch(url, {
