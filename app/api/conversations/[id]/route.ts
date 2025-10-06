@@ -72,10 +72,8 @@ export async function GET(
     }
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error(`[Conversation API] GET error for ${await params}:`, error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to load conversation',
       code: 'LOAD_CONVERSATION_FAILED',
@@ -168,10 +166,8 @@ export async function PUT(
     };
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error(`[Conversation API] PUT error for ${await params}:`, error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to update conversation',
       code: 'UPDATE_CONVERSATION_FAILED',
@@ -252,10 +248,8 @@ export async function DELETE(
     };
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error(`[Conversation API] DELETE error for ${await params}:`, error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to delete conversation',
       code: 'DELETE_CONVERSATION_FAILED',

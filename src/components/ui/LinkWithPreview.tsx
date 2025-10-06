@@ -51,7 +51,6 @@ export const LinkWithPreview: React.FC<LinkWithPreviewProps> = ({
     try {
       return new URL(url).hostname;
     } catch (error) {
-      console.warn('Invalid URL in LinkWithPreview:', url);
       return 'Unknown source';
     }
   };

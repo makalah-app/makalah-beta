@@ -75,10 +75,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error('[Conversations API] GET error:', error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to load conversations',
       code: 'LOAD_CONVERSATIONS_FAILED',
@@ -176,10 +174,8 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response, { status: 201 });
-    
+
   } catch (error) {
-    console.error('[Conversations API] POST error:', error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to create conversation',
       code: 'CREATE_CONVERSATION_FAILED',

@@ -100,11 +100,11 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       ]) as { data: AdminSettingRow[] | null; error: any };
 
     if (modelError) {
-      console.error('[DynamicConfig] Model configs error:', modelError);
+      // Model configs error - handled by fallback logic
     }
 
     if (settingsError) {
-      console.error('[DynamicConfig] API keys error:', settingsError);
+      // API keys error - handled by fallback logic
     }
 
     // Process API keys
@@ -144,9 +144,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         systemPromptContent = openrouterPrompt.content;
         promptSource = 'openrouter_system_prompts';
       } else if (openrouterError) {
-        console.error('[DynamicConfig] ⚠️ OpenRouter prompt error:', openrouterError);
+        // OpenRouter prompt error - will use emergency fallback
       } else {
-        console.warn('[DynamicConfig] ⚠️ No active OpenRouter prompt found');
+        // No active OpenRouter prompt found - will use emergency fallback
       }
     } else {
       // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
@@ -162,9 +162,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
         systemPromptContent = openaiPrompt.content;
         promptSource = 'openai_system_prompts';
       } else if (openaiError) {
-        console.error('[DynamicConfig] ⚠️ OpenAI prompt error:', openaiError);
+        // OpenAI prompt error - will use emergency fallback
       } else {
-        console.warn('[DynamicConfig] ⚠️ No active OpenAI prompt found in database');
+        // No active OpenAI prompt found in database - will use emergency fallback
       }
     }
 
@@ -237,9 +237,9 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       },
     };
 
-    // AI SDK compliance: Warn when no system prompt available
+    // AI SDK compliance: System prompt fallback handled by emergency mode
     if (!systemPromptContent) {
-      console.error('[DynamicConfig] 🚨 EMERGENCY FALLBACK: No system prompt found in database - using emergency mode');
+      // EMERGENCY FALLBACK: No system prompt found in database - using emergency mode
     }
 
     // ⚡ PERFORMANCE: Cache the result
@@ -249,8 +249,8 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     return config;
 
   } catch (error) {
-    console.error('[DynamicConfig] ❌ Failed to load dynamic configuration:', error);
-    
+    // Failed to load dynamic configuration - using fallback config
+
     // Fallback to hardcoded config
     try {
       // Debug API keys availability
@@ -297,7 +297,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       };
       
     } catch (fallbackError) {
-      console.error('[DynamicConfig] ❌ Fallback configuration also failed:', fallbackError);
+      // Fallback configuration also failed - throwing error
       throw new Error(`Both dynamic and fallback configurations failed. Original: ${(error as Error).message}, Fallback: ${(fallbackError as Error).message}`);
     }
   }

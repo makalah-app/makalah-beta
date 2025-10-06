@@ -56,8 +56,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[Title Monitoring] Failed to generate stats:', error);
-
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to generate title monitoring stats',
       pending: 0,
@@ -125,8 +123,6 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[Title Monitoring] POST operation failed:', error);
-
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Operation failed',
       timestamp: Date.now()

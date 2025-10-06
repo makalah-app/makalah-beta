@@ -109,27 +109,14 @@ export async function persistMessagesAsync(
     
   } catch (error) {
     // Re-throw error for proper handling by caller
-    console.error(`[MessagePersistence] ❌ Persistence failed:`, {
-      error: error instanceof Error ? error.message : String(error),
-      messageCount: messages.length,
-      metadata: {
-        conversationId: metadata.conversationId,
-        userId: metadata.userId,
-        phase: metadata.phase
-      },
-      timing: {
-        duration: Date.now() - startTime
-      }
-    });
-    
+
     // Try fallback persistence if main persistence fails
     try {
       await attemptFallbackPersistence(messages, metadata);
     } catch (fallbackError) {
-      // Log fallback error but still throw original error
-      console.error(`[MessagePersistence] ❌ Fallback persistence also failed:`, fallbackError);
+      // Fallback error handled silently
     }
-    
+
     throw error; // Allow caller to handle appropriately
   }
 }
@@ -195,9 +182,7 @@ async function performMessagePersistence(
   } catch (error) {
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
-    console.error(`[MessagePersistence] ❌ Persistence failed after ${duration}ms:`, error);
-    
+
     throw new Error(
       `Message persistence failed: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -245,8 +230,7 @@ async function attemptFallbackPersistence(
     }
     
   } catch (fallbackError) {
-    console.error(`[MessagePersistence] ❌ Even fallback persistence failed:`, fallbackError);
-    // At this point, we've tried everything - just log and move on
+    // At this point, we've tried everything - just move on silently
   }
 }
 

@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
       if (sessionError) {
-        console.error('❌ Session validation error:', sessionError);
         return Response.json({
           success: false,
           isAdmin: false,
@@ -117,8 +116,6 @@ export async function GET(request: NextRequest) {
     }, { status: 400 });
 
   } catch (error) {
-    console.error('❌ Admin validation error:', error);
-
     const errorMessage = error instanceof Error ? error.message : 'Admin validation failed';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
 
@@ -176,7 +173,6 @@ export async function POST(request: NextRequest) {
       const { data, error } = await supabaseClient.auth.getUser(accessToken);
       
       if (error || !data.user) {
-        console.error('❌ Token validation failed:', error);
         return Response.json({
           success: false,
           isAdmin: false,
@@ -218,7 +214,6 @@ export async function POST(request: NextRequest) {
       });
 
     } catch (tokenError) {
-      console.error('❌ Token validation exception:', tokenError);
       return Response.json({
         success: false,
         isAdmin: false,
@@ -231,8 +226,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Admin POST validation error:', error);
-
     const errorMessage = error instanceof Error ? error.message : 'Admin validation failed';
     
     return Response.json({

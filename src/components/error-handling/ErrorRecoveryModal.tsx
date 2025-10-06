@@ -166,7 +166,7 @@ export const ErrorRecoveryModal: React.FC<ErrorRecoveryModalProps> = ({
 
       setDiagnosticData(diagnostics);
     } catch (diagError) {
-      console.warn('[ErrorRecoveryModal] Failed to collect diagnostics:', diagError);
+      // Failed to collect diagnostics - diagnosticData remains empty
     }
   }, [error]);
 
@@ -255,8 +255,6 @@ export const ErrorRecoveryModal: React.FC<ErrorRecoveryModalProps> = ({
       }
 
     } catch (stepError) {
-      console.error(`Recovery step failed: ${step.id}`, stepError);
-      
       // Mark step as failed
       setRecoverySteps(prev => prev.map((s, i) => 
         i === stepIndex ? { 

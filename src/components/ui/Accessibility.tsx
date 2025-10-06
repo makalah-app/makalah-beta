@@ -339,7 +339,7 @@ export const AccessibilityProvider: React.FC<AccessibilityProviderProps> = ({ ch
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (error) {
-      console.warn('[Accessibility] Audio feedback not available:', error);
+      // Audio feedback not available - browser may not support Web Audio API
     }
   }, [state.soundEnabled, state.audioFeedback]);
 

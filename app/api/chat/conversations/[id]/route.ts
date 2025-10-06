@@ -52,7 +52,6 @@ export async function DELETE(
     }
 
     if (!userId) {
-      console.error('[DELETE] No valid user ID found in session, headers, or query params');
       return NextResponse.json({ error: 'Unauthorized - no user session' }, { status: 401 });
     }
 
@@ -67,12 +66,10 @@ export async function DELETE(
       .single();
 
     if (convErr || !conv) {
-      console.error('[DELETE] Conversation not found:', conversationId, convErr);
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
     if (conv.user_id !== userId) {
-      console.error('[DELETE] User does not own conversation:', { userId, ownerId: conv.user_id });
       return NextResponse.json({ error: 'Forbidden - not owner' }, { status: 403 });
     }
 
@@ -83,7 +80,6 @@ export async function DELETE(
       .eq('conversation_id', conversationId);
 
     if (delMsgErr) {
-      console.error('[DELETE] Failed to delete messages:', delMsgErr);
       return NextResponse.json({ error: 'Failed to delete messages' }, { status: 500 });
     }
 
@@ -94,14 +90,12 @@ export async function DELETE(
       .eq('id', conversationId);
 
     if (delConvErr) {
-      console.error('[DELETE] Failed to delete conversation:', delConvErr);
       return NextResponse.json({ error: 'Failed to delete conversation' }, { status: 500 });
     }
 
     return NextResponse.json({ id: conversationId, deleted: true });
 
   } catch (error) {
-    console.error('[DELETE] Unexpected error:', error);
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

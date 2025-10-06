@@ -22,7 +22,6 @@ export async function GET() {
       .single();
 
     if (error) {
-      console.error('[Public API] Failed to fetch app_version:', error);
       // Return default version on error
       return NextResponse.json({
         success: true,
@@ -38,8 +37,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[Public API] Unexpected error fetching app_version:', error);
-
     // Return default version on any error (graceful degradation)
     return NextResponse.json({
       success: true,

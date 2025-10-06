@@ -502,7 +502,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                         try {
                           hostname = source.url ? new URL(source.url).hostname : 'Source';
                         } catch (error) {
-                          console.warn('Invalid URL in source:', source.url);
+                          // Invalid URL - use default hostname
                         }
 
                         // Format current date in Indonesian

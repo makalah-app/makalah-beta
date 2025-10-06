@@ -70,7 +70,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
         
       }
     } catch (err) {
-      console.error('Error loading database prompts:', err);
       setError(err instanceof Error ? err.message : 'Failed to load prompts');
     } finally {
       setLoading(false);
@@ -128,7 +127,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       setFormData({});
 
     } catch (err) {
-      console.error(`Error ${editingPrompt ? 'updating' : 'creating'} prompt:`, err);
       setError(err instanceof Error ? err.message : 'Failed to save prompt');
     } finally {
       setSaving(false);
@@ -162,7 +160,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       setDeletingPrompt(null);
 
     } catch (err) {
-      console.error('Error deleting prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete prompt');
     } finally {
       setSaving(false);
@@ -192,7 +189,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       await loadPrompts();
 
     } catch (err) {
-      console.error('Error toggling active status:', err);
       setError(err instanceof Error ? err.message : 'Failed to toggle active status');
     }
   };

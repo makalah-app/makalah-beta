@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
     const sessionUserId = session.userId;
     const qpUserId = searchParams.get('userId') || undefined;
     const userId = sessionUserId || undefined; // prefer session; query param used only for fallback
-    // console.debug('[Chat History API][AuthDebug] session status:', { hasUserId: !!sessionUserId, hasError: !!session.error });
     const conversationId = searchParams.get('conversationId');
     const chatId = searchParams.get('chatId'); // AI SDK v5 pattern support
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -90,13 +89,11 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json(messages); // Return UIMessage[] directly for AI SDK compatibility
       } catch (error) {
-        console.error(`[Chat History API] Failed to load chat ${chatId}:`, error);
         return NextResponse.json([]); // Return empty array on error for graceful fallback
       }
     }
 
     if (!userId && !qpUserId) {
-      // console.debug('[Chat History API][AuthDebug] No session and no qpUserId → empty history fallback');
       // No session and no fallback user id; return empty to avoid UI error
       const response = {
         conversations: [],
@@ -197,7 +194,6 @@ export async function GET(request: NextRequest) {
       conversations = await getUserConversations(userId, supabase);
     } else {
       // Fallback: no session, use admin client with qpUserId (dev-only scenario)
-      // console.debug('[Chat History API][AuthDebug] Using admin fallback (no session). qpUserId present:', !!qpUserId);
       const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
       // Include conversations owned by SYSTEM user to surface recent chats persisted without SSR
       const { data, error } = await (supabaseAdmin as any)
@@ -278,8 +274,6 @@ export async function GET(request: NextRequest) {
             metadata: msg.metadata || {}
           });
         });
-      } else if (messagesError) {
-        console.warn('[Chat History API] Messages query failed:', messagesError.message);
       }
     }
 
@@ -394,7 +388,7 @@ export async function GET(request: NextRequest) {
                     }
                   }
                 } catch (e) {
-                  console.warn('[Chat History API] Assistant-based title generation failed:', e);
+                  // Title generation failed, continue with fallback
                 }
               }
             }
@@ -426,7 +420,6 @@ export async function GET(request: NextRequest) {
             totalMessages: recentMessages.length
           };
         } catch (error) {
-          console.warn(`[Chat History API] Failed to load messages for conversation ${conv.id}:`, error);
           return {
             ...conv,
             recentMessages: [],
@@ -451,10 +444,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error('[Chat History API] GET error:', error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to load chat history',
       code: 'LOAD_HISTORY_FAILED',
@@ -617,10 +608,8 @@ export async function POST(request: NextRequest) {
     };
 
     return NextResponse.json(response);
-    
+
   } catch (error) {
-    console.error('[Chat History Search API] POST error:', error);
-    
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Search failed',
       code: 'SEARCH_FAILED',

@@ -101,7 +101,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create conversation';
       setError(errorMessage);
-      console.error('[ConversationProvider] Create conversation error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -132,7 +131,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation';
       setError(errorMessage);
-      console.error('[ConversationProvider] Load conversation error:', error);
       return [];
     } finally {
       setIsLoading(false);
@@ -151,7 +149,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       setConversations(userConversations);
 
     } catch (error) {
-      console.error('[ConversationProvider] Load conversations error:', error);
       setConversations([]); // Fallback to empty array
     } finally {
       setLoadingConversations(false);
@@ -168,9 +165,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       }
 
       await loadConversation(conversationId);
-      
+
     } catch (error) {
-      console.error('[ConversationProvider] Switch conversation error:', error);
       throw error;
     }
   }, [currentConversationId, loadConversation]);
@@ -184,9 +180,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
       // TODO: Implement conversation deletion
       // For now, we'll archive it
       await archiveConversation(conversationId);
-      
+
     } catch (error) {
-      console.error('[ConversationProvider] Delete conversation error:', error);
       throw error;
     }
   }, []);
@@ -208,9 +203,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
         setCurrentConversation(undefined);
         setCurrentConversationId(undefined);
       }
-      
+
     } catch (error) {
-      console.error('[ConversationProvider] Archive conversation error:', error);
       throw error;
     }
   }, [currentConversationId, loadUserConversations]);
@@ -228,9 +222,9 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
     try {
       await loadConversation(targetId);
       await loadUserConversations();
-      
+
     } catch (error) {
-      console.error('[ConversationProvider] Refresh conversation error:', error);
+      // Refresh error - state already updated by loadConversation
     }
   }, [currentConversationId, loadConversation, loadUserConversations]);
 
@@ -304,7 +298,6 @@ export const useCreateConversation = () => {
       const conversationId = await createNewConversation();
       return conversationId;
     } catch (error) {
-      console.error('[useCreateConversation] Error:', error);
       return null;
     }
   }, [createNewConversation]);

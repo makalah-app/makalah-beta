@@ -43,7 +43,6 @@ export default function ForgotPasswordPage() {
       });
 
       if (error) {
-        console.error('Reset password error:', error);
         setError(error.message);
       } else {
         setIsSubmitted(true);

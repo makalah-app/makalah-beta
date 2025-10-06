@@ -165,7 +165,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
       }
     } catch (e) {
-      console.error('[Sidebar] Delete error:', e);
       setDeleteError(e instanceof Error ? e.message : 'Gagal menghapus percakapan');
     } finally {
       setIsDeleting(false);

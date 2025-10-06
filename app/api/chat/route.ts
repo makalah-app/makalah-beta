@@ -280,17 +280,6 @@ export async function POST(req: Request) {
               writerUsed = true;
             }
 
-            // 🔍 DEBUG: Log full text after streaming for OpenRouter :online
-            if (dynamicConfig.primaryProvider === 'openrouter') {
-
-              // Get full text by consuming text promise
-              const fullText = await result.text;
-
-              if (!fullText || fullText.length === 0) {
-                console.error('[OpenRouter :online Debug] ⚠️ CRITICAL: Model returned no text!');
-              }
-            }
-
             // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah
             await result.response;
 

@@ -88,9 +88,6 @@ export class AIProviderManager {
           throw new ProviderSelectionError(`Unknown strategy: ${strategy}`);
       }
     } catch (error) {
-      if (LOGGING_CONFIG.logProviderSwitching) {
-        console.error('❌ Provider selection failed:', error);
-      }
       throw error;
     }
   }
@@ -121,10 +118,6 @@ export class AIProviderManager {
     const fallbackHealth = await this.healthManager.checkProviderHealth(this.providers.fallback.name);
 
     if (this.isProviderViable(fallbackHealth, requireHealthy, maxResponseTime)) {
-      if (LOGGING_CONFIG.logProviderSwitching) {
-        console.warn(`⚠️  Primary provider unhealthy, using fallback: ${this.providers.fallback.name}`);
-      }
-      
       return {
         provider: this.providers.fallback.provider,
         providerName: this.providers.fallback.name,

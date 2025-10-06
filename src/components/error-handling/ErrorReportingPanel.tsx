@@ -170,13 +170,13 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
             quota: estimate.quota || 0,
           };
         } catch (e) {
-        console.warn('Could not collect storage quota');
+        // Storage quota API not available
       }
     }
 
     setDiagnostics(diagnosticData);
   } catch (diagError) {
-    console.error('Failed to collect diagnostics:', diagError);
+    // Failed to collect diagnostics - diagnosticData remains empty
   }
   }, [enablePrivacyMode, error]);
 
@@ -229,7 +229,7 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
         setScreenshot(screenshotData);
       }
     } catch (screenshotError) {
-      console.error('Failed to take screenshot:', screenshotError);
+      // Failed to take screenshot - screenshot remains null
     }
   };
 
@@ -305,7 +305,6 @@ export const ErrorReportingPanel: React.FC<ErrorReportingPanelProps> = ({
       await onSubmitReport(finalReport);
       onClose();
     } catch (submitError) {
-      console.error('Failed to submit report:', submitError);
       alert('Failed to submit report. Please try again.');
     } finally {
       setIsSubmitting(false);

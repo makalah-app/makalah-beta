@@ -470,7 +470,6 @@ export class ApiKeyRotationManager {
 
       return data || [];
     } catch (error) {
-      console.error('Failed to fetch rotation history:', error);
       return [];
     }
   }

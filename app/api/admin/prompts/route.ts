@@ -46,7 +46,6 @@ try {
     }
   }
 } catch (error) {
-  console.warn('⚠️ Crypto initialization error:', error);
   crypto = null;
 }
 
@@ -66,9 +65,9 @@ const getCryptoUUID = () => {
       return `${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}`;
     }
   } catch (error) {
-    console.warn('⚠️ Crypto UUID generation failed:', error);
+    // UUID generation with crypto failed, use fallback
   }
-  
+
   // Fallback UUID generation - guaranteed to work
   const timestamp = Date.now().toString(16);
   const random1 = Math.random().toString(16).substring(2, 10);
@@ -180,7 +179,6 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false });
 
       if (listError) {
-        console.error('❌ Error getting all prompts:', listError);
         throw new Error('Failed to get system prompts');
       }
 
@@ -206,7 +204,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (currentError) {
-      console.error('❌ Error getting current prompt:', currentError);
+      // Error getting current prompt, will return empty
     }
 
     // Get prompt history from prompt_versions if it exists
@@ -262,8 +260,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Admin prompts GET error:', error);
-
     return Response.json({
       success: false,
       error: {
@@ -337,7 +333,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (promptError) {
-      console.error('❌ Error saving prompt:', promptError);
       throw new Error('Failed to save system prompt');
     }
 
@@ -355,7 +350,6 @@ export async function POST(request: NextRequest) {
       } as any);
 
     if (historyError) {
-      console.warn('⚠️ Failed to create version history entry:', historyError);
       // Don't fail the entire operation for history tracking
     }
 
@@ -363,9 +357,8 @@ export async function POST(request: NextRequest) {
     try {
       const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
       clearDynamicConfigCache();
-      
+
     } catch (cacheError) {
-      console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
       // Don't fail the operation for cache clearing issues
     }
 
@@ -381,17 +374,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Admin prompts POST error:', error);
-
-    if (error instanceof z.ZodError) {
-      console.error('❌ [SERVER] Zod validation failed:', {
-        issues: error.issues,
-        path: error.issues.map(i => i.path),
-        messages: error.issues.map(i => i.message),
-        codes: error.issues.map(i => i.code)
-      });
-    }
-
     const errorMessage = error instanceof Error ? error.message : 'Failed to save prompt';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
 
@@ -467,7 +449,6 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (updateError) {
-      console.error('❌ Error updating prompt:', updateError);
       throw new Error('Failed to update system prompt');
     }
 
@@ -475,9 +456,9 @@ export async function PUT(request: NextRequest) {
     try {
       const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
       clearDynamicConfigCache();
-      
+
     } catch (cacheError) {
-      console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
+      // Don't fail the operation for cache clearing issues
     }
 
     return Response.json({
@@ -489,8 +470,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Admin prompts PUT error:', error);
-
     return Response.json({
       success: false,
       error: {
@@ -578,7 +557,6 @@ export async function DELETE(request: NextRequest) {
       .eq('id', promptId);
 
     if (deleteError) {
-      console.error('❌ Error deleting prompt:', deleteError);
       throw new Error('Failed to delete system prompt');
     }
 
@@ -587,9 +565,9 @@ export async function DELETE(request: NextRequest) {
       try {
         const { clearDynamicConfigCache } = await import('@/lib/ai/dynamic-config');
         clearDynamicConfigCache();
-        
+
       } catch (cacheError) {
-        console.warn('⚠️ Failed to clear dynamic config cache:', cacheError);
+        // Don't fail the operation for cache clearing issues
       }
     }
 
@@ -599,8 +577,6 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Admin prompts DELETE error:', error);
-
     return Response.json({
       success: false,
       error: {

@@ -89,8 +89,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ GET provider status error:', error);
-
     return Response.json({
       success: false,
       error: {

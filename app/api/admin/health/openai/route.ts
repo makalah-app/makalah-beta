@@ -120,8 +120,6 @@ export async function POST(request: NextRequest) {
       clearTimeout(timeoutId);
       const responseTimeMs = Date.now() - startTime;
 
-      console.error(`❌ OpenAI health check failed:`, testError);
-
       // Handle specific error types
       let errorType = 'connection_error';
       let errorMessage = 'Model connectivity test failed';
@@ -162,7 +160,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const responseTimeMs = Date.now() - startTime;
-    console.error('❌ OpenAI health check endpoint error:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Health check failed';
     const statusCode = error instanceof z.ZodError ? 400 : 500;

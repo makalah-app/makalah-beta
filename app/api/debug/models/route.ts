@@ -24,7 +24,6 @@ export async function GET() {
       .limit(10);
 
     if (error) {
-      console.error('[DEBUG-MODELS] Database error:', error);
       return NextResponse.json({
         error: error.message
       }, { status: 500 });
@@ -41,7 +40,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('[DEBUG-MODELS] Unexpected error:', error);
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

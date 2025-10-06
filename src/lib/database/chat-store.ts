@@ -192,8 +192,7 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
             
           }
         } catch (error) {
-            console.error(`❌ [SMART TITLE] Generation failed for chatId: ${chatId.substring(0, 8)}...`);
-            console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+            // Smart title generation failed - using fallback title
           }
       });
     }
@@ -258,8 +257,6 @@ export async function saveChat({
   } catch (error) {
     const saveTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`❌ [SAVE CHAT] Failed after ${saveTime}ms (chatId: ${chatId.substring(0, 8)}...):`);
-    console.error(`   Error: ${errorMessage}`);
 
     // 🔍 ENHANCED ERROR CLASSIFICATION for better UI feedback
     const isConstraintError = errorMessage.includes('foreign key constraint') || errorMessage.includes('violates foreign key');

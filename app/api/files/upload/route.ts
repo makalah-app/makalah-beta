@@ -161,8 +161,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[File Upload API] Error:', error);
-
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
@@ -230,7 +228,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[File Get API] Error:', error);
     return NextResponse.json(
       {
         success: false,

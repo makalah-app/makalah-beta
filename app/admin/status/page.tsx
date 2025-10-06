@@ -67,13 +67,11 @@ function AdminStatusContent() {
       const now = Date.now();
       if (lastRefreshTime > 0 && (now - lastRefreshTime) < REFRESH_COOLDOWN) {
         const remainingTime = Math.ceil((REFRESH_COOLDOWN - (now - lastRefreshTime)) / 1000);
-        console.warn(`[authenticatedFetch] 403 refresh in cooldown. Wait ${remainingTime} seconds.`);
         throw new Error(`Token refresh rate limited. Please wait ${remainingTime} seconds before trying again.`);
       }
 
       // Circuit breaker: Check if we've exceeded max attempts
       if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        console.warn('[authenticatedFetch] Max 403 refresh attempts exceeded');
         setRefreshAttempts(0);
         setLastRefreshTime(now);
         throw new Error('Too many token refresh attempts. Please wait and try again.');
@@ -94,7 +92,6 @@ function AdminStatusContent() {
 
     // Handle 429 rate limit errors (no retry to prevent further rate limiting)
     if (response.status === 429) {
-      console.warn('[authenticatedFetch] Rate limit reached, stopping retry attempts');
       throw new Error('Rate limit reached. Please wait before trying again.');
     }
 
@@ -131,7 +128,6 @@ function AdminStatusContent() {
               activePromptVersion = openrouterPromptResult.data.prompt.version || 'v1.0';
             }
           } catch (openrouterError) {
-            console.warn('Failed to load OpenRouter prompt, using fallback:', openrouterError);
             activePromptCharCount = 0;
           }
         } else {
@@ -158,7 +154,6 @@ function AdminStatusContent() {
         });
       }
     } catch (err) {
-      console.error('Failed to load config status:', err);
       setError(err instanceof Error ? err.message : 'Failed to load configuration');
     } finally {
       setLoading(false);
@@ -219,7 +214,6 @@ function AdminStatusContent() {
       await loadConfigStatus();
 
     } catch (err) {
-      console.error('Failed to save version:', err);
       setError(err instanceof Error ? err.message : 'Failed to update version');
     } finally {
       setIsSaving(false);

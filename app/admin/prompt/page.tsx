@@ -108,13 +108,11 @@ function AdminPromptContent() {
       const now = Date.now();
       if (lastRefreshTime > 0 && (now - lastRefreshTime) < REFRESH_COOLDOWN) {
         const remainingTime = Math.ceil((REFRESH_COOLDOWN - (now - lastRefreshTime)) / 1000);
-        console.warn(`[authenticatedFetch] 403 refresh in cooldown. Wait ${remainingTime} seconds.`);
         throw new Error(`Token refresh rate limited. Please wait ${remainingTime} seconds before trying again.`);
       }
 
       // Circuit breaker: Check if we've exceeded max attempts
       if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        console.warn('[authenticatedFetch] Max 403 refresh attempts exceeded');
         setRefreshAttempts(0);
         setLastRefreshTime(now);
         throw new Error('Too many token refresh attempts. Please wait and try again.');
@@ -135,7 +133,6 @@ function AdminPromptContent() {
 
     // Handle 429 rate limit errors (no retry to prevent further rate limiting)
     if (response.status === 429) {
-      console.warn('[authenticatedFetch] Rate limit reached, stopping retry attempts');
       throw new Error('Rate limit reached. Please wait before trying again.');
     }
 
@@ -172,7 +169,6 @@ function AdminPromptContent() {
       }
 
     } catch (err) {
-      console.error('Error loading prompt data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load prompt data');
       // Use defaults on error
       setPromptHistory(defaultPromptHistory);
@@ -206,7 +202,6 @@ function AdminPromptContent() {
         
       }
     } catch (err) {
-      console.error('Error loading fallback prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to load fallback prompt');
       setFallbackContent(DEFAULT_SYSTEM_PROMPT);
     } finally {
@@ -244,7 +239,6 @@ function AdminPromptContent() {
         
       }
     } catch (err) {
-      console.error('Error saving fallback prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to save fallback prompt');
     } finally {
       setFallbackSaving(false);
@@ -280,7 +274,6 @@ function AdminPromptContent() {
 
       }
     } catch (err) {
-      console.error('Error loading provider status:', err);
       setPrimaryProvider('openai'); // fallback
       setCurrentModelName('GPT-4o'); // fallback
     } finally {
@@ -347,7 +340,6 @@ function AdminPromptContent() {
       setTimeout(() => setSaveSuccess(false), 3000);
 
     } catch (err) {
-      console.error('Error saving system prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to save system prompt');
     } finally {
       setSaving(false);
@@ -380,7 +372,6 @@ function AdminPromptContent() {
           }
         }
       } catch (saveError) {
-        console.warn('Could not save to database, using local fallback:', saveError);
         // Fallback to local state only
         setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
         setPromptVersion('v2.1-local');
@@ -391,7 +382,6 @@ function AdminPromptContent() {
       setSaveSuccess(false);
 
     } catch (err) {
-      console.error('Error resetting prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to reset prompt');
 
       // Ultimate fallback

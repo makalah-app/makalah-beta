@@ -149,9 +149,8 @@ export function getValidUserUUID(userId?: string | null): string {
   if (isValidUUIDFormat(userId)) {
     return userId;
   }
-  
+
   // For invalid formats, return system UUID as fallback
-  console.warn(`[UUID] Invalid user ID format: ${userId}, using system UUID`);
   return SYSTEM_USER_UUID;
 }
 

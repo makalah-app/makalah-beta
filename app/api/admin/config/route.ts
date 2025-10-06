@@ -618,7 +618,6 @@ export async function POST(request: NextRequest) {
         const { data: versionResult, error: versionError } = await versionRpcCall;
 
         if (versionError) {
-          console.error('[Admin Config] App version update error:', versionError);
           throw new Error(`Failed to update app version: ${versionError.message || JSON.stringify(versionError)}`);
         }
 
@@ -628,7 +627,6 @@ export async function POST(request: NextRequest) {
           results.timestamps.appVersion = new Date().toISOString();
         }
       } catch (versionError) {
-        console.error('[Admin Config] App version update exception:', versionError);
         throw versionError;
       }
     }

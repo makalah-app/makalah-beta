@@ -150,13 +150,11 @@ function AdminModelsContent() {
       const now = Date.now();
       if (lastRefreshTime > 0 && (now - lastRefreshTime) < REFRESH_COOLDOWN) {
         const remainingTime = Math.ceil((REFRESH_COOLDOWN - (now - lastRefreshTime)) / 1000);
-        console.warn(`[authenticatedFetch] 403 refresh in cooldown. Wait ${remainingTime} seconds.`);
         throw new Error(`Token refresh rate limited. Please wait ${remainingTime} seconds before trying again.`);
       }
 
       // Circuit breaker: Check if we've exceeded max attempts
       if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        console.warn('[authenticatedFetch] Max 403 refresh attempts exceeded');
         setRefreshAttempts(0);
         setLastRefreshTime(now);
         throw new Error('Too many token refresh attempts. Please wait and try again.');
@@ -177,7 +175,6 @@ function AdminModelsContent() {
 
     // Handle 429 rate limit errors (no retry to prevent further rate limiting)
     if (response.status === 429) {
-      console.warn('[authenticatedFetch] Rate limit reached, stopping retry attempts');
       throw new Error('Rate limit reached. Please wait before trying again.');
     }
 
@@ -253,7 +250,6 @@ function AdminModelsContent() {
       }
 
     } catch (err) {
-      console.error('Error loading config data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load configuration');
     } finally {
       setLoading(false);
@@ -319,8 +315,6 @@ function AdminModelsContent() {
       setLastHealthCheck(checkTime);
 
     } catch (error) {
-      console.error('Health check failed:', error);
-
       setModelStatus(prev => ({
         primary: { ...prev.primary, status: 'error', error: 'Health check failed', lastChecked: checkTime },
         fallback: { ...prev.fallback, status: 'error', error: 'Health check failed', lastChecked: checkTime }
@@ -430,7 +424,6 @@ function AdminModelsContent() {
         throw new Error(configResult.error?.message || 'Auto-save failed');
       }
     } catch (swapError) {
-      console.error('❌ Auto-save after swap failed:', swapError);
       setError('Swap berhasil, tetapi auto-save gagal. Silakan klik "Simpan Konfigurasi" secara manual.');
     } finally {
       setSaving(false);
@@ -493,7 +486,6 @@ function AdminModelsContent() {
       setTimeout(() => setSaveSuccess(false), 3000);
 
     } catch (err) {
-      console.error('Error saving configuration:', err);
       setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
       setSaving(false);

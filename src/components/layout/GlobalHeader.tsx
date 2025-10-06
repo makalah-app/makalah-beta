@@ -63,7 +63,6 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
         }
       } catch (error) {
         // Silently fail and keep default version
-        console.error('Failed to fetch app version:', error);
       }
     };
 

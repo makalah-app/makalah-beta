@@ -88,7 +88,6 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Error getting OpenRouter prompt:', error);
       throw new Error('Failed to get OpenRouter prompt');
     }
 
@@ -107,8 +106,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ GET OpenRouter prompt error:', error);
-
     return Response.json({
       success: false,
       error: {
@@ -166,7 +163,6 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error('❌ Error creating OpenRouter prompt:', insertError);
         throw new Error('Failed to create OpenRouter prompt');
       }
 
@@ -197,7 +193,6 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (updateError) {
-      console.error('❌ Error updating OpenRouter prompt:', updateError);
       throw new Error('Failed to update OpenRouter prompt');
     }
 
@@ -212,8 +207,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ PUT OpenRouter prompt error:', error);
-
     if (error instanceof z.ZodError) {
       return Response.json({
         success: false,

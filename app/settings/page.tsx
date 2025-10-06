@@ -125,7 +125,6 @@ export default function SettingsPage() {
         setStatusMessage({ type: 'error', text: 'Gagal memperbarui profil. Coba lagi sebentar.' });
       }
     } catch (error) {
-      console.error('Profile update error:', error);
       setStatusMessage({ type: 'error', text: 'Terjadi kesalahan saat menyimpan profil.' });
     } finally {
       setIsSavingProfile(false);
@@ -155,7 +154,6 @@ export default function SettingsPage() {
         setStatusMessage({ type: 'error', text: 'Tidak dapat mengubah password. Pastikan password lama benar.' });
       }
     } catch (error) {
-      console.error('Password update error:', error);
       setStatusMessage({ type: 'error', text: 'Terjadi kesalahan saat mengubah password.' });
     } finally {
       setIsSavingPassword(false);
@@ -167,7 +165,6 @@ export default function SettingsPage() {
       await logout();
       router.push('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
       setStatusMessage({ type: 'error', text: 'Gagal keluar dari akun. Coba ulangi.' });
     }
   };

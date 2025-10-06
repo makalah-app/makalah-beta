@@ -194,8 +194,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Config GET error:', error);
-
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
 
@@ -282,8 +280,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Config POST error:', error);
-
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     const statusCode = error instanceof z.ZodError ? 400 : 500;
 
@@ -380,8 +376,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Config test error:', error);
-    
     const testDuration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

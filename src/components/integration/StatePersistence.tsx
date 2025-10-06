@@ -105,7 +105,6 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       setIsStorageAvailable(true);
       return true;
     } catch (error) {
-      console.warn('[StatePersistence] localStorage not available:', error);
       setIsStorageAvailable(false);
       return false;
     }
@@ -125,7 +124,6 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       setStorageUsage(totalSize);
       return totalSize;
     } catch (error) {
-      console.error('[StatePersistence] Error calculating storage usage:', error);
       return 0;
     }
   }, [storagePrefix, isStorageAvailable]);
@@ -145,7 +143,6 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
     try {
       return JSON.parse(compressed);
     } catch (error) {
-      console.error('[StatePersistence] Error decompressing data:', error);
       return null;
     }
   }, []);
@@ -160,7 +157,6 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       calculateStorageUsage();
       return true;
     } catch (error) {
-      console.error('[StatePersistence] Error saving to storage:', error);
       return false;
     }
   }, [isStorageAvailable, compressData, calculateStorageUsage]);
@@ -176,7 +172,6 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       }
       return null;
     } catch (error) {
-      console.error('[StatePersistence] Error loading from storage:', error);
       return null;
     }
   }, [isStorageAvailable, decompressData]);
@@ -419,7 +414,7 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
         });
         calculateStorageUsage();
       } catch (error) {
-        console.error('[StatePersistence] Error clearing storage:', error);
+        // Error clearing storage - state already reset
       }
     }
   }, [isStorageAvailable, storagePrefix, calculateStorageUsage]);

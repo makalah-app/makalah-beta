@@ -114,8 +114,6 @@ export default function AuthPage() {
         // Don't set isSubmitting(false) for login success - let redirect handle it
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-
       // Check if error is due to unverified email
       if (!isRegisterMode && error?.message?.toLowerCase().includes('email not confirmed')) {
         setShowResendOption(true);

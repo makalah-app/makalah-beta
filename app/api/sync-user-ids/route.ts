@@ -23,9 +23,8 @@ export async function POST(request: NextRequest) {
       .update({ id: authUser.id })
       .eq('email', email)
       .select();
-      
+
     if (updateError) {
-      console.error('[SYNC-USER-IDS] Update error:', updateError);
       return NextResponse.json({ 
         error: 'Failed to update users table: ' + updateError.message,
         timestamp: new Date().toISOString()
@@ -39,9 +38,8 @@ export async function POST(request: NextRequest) {
       updatedRecord: updateResult,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
-    console.error('[SYNC-USER-IDS] Error:', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()

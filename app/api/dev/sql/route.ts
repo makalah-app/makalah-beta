@@ -65,10 +65,8 @@ export async function POST(request: NextRequest) {
       operation,
       ...result
     })
-    
+
   } catch (error) {
-    console.error('SQL API error:', error)
-    
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

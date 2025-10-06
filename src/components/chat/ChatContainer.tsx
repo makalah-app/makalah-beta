@@ -418,7 +418,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => '');
-          console.error(`❌ [CLIENT PERSIST] Sync failed with status ${response.status}: ${errorText}`);
           throw new Error(`Chat sync failed (${response.status}): ${errorText}`);
         }
 

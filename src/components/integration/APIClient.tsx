@@ -217,7 +217,7 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
                   const data = JSON.parse(line.substring(6));
                   onData?.(data);
                 } catch (parseError) {
-                  console.warn('Failed to parse SSE data:', line);
+                  // Invalid SSE data - skip line
                 }
               }
             }

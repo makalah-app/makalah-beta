@@ -63,7 +63,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('[File Download API] Error:', error);
     return NextResponse.json(
       {
         success: false,
