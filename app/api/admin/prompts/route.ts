@@ -294,17 +294,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    
-    ,
-      contentLength: body.content?.length,
-      contentType: typeof body.content,
-      version: body.version,
-      versionType: typeof body.version,
-      changeReason: body.changeReason,
-      changeReasonType: typeof body.changeReason,
-      fullBody: body
-    });
-    
+
     const validatedRequest: SavePromptRequest = SavePromptRequestSchema.parse(body);
     const { content, version, changeReason } = validatedRequest;
 

@@ -150,7 +150,6 @@ export async function PUT(request: NextRequest) {
 
     if (!currentPrompt) {
       // Create new if none exists
-      ');
 
       const { data: newPrompt, error: insertError } = await (supabaseAdmin as any)
         .from('openrouter_system_prompts')

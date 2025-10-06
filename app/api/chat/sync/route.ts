@@ -642,8 +642,6 @@ export async function PUT(req: NextRequest) {
       }, { status: 400 });
     }
 
-    }...`);
-
     // Load current messages from database
     const currentMessages = await loadChat(conversationId);
 

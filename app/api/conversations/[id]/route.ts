@@ -45,8 +45,6 @@ export async function GET(
       }, { status: 400 });
     }
 
-    `);
-    
     // Load complete conversation details
     const conversationDetails = await getConversationDetails(id);
     

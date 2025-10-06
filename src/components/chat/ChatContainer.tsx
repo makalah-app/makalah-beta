@@ -361,8 +361,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
       return;
     }
 
-    }... (${messages.length} messages)`);
-
     const effectiveUserId = getUserId(); // Use consistent user ID extraction
     const timestamp = new Date().toISOString();
 

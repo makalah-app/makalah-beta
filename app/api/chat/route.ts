@@ -285,10 +285,6 @@ export async function POST(req: Request) {
 
               // Get full text by consuming text promise
               const fullText = await result.text;
-              
-              :',
-                fullText ? fullText.substring(0, 500) : 'NO TEXT'
-              );
 
               if (!fullText || fullText.length === 0) {
                 console.error('[OpenRouter :online Debug] ⚠️ CRITICAL: Model returned no text!');

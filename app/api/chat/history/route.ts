@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
       if (!userId) {
         const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
         clientForMessages = supabaseAdmin as any;
-        ');
+
       }
 
       const { data: allMessages, error: messagesError } = await clientForMessages

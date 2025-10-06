@@ -51,8 +51,6 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    `);
-    
     // Load user conversations with enhanced filtering
     const conversations = await getUserConversations(userId);
     

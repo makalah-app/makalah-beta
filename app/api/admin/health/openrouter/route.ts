@@ -70,12 +70,9 @@ export async function POST(request: NextRequest) {
     
     const { model, apiKey, timeout } = validatedRequest;
 
-    }`);
-
     // Create OpenRouter provider with the provided or environment API key
     // Prioritize environment variable for security, unless specific key provided
     const finalApiKey = process.env.OPENROUTER_API_KEY || apiKey;
-    }... (length: ${finalApiKey?.length})`);
     const provider: any = createOpenRouter({
       apiKey: finalApiKey,
       baseURL: 'https://openrouter.ai/api/v1',
