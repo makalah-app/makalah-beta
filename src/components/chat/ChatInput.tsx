@@ -278,6 +278,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </PromptInputToolbar>
       </PromptInput>
 
+      {/* AI Disclaimer */}
+      <p className="mt-3 text-center text-xxs text-muted-foreground">
+        Agen Ai Makalah bisa membuat kesalahan. Selalu lakukan pemeriksaan hasil, terutama mengenai akurasi data, dan koherensi antar pernyataan.
+      </p>
+
     </div>
   );
 };
