@@ -6,6 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Makalah AI is an academic writing platform for Indonesian researchers, students, and academics. It uses AI to assist with research and paper writing following academic standards. Built with Next.js 14, React 18, TypeScript, and Supabase.
 
+## Current Status: Beta 0.2
+
+**Official Release**: The application has officially entered **Beta 0.2** phase.
+
+**Development Priorities**:
+1. **Feature Expansion**: Adding new capabilities to enhance user experience and academic writing assistance
+2. **LLM Tools Enhancement**: Building and refining AI tools for better research, citation management, and content generation
+3. **Workflow Strengthening**: Improving the 7-waypoint academic paper writing workflow with better guidance, quality checks, and automation
+
+**Focus Areas**:
+- Strengthen web search quality control with credible source enforcement
+- Enhance citation and reference management system
+- Improve system prompt engineering for better academic output
+- Optimize conversation history and message persistence
+- Refine admin dashboard for system configuration
+
 ## Development Commands
 
 ### Running the Application
