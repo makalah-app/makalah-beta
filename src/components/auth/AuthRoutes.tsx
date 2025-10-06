@@ -1,17 +1,21 @@
 /**
  * Authentication Route Components
- * 
+ *
  * Clean version of role-based route protection without caching issues.
+ * Styled with shadcn/ui components for consistency with login/admin pages.
  */
 
 'use client';
 
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Loader2, ShieldAlert, LogIn, Home } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import { UserRole, Permission } from '../../lib/auth/role-permissions';
 
 export interface RoleBasedRouteProps {
@@ -226,30 +230,76 @@ export default function RoleBasedRoute({
     return <>{fallbackComponent}</>;
   }
 
+  // Access denied UI with shadcn/ui components
   return (
-    <div className={`route-access-denied ${className}`}>
-      <div className="access-denied-container">
-        <div className="access-denied-icon">🚫</div>
-        <h2 className="access-denied-title">Akses Ditolak</h2>
-        <p className="access-denied-message">
-          {accessState.reason || 'Akses ke halaman ini tidak diizinkan.'}
-        </p>
-        <div className="access-denied-actions">
-          {!user ? (
-            <a href="/auth" className="action-button primary">
-              Login
-            </a>
-          ) : (
-            <button 
-              onClick={() => window.history.back()} 
-              className="action-button secondary"
-            >
-              Kembali
-            </button>
-          )}
-          <a href="/chat" className="action-button secondary">
-            Chat
-          </a>
+    <div className={cn('min-h-screen bg-background', className)}>
+      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-6 py-12">
+        <div className="w-full max-w-md">
+          <Card className="p-8 border-border bg-card shadow-lg">
+            <div className="text-center">
+              {/* Logo or Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="rounded-full bg-destructive/10 p-4">
+                  <ShieldAlert className="h-8 w-8 text-destructive" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h1 className="text-xl font-medium mb-2 text-foreground font-heading">
+                Akses Ditolak
+              </h1>
+
+              {/* Error Message */}
+              <p className="text-sm text-muted-foreground mb-6">
+                {accessState.reason || 'Akses ke halaman ini tidak diizinkan.'}
+              </p>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                {!user ? (
+                  <Button asChild className="w-full" size="lg">
+                    <Link href="/auth">
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Login
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      className="w-full"
+                      size="lg"
+                    >
+                      <Link href="/chat">
+                        <Home className="mr-2 h-4 w-4" />
+                        Kembali ke Chat
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.history.back()}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Kembali
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Additional Info */}
+              {user && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Login sebagai: <span className="font-medium text-foreground">{user.email}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Role: <span className="font-medium text-foreground">{user.role}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     </div>
