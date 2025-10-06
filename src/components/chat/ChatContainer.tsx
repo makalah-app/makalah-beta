@@ -651,7 +651,12 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
 
       // Trigger new AI response
       setTimeout(() => {
-        sendMessage({ text: newContent });
+        sendMessage({
+          text: newContent,
+          metadata: {
+            timestamp: Date.now()
+          }
+        });
       }, 100); // Small delay to ensure state is updated
     }
   }, [messages, setMessages, sendMessage]);

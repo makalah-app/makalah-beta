@@ -30,7 +30,9 @@ import {
 } from 'ai';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { RefreshCw, Copy, Edit, BookOpen } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { RefreshCw, Copy, Edit, BookOpen, ChevronDown, Clock } from 'lucide-react';
+import { cn } from '../../lib/utils';
 // New reusable components
 import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
@@ -99,6 +101,9 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   onEditingTextChange,
   editAreaRef,
 }) => {
+  // 📚 Rujukan collapsible state - default collapsed for cleaner UI
+  const [referencesOpen, setReferencesOpen] = React.useState(false);
+
   // ❌ REMOVED: Unused state variables - no longer needed for natural LLM flow
   // - revisionFeedback, setRevisionFeedback: Revision state management
   // - resolvedToolCalls: Tool call tracking
@@ -302,7 +307,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
       {/* User Message */}
       {isUser && (
         <Message from="user">
-          <MessageContent className={isEditing ? "!max-w-none" : "message-content-user"}>
+          <div className="flex flex-col items-end gap-1">
+            <MessageContent className={isEditing ? "!max-w-none" : "message-content-user"}>
             {/* 📝 EDIT MODE: Clean component-based approach */}
             {isEditing ? (
               <MessageEditor
@@ -353,18 +359,20 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </div>
                 ))}
 
-                {/* Edit Action */}
-                <MessageActions>
-                  <MessageAction
-                    icon={Edit}
-                    onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
-                    tooltip="Edit percakapan"
-                    label="Edit Percakapan"
-                  />
-                </MessageActions>
               </>
             )}
-          </MessageContent>
+            </MessageContent>
+
+            {/* Edit Action - Below message box, right-aligned */}
+            {!isEditing && (
+              <MessageAction
+                icon={Edit}
+                onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
+                tooltip="Edit percakapan"
+                label="Edit Percakapan"
+              />
+            )}
+          </div>
 
           {/* Debug Info */}
           {debugMode && (
@@ -473,62 +481,71 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             {/* Source References - using standard source-url parts */}
             {!isSystem && uniqueSourceParts.length > 0 && (
               <Card className="mt-3">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs flex items-center gap-1.5">
-                    <BookOpen className="h-3.5 w-3.5" />
-                    <span>Rujukan</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {uniqueSourceParts.map((source, index) => {
-                    // Extract hostname safely
-                    let hostname = 'Source';
-                    try {
-                      hostname = source.url ? new URL(source.url).hostname : 'Source';
-                    } catch (error) {
-                      console.warn('Invalid URL in source:', source.url);
-                    }
-
-                    // Format current date in Indonesian
-                    const date = new Date();
-                    const formattedDate = `${date.getDate()} ${date.toLocaleDateString('id-ID', { month: 'long' })} ${date.getFullYear()}`;
-
-                    return (
-                      <div key={index} className="text-xs text-muted-foreground mb-2 last:mb-0">
-                        {/* Title line dengan bullet */}
-                        <div>• {source.title || 'Untitled'}</div>
-
-                        {/* Source info line dengan indent */}
-                        <div className="ml-3 mt-0.5">
-                          {source.url ? (
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {hostname}
-                            </a>
-                          ) : (
-                            <span>{hostname}</span>
-                          )}
-                          <span>, {formattedDate}</span>
+                <Collapsible open={referencesOpen} onOpenChange={setReferencesOpen}>
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-3">
+                      <CardTitle className="text-xs flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <BookOpen className="h-3.5 w-3.5" />
+                          <span>Rujukan ({uniqueSourceParts.length})</span>
                         </div>
-                      </div>
-                    );
-                  })}
-                </CardContent>
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 transition-transform duration-200",
+                            referencesOpen && "rotate-180"
+                          )}
+                        />
+                      </CardTitle>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <CardContent className="space-y-2">
+                      {uniqueSourceParts.map((source, index) => {
+                        // Extract hostname safely
+                        let hostname = 'Source';
+                        try {
+                          hostname = source.url ? new URL(source.url).hostname : 'Source';
+                        } catch (error) {
+                          console.warn('Invalid URL in source:', source.url);
+                        }
+
+                        // Format current date in Indonesian
+                        const date = new Date();
+                        const formattedDate = `${date.getDate()} ${date.toLocaleDateString('id-ID', { month: 'long' })} ${date.getFullYear()}`;
+
+                        return (
+                          <div key={index} className="text-xs text-muted-foreground mb-2 last:mb-0">
+                            {/* Title line dengan bullet */}
+                            <div>• {source.title || 'Untitled'}</div>
+
+                            {/* Source info line dengan indent */}
+                            <div className="ml-3 mt-0.5">
+                              {source.url ? (
+                                <a
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  {hostname}
+                                </a>
+                              ) : (
+                                <span>{hostname}</span>
+                              )}
+                              <span>, {formattedDate}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
               </Card>
             )}
 
-            {/* Assistant Actions with timestamp */}
-            <AssistantActions
-              timestamp={message.metadata?.timestamp ? new Date(message.metadata.timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }) : undefined}
-            >
+            {/* Assistant Actions */}
+            <AssistantActions>
               <MessageAction
                 icon={RefreshCw}
                 onClick={onRegenerate}

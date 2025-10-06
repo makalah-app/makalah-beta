@@ -45,10 +45,30 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [appVersion, setAppVersion] = useState('Beta 0.1');
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Fetch app version dynamically
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        const response = await fetch('/api/public/app-version');
+        const result = await response.json();
+
+        if (result.success && result.version) {
+          setAppVersion(result.version);
+        }
+      } catch (error) {
+        // Silently fail and keep default version
+        console.error('Failed to fetch app version:', error);
+      }
+    };
+
+    fetchVersion();
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -102,7 +122,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           />
           <div className="flex flex-col">
             <div className="text-xl font-medium text-foreground">Makalah AI</div>
-            <div className="text-xs font-light text-muted-foreground mt-0.5">Versi Beta 0.1</div>
+            <div className="text-xs font-light text-muted-foreground mt-0.5">Versi {appVersion}</div>
           </div>
         </Link>
       </div>

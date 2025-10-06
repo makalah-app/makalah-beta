@@ -5,6 +5,9 @@ import AdminAccess from '../../../src/components/auth/AdminAccess';
 import { useAuth } from '../../../src/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Shield, RefreshCw } from 'lucide-react';
 
 interface ConfigStatus {
@@ -20,6 +23,7 @@ interface ConfigStatus {
   fallbackTopP: number;
   promptCharCount: number;
   promptVersion: string;
+  appVersion: string;
 }
 
 function AdminStatusContent() {
@@ -34,6 +38,11 @@ function AdminStatusContent() {
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const MAX_REFRESH_ATTEMPTS = 3;
   const REFRESH_COOLDOWN = 30000; // 30 seconds
+
+  // Version edit dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editVersionValue, setEditVersionValue] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Helper function for authenticated API calls with token refresh and retry
   const authenticatedFetch = useCallback(async (url: string, options: RequestInit = {}, retryCount = 0): Promise<Response> => {
@@ -144,7 +153,8 @@ function AdminStatusContent() {
           fallbackMaxTokens: result.data.models?.fallback?.maxTokens || 12288,
           fallbackTopP: result.data.models?.fallback?.topP || 0.9,
           promptCharCount: activePromptCharCount,
-          promptVersion: activePromptVersion
+          promptVersion: activePromptVersion,
+          appVersion: result.data.settings?.app_version || 'Beta 0.1'
         });
 
         console.log('\n========================================');
@@ -185,6 +195,58 @@ function AdminStatusContent() {
 
     loadConfigStatus();
   }, [session?.accessToken, loadConfigStatus]);
+
+  // Handle opening edit version dialog
+  const handleEditVersion = () => {
+    if (configStatus) {
+      setEditVersionValue(configStatus.appVersion);
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  // Handle saving new version
+  const handleSaveVersion = async () => {
+    if (!editVersionValue.trim()) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const response = await authenticatedFetch('/api/admin/config', {
+        method: 'POST',
+        body: JSON.stringify({
+          appVersion: editVersionValue.trim()
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || 'Failed to update version');
+      }
+
+      // Update local state
+      if (configStatus) {
+        setConfigStatus({
+          ...configStatus,
+          appVersion: editVersionValue.trim()
+        });
+      }
+
+      // Close dialog
+      setIsEditDialogOpen(false);
+
+      // Optionally reload config to ensure sync
+      await loadConfigStatus();
+
+    } catch (err) {
+      console.error('Failed to save version:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update version');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -253,6 +315,27 @@ function AdminStatusContent() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
+            {/* App Version - Full Width */}
+            <div className="md:col-span-2 space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-muted-foreground">App Version</p>
+                  <p className="text-sm font-semibold text-foreground mt-2">
+                    {configStatus.appVersion}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Versi aplikasi yang ditampilkan di header
+                  </p>
+                </div>
+                <button
+                  className="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 border border-primary hover:bg-primary/5 rounded-md transition-colors"
+                  onClick={handleEditVersion}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+
             {/* Primary Model */}
             <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">Model aktif</p>
@@ -325,6 +408,53 @@ function AdminStatusContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Version Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit App Version</DialogTitle>
+            <DialogDescription>
+              Ubah versi aplikasi yang ditampilkan di header. Format: "Beta 0.1", "v1.0", dll.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="version" className="text-sm font-medium">
+                Version
+              </label>
+              <Input
+                id="version"
+                value={editVersionValue}
+                onChange={(e) => setEditVersionValue(e.target.value)}
+                placeholder="Beta 0.1"
+                maxLength={50}
+                disabled={isSaving}
+              />
+              <p className="text-xs text-muted-foreground">
+                Maksimal 50 karakter
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+              disabled={isSaving}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveVersion}
+              disabled={isSaving || !editVersionValue.trim()}
+            >
+              {isSaving ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

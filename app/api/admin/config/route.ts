@@ -83,11 +83,14 @@ const UpdateConfigRequestSchema = z.object({
       priority: z.number().default(1)
     }).optional()
   }).optional(),
-  
+
   apiKeys: z.object({
     openai: z.string().optional(),
     openrouter: z.string().optional()
-  }).optional()
+  }).optional(),
+
+  // Application settings
+  appVersion: z.string().min(1).max(50).optional()
 });
 
 type GetConfigRequest = z.infer<typeof GetConfigRequestSchema>;
@@ -357,6 +360,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get app_version from admin_settings (application category)
+    if (scope === 'all' || scope === 'settings') {
+      try {
+        const { data: appVersionData } = await supabaseAdmin
+          .from('admin_settings')
+          .select('setting_value')
+          .eq('setting_key', 'app_version')
+          .single();
+
+        if (appVersionData) {
+          if (!response.data.settings) {
+            response.data.settings = {};
+          }
+          response.data.settings.app_version = appVersionData.setting_value || 'Beta 0.1';
+        }
+      } catch (versionError) {
+        // Silently fail, app_version is optional
+        if (!response.data.settings) {
+          response.data.settings = {};
+        }
+        response.data.settings.app_version = 'Beta 0.1'; // Fallback default
+      }
+    }
+
     // Features configuration removed - using auto-pairing instead
 
     // Provider health status block disabled for now to stabilize type-check/build.
@@ -412,7 +439,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedRequest: UpdateConfigRequest = UpdateConfigRequestSchema.parse(body);
 
-    const { models, prompts, apiKeys } = validatedRequest;
+    const { models, prompts, apiKeys, appVersion } = validatedRequest;
 
 
     const results: any = {
@@ -574,6 +601,31 @@ export async function POST(request: NextRequest) {
           } catch (encryptError) {
           }
         }
+      }
+    }
+
+    // Update app_version if provided
+    if (appVersion) {
+      try {
+        // Use RPC function to bypass trigger validation
+        const { data: versionResult, error: versionError } = await supabaseAdmin
+          .rpc('update_app_version', {
+            new_version: appVersion,
+            user_id: adminUserId
+          });
+
+        if (versionError) {
+          console.error('[Admin Config] App version update error:', versionError);
+          throw new Error(`Failed to update app version: ${versionError.message || JSON.stringify(versionError)}`);
+        }
+
+        if (versionResult && versionResult.length > 0) {
+          results.updated.appVersion = versionResult[0];
+          results.timestamps.appVersion = new Date().toISOString();
+        }
+      } catch (versionError) {
+        console.error('[Admin Config] App version update exception:', versionError);
+        throw versionError;
       }
     }
 

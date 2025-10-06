@@ -75,12 +75,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (selectedFiles?.length) {
       const fileNames = Array.from(selectedFiles).map(f => f.name).join(', ');
       const messageWithFiles = `${messageText}\n\n[Files attached: ${fileNames}]`;
-      sendMessage({ text: messageWithFiles });
+      sendMessage({
+        text: messageWithFiles,
+        metadata: {
+          timestamp: Date.now()
+        }
+      });
 
       // Clear selected files after sending
       clearFiles();
     } else {
-      sendMessage({ text: messageText });
+      sendMessage({
+        text: messageText,
+        metadata: {
+          timestamp: Date.now()
+        }
+      });
     }
 
     // Clear text after sending
