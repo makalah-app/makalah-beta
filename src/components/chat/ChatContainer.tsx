@@ -568,21 +568,21 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         if (loadedChatMessages.length > 0) {
           // ✅ FIX: Filter out tool-call parts from historical messages to prevent re-execution
           // Keep tool-result parts to show search results, but remove tool-call parts that trigger execution
-          const historicalMessages = loadedChatMessages.map((msg: AcademicUIMessage) => {
+          const historicalMessages = loadedChatMessages.map((msg) => {
             if (msg.role === 'assistant' && msg.parts) {
               // Keep only non-tool-call parts (text, source-url, tool-result)
               const filteredParts = msg.parts.filter(part =>
                 part.type !== 'tool-call'
               );
-              return { ...msg, parts: filteredParts };
+              return { ...msg, parts: filteredParts } as AcademicUIMessage;
             }
-            return msg;
+            return msg as AcademicUIMessage;
           });
 
-          setLoadedMessages(historicalMessages as AcademicUIMessage[]);
+          setLoadedMessages(historicalMessages);
           // ✅ CRITICAL FIX: Use setTimeout to break the sync update loop that causes infinite re-renders
           setTimeout(() => {
-            setMessages(historicalMessages as AcademicUIMessage[]);
+            setMessages(historicalMessages);
           }, 0);
           lastPersistedCountRef.current = historicalMessages.length;
         } else {
