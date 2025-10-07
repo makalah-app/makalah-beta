@@ -14,7 +14,6 @@ import {
   type UIMessage
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import type { AcademicMetadata } from '../../../src/components/chat/ChatContainer';
 import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
@@ -98,33 +97,6 @@ export async function POST(req: Request) {
 
     // Use simple validated messages - trust LLM intelligence
 
-    // Convert UI messages to model messages using AI SDK function
-    // This is the CRITICAL fix - harus menggunakan convertToModelMessages
-    let processedMessages;
-    try {
-      processedMessages = convertToModelMessages(validatedMessages);
-    } catch (conversionError) {
-      
-      // 🛠️ FIX 4: Enhanced error recovery - create minimal valid AI SDK v5 UIMessage structure
-      try {
-        // Extract text from the most recent message as fallback
-        const lastMessage = validatedMessages[validatedMessages.length - 1];
-        const textPart = lastMessage?.parts?.find((part: any) => part.type === 'text') as { type: 'text'; text: string } | undefined;
-        const textContent = textPart?.text || 'Hello';
-
-        // Create proper AI SDK v5 UIMessage structure
-        const fallbackMessages: AcademicUIMessage[] = [{
-          id: `fallback-msg-${Date.now()}`,
-          role: 'user' as const,
-          parts: [{ type: 'text' as const, text: textContent }]
-        }];
-
-        processedMessages = convertToModelMessages(fallbackMessages);
-      } catch (fallbackError) {
-        throw new Error(`Message processing failed completely. Original: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`);
-      }
-    }
-    
     // Get provider manager
     const providerManager = getProviderManager();
 
@@ -154,14 +126,11 @@ export async function POST(req: Request) {
 
         // ❌ REMOVED: Hardcoded phase progression context - all instructions must come from centralized database system prompt
 
-        let primaryExecuted = false;
-        let primarySuccess = false;
         let writerUsed = false;
 
         try {
           // 🚀 HIGH PRIORITY FIX 1: DYNAMIC EXECUTION PATTERN
           // PRIMARY: Dynamic provider based on database configuration
-          primaryExecuted = true;
 
           // Simple message processing
           const filteredDebugMessages = finalProcessedMessages;
@@ -278,17 +247,18 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
             // Infer new workflow state from AI response
             const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
 
-            // Attach metadata to message via writer
-            writer.writeMessageAnnotation({
+            // Store workflow state for messageMetadata callback
+            // @ts-ignore - Store on result object for access in toUIMessageStream
+            result.workflowMetadata = {
               ...newState,
               model: dynamicConfig.primaryModelName,
               tokens: usage ? {
-                prompt: usage.promptTokens,
-                completion: usage.completionTokens,
-                total: usage.totalTokens
+                prompt: usage.inputTokens || 0,
+                completion: usage.outputTokens || 0,
+                total: usage.totalTokens || 0
               } : undefined,
               userId: userId
-            });
+            };
           } catch (metadataError) {
             // Silent fail - metadata is non-critical
             console.error('[Workflow] Metadata attachment failed:', metadataError);
@@ -333,17 +303,18 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
             // Infer new workflow state from AI response
             const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
 
-            // Attach metadata to message via writer
-            writer.writeMessageAnnotation({
+            // Store workflow state for messageMetadata callback
+            // @ts-ignore - Store on result object for access in toUIMessageStream
+            result.workflowMetadata = {
               ...newState,
               model: dynamicConfig.primaryModelName,
               tokens: usage ? {
-                prompt: usage.promptTokens,
-                completion: usage.completionTokens,
-                total: usage.totalTokens
+                prompt: usage.inputTokens || 0,
+                completion: usage.outputTokens || 0,
+                total: usage.totalTokens || 0
               } : undefined,
               userId: userId
-            });
+            };
           } catch (metadataError) {
             // Silent fail - metadata is non-critical
             console.error('[Workflow] Metadata attachment failed:', metadataError);
@@ -362,6 +333,13 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
                 originalMessages: finalProcessedMessages,
                 sendFinish: true,
                 sendSources: sendSources,  // ✅ Sources for all providers
+                messageMetadata: ({ part }) => {
+                  // Attach workflow metadata on finish event
+                  if (part.type === 'finish' && (result as any).workflowMetadata) {
+                    return (result as any).workflowMetadata;
+                  }
+                  return undefined;
+                }
               }));
               writerUsed = true;
             }
@@ -376,8 +354,6 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
               dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
               responseTime
             );
-
-            primarySuccess = true;
 
           } catch (responseError: any) {
             // Record failure for circuit breaker tracking
