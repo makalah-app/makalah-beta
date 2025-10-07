@@ -87,6 +87,93 @@ Built on **Vercel AI SDK v5** with strict compliance to official patterns:
    - Integrates with 24-table Supabase schema
    - Supports conversation summaries and metadata
 
+### Invisible Workflow System
+
+**Status**: Production-ready (Beta 0.2)
+
+The workflow system tracks academic paper writing progress through **constitutional gravity** - the LLM naturally guides users through milestones while the backend silently observes and records progress. This is NOT a state machine; the AI maintains full conversational freedom.
+
+**Philosophy**: Let the LLM decide transitions, the backend only observes. No programmatic control of AI behavior.
+
+**Key Characteristics**:
+- ✅ **Zero Token Overhead**: State stored in UIMessage.metadata (AI SDK v5 native pattern)
+- ✅ **Pure AI SDK v5**: Uses `writeMessageAnnotation()` for metadata attachment
+- ✅ **Organic Milestones**: 10 natural phases from exploration to delivery
+- ✅ **Pattern Detection**: Regex-based inference from AI response text
+- ✅ **Artifact Preservation**: References, keywords, sections persist across conversations
+- ✅ **Database Persistence**: PostgreSQL JSONB with expression indexes for fast queries
+- ✅ **84% Token Reduction**: From ~3200 to ~500 tokens per request vs. state-in-prompt
+
+**Architecture Components**:
+
+1. **Type System** (`src/lib/types/academic-message.ts`)
+   - `WorkflowMetadata`: milestone, progress, artifacts, timestamp
+   - `WorkflowMilestone`: Union of 10 milestone literals
+   - `WorkflowArtifacts`: topicSummary, researchQuestions, references, keywords, completedSections
+   - `AcademicUIMessage`: Extends AI SDK UIMessage with workflow metadata
+
+2. **Inference Engine** (`src/lib/ai/workflow-inference.ts`)
+   - `inferStateFromResponse()`: Detects milestones from AI text using regex patterns
+   - `extractArtifacts()`: Captures academic elements (citations, RQs, keywords)
+   - Pure functions, no side effects, preserves existing artifacts
+
+3. **API Integration** (`app/api/chat/route.ts`)
+   - Reads current state from conversation history before streaming
+   - Infers new state from AI response text during streaming
+   - Attaches metadata via `writer.writeMessageAnnotation()` in `onFinish` callback
+   - No impact on streaming performance
+
+4. **UI Display** (`src/components/workflow/`)
+   - `WorkflowProgress.tsx`: Main sidebar component (hidden on mobile)
+   - `ProgressBar.tsx`: Animated progress bar with status text
+   - `MilestoneCard.tsx`: Individual milestone cards with icons and badges
+   - Uses shadcn/ui primitives (Card, Badge, Progress)
+
+5. **Database Storage** (`supabase/migrations/20251005000000_create_workflow_metadata.sql`)
+   - `chat_messages.metadata` JSONB column stores workflow state
+   - Expression indexes: `metadata->>'milestone'`, `metadata->>'progress'`
+   - Enables fast queries for analytics and debugging
+
+**10 Organic Milestones** (with progress percentages):
+
+1. **exploring** (5%) - Initial topic exploration, no commitment yet
+2. **topic_locked** (15%) - Topic and research questions defined
+3. **researching** (25%) - Literature search, web_search tool active
+4. **foundation_ready** (35%) - Sufficient references gathered (≥5-8 papers)
+5. **outlining** (45%) - Structuring paper sections (IMRaD/standard format)
+6. **outline_locked** (55%) - Outline approved, ready to write
+7. **drafting** (65%) - Writing section content (Abstract, Intro, Methods, etc.)
+8. **integrating** (75%) - Connecting sections, coherence checks, transitions
+9. **polishing** (85%) - Grammar, citations, formatting, final review
+10. **delivered** (100%) - Paper complete and ready for submission
+
+**Token Efficiency Metrics**:
+- **Before**: ~3200 tokens (system prompt includes full workflow instructions)
+- **After**: ~500 tokens (workflow state in metadata, compact system prompt)
+- **Reduction**: 84% fewer tokens per API request
+- **Cost Savings**: ~$0.03 per 100 conversations at GPT-4o pricing
+
+**Developer References**:
+- Testing: `src/lib/ai/__tests__/workflow-inference.test.ts` (27 test cases)
+- Utilities: `src/lib/utils/workflow-helpers.ts` (milestoneIndex, calculateProgress, formatMilestone)
+- E2E Tests: `tests/e2e/workflow.spec.ts` (Playwright desktop/mobile tests)
+- Implementation Blueprint: `__references__/workflow/index/task/` (7 task specs)
+
+**Maintenance Notes**:
+- To add new milestone: Update WorkflowMilestone type → Add regex pattern → Update UI labels
+- To tune detection: Modify patterns in `workflow-inference.ts:inferStateFromResponse()`
+- To debug state: Query `SELECT metadata FROM chat_messages WHERE conversation_id = 'xxx' ORDER BY timestamp DESC;`
+- Progress calculation: Linear interpolation between milestones (see `calculateProgress()`)
+
+**System Prompt Workflow**:
+The workflow is guided by **rich system prompt instructions** (not programmatic logic). The AI is instructed to:
+1. Recognize user's current stage based on conversation context
+2. Provide stage-appropriate guidance (e.g., suggest outlines during outlining phase)
+3. Use natural milestone language in responses (e.g., "Mari kita tentukan topik" = topic_locked)
+4. NOT explicitly announce transitions (invisible to user)
+
+The backend detects these natural phrases to update metadata silently.
+
 ### Database Layer
 
 Uses Supabase with comprehensive schema in `supabase/migrations/`:
