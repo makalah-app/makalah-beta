@@ -14,7 +14,7 @@
  */
 
 // Permission Types
-export type UserRole = 'admin' | 'researcher' | 'student' | 'guest';
+export type UserRole = 'superadmin' | 'admin' | 'user' | 'guest';
 
 export type Permission = 
   // Academic Workflow Permissions
@@ -52,6 +52,8 @@ export type Permission =
   
   // Admin Permissions
   | 'admin.users'
+  | 'admin.users.promote' // Superadmin only: promote user to admin
+  | 'admin.users.demote'  // Superadmin only: demote admin to user
   | 'admin.system'
   | 'admin.analytics'
   | 'admin.settings'
@@ -100,100 +102,99 @@ export interface PermissionCheckResult {
 
 // Role Definitions with Hierarchical Permissions
 const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
-  admin: {
-    role: 'admin',
+  superadmin: {
+    role: 'superadmin',
     permissions: [
-      // Full access to everything
+      // Full access to everything (inherits all admin permissions)
       'workflow.create', 'workflow.read', 'workflow.update', 'workflow.delete',
       'workflow.approve', 'workflow.reject', 'workflow.export',
-      
+
       // All phases
       'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
       'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
-      
+
       // All resources
       'resources.upload', 'resources.download', 'resources.share', 'resources.manage',
-      
+
       // All AI & tools
       'ai.chat', 'ai.search', 'ai.analysis', 'ai.generation',
       'tools.academic_tools', 'tools.citation_tools', 'tools.analysis_tools',
-      
-      // Admin exclusive
-      'admin.users', 'admin.system', 'admin.analytics', 'admin.settings', 'admin.content',
-      
+
+      // Admin permissions + superadmin exclusive
+      'admin.users', 'admin.users.promote', 'admin.users.demote',
+      'admin.system', 'admin.analytics', 'admin.settings', 'admin.content',
+
       // System level
       'system.read', 'system.write', 'system.delete', 'system.configure'
     ],
     limitations: {},
     metadata: {
-      description: 'Administrator dengan akses penuh ke seluruh sistem',
+      description: 'Superadmin dengan kontrol penuh sistem termasuk promote/demote admin',
+      level: 5,
+      inheritsFrom: []
+    }
+  },
+
+  admin: {
+    role: 'admin',
+    permissions: [
+      // Full access to workflows
+      'workflow.create', 'workflow.read', 'workflow.update', 'workflow.delete',
+      'workflow.approve', 'workflow.reject', 'workflow.export',
+
+      // All phases
+      'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
+      'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
+
+      // All resources
+      'resources.upload', 'resources.download', 'resources.share', 'resources.manage',
+
+      // All AI & tools
+      'ai.chat', 'ai.search', 'ai.analysis', 'ai.generation',
+      'tools.academic_tools', 'tools.citation_tools', 'tools.analysis_tools',
+
+      // Admin permissions (but NOT promote/demote)
+      'admin.users', 'admin.system', 'admin.analytics', 'admin.settings', 'admin.content',
+
+      // System level
+      'system.read', 'system.write', 'system.delete', 'system.configure'
+    ],
+    limitations: {},
+    metadata: {
+      description: 'Administrator dengan akses penuh sistem (kecuali promote/demote admin)',
       level: 4,
       inheritsFrom: []
     }
   },
   
-  researcher: {
-    role: 'researcher',
+  user: {
+    role: 'user',
     permissions: [
-      // Workflow permissions (full academic workflow)
+      // Full workflow permissions (merged from researcher + student)
       'workflow.create', 'workflow.read', 'workflow.update', 'workflow.export',
-      
+
       // All academic phases
       'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
       'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
-      
-      // Resource management
+
+      // Full resource access
       'resources.upload', 'resources.download', 'resources.share',
-      
-      // AI & tools access
+
+      // All AI & tools access
       'ai.chat', 'ai.search', 'ai.analysis', 'ai.generation',
       'tools.academic_tools', 'tools.citation_tools', 'tools.analysis_tools',
-      
-      // Basic system access
+
+      // System access
       'system.read', 'system.write'
     ],
     limitations: {
-      maxWorkflows: 10,
-      maxFileUpload: 100, // MB
-      aiRequestsPerDay: 1000,
-      collaboratorsLimit: 5
+      maxWorkflows: 50,
+      maxFileUpload: 500, // MB (generous limit)
+      aiRequestsPerDay: 5000,
+      collaboratorsLimit: 10
     },
     metadata: {
-      description: 'Peneliti dengan akses penuh workflow akademik',
-      level: 3,
-      inheritsFrom: ['student']
-    }
-  },
-  
-  student: {
-    role: 'student',
-    permissions: [
-      // Basic workflow permissions
-      'workflow.create', 'workflow.read', 'workflow.update',
-      
-      // Phase permissions (supervised)
-      'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
-      'phase.data_collection', 'phase.analysis', 'phase.writing',
-      
-      // Limited resource access
-      'resources.upload', 'resources.download',
-      
-      // AI access (limited)
-      'ai.chat', 'ai.search', 'ai.analysis',
-      'tools.academic_tools', 'tools.citation_tools',
-      
-      // Read-only system access
-      'system.read'
-    ],
-    limitations: {
-      maxWorkflows: 3,
-      maxFileUpload: 25, // MB
-      aiRequestsPerDay: 200,
-      requiresApproval: ['phase.review', 'workflow.export'],
-      supervisorRequired: true
-    },
-    metadata: {
-      description: 'Mahasiswa dengan akses terbatas dan supervised',
+      description: 'Pengguna reguler dengan akses penuh workflow akademik',
       level: 2,
       inheritsFrom: ['guest']
     }
@@ -355,7 +356,15 @@ export class PermissionManager {
    * Check if user can access admin features
    */
   isAdmin(context: UserPermissionContext): boolean {
-    return context.role === 'admin' && this.hasPermission(context, 'admin.system').granted;
+    return (context.role === 'admin' || context.role === 'superadmin') &&
+           this.hasPermission(context, 'admin.system').granted;
+  }
+
+  /**
+   * Check if user is superadmin
+   */
+  isSuperAdmin(context: UserPermissionContext): boolean {
+    return context.role === 'superadmin' && this.hasPermission(context, 'admin.users.promote').granted;
   }
 
   /**
@@ -387,8 +396,8 @@ export class PermissionManager {
    * Get role upgrade suggestions
    */
   suggestUpgrade(currentRole: UserRole, desiredPermission: Permission): UserRole | undefined {
-    const roles: UserRole[] = ['student', 'researcher', 'admin'];
-    
+    const roles: UserRole[] = ['user', 'admin', 'superadmin'];
+
     for (const role of roles) {
       if (this.compareRoles(role, currentRole) > 0) {
         const rolePerms = this.getRolePermissions(role);
@@ -397,7 +406,7 @@ export class PermissionManager {
         }
       }
     }
-    
+
     return undefined;
   }
 

@@ -1,10 +1,10 @@
 /**
  * Authentication Form Validation Utilities
- * 
+ *
  * Provides validation functions for login and registration forms
  * without external dependencies. Used for client-side form validation
  * with academic context requirements.
- * 
+ *
  * Features:
  * - Email validation with academic domain support
  * - Password strength validation for academic accounts
@@ -12,6 +12,8 @@
  * - Error message generation with internationalization support
  * - Input sanitization for security
  */
+
+import type { UserRole } from './role-permissions';
 
 // Validation Types
 export interface ValidationResult {
@@ -32,7 +34,7 @@ export interface RegistrationFormData {
   confirmPassword: string;
   fullName: string;
   institution?: string;
-  role: 'researcher' | 'student';
+  role: UserRole;
   acceptTerms: boolean;
 }
 

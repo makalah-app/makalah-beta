@@ -167,7 +167,7 @@ function ChatPageContent() {
   const { user, logout, isLoading } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
-  const [appVersion, setAppVersion] = useState('Beta 0.1');
+  const [appVersion, setAppVersion] = useState('');
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -263,7 +263,7 @@ function ChatPageContent() {
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
 
-  // ✅ SIDE EFFECT: Fetch app version from database
+  // ✅ SIDE EFFECT: Fetch app version from database with polling
   useEffect(() => {
     const fetchVersion = async () => {
       try {
@@ -278,7 +278,13 @@ function ChatPageContent() {
       }
     };
 
+    // Fetch immediately
     fetchVersion();
+
+    // Poll every 30 seconds for updates
+    const interval = setInterval(fetchVersion, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)
@@ -459,7 +465,9 @@ function ChatPageContent() {
                   />
                   <div className="flex flex-col">
                     <div className="text-sm font-medium text-foreground">Makalah AI</div>
-                    <div className="text-xs font-light text-muted-foreground">Versi {appVersion}</div>
+                    <div className="text-xs font-light text-muted-foreground">
+                      {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
+                    </div>
                   </div>
                 </a>
               </div>
@@ -616,7 +624,7 @@ export default function ChatPage() {
   return (
     <RoleBasedRoute
       requiresAuth={true}
-      allowedRoles={['admin', 'researcher', 'student']}
+      allowedRoles={['superadmin', 'admin', 'user']}
       redirectTo="/auth"
     >
       <ChatPageContent />

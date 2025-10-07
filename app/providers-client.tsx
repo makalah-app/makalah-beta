@@ -2,10 +2,11 @@
 
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { ThemeProvider } from '../src/components/theme/ThemeProvider';
-import { AuthProvider } from '../src/hooks/useAuth';
-import { GlobalHeader } from '../src/components/layout/GlobalHeader';
-import { Footer } from '../src/components/layout/Footer';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { AuthProvider } from '@/hooks/useAuth';
+import { GlobalHeader } from '@/components/layout/GlobalHeader';
+import { Footer } from '@/components/layout/Footer';
+import { Toaster } from '@/components/ui/toaster';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -40,6 +41,7 @@ export function AppProviders({ children }: ProvidersProps) {
         disableTransitionOnChange={false}
       >
         <LayoutShell>{children}</LayoutShell>
+        <Toaster />
       </ThemeProvider>
     </AuthProvider>
   );

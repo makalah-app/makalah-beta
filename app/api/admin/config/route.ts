@@ -16,8 +16,9 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
 import { apiKeyManager, generateAPIKeyHint } from '../../../../src/lib/security/api-key-encryption';
+import { validateAdminAccess as validateAdmin } from '../../../../src/lib/admin/admin-auth';
 
-// Admin email hardcoded for security
+// Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
 const ADMIN_EMAIL = 'makalah.app@gmail.com';
 
 // Crypto polyfill handling for different environments
@@ -97,46 +98,12 @@ type GetConfigRequest = z.infer<typeof GetConfigRequestSchema>;
 type UpdateConfigRequest = z.infer<typeof UpdateConfigRequestSchema>;
 
 /**
- * Validate admin access from request
- */
-async function validateAdminAccess(request: NextRequest): Promise<{ valid: boolean; error?: string; userId?: string }> {
-  try {
-    // Get Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { valid: false, error: 'No authorization header' };
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    
-    if (error || !user) {
-      return { valid: false, error: 'Invalid token' };
-    }
-    
-    // Check if user is admin
-    const isAdmin = user.email === ADMIN_EMAIL;
-    
-    if (!isAdmin) {
-      return { valid: false, error: 'Admin access required' };
-    }
-    
-    return { valid: true, userId: user.id };
-    
-  } catch (error) {
-    return { valid: false, error: 'Auth validation failed' };
-  }
-}
-
-/**
  * GET /api/admin/config - Get admin configuration
  */
 export async function GET(request: NextRequest) {
   try {
-    // Validate admin access
-    const adminCheck = await validateAdminAccess(request);
+    // Validate admin access (admin or superadmin)
+    const adminCheck = await validateAdmin(request);
     if (!adminCheck.valid) {
       return Response.json({
         success: false,
@@ -424,8 +391,8 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validate admin access
-    const adminCheck = await validateAdminAccess(request);
+    // Validate admin access (admin or superadmin)
+    const adminCheck = await validateAdmin(request);
     if (!adminCheck.valid) {
       return Response.json({
         success: false,

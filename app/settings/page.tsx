@@ -24,6 +24,7 @@ type ProfileFormState = {
   fullName: string;
   email: string;
   institution: string;
+  predikat?: string; // Mahasiswa or Peneliti
 };
 
 type PasswordFormState = {
@@ -44,7 +45,8 @@ export default function SettingsPage() {
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
     fullName: '',
     email: '',
-    institution: ''
+    institution: '',
+    predikat: undefined
   });
   const [passwordForm, setPasswordForm] = useState<PasswordFormState>({
     currentPassword: '',
@@ -69,7 +71,8 @@ export default function SettingsPage() {
       setProfileForm({
         fullName: user.fullName || user.name || '',
         email: user.email || '',
-        institution: user.institution || ''
+        institution: user.institution || '',
+        predikat: (user as any).predikat || undefined
       });
     }
   }, [user]);
@@ -84,22 +87,23 @@ export default function SettingsPage() {
 
   const roleLabel = useMemo(() => {
     switch (user?.role) {
+      case 'superadmin':
+        return 'Superadmin';
       case 'admin':
         return 'Administrator';
-      case 'researcher':
-        return 'Peneliti';
-      case 'student':
-        return 'Mahasiswa';
-      default:
+      case 'user':
         return 'Pengguna';
+      default:
+        return 'Tamu';
     }
   }, [user?.role]);
 
   const accountTier = useMemo(() => {
-    if (!user) return 'Standard';
+    if (!user) return 'Akses Standar';
+    if (user.role === 'superadmin') return 'Akses Superadmin';
     if (user.role === 'admin') return 'Akses Administrator';
-    if (user.role === 'researcher') return 'Akses Peneliti';
-    return 'Akses Dasar';
+    if (user.role === 'user') return 'Akses Pengguna';
+    return 'Akses Tamu';
   }, [user]);
 
   const isDarkMode = selectedTheme === 'dark';
@@ -115,8 +119,9 @@ export default function SettingsPage() {
     try {
       const success = await updateProfile({
         fullName: profileForm.fullName,
-        institution: profileForm.institution
-      });
+        institution: profileForm.institution,
+        predikat: profileForm.predikat
+      } as any);
 
       if (success) {
         setStatusMessage({ type: 'success', text: 'Profil berhasil diperbarui.' });
@@ -240,18 +245,26 @@ export default function SettingsPage() {
 
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="rounded-[3px] border border-dashed border-border/60 bg-muted/30 p-3">
-                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Peran</span>
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Peran Sistem</span>
                         <div className="mt-2 flex items-center gap-2">
                           <Shield className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm font-medium text-foreground">{roleLabel}</span>
                         </div>
                       </div>
                       <div className="rounded-[3px] border border-dashed border-border/60 bg-muted/30 p-3">
-                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Institusi</span>
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Predikat</span>
                         <div className="mt-2 flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{profileForm.institution || 'Belum diatur'}</span>
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{profileForm.predikat || 'Belum diatur'}</span>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[3px] border border-dashed border-border/60 bg-muted/30 p-3">
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Institusi</span>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">{profileForm.institution || 'Belum diatur'}</span>
                       </div>
                     </div>
 
@@ -285,6 +298,26 @@ export default function SettingsPage() {
                         <Input id="email" value={profileForm.email} disabled className="pl-9" />
                       </div>
                       <p className="text-xs text-muted-foreground">Email hanya bisa diubah lewat tim dukungan.</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="predikat">Predikat (Opsional)</Label>
+                      <Select
+                        value={profileForm.predikat || 'tidak-ada'}
+                        onValueChange={(value) => setProfileForm((prev) => ({ ...prev, predikat: value === 'tidak-ada' ? undefined : value }))}
+                      >
+                        <SelectTrigger id="predikat">
+                          <SelectValue placeholder="Pilih predikat" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tidak-ada">Tidak ada</SelectItem>
+                          <SelectItem value="Mahasiswa">Mahasiswa</SelectItem>
+                          <SelectItem value="Peneliti">Peneliti</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Predikat akademik Anda (tidak memengaruhi akses sistem)
+                      </p>
                     </div>
 
                     <div className="space-y-2">

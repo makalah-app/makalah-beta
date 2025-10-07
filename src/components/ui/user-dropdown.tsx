@@ -60,7 +60,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
 
   const renderMenuItems = () => (
     <>
-      {user.role === 'admin' && (
+      {(user.role === 'superadmin' || user.role === 'admin') && (
         <DropdownMenuItem
           onSelect={handleDashboard}
           className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground transition-colors duration-150 focus:bg-[var(--user-menu-item-hover)] focus:text-foreground data-[highlighted]:bg-[var(--user-menu-item-hover)] data-[highlighted]:text-foreground"

@@ -45,5 +45,6 @@ export async function GET() {
   }
 }
 
-// Cache configuration for performance
-export const revalidate = 30; // Cache for 30 seconds (ISR)
+// No cache - allow real-time updates from admin
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;

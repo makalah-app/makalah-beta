@@ -90,8 +90,18 @@ Built on **Vercel AI SDK v5** with strict compliance to official patterns:
 ### Database Layer
 
 Uses Supabase with comprehensive schema in `supabase/migrations/`:
+- **2025-10-07** Role System Simplification: Migrasi `20251007000000_role_simplification_superadmin.sql` mengubah sistem dari 4 role (admin, researcher, reviewer, student) menjadi 3 role (superadmin, admin, user). Menambahkan field `predikat` di `user_profiles`, database functions untuk promote/demote, dan trigger proteksi superadmin. Migrasi `20251007000001_create_superadmin_trigger.sql` mengimplementasi auto-promotion erik.supit@gmail.com ke superadmin.
 - **2025-10-07** Sinkronisasi auth→public: migrasi `20250929000000_fix_auth_trigger.sql` mengaktifkan trigger `public.handle_new_user` dan `on_auth_user_created/on_auth_user_deleted`, memastikan akun baru dari Supabase Auth otomatis masuk ke `public.users`/`user_profiles` (sinkron 11 baris pasca rekonsiliasi). Backup snapshot terakhir ada di `__references__/debug/users/backups/snapshot-YYYY-MM-DDTHH-MM-SSZ.json`.
-- **Health-check SQL** (jalan di CI atau manual): `SELECT COUNT(*) FROM auth.users` vs `public.users`, plus `SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 'users' AND trigger_schema = 'auth';` buat pastikan trigger aktif.
+- **Health-check SQL** (jalan di CI atau manual):
+  ```sql
+  SELECT COUNT(*) FILTER (WHERE is_active) AS active_users,
+         COUNT(*) FILTER (WHERE NOT is_active) AS suspended_users
+  FROM public.users;
+  SELECT trigger_name
+  FROM information_schema.triggers
+  WHERE event_object_table = 'users'
+    AND trigger_schema = 'auth';
+  ```
 
 - **User Management**: `users`, `user_profiles`, `user_sessions`, `user_preferences`
 - **Chat System**: `conversations`, `chat_messages` with message parts and metadata
@@ -107,11 +117,70 @@ Uses Supabase with comprehensive schema in `supabase/migrations/`:
 - **Auth Routes** (`app/api/auth/`): Session management and sign-out
 - **UUID Validation** (`src/lib/utils/uuid-generator.ts`): PostgreSQL-compatible UUID generation
 
+### Role-Based Access Control (RBAC)
+
+The application uses a **3-tier role system** with granular permissions:
+
+**Role Hierarchy:**
+- `superadmin` (Level 5) - Full system control including promote/demote admin
+- `admin` (Level 4) - System administration without promote/demote privileges
+- `user` (Level 2) - Regular users with full academic workflow access
+- `guest` (Level 1) - Limited read-only access
+
+**Key Features:**
+1. **Permission System** (`src/lib/auth/role-permissions.ts`)
+   - 40+ granular permissions across workflow, resources, AI tools, and admin functions
+   - Permission inheritance and role comparison
+   - Limitation enforcement (file uploads, AI requests, collaborators)
+   - Session-based permission caching (5-minute TTL)
+
+2. **Predikat Field**
+   - Academic metadata field separate from system role
+   - Values: "Mahasiswa" (Student) or "Peneliti" (Researcher)
+   - Stored in `user_profiles.predikat`
+   - Does NOT affect permissions, purely for display/categorization
+
+3. **Database Functions** (Migration `20251007000000_role_simplification_superadmin.sql`)
+   - `is_superadmin(user_id)` - Check superadmin status
+   - `promote_to_admin(target_user_id, promoted_by)` - Promote user to admin (superadmin only)
+   - `demote_to_user(target_user_id, demoted_by)` - Demote admin to user (superadmin only)
+   - `protect_superadmin()` - Trigger to prevent superadmin deletion/demotion
+
+4. **Auto-promotion Trigger** (Migration `20251007000001_create_superadmin_trigger.sql`)
+   - Automatically promotes `erik.supit@gmail.com` to superadmin on registration
+   - Logs promotion in `security_audit_log` table
+   - Applies to both new registrations and existing accounts
+
+5. **Admin Access Control** (`src/lib/admin/admin-auth.ts`)
+   - `validateAdminAccess()` - Checks for admin OR superadmin role
+   - `validateSuperAdminAccess()` - Checks for superadmin role only
+   - Returns `AdminAccessResult` with user ID, email, and role
+
+6. **API Endpoints:**
+   - `POST /api/admin/users/promote` - Promote user to admin (superadmin only)
+   - `POST /api/admin/users/demote` - Demote admin to user (superadmin only)
+   - Both endpoints require superadmin token and perform validation
+
+7. **UI Integration:**
+   - Registration: Hardcoded to `user` role + predikat selection
+   - Settings: Displays role (read-only) + predikat (editable)
+   - Admin Users Page: Promote/demote buttons for superadmin only
+   - Role badges and status indicators throughout admin UI
+
+**Architecture Notes:**
+- All new registrations default to `user` role
+- Only superadmin can promote users to admin or demote admins
+- Superadmin role is protected at database level (cannot be deleted or demoted)
+- Regular admins can manage users but NOT change roles
+- Permission checks are centralized through `PermissionManager` singleton
+- Role migration from 4-role to 3-role system completed on 2025-10-07
+
 ### Frontend Architecture
 
 - **App Structure**: Next.js App Router with route groups
   - `app/chat/` - Main chat interface
   - `app/admin/` - Admin dashboard for prompts, users, models
+    - `app/admin/users/details/` - halaman kontrol akun dengan paginasi 25/50/100, filter status/role/joinedSince, aksi suspend/activate/delete (CTA "Lihat" di kartu statistik terhubung langsung ke sini)
   - `app/auth/` - Authentication flows
   - `app/api/` - API routes
 
@@ -302,10 +371,13 @@ Copy `.env.example` to `.env.local` and configure:
 ## Testing Credentials
 
 ```
-Admin:  makalah.app@gmail.com / M4k4l4h2025
-User 1: 1200pixels@gmail.com / M4k4l4h2025
-User 2: posteriot@gmail.com / M4k4l4h2025
+Superadmin: erik.supit@gmail.com / M4k4lah2025 (auto-promoted via database trigger)
+Admin:      makalah.app@gmail.com / M4k4l4h2025
+User 1:     1200pixels@gmail.com / M4k4l4h2025
+User 2:     posteriot@gmail.com / M4k4l4h2025
 ```
+
+**Note**: The superadmin account (erik.supit@gmail.com) is automatically promoted via database trigger on registration and has exclusive privileges to promote/demote admin users.
 
 ## Key Architectural Decisions
 
@@ -395,7 +467,8 @@ NEVER CLAIM SUCCESS WHILE ACTUALLY LYING. NEVER BE OVERCONFIDENT: ALWAYS CHECK, 
 
 ## Testing Credentials
 ```
-Admin:  makalah.app@gmail.com / M4k4l4h2025
-User 1: 1200pixels@gmail.com / M4k4l4h2025
-User 2: posteriot@gmail.com / M4k4l4h2025
+Superadmin: erik.supit@gmail.com / M4k4lah2025 (auto-promoted via database trigger)
+Admin:      makalah.app@gmail.com / M4k4l4h2025
+User 1:     1200pixels@gmail.com / M4k4l4h2025
+User 2:     posteriot@gmail.com / M4k4l4h2025
 ```

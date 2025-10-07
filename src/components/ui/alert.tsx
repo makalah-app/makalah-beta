@@ -3,14 +3,18 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+const baseAlertClass =
+  "relative w-full rounded-[3px] border px-4 py-3 text-sm shadow-sm [&>svg+div]:translate-y-[-1px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:h-4 [&>svg]:w-4 [&>svg~*]:pl-9";
+
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  baseAlertClass,
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
+       default:
+          "bg-emerald-600 text-white border-emerald-600 [&>svg]:text-white [&>svg~*]:pl-10",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "bg-destructive text-white border-destructive [&>svg]:text-white [&>svg~*]:pl-10",
       },
     },
     defaultVariants: {

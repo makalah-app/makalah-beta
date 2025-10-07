@@ -15,10 +15,8 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
-
-// Admin email hardcoded for security
-const ADMIN_EMAIL = 'makalah.app@gmail.com';
+import { supabaseAdmin } from '@/lib/database/supabase-client';
+import { validateAdminAccess } from '@/lib/admin/admin-auth';
 
 // Request validation schema
 const UsersRequestSchema = z.object({
@@ -28,40 +26,6 @@ const UsersRequestSchema = z.object({
 });
 
 type UsersRequest = z.infer<typeof UsersRequestSchema>;
-
-/**
- * Validate admin access from request headers
- */
-async function validateAdminAccess(request: NextRequest): Promise<{ valid: boolean; error?: string }> {
-  try {
-    // Get Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { valid: false, error: 'No authorization header' };
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-    
-    if (error || !user) {
-      return { valid: false, error: 'Invalid token' };
-    }
-    
-    // Check if user is admin
-    const isAdmin = user.email === ADMIN_EMAIL;
-    
-    if (!isAdmin) {
-      return { valid: false, error: 'Admin access required' };
-    }
-    
-    return { valid: true };
-    
-  } catch (error) {
-    return { valid: false, error: 'Auth validation failed' };
-  }
-}
 
 /**
  * GET /api/admin/users - Get user statistics and list

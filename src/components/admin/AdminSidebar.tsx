@@ -5,14 +5,24 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Brain, Cpu, Users } from 'lucide-react';
+import { Shield, Brain, Cpu, Users, UserPlus, LucideIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AdminSidebarProps {
   currentPath?: string;
   onNavigate?: () => void;
 }
 
-const navigationItems = [
+interface NavigationItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  description: string;
+  superadminOnly?: boolean;
+}
+
+const navigationItems: NavigationItem[] = [
   {
     id: 'status',
     label: 'Status Konfigurasi',
@@ -40,16 +50,38 @@ const navigationItems = [
     href: '/admin/users',
     icon: Users,
     description: 'Analitik pemakaian'
+  },
+  {
+    id: 'users-details',
+    label: 'Detail Users',
+    href: '/admin/users/details',
+    icon: Users,
+    description: 'Kontrol akun & status'
+  },
+  {
+    id: 'create-admin',
+    label: 'Buat Admin',
+    href: '/admin/create-admin',
+    icon: UserPlus,
+    description: 'Tambah administrator',
+    superadminOnly: true
   }
 ];
 
 export function AdminSidebar({ currentPath, onNavigate }: AdminSidebarProps) {
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleNavigation = (href: string) => {
     router.push(href);
     onNavigate?.();
   };
+
+  // Filter navigation items based on user role
+  const isSuperAdmin = user?.role === 'superadmin';
+  const visibleItems = navigationItems.filter(
+    (item) => !item.superadminOnly || isSuperAdmin
+  );
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -69,7 +101,7 @@ export function AdminSidebar({ currentPath, onNavigate }: AdminSidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <div className="space-y-2">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPath === item.href;
 

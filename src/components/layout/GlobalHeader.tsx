@@ -45,13 +45,13 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [appVersion, setAppVersion] = useState('Beta 0.1');
+  const [appVersion, setAppVersion] = useState('');
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Fetch app version dynamically
+  // Fetch app version dynamically with polling
   useEffect(() => {
     const fetchVersion = async () => {
       try {
@@ -62,11 +62,17 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           setAppVersion(result.version);
         }
       } catch (error) {
-        // Silently fail and keep default version
+        // Silent fail - use default version
       }
     };
 
+    // Fetch immediately
     fetchVersion();
+
+    // Poll every 30 seconds for updates
+    const interval = setInterval(fetchVersion, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
@@ -121,7 +127,9 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           />
           <div className="flex flex-col">
             <div className="text-xl font-medium text-foreground">Makalah AI</div>
-            <div className="text-xs font-light text-muted-foreground mt-0.5">Versi {appVersion}</div>
+            <div className="text-xs font-light text-muted-foreground mt-0.5">
+              {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
+            </div>
           </div>
         </Link>
       </div>

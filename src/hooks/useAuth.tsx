@@ -6,7 +6,7 @@
  *
  * Features:
  * - JWT token management with automatic refresh
- * - Role-based state handling (admin/researcher/student)
+ * - Role-based state handling (superadmin/admin/user)
  * - Session persistence with localStorage
  * - Login/logout functionality with API integration
  * - Permission checking integration
@@ -77,6 +77,7 @@ export interface RegistrationData {
   fullName: string;
   role: UserRole;
   institution?: string;
+  predikat?: string; // Mahasiswa or Peneliti
 }
 
 export interface AuthState {
@@ -157,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: session.user.email || '',
       name: emailName,
       fullName: emailName,
-      role: (session.user.user_metadata?.role || 'student') as UserRole,
+      role: (session.user.user_metadata?.role || 'user') as UserRole,
       institution: session.user.user_metadata?.institution || undefined,
       isVerified: !!session.user.email_confirmed,
       createdAt: session.user.created_at || new Date().toISOString(),
@@ -165,6 +166,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       avatarUrl: session.user.user_metadata?.avatar_url || undefined
     };
   };
+
+  const touchLastLogin = useCallback(async (params: {
+    userId: string;
+    email?: string | null;
+    role?: string | null;
+    lastLoginAt?: string | null;
+    force?: boolean;
+  }) => {
+    const { userId, email, role, lastLoginAt, force } = params;
+    if (!userId) return;
+
+    try {
+      const now = new Date();
+      if (!force && lastLoginAt) {
+        const last = new Date(lastLoginAt);
+        if (!Number.isNaN(last.valueOf()) && now.getTime() - last.getTime() < 5 * 60 * 1000) {
+          return;
+        }
+      }
+
+      const allowedRoles = new Set(['superadmin', 'admin', 'user']);
+      const normalizedRole = role && allowedRoles.has(role) ? role : 'user';
+
+      const nowIso = now.toISOString();
+      const updatePayload: Record<string, any> = {
+        last_login_at: nowIso,
+        updated_at: nowIso,
+        is_active: true,
+        role: normalizedRole,
+      };
+
+      const { error: updateError } = await (supabaseClient as any)
+        .from('users')
+        .update(updatePayload)
+        .eq('id', userId);
+
+      if (updateError && updateError.code !== 'PGRST116') {
+        throw updateError;
+      }
+
+      if (updateError && updateError.code === 'PGRST116') {
+        const insertPayload: Record<string, any> = {
+          id: userId,
+          email: email ?? `${userId}@local.local`,
+          password_hash: 'SUPABASE_AUTH',
+          role: normalizedRole,
+          is_active: true,
+          last_login_at: nowIso,
+          login_count: 0,
+          failed_login_attempts: 0,
+          locked_until: null,
+          created_at: nowIso,
+          updated_at: nowIso,
+        };
+
+        const { error: insertError } = await (supabaseClient as any)
+          .from('users')
+          .insert(insertPayload);
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+    } catch (err) {
+      // Silent fail - last_login_at update is non-critical
+    }
+  }, []);
 
   /**
    * Initialize authentication from stored session
@@ -276,6 +344,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Update tracking refs
           lastAccessTokenRef.current = session.access_token;
           lastSessionUserIdRef.current = session.user?.id;
+
+          if (session?.user?.id) {
+            await touchLastLogin({
+              userId: session.user.id,
+              email: session.user.email,
+              role: fallbackUser.role,
+              force: true,
+            });
+          }
         } else {
           setAuthState({
             user: null,
@@ -310,6 +387,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastLogin: userProfile.last_login_at || new Date().toISOString(),
         avatarUrl: profile?.avatar_url || userProfile.avatar_url || undefined
       };
+
+      await touchLastLogin({
+        userId: userProfile.id,
+        email: userProfile.email,
+        role: userProfile.role,
+        lastLoginAt: userProfile.last_login_at,
+      });
 
       // Create our auth session
       const authSession: AuthSession = {
@@ -352,7 +436,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       initializingRef.current = false;
     }
-  }, []);
+  }, [touchLastLogin]);
 
   // Initialize authentication and set up auth state change listener
   useEffect(() => {
@@ -468,7 +552,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           userProfile = {
             id: data.user.id,
             email: data.user.email,
-            role: data.user.user_metadata?.role || 'student',
+            role: data.user.user_metadata?.role || 'user',
             email_verified_at: data.user.email_confirmed_at,
             created_at: data.user.created_at,
             last_login_at: new Date().toISOString(),
@@ -520,7 +604,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.user.email!,
         name: fallbackName,
         fullName: data.user.user_metadata?.full_name || undefined,
-        role: (data.user.user_metadata?.role || 'student') as UserRole,
+        role: (data.user.user_metadata?.role || 'user') as UserRole,
         institution: data.user.user_metadata?.institution || undefined,
         isVerified: data.user.email_confirmed_at != null,
         createdAt: data.user.created_at!,
@@ -570,6 +654,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // SSR cookie sync failed, but login still successful
       }
 
+      await touchLastLogin({
+        userId: data.user.id,
+        email: data.user.email,
+        role: user.role,
+        force: true,
+      });
+
       return true;
 
     } catch (error) {
@@ -581,7 +672,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }));
       return false;
     }
-  }, []);
+  }, [touchLastLogin]);
 
   /**
    * Register new user
@@ -597,7 +688,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: {
           data: {
             full_name: data.fullName,
-            role: data.role,
+            role: 'user', // Always register as 'user' role
             institution: data.institution
           }
         }
@@ -617,7 +708,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firstName = nameParts[0] || data.fullName;
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
-      // Create user profile in user_profiles table
+      // Create user profile in user_profiles table with predikat
       const { error: profileError } = await (supabaseClient as any)
         .from('user_profiles')
         .upsert({
@@ -626,6 +717,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           last_name: lastName,
           display_name: data.fullName,
           institution: data.institution || null,
+          predikat: data.predikat || null, // Save predikat (Mahasiswa/Peneliti)
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         } as any, { onConflict: 'user_id' });
@@ -816,7 +908,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authState.user?.id, authState.user?.role, authState.session?.sessionId, permissionManager]); // ✅ CRITICAL FIX: Depend only on stable primitive values
 
   const isAdmin = useCallback((): boolean => {
-    return authState.user?.role === 'admin' && hasPermission('admin.system');
+    return (authState.user?.role === 'superadmin' || authState.user?.role === 'admin') && hasPermission('admin.system');
   }, [authState.user?.role, hasPermission]); // ✅ CRITICAL FIX: Depend only on role value, not full user object
 
   const canPerformAcademicOperations = useCallback((): boolean => {
@@ -839,7 +931,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthState(prev => ({ ...prev, error: null }));
   }, []);
 
-  const updateProfile = useCallback(async (updates: Partial<User>): Promise<boolean> => {
+  const updateProfile = useCallback(async (updates: Partial<User> & { predikat?: string }): Promise<boolean> => {
     if (!authState.user || !authState.session) return false;
 
     try {
@@ -859,6 +951,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (updates.institution !== undefined) dbUpdates.institution = updates.institution;
       if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
+      if ((updates as any).predikat !== undefined) dbUpdates.predikat = (updates as any).predikat;
       dbUpdates.updated_at = new Date().toISOString();
 
       // Update user profile in user_profiles table (correct table)

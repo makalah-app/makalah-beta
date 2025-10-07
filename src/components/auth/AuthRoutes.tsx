@@ -127,10 +127,10 @@ export default function RoleBasedRoute({
         if (normalizedRequiredPermissions.length > 0) {
           // ✅ CRITICAL FIX: Use local permission checking instead of unstable hasAllPermissions hook
           const userHasPermissions = user && normalizedRequiredPermissions.every(permission => {
-            // Simple permission check - admin has all permissions, others have basic chat access
-            if (user.role === 'admin') return true;
+            // Simple permission check - superadmin and admin have all permissions, others have basic chat access
+            if (user.role === 'superadmin' || user.role === 'admin') return true;
             if (permission === 'ai.chat' || permission === 'workflow.read') return true;
-            return user.role === 'researcher' || user.role === 'student';
+            return user.role === 'user';
           });
 
           if (!userHasPermissions) {
@@ -321,10 +321,10 @@ export function ProtectedRoute({
     allowedRoles = [exactRole];
   } else if (minRole) {
     const roleHierarchy: Record<UserRole, UserRole[]> = {
-      guest: ['guest', 'student', 'researcher', 'admin'],
-      student: ['student', 'researcher', 'admin'],
-      researcher: ['researcher', 'admin'],
-      admin: ['admin']
+      guest: ['guest', 'user', 'admin', 'superadmin'],
+      user: ['user', 'admin', 'superadmin'],
+      admin: ['admin', 'superadmin'],
+      superadmin: ['superadmin']
     };
     allowedRoles = roleHierarchy[minRole] || [];
   }
@@ -354,7 +354,7 @@ export function AdminRoute({
 }) {
   return (
     <RoleBasedRoute
-      allowedRoles={['admin']}
+      allowedRoles={['admin', 'superadmin']}
       requiredPermissions={requiredPermissions}
       redirectTo="/auth"
       className={className}
@@ -375,7 +375,7 @@ export function ResearcherRoute({
 }) {
   return (
     <RoleBasedRoute
-      allowedRoles={['researcher', 'admin']}
+      allowedRoles={['user', 'admin', 'superadmin']}
       requiredPermissions={requiredPermissions}
       redirectTo="/auth"
       className={className}

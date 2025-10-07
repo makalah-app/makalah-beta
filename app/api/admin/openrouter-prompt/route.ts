@@ -14,8 +14,9 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/database/supabase-client';
+import { validateAdminAccess as validateAdmin } from '@/lib/admin/admin-auth';
 
-// Admin email hardcoded for security
+// Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
 const ADMIN_EMAIL = 'makalah.app@gmail.com';
 
 // Request validation schemas
@@ -30,46 +31,12 @@ const UpdateOpenRouterPromptSchema = z.object({
 type UpdateOpenRouterPromptRequest = z.infer<typeof UpdateOpenRouterPromptSchema>;
 
 /**
- * Validate admin access from request
- */
-async function validateAdminAccess(request: NextRequest): Promise<{ valid: boolean; error?: string; userId?: string }> {
-  try {
-    // Get Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { valid: false, error: 'No authorization header' };
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-
-    if (error || !user) {
-      return { valid: false, error: 'Invalid token' };
-    }
-
-    // Check if user is admin
-    const isAdmin = user.email === ADMIN_EMAIL;
-
-    if (!isAdmin) {
-      return { valid: false, error: 'Admin access required' };
-    }
-
-    return { valid: true, userId: user.id };
-
-  } catch (error) {
-    return { valid: false, error: 'Auth validation failed' };
-  }
-}
-
-/**
  * GET /api/admin/fallback-prompt - Retrieve active OpenRouter prompt
  */
 export async function GET(request: NextRequest) {
   try {
-    // Validate admin access
-    const adminCheck = await validateAdminAccess(request);
+    // Validate admin access (admin or superadmin)
+    const adminCheck = await validateAdmin(request);
     if (!adminCheck.valid) {
       return Response.json({
         success: false,
@@ -122,8 +89,8 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Validate admin access
-    const adminCheck = await validateAdminAccess(request);
+    // Validate admin access (admin or superadmin)
+    const adminCheck = await validateAdmin(request);
     if (!adminCheck.valid) {
       return Response.json({
         success: false,

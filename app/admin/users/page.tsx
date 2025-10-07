@@ -1,9 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AdminAccess from '../../../src/components/auth/AdminAccess';
 import { useAuth } from '../../../src/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { RefreshCw, Users } from 'lucide-react';
 
 interface UserStats {
@@ -15,6 +17,7 @@ interface UserStats {
 
 function AdminUsersContent() {
   const { session, refreshToken } = useAuth();
+  const router = useRouter();
 
   // State for user statistics
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -170,6 +173,14 @@ function AdminUsersContent() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Semua pengguna terdaftar
                 </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-xs"
+                  onClick={() => router.push('/admin/users/details?page=1&pageSize=50')}
+                >
+                  Lihat
+                </Button>
               </div>
               <div className="rounded-[3px] border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
@@ -180,6 +191,14 @@ function AdminUsersContent() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Aktif dalam 30 hari terakhir
                 </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-xs"
+                  onClick={() => router.push('/admin/users/details?page=1&pageSize=50&lastActiveSince=30d')}
+                >
+                  Lihat
+                </Button>
               </div>
               <div className="rounded-[3px] border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
@@ -190,6 +209,14 @@ function AdminUsersContent() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Bergabung dalam 7 hari terakhir
                 </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-xs"
+                  onClick={() => router.push('/admin/users/details?page=1&pageSize=50&joinedSince=7d')}
+                >
+                  Lihat
+                </Button>
               </div>
               <div className="rounded-[3px] border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
@@ -200,6 +227,14 @@ function AdminUsersContent() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Tidak aktif lebih dari 30 hari
                 </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 text-xs"
+                  onClick={() => router.push('/admin/users/details?page=1&pageSize=50&lastActiveBefore=30d')}
+                >
+                  Lihat
+                </Button>
               </div>
             </div>
           ) : (

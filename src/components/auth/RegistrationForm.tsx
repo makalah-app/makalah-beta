@@ -39,13 +39,14 @@ export default function RegistrationForm({
   const { register, isLoading, error, clearError } = useAuth();
 
   // Form state
-  const [formData, setFormData] = useState<RegistrationFormData>({
+  const [formData, setFormData] = useState<RegistrationFormData & { predikat?: string }>({
     email: '',
     password: '',
     confirmPassword: '',
     fullName: '',
     institution: '',
-    role: 'student',
+    role: 'user', // Hardcoded to 'user' for all new registrations
+    predikat: 'Mahasiswa', // Default predikat
     acceptTerms: false
   });
 
@@ -111,9 +112,10 @@ export default function RegistrationForm({
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
-        role: formData.role,
-        institution: formData.institution || undefined
-      });
+        role: 'user', // Always register as 'user'
+        institution: formData.institution || undefined,
+        predikat: formData.predikat || undefined
+      } as any);
       
       if (success) {
         const successMessage = 'Registrasi berhasil! Silakan cek email untuk verifikasi akun.';
@@ -135,15 +137,14 @@ export default function RegistrationForm({
   }, [formData, register, onSuccess, onError, redirectTo, error, clearError]);
 
   /**
-   * Get role description
+   * Get predikat description
    */
-  const getRoleDescription = (role: UserRole): string => {
+  const getPredikatDescription = (predikat: string): string => {
     const descriptions = {
-      student: 'Mahasiswa dengan akses workflow supervised dan bantuan AI terbatas',
-      researcher: 'Peneliti dengan akses penuh workflow akademik dan fitur AI advanced',
-      admin: 'Administrator dengan akses manajemen sistem (khusus undangan)'
+      'Mahasiswa': 'Mahasiswa yang sedang menempuh pendidikan tinggi',
+      'Peneliti': 'Peneliti atau akademisi yang melakukan riset'
     };
-    return descriptions[role as keyof typeof descriptions] || 'Pengguna';
+    return descriptions[predikat as keyof typeof descriptions] || 'Pengguna umum';
   };
 
   /**
@@ -263,34 +264,26 @@ export default function RegistrationForm({
           )}
         </div>
 
-        {/* Role Selection */}
+        {/* Predikat Selection */}
         <div className="form-field">
-          <label htmlFor="role" className="form-label">
-            Role <span className="required-asterisk">*</span>
+          <label htmlFor="predikat" className="form-label">
+            Predikat (Opsional)
           </label>
           <select
-            id="role"
-            name="role"
-            value={formData.role}
+            id="predikat"
+            name="predikat"
+            value={formData.predikat || 'Mahasiswa'}
             onChange={handleInputChange}
-            className={`form-input ${validationErrors.role ? 'error' : ''}`}
-            required
+            className="form-input"
           >
-            <option value="student">Mahasiswa/Student</option>
-            <option value="researcher">Peneliti/Researcher</option>
+            <option value="Mahasiswa">Mahasiswa</option>
+            <option value="Peneliti">Peneliti</option>
           </select>
-          
+
           <div className="role-description">
             <span className="info-icon">ℹ️</span>
-            <span>{getRoleDescription(formData.role)}</span>
+            <span>{getPredikatDescription(formData.predikat || 'Mahasiswa')}</span>
           </div>
-          
-          {validationErrors.role && (
-            <div className="field-error">
-              <span className="error-icon">⚠️</span>
-              <span>{validationErrors.role}</span>
-            </div>
-          )}
         </div>
 
         {/* Password Field */}

@@ -77,7 +77,7 @@ export default function AuthPage() {
           email: formData.email,
           password: formData.password,
           fullName: formData.fullName || '',
-          role: 'student', // Default role untuk registrasi umum
+          role: 'user', // Default role untuk registrasi umum
         });
         // Show success message and redirect to login
         setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');

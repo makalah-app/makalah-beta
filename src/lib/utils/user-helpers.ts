@@ -32,9 +32,10 @@ export const getUserDisplayName = (user: User | null): string => {
 export const getUserRole = (user: User | null): string => {
   if (!user || !user.role) return 'Pengguna';
   const roleMap: Record<string, string> = {
+    'superadmin': 'Superadmin',
     'admin': 'Admin',
-    'researcher': 'Peneliti',
-    'student': 'Mahasiswa'
+    'user': 'Pengguna',
+    'guest': 'Tamu'
   };
   return roleMap[user.role] || 'Pengguna';
 };
