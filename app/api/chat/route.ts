@@ -146,6 +146,10 @@ export async function POST(req: Request) {
         // Infer current workflow state from conversation history
         const currentWorkflowState = inferWorkflowState(validatedMessages as WorkflowUIMessage[]);
 
+        // 🚨 BACKEND ENFORCEMENT: Off-topic escalation for extreme cases
+        // If user has been off-topic 3+ times, inject strong redirect
+        const needsStrongRedirect = (currentWorkflowState.offTopicCount || 0) >= 3;
+
         // Simple processing - trust LLM intelligence
 
         // ❌ REMOVED: Hardcoded phase progression context - all instructions must come from centralized database system prompt
@@ -173,6 +177,29 @@ export async function POST(req: Request) {
               role: msg.role,
               content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
             }));
+          }
+
+          // 🚨 BACKEND ENFORCEMENT: Inject strong redirect for Tier 3 escalation
+          if (needsStrongRedirect) {
+            // Inject system message at the end to enforce Tier 3 redirect
+            manualMessages.push({
+              role: 'system',
+              content: `[SYSTEM ENFORCEMENT - TIER 3 OFF-TOPIC ESCALATION]
+
+User telah off-topic sebanyak ${currentWorkflowState.offTopicCount || 0} kali berturut-turut. Ini adalah batas maksimum.
+
+WAJIB LAKUKAN SEKARANG:
+1. Politely decline untuk melanjutkan topik off-topic
+2. Restate purpose kamu: "Gue spesifik untuk paper akademik"
+3. Berikan binary choice: "Mau lanjut nulis paper atau selesai dulu?"
+4. Jangan engage dengan topik off-topic sama sekali
+5. Jangan explain atau elaborate tentang kenapa tidak bisa bantu
+
+Contoh response:
+"Gue spesifik untuk paper akademik, bukan info [topik off-topic]. Mau lanjut nulis paper atau selesai dulu?"
+
+Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User harus memilih untuk kembali ke paper atau mengakhiri percakapan.`
+            });
           }
 
           // Removed unused persistAndBroadcast function
