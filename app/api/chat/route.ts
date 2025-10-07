@@ -241,8 +241,15 @@ export async function POST(req: Request) {
         },
         onFinish: async ({ text, usage }) => {
           try {
+            // Extract last user message for off-topic detection
+            const lastUserMessage = [...validatedMessages].reverse().find(m => m.role === 'user');
+            const userMessageText = lastUserMessage?.parts
+              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map(p => p.text)
+              .join('') || '';
+
             // Infer new workflow state from AI response
-            const newState = inferStateFromResponse(text, currentWorkflowState);
+            const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
 
             // Attach metadata to message via writer
             writer.writeMessageAnnotation({
@@ -289,8 +296,15 @@ export async function POST(req: Request) {
         },
         onFinish: async ({ text, usage }) => {
           try {
+            // Extract last user message for off-topic detection
+            const lastUserMessage = [...validatedMessages].reverse().find(m => m.role === 'user');
+            const userMessageText = lastUserMessage?.parts
+              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map(p => p.text)
+              .join('') || '';
+
             // Infer new workflow state from AI response
-            const newState = inferStateFromResponse(text, currentWorkflowState);
+            const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
 
             // Attach metadata to message via writer
             writer.writeMessageAnnotation({

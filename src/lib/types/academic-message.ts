@@ -48,6 +48,8 @@ export interface WorkflowMetadata {
     total: number;
   };
   userId?: string;
+  offTopicCount?: number; // Track consecutive off-topic messages
+  lastRedirectAttempt?: string; // ISO timestamp of last redirect
 }
 
 // 5. Export AcademicUIMessage type (extends AI SDK UIMessage)

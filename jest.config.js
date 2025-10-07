@@ -21,10 +21,9 @@ const customJestConfig = {
     '!src/**/*.test.{js,ts,tsx}',
     '!src/**/*.spec.{js,ts,tsx}',
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  testEnvironment: 'jsdom',
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },

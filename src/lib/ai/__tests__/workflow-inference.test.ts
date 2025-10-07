@@ -209,4 +209,111 @@ describe('Workflow Inference Engine', () => {
       expect(state.artifacts?.references?.some(r => r.author === 'Existing')).toBe(true);
     });
   });
+
+  describe('Off-Topic Detection', () => {
+    const initialState: WorkflowMetadata = {
+      milestone: 'exploring',
+      progress: 0.05,
+      artifacts: {}
+    };
+
+    it('should detect off-topic message and increment counter', () => {
+      const userMessage = 'Aku lelah banget hari ini';
+      const response = 'Wah, butuh istirahat ya. Btw, mau mulai brainstorm topik paper?';
+      const newState = inferStateFromResponse(response, initialState, userMessage);
+
+      expect(newState.offTopicCount).toBe(1);
+      expect(newState.lastRedirectAttempt).toBeDefined();
+    });
+
+    it('should increment counter on consecutive off-topic messages', () => {
+      const previousState: WorkflowMetadata = {
+        milestone: 'exploring',
+        progress: 0.05,
+        artifacts: {},
+        offTopicCount: 1,
+        lastRedirectAttempt: '2025-10-08T00:00:00Z'
+      };
+
+      const userMessage = 'Dari Pemalang aku';
+      const response = 'Oke noted. Anyway, balik ke paper—mau fokus topik AI?';
+      const newState = inferStateFromResponse(response, previousState, userMessage);
+
+      expect(newState.offTopicCount).toBe(2);
+    });
+
+    it('should reset counter when user returns to academic topic', () => {
+      const previousState: WorkflowMetadata = {
+        milestone: 'exploring',
+        progress: 0.05,
+        artifacts: {},
+        offTopicCount: 2,
+        lastRedirectAttempt: '2025-10-08T00:00:00Z'
+      };
+
+      const userMessage = 'Oke, mau nulis paper tentang AI in Healthcare';
+      const response = 'Bagus! Mari kita mulai dengan menentukan topik spesifik...';
+      const newState = inferStateFromResponse(response, previousState, userMessage);
+
+      expect(newState.offTopicCount).toBe(0);
+    });
+
+    it('should not count short messages as off-topic', () => {
+      const userMessage = 'Oke';
+      const response = 'Baik, lanjut ke tahap berikutnya';
+      const newState = inferStateFromResponse(response, initialState, userMessage);
+
+      expect(newState.offTopicCount).toBe(0);
+    });
+
+    it('should recognize academic keywords and not mark as off-topic', () => {
+      const userMessage = 'Saya ingin menulis penelitian tentang makanan sehat';
+      const response = 'Baik, topik tentang makanan sehat...';
+      const newState = inferStateFromResponse(response, initialState, userMessage);
+
+      // Contains 'penelitian' which is academic keyword
+      expect(newState.offTopicCount).toBe(0);
+    });
+
+    it('should detect tourism-related off-topic messages', () => {
+      const userMessage = 'Wisata di Pemalang itu bagus loh';
+      const response = 'Menarik. Anyway, mau balik ke paper?';
+      const newState = inferStateFromResponse(response, initialState, userMessage);
+
+      expect(newState.offTopicCount).toBe(1);
+    });
+
+    it('should detect food-related off-topic messages', () => {
+      const userMessage = 'Kuliner favorit aku itu sate';
+      const response = 'Enak ya. Btw, mau lanjut paper?';
+      const newState = inferStateFromResponse(response, initialState, userMessage);
+
+      expect(newState.offTopicCount).toBe(1);
+    });
+
+    it('should handle undefined userMessage gracefully', () => {
+      const response = 'Mari lanjut ke tahap berikutnya';
+      const newState = inferStateFromResponse(response, initialState);
+
+      expect(newState.offTopicCount).toBe(0);
+    });
+
+    it('should preserve lastRedirectAttempt when returning to topic', () => {
+      const previousTimestamp = '2025-10-08T00:00:00Z';
+      const previousState: WorkflowMetadata = {
+        milestone: 'exploring',
+        progress: 0.05,
+        artifacts: {},
+        offTopicCount: 1,
+        lastRedirectAttempt: previousTimestamp
+      };
+
+      const userMessage = 'Mau nulis paper tentang AI';
+      const response = 'Bagus! Mari mulai...';
+      const newState = inferStateFromResponse(response, previousState, userMessage);
+
+      expect(newState.offTopicCount).toBe(0);
+      expect(newState.lastRedirectAttempt).toBe(previousTimestamp);
+    });
+  });
 });

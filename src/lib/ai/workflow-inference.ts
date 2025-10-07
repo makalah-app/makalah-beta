@@ -37,12 +37,47 @@ export function inferWorkflowState(
 }
 
 /**
+ * Detect if user message is off-topic (not academic)
+ */
+function detectOffTopic(userMessage: string): boolean {
+  const text = userMessage.toLowerCase();
+
+  // Academic keywords - if any present, message is on-topic
+  const academicKeywords = [
+    'paper', 'penelitian', 'riset', 'topik', 'outline',
+    'draft', 'referensi', 'jurnal', 'publikasi', 'methodology',
+    'citation', 'akademik', 'skripsi', 'tesis', 'disertasi',
+    'artikel', 'karya ilmiah', 'hipotesis', 'analisis'
+  ];
+
+  const hasAcademicKeyword = academicKeywords.some(kw => text.includes(kw));
+
+  // If has academic keyword OR message too short, it's on-topic
+  if (hasAcademicKeyword || userMessage.length <= 10) {
+    return false;
+  }
+
+  // Off-topic signals
+  const offTopicSignals = [
+    /(?:aku|saya|gue)\s+(?:lelah|capek|sedih|senang)/i,  // Personal feelings
+    /(?:wisata|traveling|liburan|jalan-jalan)/i,  // Tourism
+    /(?:makanan|kuliner|resep|restoran)/i,  // Food
+    /(?:film|musik|game|hiburan)/i,  // Entertainment
+    /(?:cuaca|hari ini|tadi pagi)/i,  // General chitchat
+    /(?:kampung halaman|kota asal|dari\s+\w+|dari mana)/i  // Personal background - includes "dari [place]"
+  ];
+
+  return offTopicSignals.some(pattern => pattern.test(text));
+}
+
+/**
  * Infer new state from AI response text
  * Uses priority-based pattern detection
  */
 export function inferStateFromResponse(
   response: string,
-  previousState: WorkflowMetadata
+  previousState: WorkflowMetadata,
+  userMessage?: string
 ): WorkflowMetadata {
   const text = response.toLowerCase();
   const currentMilestone = previousState.milestone || 'exploring';
@@ -70,20 +105,20 @@ export function inferStateFromResponse(
   else if (/outline\s+(?:disetujui|approved|oke)|mari\s+mulai\s+menulis/i.test(text)) {
     detectedMilestone = 'outline_locked';
   }
-  // 6. Outlining
-  else if (/outline|struktur\s+paper|kerangka|susunan\s+bagian/i.test(text)) {
-    detectedMilestone = 'outlining';
-  }
-  // 7. Foundation ready
-  else if (/cukup\s+referensi|foundation\s+ready|siap.*outline/i.test(text)) {
+  // 7. Foundation ready (check before outlining to catch readiness signals)
+  else if (/cukup\s+referensi|foundation\s+ready|siap.*(?:membuat|buat)\s+outline/i.test(text)) {
     detectedMilestone = 'foundation_ready';
+  }
+  // 6. Outlining
+  else if (/(?:berikut|ini)\s+(?:adalah\s+)?(?:struktur\s+)?outline|struktur\s+paper|kerangka|susunan\s+bagian/i.test(text)) {
+    detectedMilestone = 'outlining';
   }
   // 8. Researching
   else if (/(?:mencari|cari|search).*(?:paper|artikel|jurnal)|web_search/i.test(text)) {
     detectedMilestone = 'researching';
   }
   // 9. Topic locked
-  else if (/topik\s+(?:dipilih|ditetapkan|fix)|pertanyaan\s+penelitian/i.test(text)) {
+  else if (/topik\s+(?:sudah\s+)?(?:dipilih|ditetapkan|fix)|pertanyaan\s+penelitian/i.test(text)) {
     detectedMilestone = 'topic_locked';
   }
   // 10. Exploring (default)
@@ -97,11 +132,21 @@ export function inferStateFromResponse(
   // Calculate progress
   const progress = calculateProgress(detectedMilestone);
 
+  // Detect off-topic and update counter
+  const isOffTopic = userMessage ? detectOffTopic(userMessage) : false;
+  const offTopicCount = isOffTopic
+    ? (previousState.offTopicCount || 0) + 1
+    : 0; // Reset counter when back on topic
+
+  const timestamp = new Date().toISOString();
+
   return {
     milestone: detectedMilestone,
     progress,
     artifacts,
-    timestamp: new Date().toISOString()
+    timestamp,
+    offTopicCount,
+    lastRedirectAttempt: isOffTopic ? timestamp : previousState.lastRedirectAttempt
   };
 }
 
@@ -112,10 +157,15 @@ function extractArtifacts(
   response: string,
   previousArtifacts?: WorkflowArtifacts
 ): WorkflowArtifacts {
+  const newRefs = extractReferences(response);
+  const mergedRefs = newRefs
+    ? [...(previousArtifacts?.references || []), ...newRefs]
+    : previousArtifacts?.references;
+
   return {
     topicSummary: extractTopicSummary(response) || previousArtifacts?.topicSummary,
     researchQuestion: extractResearchQuestion(response) || previousArtifacts?.researchQuestion,
-    references: extractReferences(response) || previousArtifacts?.references,
+    references: mergedRefs,
     outline: extractOutline(response) || previousArtifacts?.outline,
     completedSections: extractCompletedSections(response) || previousArtifacts?.completedSections,
     keywords: extractKeywords(response) || previousArtifacts?.keywords
@@ -146,12 +196,12 @@ function extractTopicSummary(text: string): string | undefined {
  */
 function extractResearchQuestion(text: string): string | undefined {
   const patterns = [
-    /(?:pertanyaan penelitian|research question).*(?:adalah|is|:|yaitu)\s*["']?([^"'\n]+)["']?/i
+    /(?:pertanyaan penelitian|research question).*(?:adalah|is|:|yaitu)\s*["']?([^"'\n.?!]+[.?!]?)["']?/i
   ];
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
-    if (match && match[1]) {
+    if (match && match[1] && match[1].length > 3) {
       return match[1].trim();
     }
   }
