@@ -252,3 +252,9 @@ show-env-values.sh
 playwright.config.ts
 onboarding.md
 SUPABASE_EMAIL_SETUP.md
+
+# Debug & Testing Tools (Development Only - Solo Dev)
+# Note: Selective exclusion - some debug endpoints are system-critical
+/app/test-login/
+/app/api/debug/login/
+/app/clear-auth/
