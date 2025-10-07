@@ -20,14 +20,14 @@ import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
 // Removed: academicTools import - search tools deleted for rebuild with search_literature
+import type { AcademicUIMessage as WorkflowUIMessage } from '../../../src/lib/types/academic-message';
+import { inferWorkflowState, inferStateFromResponse } from '../../../src/lib/ai/workflow-inference';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 // Define custom message type extending AI SDK v5 UIMessage
-export type AcademicUIMessage = UIMessage & {
-  metadata?: AcademicMetadata;
-};
+export type AcademicUIMessage = WorkflowUIMessage; // Use Phase 1 type
 
 export async function POST(req: Request) {
   try {
@@ -143,6 +143,9 @@ export async function POST(req: Request) {
         // User requirement: Natural LLM flow without programmatic approval gates
         const finalProcessedMessages = validatedMessages;
 
+        // Infer current workflow state from conversation history
+        const currentWorkflowState = inferWorkflowState(validatedMessages as WorkflowUIMessage[]);
+
         // Simple processing - trust LLM intelligence
 
         // ❌ REMOVED: Hardcoded phase progression context - all instructions must come from centralized database system prompt
@@ -235,6 +238,27 @@ export async function POST(req: Request) {
         abortSignal: abortController.signal,
         onAbort: () => {
           // Cleanup jika diperlukan - stream akan automatically close
+        },
+        onFinish: async ({ text, usage }) => {
+          try {
+            // Infer new workflow state from AI response
+            const newState = inferStateFromResponse(text, currentWorkflowState);
+
+            // Attach metadata to message via writer
+            writer.writeMessageAnnotation({
+              ...newState,
+              model: dynamicConfig.primaryModelName,
+              tokens: usage ? {
+                prompt: usage.promptTokens,
+                completion: usage.completionTokens,
+                total: usage.totalTokens
+              } : undefined,
+              userId: userId
+            });
+          } catch (metadataError) {
+            // Silent fail - metadata is non-critical
+            console.error('[Workflow] Metadata attachment failed:', metadataError);
+          }
         }
       })
     : streamText({
@@ -262,6 +286,27 @@ export async function POST(req: Request) {
         abortSignal: abortController.signal,
         onAbort: () => {
           // Cleanup jika diperlukan - stream akan automatically close
+        },
+        onFinish: async ({ text, usage }) => {
+          try {
+            // Infer new workflow state from AI response
+            const newState = inferStateFromResponse(text, currentWorkflowState);
+
+            // Attach metadata to message via writer
+            writer.writeMessageAnnotation({
+              ...newState,
+              model: dynamicConfig.primaryModelName,
+              tokens: usage ? {
+                prompt: usage.promptTokens,
+                completion: usage.completionTokens,
+                total: usage.totalTokens
+              } : undefined,
+              userId: userId
+            });
+          } catch (metadataError) {
+            // Silent fail - metadata is non-critical
+            console.error('[Workflow] Metadata attachment failed:', metadataError);
+          }
         }
       });
 
