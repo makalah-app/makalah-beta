@@ -85,7 +85,7 @@ export async function fetchUsersPaginated(params: PaginatedUsersParams): Promise
   };
 }
 
-export async function toggleUserStatus(id: string, action: ToggleUserAction): Promise<AdminUserRow | null> {
+export async function toggleUserStatus(id: string, action: ToggleUserAction): Promise<AdminUserRow> {
   const suspend = action === 'suspend';
   const updatePayload = {
     is_active: !suspend,
