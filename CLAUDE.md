@@ -90,6 +90,8 @@ Built on **Vercel AI SDK v5** with strict compliance to official patterns:
 ### Database Layer
 
 Uses Supabase with comprehensive schema in `supabase/migrations/`:
+- **2025-10-07** Sinkronisasi auth→public: migrasi `20250929000000_fix_auth_trigger.sql` mengaktifkan trigger `public.handle_new_user` dan `on_auth_user_created/on_auth_user_deleted`, memastikan akun baru dari Supabase Auth otomatis masuk ke `public.users`/`user_profiles` (sinkron 11 baris pasca rekonsiliasi). Backup snapshot terakhir ada di `__references__/debug/users/backups/snapshot-YYYY-MM-DDTHH-MM-SSZ.json`.
+- **Health-check SQL** (jalan di CI atau manual): `SELECT COUNT(*) FROM auth.users` vs `public.users`, plus `SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 'users' AND trigger_schema = 'auth';` buat pastikan trigger aktif.
 
 - **User Management**: `users`, `user_profiles`, `user_sessions`, `user_preferences`
 - **Chat System**: `conversations`, `chat_messages` with message parts and metadata
