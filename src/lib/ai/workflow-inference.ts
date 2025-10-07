@@ -37,47 +37,44 @@ export function inferWorkflowState(
 }
 
 /**
- * Detect if user message is off-topic (not academic)
+ * Detect if LLM response contains redirect attempt
+ * Observes what LLM ALREADY DECIDED, doesn't predict user intent
+ *
+ * Philosophy: Backend observes LLM behavior, not enforces patterns
  */
-function detectOffTopic(userMessage: string): boolean {
-  const text = userMessage.toLowerCase();
+function detectRedirectAttempt(llmResponse: string): {
+  isRedirect: boolean;
+  tier: 1 | 2 | 3 | null;
+} {
+  const text = llmResponse.toLowerCase();
 
-  // Academic keywords - if any present, message is on-topic
-  const academicKeywords = [
-    'paper', 'penelitian', 'riset', 'topik', 'outline',
-    'draft', 'referensi', 'jurnal', 'publikasi', 'methodology',
-    'citation', 'akademik', 'skripsi', 'tesis', 'disertasi',
-    'artikel', 'karya ilmiah', 'hipotesis', 'analisis'
-  ];
-
-  const hasAcademicKeyword = academicKeywords.some(kw => text.includes(kw));
-
-  // If has academic keyword OR message too short, it's on-topic
-  if (hasAcademicKeyword || userMessage.length <= 10) {
-    return false;
+  // Tier 3: Firm boundary (LLM declining to engage, giving binary choice)
+  if (/gue spesifik untuk.*akademik|mau lanjut.*paper.*atau.*selesai/i.test(text)) {
+    return { isRedirect: true, tier: 3 };
   }
 
-  // Off-topic signals
-  const offTopicSignals = [
-    /(?:aku|saya|gue)\s+(?:lelah|capek|sedih|senang)/i,  // Personal feelings
-    /(?:wisata|traveling|liburan|jalan-jalan)/i,  // Tourism
-    /(?:makanan|kuliner|resep|restoran)/i,  // Food
-    /(?:film|musik|game|hiburan)/i,  // Entertainment
-    /(?:cuaca|hari ini|tadi pagi)/i,  // General chitchat
-    /(?:kampung halaman|kota asal|dari\s+\w+|dari mana)/i  // Personal background - includes "dari [place]"
-  ];
+  // Tier 2: Medium redirect (acknowledged + stronger return to topic)
+  if (/noted.*anyway.*(?:paper|topik|outline)|oke.*balik ke.*(?:paper|topik|outline)/i.test(text)) {
+    return { isRedirect: true, tier: 2 };
+  }
 
-  return offTopicSignals.some(pattern => pattern.test(text));
+  // Tier 1: Soft redirect (btw/anyway + academic keyword)
+  if (/(btw|anyway).*(?:paper|topik|outline|draft|penelitian|riset)/i.test(text)) {
+    return { isRedirect: true, tier: 1 };
+  }
+
+  return { isRedirect: false, tier: null };
 }
 
 /**
  * Infer new state from AI response text
  * Uses priority-based pattern detection
+ *
+ * Philosophy: Observes LLM behavior (milestones + redirects) from response only
  */
 export function inferStateFromResponse(
   response: string,
-  previousState: WorkflowMetadata,
-  userMessage?: string
+  previousState: WorkflowMetadata
 ): WorkflowMetadata {
   const text = response.toLowerCase();
   const currentMilestone = previousState.milestone || 'exploring';
@@ -132,11 +129,13 @@ export function inferStateFromResponse(
   // Calculate progress
   const progress = calculateProgress(detectedMilestone);
 
-  // Detect off-topic and update counter
-  const isOffTopic = userMessage ? detectOffTopic(userMessage) : false;
-  const offTopicCount = isOffTopic
+  // Detect redirect attempt from LLM response
+  const redirectInfo = detectRedirectAttempt(response);
+
+  // Increment counter ONLY if LLM showed redirect behavior
+  const offTopicCount = redirectInfo.isRedirect
     ? (previousState.offTopicCount || 0) + 1
-    : 0; // Reset counter when back on topic
+    : 0; // Reset counter when LLM stops redirecting
 
   const timestamp = new Date().toISOString();
 
@@ -146,7 +145,7 @@ export function inferStateFromResponse(
     artifacts,
     timestamp,
     offTopicCount,
-    lastRedirectAttempt: isOffTopic ? timestamp : previousState.lastRedirectAttempt
+    lastRedirectAttempt: redirectInfo.isRedirect ? timestamp : previousState.lastRedirectAttempt
   };
 }
 

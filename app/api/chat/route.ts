@@ -237,15 +237,9 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            // Extract last user message for off-topic detection
-            const lastUserMessage = [...validatedMessages].reverse().find(m => m.role === 'user');
-            const userMessageText = lastUserMessage?.parts
-              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-              .map(p => p.text)
-              .join('') || '';
-
             // Infer new workflow state from AI response
-            const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
+            // Philosophy: Observe LLM behavior (redirects, milestones) from response only
+            const newState = inferStateFromResponse(text, currentWorkflowState);
 
             // Store workflow state for messageMetadata callback
             // @ts-ignore - Store on result object for access in toUIMessageStream
@@ -293,15 +287,9 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            // Extract last user message for off-topic detection
-            const lastUserMessage = [...validatedMessages].reverse().find(m => m.role === 'user');
-            const userMessageText = lastUserMessage?.parts
-              ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-              .map(p => p.text)
-              .join('') || '';
-
             // Infer new workflow state from AI response
-            const newState = inferStateFromResponse(text, currentWorkflowState, userMessageText);
+            // Philosophy: Observe LLM behavior (redirects, milestones) from response only
+            const newState = inferStateFromResponse(text, currentWorkflowState);
 
             // Store workflow state for messageMetadata callback
             // @ts-ignore - Store on result object for access in toUIMessageStream

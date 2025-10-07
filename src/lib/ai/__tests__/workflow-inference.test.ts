@@ -210,107 +210,76 @@ describe('Workflow Inference Engine', () => {
     });
   });
 
-  describe('Off-Topic Detection', () => {
+  describe('Redirect Detection (LLM Behavior Observer)', () => {
     const initialState: WorkflowMetadata = {
       milestone: 'exploring',
       progress: 0.05,
       artifacts: {}
     };
 
-    it('should detect off-topic message and increment counter', () => {
-      const userMessage = 'Aku lelah banget hari ini';
-      const response = 'Wah, butuh istirahat ya. Btw, mau mulai brainstorm topik paper?';
-      const newState = inferStateFromResponse(response, initialState, userMessage);
+    it('should detect Tier 1 soft redirect from LLM response', () => {
+      const llmResponse = 'Wah, butuh istirahat ya. Btw, mau mulai brainstorm topik paper?';
+      const newState = inferStateFromResponse(llmResponse, initialState);
 
       expect(newState.offTopicCount).toBe(1);
       expect(newState.lastRedirectAttempt).toBeDefined();
     });
 
-    it('should increment counter on consecutive off-topic messages', () => {
+    it('should detect Tier 2 medium redirect', () => {
       const previousState: WorkflowMetadata = {
-        milestone: 'exploring',
-        progress: 0.05,
-        artifacts: {},
+        ...initialState,
         offTopicCount: 1,
         lastRedirectAttempt: '2025-10-08T00:00:00Z'
       };
 
-      const userMessage = 'Dari Pemalang aku';
-      const response = 'Oke noted. Anyway, balik ke paper—mau fokus topik AI?';
-      const newState = inferStateFromResponse(response, previousState, userMessage);
+      const llmResponse = 'Oke noted. Anyway, balik ke paper—mau fokus topik AI?';
+      const newState = inferStateFromResponse(llmResponse, previousState);
 
       expect(newState.offTopicCount).toBe(2);
     });
 
-    it('should reset counter when user returns to academic topic', () => {
+    it('should detect Tier 3 firm boundary', () => {
       const previousState: WorkflowMetadata = {
-        milestone: 'exploring',
-        progress: 0.05,
-        artifacts: {},
+        ...initialState,
+        offTopicCount: 2
+      };
+
+      const llmResponse = 'Gue spesifik untuk paper akademik, bukan info wisata. Mau lanjut nulis paper atau selesai dulu?';
+      const newState = inferStateFromResponse(llmResponse, previousState);
+
+      expect(newState.offTopicCount).toBe(3);
+    });
+
+    it('should reset counter when LLM stops redirecting', () => {
+      const previousState: WorkflowMetadata = {
+        ...initialState,
         offTopicCount: 2,
         lastRedirectAttempt: '2025-10-08T00:00:00Z'
       };
 
-      const userMessage = 'Oke, mau nulis paper tentang AI in Healthcare';
-      const response = 'Bagus! Mari kita mulai dengan menentukan topik spesifik...';
-      const newState = inferStateFromResponse(response, previousState, userMessage);
+      const llmResponse = 'Bagus! Mari kita mulai dengan menentukan topik spesifik...';
+      const newState = inferStateFromResponse(llmResponse, previousState);
 
       expect(newState.offTopicCount).toBe(0);
     });
 
-    it('should not count short messages as off-topic', () => {
-      const userMessage = 'Oke';
-      const response = 'Baik, lanjut ke tahap berikutnya';
-      const newState = inferStateFromResponse(response, initialState, userMessage);
+    it('should not count "btw" without academic context as redirect', () => {
+      const llmResponse = 'Btw, makanan di Pemalang enak-enak loh';
+      const newState = inferStateFromResponse(llmResponse, initialState);
 
       expect(newState.offTopicCount).toBe(0);
     });
 
-    it('should recognize academic keywords and not mark as off-topic', () => {
-      const userMessage = 'Saya ingin menulis penelitian tentang makanan sehat';
-      const response = 'Baik, topik tentang makanan sehat...';
-      const newState = inferStateFromResponse(response, initialState, userMessage);
-
-      // Contains 'penelitian' which is academic keyword
-      expect(newState.offTopicCount).toBe(0);
-    });
-
-    it('should detect tourism-related off-topic messages', () => {
-      const userMessage = 'Wisata di Pemalang itu bagus loh';
-      const response = 'Menarik. Anyway, mau balik ke paper?';
-      const newState = inferStateFromResponse(response, initialState, userMessage);
-
-      expect(newState.offTopicCount).toBe(1);
-    });
-
-    it('should detect food-related off-topic messages', () => {
-      const userMessage = 'Kuliner favorit aku itu sate';
-      const response = 'Enak ya. Btw, mau lanjut paper?';
-      const newState = inferStateFromResponse(response, initialState, userMessage);
-
-      expect(newState.offTopicCount).toBe(1);
-    });
-
-    it('should handle undefined userMessage gracefully', () => {
-      const response = 'Mari lanjut ke tahap berikutnya';
-      const newState = inferStateFromResponse(response, initialState);
-
-      expect(newState.offTopicCount).toBe(0);
-    });
-
-    it('should preserve lastRedirectAttempt when returning to topic', () => {
+    it('should preserve lastRedirectAttempt when reset', () => {
       const previousTimestamp = '2025-10-08T00:00:00Z';
       const previousState: WorkflowMetadata = {
-        milestone: 'exploring',
-        progress: 0.05,
-        artifacts: {},
+        ...initialState,
         offTopicCount: 1,
         lastRedirectAttempt: previousTimestamp
       };
 
-      const userMessage = 'Mau nulis paper tentang AI';
-      const response = 'Bagus! Mari mulai...';
-      const newState = inferStateFromResponse(response, previousState, userMessage);
+      const llmResponse = 'Mari fokus ke paper...';
+      const newState = inferStateFromResponse(llmResponse, previousState);
 
       expect(newState.offTopicCount).toBe(0);
       expect(newState.lastRedirectAttempt).toBe(previousTimestamp);
