@@ -45,19 +45,16 @@ import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: Unused HITL imports - not used in natural LLM conversation flow
 // - academicTools: Complex tool management not needed
 // - APPROVAL: Approval constants not used in natural conversation
+// Workflow Progress UI Components
+import { WorkflowProgress } from '../workflow/WorkflowProgress';
+import type { WorkflowMetadata } from '../../lib/types/academic-message';
 
-// Enhanced academic metadata type - simplified for native OpenAI web search
-export interface AcademicMetadata {
-  timestamp?: number;
-  model?: string;
-  tokens?: number;
-  userId?: string;
-  sequenceNumber?: number;
-  persistedAt?: string;
-}
+// Import Phase 1 WorkflowMetadata type - invisible workflow tracking
+// Replaces old AcademicMetadata with workflow milestone support
+export type AcademicMetadata = WorkflowMetadata;
 
-// Standard UIMessage with enhanced academic metadata
-export type AcademicUIMessage = UIMessage<AcademicMetadata>;
+// Standard UIMessage with workflow metadata
+export type AcademicUIMessage = UIMessage<WorkflowMetadata>;
 
 interface ChatContainerProps {
   className?: string;
@@ -769,11 +766,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           </div>
         </div>
       ) : (
-        /* WITH MESSAGES: Scrollable messages + Fixed bottom input */
-        <>
-          {/* Messages Area - Scrollable */}
-          <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
-            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
+        /* WITH MESSAGES: 2-column layout with sidebar (desktop only) */
+        <div className="flex h-full gap-4">
+          {/* Main chat area */}
+          <div className="flex-1 flex flex-col">
+            {/* Messages Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
+              <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
               {/* Enhanced Error Display */}
               {(error || errorState) && (
                 <div className="mb-4">
@@ -847,24 +846,30 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             </div>
           </div>
 
-          {/* Fixed Bottom Input Area - Responsive */}
-          <div className="shrink-0 border-t border-border bg-background">
-            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
-              <ChatInput
-                className="transition-all duration-200 ease-in-out"
-                sendMessage={(message) => {
-                  shouldScrollRef.current = true;
-                  sendMessage(message);
-                }}
-                disabled={status !== 'ready'}
-                status={status}
-                placeholder="Kirim percakapan..."
-                testMode={testMode}
-                onStop={handleStopStreaming}
-              />
+            {/* Fixed Bottom Input Area - Responsive */}
+            <div className="shrink-0 border-t border-border bg-background">
+              <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
+                <ChatInput
+                  className="transition-all duration-200 ease-in-out"
+                  sendMessage={(message) => {
+                    shouldScrollRef.current = true;
+                    sendMessage(message);
+                  }}
+                  disabled={status !== 'ready'}
+                  status={status}
+                  placeholder="Kirim percakapan..."
+                  testMode={testMode}
+                  onStop={handleStopStreaming}
+                />
+              </div>
             </div>
           </div>
-        </>
+
+          {/* Workflow progress sidebar - desktop only */}
+          <aside className="hidden lg:block w-80 border-l pl-4 overflow-y-auto">
+            <WorkflowProgress messages={messages as any} />
+          </aside>
+        </div>
       )}
 
       {/* Pass HITL functions to MessageDisplay */}
