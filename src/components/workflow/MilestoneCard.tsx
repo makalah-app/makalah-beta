@@ -48,6 +48,7 @@ export const MilestoneCard: React.FC<MilestoneCardProps> = ({
           ? 'border-green-500 bg-green-500/5'
           : 'border-muted bg-muted/30 opacity-60'
       }`}
+      data-testid="milestone-card"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

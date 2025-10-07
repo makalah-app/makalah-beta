@@ -190,5 +190,23 @@ describe('Workflow Inference Engine', () => {
       expect(state.artifacts?.keywords?.length).toBe(3);
       expect(state.artifacts?.keywords).toContain('machine learning');
     });
+
+    it('should not lose existing artifacts when extracting new ones', () => {
+      const previousState: WorkflowMetadata = {
+        milestone: 'researching',
+        artifacts: {
+          topicSummary: 'Existing Topic',
+          references: [{ author: 'Existing', year: 2022, title: 'Paper' }]
+        }
+      };
+
+      const response = 'Found new paper: NewAuthor (2024). "New Paper"';
+      const state = inferStateFromResponse(response, previousState);
+
+      // Should keep existing artifacts
+      expect(state.artifacts?.topicSummary).toBe('Existing Topic');
+      // Existing reference should still be present
+      expect(state.artifacts?.references?.some(r => r.author === 'Existing')).toBe(true);
+    });
   });
 });

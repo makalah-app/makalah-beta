@@ -38,7 +38,7 @@ export const WorkflowProgress: React.FC<WorkflowProgressProps> = ({
   ];
 
   return (
-    <div className={`flex flex-col gap-6 ${className}`}>
+    <div className={`flex flex-col gap-6 ${className}`} data-testid="workflow-progress">
       {/* Header */}
       <div>
         <h2 className="text-lg font-semibold mb-1">Progress Paper</h2>

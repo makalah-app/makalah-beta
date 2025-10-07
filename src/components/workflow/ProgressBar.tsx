@@ -20,7 +20,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between text-sm text-muted-foreground">
         <span>Progress</span>
-        <span className="font-medium">{percentage}%</span>
+        <span className="font-medium" data-testid="progress-percentage">{percentage}%</span>
       </div>
 
       <Progress value={percentage} className="h-2" />
