@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, role')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (userError || !targetUser) {
       return Response.json({
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       {
         target_user_id: userId,
         promoted_by: adminCheck.userId
-      }
+      } as any
     );
 
     if (promoteError) {
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, role, updated_at')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (updateError || !updatedUser) {
       // Promotion succeeded but couldn't fetch updated data

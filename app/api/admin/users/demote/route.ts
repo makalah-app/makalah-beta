@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, role')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (userError || !targetUser) {
       return Response.json({
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       {
         target_user_id: userId,
         demoted_by: adminCheck.userId
-      }
+      } as any
     );
 
     if (demoteError) {
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, role, updated_at')
       .eq('id', userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (updateError || !updatedUser) {
       // Demotion succeeded but couldn't fetch updated data

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      });
+      } as any);
 
     if (userInsertError) {
       // Rollback: delete from auth if public.users insert fails
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
           institution: validated.institution,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        });
+        } as any);
 
       // Don't rollback if profile insert fails - user can update profile later
       if (profileInsertError) {

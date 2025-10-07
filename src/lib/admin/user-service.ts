@@ -93,8 +93,8 @@ export async function toggleUserStatus(id: string, action: ToggleUserAction): Pr
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabaseAdmin
-    .from('users')
+  const { data, error } = await (supabaseAdmin
+    .from('users') as any)
     .update(updatePayload)
     .eq('id', id)
     .select('id,email,role,is_active,created_at,last_login_at,user_profiles(first_name,last_name,display_name)')

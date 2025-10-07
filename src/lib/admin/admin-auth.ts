@@ -34,7 +34,7 @@ export async function validateAdminAccess(request: NextRequest): Promise<AdminAc
       .from('users')
       .select('id, email, role')
       .eq('id', user.id)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (userError || !userData) {
       return { valid: false, error: 'User data not found' };
@@ -80,7 +80,7 @@ export async function validateSuperAdminAccess(request: NextRequest): Promise<Ad
       .from('users')
       .select('id, email, role')
       .eq('id', user.id)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (userError || !userData) {
       return { valid: false, error: 'User data not found' };
