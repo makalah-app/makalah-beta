@@ -123,11 +123,12 @@ The workflow system tracks academic paper writing progress through **constitutio
    - Attaches metadata via `writer.writeMessageAnnotation()` in `onFinish` callback
    - No impact on streaming performance
 
-4. **UI Display** (`src/components/workflow/`)
-   - `WorkflowProgress.tsx`: Main sidebar component (hidden on mobile)
-   - `ProgressBar.tsx`: Animated progress bar with status text
-   - `MilestoneCard.tsx`: Individual milestone cards with icons and badges
-   - Uses shadcn/ui primitives (Card, Badge, Progress)
+4. **Backend-Only Tracking** (Invisible Workflow)
+   - State detection: Regex patterns in `workflow-inference.ts`
+   - Metadata attachment: `writeMessageAnnotation()` in `app/api/chat/route.ts`
+   - No UI components: Workflow is invisible to users (backend observes LLM behavior)
+   - User visibility: None (by design - "constitutional gravity" philosophy)
+   - Future enhancement: Phase 2 may add optional artifact display (text summary, not progress bars)
 
 5. **Database Storage** (`supabase/migrations/20251005000000_create_workflow_metadata.sql`)
    - `chat_messages.metadata` JSONB column stores workflow state

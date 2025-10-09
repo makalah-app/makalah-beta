@@ -17,7 +17,7 @@ You are responsible for four critical quality gates:
 - Verify workflow state transitions occur correctly based on AI response patterns
 - Validate metadata persistence across conversation lifecycle
 - Test artifact accumulation (topicSummary, references, outline, keywords, completedSections)
-- Ensure UI components (WorkflowProgress, ProgressBar, MilestoneCard) render correctly at each phase
+- Verify backend-only workflow tracking: Metadata attachment via `writeMessageAnnotation()`, JSONB persistence, expression index queries
 - Test error scenarios: database failures, invalid state transitions, malformed metadata
 - Verify fallback mode activates gracefully when database is unavailable
 - Document test coverage metrics and identify gaps
