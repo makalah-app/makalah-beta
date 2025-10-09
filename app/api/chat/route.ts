@@ -268,12 +268,22 @@ export async function POST(req: Request) {
           const workflowContext = getWorkflowContext(currentWorkflowState);
           console.log('[DEBUG] Workflow context generated:', JSON.stringify(workflowContext, null, 2));
 
+          // 🔍 WEB SEARCH TOOL REMINDER: Contextual reminder for exploration/research phases
+          const isSearchPhase = currentWorkflowState.phase === 'exploring' ||
+                                currentWorkflowState.phase === 'researching';
+          const hasMinimumReferences = (currentWorkflowState.artifacts?.references?.length || 0) >= 5;
+          const needsSearchReminder = isSearchPhase && !hasMinimumReferences;
+
           const workflowContextBlueprint = `${workflowContext.contextMessage}
 
 [Workflow Blueprint]
 ${workflowSpecSummary}${
             mildRedirectReminder
               ? '\n\n[Reminder]\nFokus ke tugas akademik dan lanjutkan fase sesuai urutan di atas.'
+              : ''
+          }${
+            needsSearchReminder
+              ? '\n\n[Tool Reminder]\nKamu punya akses web_search - gunakan untuk cari literatur peer-reviewed saat user butuh referensi atau sedang eksplorasi topik.'
               : ''
           }`.trim();
 
@@ -407,6 +417,34 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
 
             console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
 
+            // 📊 WEB SEARCH USAGE ANALYTICS: Detect and log web_search tool usage
+            const completionTokens = preComputedMetadata.tokens?.completion || 0;
+            const textLength = text.length;
+            const referenceCount = preComputedMetadata.artifacts?.references?.length || 0;
+            const currentPhase = preComputedMetadata.phase;
+
+            // Heuristic: web_search likely used if completion tokens >800 OR text >5000 chars with citations
+            const webSearchLikelyUsed = completionTokens > 800 ||
+                                       (textLength > 5000 && referenceCount > 0);
+
+            if (webSearchLikelyUsed) {
+              console.log('[Analytics] 🔍 Web search likely used (OpenAI):', {
+                phase: currentPhase,
+                completionTokens: completionTokens,
+                textLength: textLength,
+                referenceCount: referenceCount,
+                userId: userId,
+                chatId: chatId,
+                timestamp: new Date().toISOString()
+              });
+            } else {
+              console.log('[Analytics] 💬 Regular response - no search (OpenAI):', {
+                phase: currentPhase,
+                completionTokens: completionTokens,
+                textLength: textLength
+              });
+            }
+
             writer.write({
               type: 'message-metadata',
               messageMetadata: preComputedMetadata
@@ -473,6 +511,34 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
             }
 
             console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
+
+            // 📊 WEB SEARCH USAGE ANALYTICS: Detect and log web_search tool usage
+            const completionTokens = preComputedMetadata.tokens?.completion || 0;
+            const textLength = text.length;
+            const referenceCount = preComputedMetadata.artifacts?.references?.length || 0;
+            const currentPhase = preComputedMetadata.phase;
+
+            // Heuristic: web_search likely used if completion tokens >800 OR text >5000 chars with citations
+            const webSearchLikelyUsed = completionTokens > 800 ||
+                                       (textLength > 5000 && referenceCount > 0);
+
+            if (webSearchLikelyUsed) {
+              console.log('[Analytics] 🔍 Web search likely used (OpenRouter):', {
+                phase: currentPhase,
+                completionTokens: completionTokens,
+                textLength: textLength,
+                referenceCount: referenceCount,
+                userId: userId,
+                chatId: chatId,
+                timestamp: new Date().toISOString()
+              });
+            } else {
+              console.log('[Analytics] 💬 Regular response - no search (OpenRouter):', {
+                phase: currentPhase,
+                completionTokens: completionTokens,
+                textLength: textLength
+              });
+            }
 
             writer.write({
               type: 'message-metadata',
