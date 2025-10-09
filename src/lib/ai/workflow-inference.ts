@@ -97,6 +97,8 @@ export function inferStateFromResponse(
   const currentPhase: WorkflowPhase = previousState.phase || 'exploring';
   let detectedPhase: WorkflowPhase = currentPhase;
 
+  console.log('[Workflow] Inferring state from response (length:', response.length, 'chars)');
+
   if (
     /paper\s+(?:sudah\s+)?selesai|siap\s+diserahkan|dokumen\s+final/i.test(text) ||
     /(?:ya|oke).*deliver.*(?:final\s+)?package/i.test(text) ||
@@ -182,7 +184,7 @@ export function inferStateFromResponse(
 
   const timestamp = new Date().toISOString();
 
-  return {
+  const newState: WorkflowMetadata = {
     ...previousState,
     phase: detectedPhase,
     progress,
@@ -191,6 +193,23 @@ export function inferStateFromResponse(
     offTopicCount,
     lastRedirectAttempt: redirectInfo.isRedirect ? timestamp : previousState.lastRedirectAttempt
   };
+
+  // Task 2.3: Logging for workflow state inference debugging
+  console.log('[Workflow] State inferred:', {
+    previousPhase: currentPhase,
+    detectedPhase: detectedPhase,
+    progress: Math.round(progress * 100) + '%',
+    artifactCount: Object.keys(artifacts || {}).filter(k => artifacts[k as keyof typeof artifacts]).length,
+    hasTopicSummary: !!artifacts.topicSummary,
+    referenceCount: artifacts.references?.length || 0,
+    keywordCount: artifacts.keywords?.length || 0,
+    hasOutline: !!artifacts.outline,
+    offTopicCount: offTopicCount,
+    redirectDetected: redirectInfo.isRedirect,
+    redirectTier: redirectInfo.tier
+  });
+
+  return newState;
 }
 
 /**
