@@ -156,7 +156,9 @@ export function inferStateFromResponse(
   if (detectedIndex >= 0) {
     if (detectedIndex < previousIndex) {
       detectedPhase = currentPhase;
-    } else if (detectedIndex > previousIndex + 1) {
+    } else if (detectedIndex > previousIndex + 2) {
+      // Allow up to +2 phase skip (e.g., exploring → researching → foundation_ready)
+      // But prevent extreme jumps (e.g., exploring → delivered)
       const sequence: WorkflowPhase[] = [
         'exploring',
         'topic_locked',
@@ -171,7 +173,7 @@ export function inferStateFromResponse(
         'delivered'
       ];
 
-      detectedPhase = sequence[Math.min(previousIndex + 1, sequence.length - 1)];
+      detectedPhase = sequence[Math.min(previousIndex + 2, sequence.length - 1)];
     }
   }
 
