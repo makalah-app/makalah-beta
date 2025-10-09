@@ -38,6 +38,7 @@ import { cn } from '../../lib/utils';
 import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
 import { ToolResult } from './ToolResult';
+import { WorkflowArtifactDisplay } from './WorkflowArtifactDisplay';
 
 type SourcePart = {
   type: 'source-url';
@@ -600,6 +601,11 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               </div>
                 );
               })()
+            )}
+
+            {/* Workflow Artifact Display - Task 2.2 */}
+            {message.metadata && message.metadata.phase && (
+              <WorkflowArtifactDisplay metadata={message.metadata} />
             )}
           </MessageContent>
 
