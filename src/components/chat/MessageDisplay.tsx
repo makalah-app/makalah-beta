@@ -581,8 +581,10 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               />
             </AssistantActions>
 
-            {/* Enhanced Metadata Display */}
-            {message.metadata && (message.metadata.tokens || message.metadata.model) && (
+            {/* Enhanced Metadata Display - HIDDEN for cleaner UX (Phase 02 cleanup) */}
+            {/* Token and model info hidden but still available in metadata for debugging */}
+            {/* Uncomment to restore: message.metadata && (message.metadata.tokens || message.metadata.model) */}
+            {/* {message.metadata && (message.metadata.tokens || message.metadata.model) && (
               (() => {
                 const tokenInfo = message.metadata.tokens;
                 const totalTokens = typeof tokenInfo === 'number' ? tokenInfo : tokenInfo?.total;
@@ -601,7 +603,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               </div>
                 );
               })()
-            )}
+            )} */}
 
             {/* Workflow Artifact Display - Task 2.2 */}
             {message.metadata && message.metadata.phase && (

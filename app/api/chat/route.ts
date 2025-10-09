@@ -185,8 +185,8 @@ export async function POST(req: Request) {
     // Get provider manager
     const providerManager = getProviderManager();
 
-    // Get dynamic configuration
-    const dynamicConfig = await getDynamicModelConfig();
+    // ✅ A/B TESTING: Pass userId to dynamic config for cohort-based prompt selection
+    const dynamicConfig = await getDynamicModelConfig(userId);
     
     // Use database system prompt AS-IS - no hardcoded additions
     const specForPrompt = getWorkflowSpec();
@@ -277,11 +277,13 @@ ${workflowSpecSummary}${
               : ''
           }`.trim();
 
-          const structuredMetadataInstruction = `\n[Metadata Contract]\nAlways end responses with:\n<!--workflow-state:{"phase":"exploring","progress":0.05,"artifacts":{...}}-->\nUse one of these phase strings: ${phaseChoices}. Keep progress 0-1.`;
+          // ❌ REMOVED: Structured metadata instruction (Phase 02 cleanup)
+          // HTML comment instruction removed - backend observes natural language via regex instead
+          // const structuredMetadataInstruction = `\n[Metadata Contract]\nAlways end responses with:\n<!--workflow-state:{"phase":"exploring","progress":0.05,"artifacts":{...}}-->\nUse one of these phase strings: ${phaseChoices}. Keep progress 0-1.`;
 
           manualMessages.unshift({
             role: 'system',
-            content: `${workflowContextBlueprint}${structuredMetadataInstruction}`
+            content: workflowContextBlueprint  // No metadata instruction appended
           });
 
           console.log('[DEBUG] Injected workflow context as first system message:', workflowContext.contextMessage);
