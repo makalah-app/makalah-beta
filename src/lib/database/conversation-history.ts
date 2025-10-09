@@ -19,6 +19,8 @@ import { supabaseServer } from './supabase-client';
 import { loadChat } from './chat-store';
 import type { ConversationSummary, ConversationDetails } from '../types/database-types';
 import type { UIMessage } from 'ai';
+import { normalizePhase } from '../ai/workflow-engine';
+import type { WorkflowPhase } from '../types/academic-message';
 
 /**
  * HISTORY FILTER OPTIONS
@@ -63,7 +65,7 @@ export interface ConversationTimelineEntry {
   description: string;
   metadata: {
     messageId?: string;
-    phase?: number;
+    phase?: WorkflowPhase;
     artifactId?: string;
     sessionId?: string;
     [key: string]: any;
@@ -78,7 +80,7 @@ export interface HistoryStatistics {
   totalMessages: number;
   averageMessagesPerConversation: number;
   totalTimeSpent: number; // in milliseconds
-  phaseDistribution: { [phase: number]: number };
+  phaseDistribution: Partial<Record<WorkflowPhase, number>>;
   dailyActivity: { [date: string]: number };
   topTopics: Array<{ topic: string; count: number }>;
 }
@@ -430,7 +432,7 @@ export async function getHistoryStatistics(
       stats.totalMessages += convData.message_count;
 
       // Phase distribution
-      const phase = convData.current_phase;
+      const phase = normalizePhase(convData.current_phase);
       stats.phaseDistribution[phase] = (stats.phaseDistribution[phase] || 0) + 1;
 
       // Daily activity
@@ -533,7 +535,7 @@ export async function searchConversations(
         title: convData.title || 'Untitled Chat',
         messageCount: convData.message_count,
         lastActivity: convData.updated_at,
-        currentPhase: convData.current_phase,
+        currentPhase: normalizePhase(convData.current_phase),
         workflowId: convData.workflow_id,
         metadata: convData.metadata
       };

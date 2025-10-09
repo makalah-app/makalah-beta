@@ -11,7 +11,7 @@ describe('Workflow Inference Engine', () => {
       const messages: AcademicUIMessage[] = [];
       const state = inferWorkflowState(messages);
 
-      expect(state.milestone).toBe('exploring');
+      expect(state.phase).toBe('exploring');
       expect(state.progress).toBe(0.05);
     });
 
@@ -22,15 +22,15 @@ describe('Workflow Inference Engine', () => {
           role: 'assistant',
           parts: [{ type: 'text', text: 'Hello' }],
           metadata: {
-            milestone: 'researching',
-            progress: 0.35
+            phase: 'researching',
+            progress: 0.25
           }
         }
       ];
 
       const state = inferWorkflowState(messages);
-      expect(state.milestone).toBe('researching');
-      expect(state.progress).toBe(0.35);
+      expect(state.phase).toBe('researching');
+      expect(state.progress).toBe(0.25);
     });
 
     it('should handle malformed metadata', () => {
@@ -44,55 +44,55 @@ describe('Workflow Inference Engine', () => {
       ];
 
       const state = inferWorkflowState(messages);
-      expect(state.milestone).toBe('exploring');
+      expect(state.phase).toBe('exploring');
     });
   });
 
   describe('inferStateFromResponse', () => {
     const initialState: WorkflowMetadata = {
-      milestone: 'exploring',
+      phase: 'exploring',
       progress: 0.05,
       artifacts: {}
     };
 
-    it('should detect topic locked milestone', () => {
+    it('should detect topic locked phase', () => {
       const response = 'Topik sudah fix: Gender Bias in AI. Mari lanjut ke research.';
       const newState = inferStateFromResponse(response, initialState);
 
-      expect(newState.milestone).toBe('topic_locked');
+      expect(newState.phase).toBe('topic_locked');
     });
 
-    it('should detect researching milestone', () => {
+    it('should detect researching phase', () => {
       const response = 'Mari saya cari paper tentang cardiovascular AI...';
       const newState = inferStateFromResponse(response, initialState);
 
-      expect(newState.milestone).toBe('researching');
+      expect(newState.phase).toBe('researching');
     });
 
-    it('should detect outlining milestone', () => {
+    it('should detect outlining phase', () => {
       const response = 'Berikut struktur outline paper kami...';
       const newState = inferStateFromResponse(response, initialState);
 
-      expect(newState.milestone).toBe('outlining');
+      expect(newState.phase).toBe('outlining');
     });
 
-    it('should detect drafting milestone', () => {
+    it('should detect drafting phase', () => {
       const response = 'Mari mulai menulis section Introduction...';
       const newState = inferStateFromResponse(response, initialState);
 
-      expect(newState.milestone).toBe('drafting');
+      expect(newState.phase).toBe('drafting');
     });
 
-    it('should detect delivered milestone', () => {
+    it('should detect delivered phase', () => {
       const response = 'Paper sudah selesai dan siap diserahkan!';
       const newState = inferStateFromResponse(response, initialState);
 
-      expect(newState.milestone).toBe('delivered');
+      expect(newState.phase).toBe('delivered');
     });
 
     it('should preserve previous state if no clear signal', () => {
       const currentState: WorkflowMetadata = {
-        milestone: 'drafting',
+        phase: 'drafting',
         progress: 0.7,
         artifacts: {}
       };
@@ -100,26 +100,26 @@ describe('Workflow Inference Engine', () => {
       const response = 'Baik, saya mengerti.';
       const newState = inferStateFromResponse(response, currentState);
 
-      expect(newState.milestone).toBe('drafting');
+      expect(newState.phase).toBe('drafting');
     });
 
     it('should handle empty response text', () => {
-      const state = inferStateFromResponse('', { milestone: 'exploring', artifacts: {} });
-      expect(state.milestone).toBe('exploring');
+      const state = inferStateFromResponse('', { phase: 'exploring', artifacts: {} });
+      expect(state.phase).toBe('exploring');
     });
 
-    it('should detect highest priority milestone in multi-signal response', () => {
+    it('should detect highest priority phase in multi-signal response', () => {
       const response = 'Topik fix: AI Bias. Mari cari paper. Berikut outline nya.';
-      const state = inferStateFromResponse(response, { milestone: 'exploring', artifacts: {} });
+      const state = inferStateFromResponse(response, { phase: 'exploring', artifacts: {} });
 
       // Should detect outline (higher priority than research and topic)
-      expect(state.milestone).toBe('outlining');
+      expect(state.phase).toBe('outlining');
     });
 
     it('should preserve artifacts across state transitions', () => {
       const previousState: WorkflowMetadata = {
-        milestone: 'researching',
-        progress: 0.35,
+        phase: 'researching',
+        progress: 0.25,
         artifacts: {
           topicSummary: 'AI Bias in Healthcare',
           references: [{ author: 'Smith', year: 2023, title: 'Test' }]
@@ -129,13 +129,13 @@ describe('Workflow Inference Engine', () => {
       const response = 'Berikut outline paper kami...';
       const newState = inferStateFromResponse(response, previousState);
 
-      expect(newState.milestone).toBe('outlining');
+      expect(newState.phase).toBe('outlining');
       expect(newState.artifacts?.topicSummary).toBe('AI Bias in Healthcare');
       expect(newState.artifacts?.references?.length).toBe(1);
     });
   });
 
-  describe('All Milestone Detection', () => {
+  describe('All Phase Detection', () => {
     const testCases: Array<{ text: string; expected: string }> = [
       { text: 'Mari kita eksplorasi beberapa ide topik...', expected: 'exploring' },
       { text: 'Topik sudah fix: Gender Bias in AI', expected: 'topic_locked' },
@@ -150,9 +150,9 @@ describe('Workflow Inference Engine', () => {
     ];
 
     testCases.forEach(({ text, expected }) => {
-      it(`should detect "${expected}" milestone`, () => {
-        const state = inferStateFromResponse(text, { milestone: 'exploring', artifacts: {} });
-        expect(state.milestone).toBe(expected);
+      it(`should detect "${expected}" phase`, () => {
+        const state = inferStateFromResponse(text, { phase: 'exploring', artifacts: {} });
+        expect(state.phase).toBe(expected);
       });
     });
   });
@@ -160,21 +160,21 @@ describe('Workflow Inference Engine', () => {
   describe('Artifact Extraction', () => {
     it('should extract topic summary', () => {
       const response = 'Topik adalah: Gender Bias in Cardiovascular AI Systems';
-      const state = inferStateFromResponse(response, { milestone: 'exploring', artifacts: {} });
+      const state = inferStateFromResponse(response, { phase: 'exploring', artifacts: {} });
 
       expect(state.artifacts?.topicSummary).toContain('Gender Bias');
     });
 
     it('should extract research question', () => {
       const response = 'Pertanyaan penelitian adalah: How does AI bias affect diagnosis?';
-      const state = inferStateFromResponse(response, { milestone: 'researching', artifacts: {} });
+      const state = inferStateFromResponse(response, { phase: 'researching', artifacts: {} });
 
       expect(state.artifacts?.researchQuestion).toContain('How does AI bias');
     });
 
     it('should extract references', () => {
       const response = 'Sumber: Smith (2023). "AI in Healthcare"';
-      const state = inferStateFromResponse(response, { milestone: 'researching', artifacts: {} });
+      const state = inferStateFromResponse(response, { phase: 'researching', artifacts: {} });
 
       expect(state.artifacts?.references).toBeDefined();
       expect(state.artifacts?.references?.length).toBeGreaterThan(0);
@@ -184,7 +184,7 @@ describe('Workflow Inference Engine', () => {
 
     it('should extract keywords', () => {
       const response = 'Keywords: machine learning, bias detection, healthcare AI';
-      const state = inferStateFromResponse(response, { milestone: 'researching', artifacts: {} });
+      const state = inferStateFromResponse(response, { phase: 'researching', artifacts: {} });
 
       expect(state.artifacts?.keywords).toBeDefined();
       expect(state.artifacts?.keywords?.length).toBe(3);
@@ -193,7 +193,7 @@ describe('Workflow Inference Engine', () => {
 
     it('should not lose existing artifacts when extracting new ones', () => {
       const previousState: WorkflowMetadata = {
-        milestone: 'researching',
+        phase: 'researching',
         artifacts: {
           topicSummary: 'Existing Topic',
           references: [{ author: 'Existing', year: 2022, title: 'Paper' }]
@@ -212,7 +212,7 @@ describe('Workflow Inference Engine', () => {
 
   describe('Redirect Detection (LLM Behavior Observer)', () => {
     const initialState: WorkflowMetadata = {
-      milestone: 'exploring',
+      phase: 'exploring',
       progress: 0.05,
       artifacts: {}
     };

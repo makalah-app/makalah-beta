@@ -19,14 +19,99 @@ import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
 // Removed: academicTools import - search tools deleted for rebuild with search_literature
-import type { AcademicUIMessage as WorkflowUIMessage } from '../../../src/lib/types/academic-message';
-import { inferWorkflowState, inferStateFromResponse } from '../../../src/lib/ai/workflow-inference';
+import type { AcademicUIMessage as WorkflowUIMessage, WorkflowMetadata } from '../../../src/lib/types/academic-message';
+import { inferWorkflowState } from '../../../src/lib/ai/workflow-inference';
+import { getWorkflowContext, calculateProgress } from '../../../src/lib/ai/workflow-engine';
+import { getWorkflowSpec, getWorkflowSpecSummary } from '../../../src/lib/ai/workflow-spec';
+import { extractStructuredWorkflowState } from '../../../src/lib/ai/structured-workflow-parser';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 // Define custom message type extending AI SDK v5 UIMessage
 export type AcademicUIMessage = WorkflowUIMessage; // Use Phase 1 type
+
+function hasOutlineContent(outline: unknown): boolean {
+  if (typeof outline === 'string') {
+    return outline.trim().length >= 20;
+  }
+
+  if (Array.isArray(outline)) {
+    return outline.length > 0;
+  }
+
+  if (outline && typeof outline === 'object') {
+    return Object.keys(outline as Record<string, unknown>).length > 0;
+  }
+
+  return false;
+}
+
+function enforceOutlinePhase(
+  metadata: WorkflowMetadata,
+  previous: WorkflowMetadata
+): WorkflowMetadata {
+  const nextPhase = metadata.phase;
+
+  if (
+    !nextPhase ||
+    (nextPhase !== 'outlining' && nextPhase !== 'outline_locked')
+  ) {
+    return metadata;
+  }
+
+  const outlinePayload = metadata.artifacts?.outline;
+  if (hasOutlineContent(outlinePayload)) {
+    return metadata;
+  }
+
+  console.warn(
+    '[Workflow] Outline phase requested without outline content. Maintaining previous phase:',
+    previous.phase || 'researching'
+  );
+
+  const sanitizedArtifacts = metadata.artifacts
+    ? { ...metadata.artifacts }
+    : undefined;
+
+  if (sanitizedArtifacts && 'outline' in sanitizedArtifacts) {
+    delete (sanitizedArtifacts as Record<string, unknown>).outline;
+  }
+
+  return {
+    ...metadata,
+    phase: previous.phase || 'researching',
+    progress: previous.progress ?? calculateProgress('researching'),
+    artifacts: sanitizedArtifacts
+  };
+}
+
+function mergeStructuredMetadata(
+  previous: WorkflowMetadata,
+  structured: WorkflowMetadata | undefined | null
+): WorkflowMetadata {
+  if (!structured) {
+    return previous;
+  }
+
+  const sanitized = enforceOutlinePhase(structured, previous);
+
+  const previousArtifacts = previous.artifacts;
+  const sanitizedArtifacts = sanitized.artifacts;
+  const mergedArtifacts =
+    previousArtifacts || sanitizedArtifacts
+      ? {
+          ...(previousArtifacts || {}),
+          ...(sanitizedArtifacts || {})
+        }
+      : undefined;
+
+  return {
+    ...previous,
+    ...sanitized,
+    artifacts: mergedArtifacts
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -104,7 +189,15 @@ export async function POST(req: Request) {
     const dynamicConfig = await getDynamicModelConfig();
     
     // Use database system prompt AS-IS - no hardcoded additions
-    const systemPrompt = dynamicConfig.systemPrompt;
+    const specForPrompt = getWorkflowSpec();
+    const phaseOrderForPrompt = specForPrompt.phases.map(phase => phase.id).join(' -> ');
+    const baseSystemPrompt = dynamicConfig.systemPrompt?.trim() || '';
+    const workflowGuardrails = `[Workflow Guardrails]
+- Jalankan 11-phase Makalah: ${phaseOrderForPrompt}.
+- Tulis metadata.phase sebagai string dari daftar tersebut.
+- Jika perlu detail fase, panggil tool workflow_spec dengan format 'summary' atau 'full'.
+- Gunakan artifacts dalam metadata sebagai memori permanen pengguna.`.trim();
+    const augmentedSystemPrompt = `${baseSystemPrompt}\n\n${workflowGuardrails}`.trim();
 
     // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
     const stream = createUIMessageStream({
@@ -118,9 +211,30 @@ export async function POST(req: Request) {
         // Infer current workflow state from conversation history
         const currentWorkflowState = inferWorkflowState(validatedMessages as WorkflowUIMessage[]);
 
+        // 🔧 FIX RACE CONDITION: Pre-compute workflow metadata BEFORE streaming starts
+        // This ensures metadata is available synchronously for messageMetadata callback
+        // Solution: Use closure variable instead of waiting for onFinish
+        const preComputedMetadata: WorkflowMetadata = {
+          phase: currentWorkflowState.phase || 'exploring',
+          progress: currentWorkflowState.progress || 0.05,
+          artifacts: currentWorkflowState.artifacts || {},
+          timestamp: new Date().toISOString(),
+          offTopicCount: currentWorkflowState.offTopicCount || 0,
+          model: dynamicConfig.primaryModelName,
+          userId: userId
+        };
+
+        console.log('[DEBUG] Pre-computed workflow metadata:', JSON.stringify(preComputedMetadata, null, 2));
+
         // 🚨 BACKEND ENFORCEMENT: Off-topic escalation for extreme cases
         // If user has been off-topic 3+ times, inject strong redirect
         const needsStrongRedirect = (currentWorkflowState.offTopicCount || 0) >= 3;
+        const mildRedirectReminder =
+          !needsStrongRedirect && (currentWorkflowState.offTopicCount || 0) >= 2;
+
+        const workflowSpec = getWorkflowSpec();
+        const workflowSpecSummary = getWorkflowSpecSummary();
+        const phaseChoices = workflowSpec.phases.map(phase => `"${phase.id}"`).join(', ');
 
         // Simple processing - trust LLM intelligence
 
@@ -147,6 +261,30 @@ export async function POST(req: Request) {
               content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
             }));
           }
+
+          // 🔄 WORKFLOW CONTEXT INJECTION: LLM-Native "Permanent RAG" Pattern
+          // Inject current workflow state as FIRST system message
+          // This tells LLM "what's happening now" without telling it "what to do"
+          const workflowContext = getWorkflowContext(currentWorkflowState);
+          console.log('[DEBUG] Workflow context generated:', JSON.stringify(workflowContext, null, 2));
+
+          const workflowContextBlueprint = `${workflowContext.contextMessage}
+
+[Workflow Blueprint]
+${workflowSpecSummary}${
+            mildRedirectReminder
+              ? '\n\n[Reminder]\nFokus ke tugas akademik dan lanjutkan fase sesuai urutan di atas.'
+              : ''
+          }`.trim();
+
+          const structuredMetadataInstruction = `\n[Metadata Contract]\nAlways end responses with:\n<!--workflow-state:{"phase":"exploring","progress":0.05,"artifacts":{...}}-->\nUse one of these phase strings: ${phaseChoices}. Keep progress 0-1.`;
+
+          manualMessages.unshift({
+            role: 'system',
+            content: `${workflowContextBlueprint}${structuredMetadataInstruction}`
+          });
+
+          console.log('[DEBUG] Injected workflow context as first system message:', workflowContext.contextMessage);
 
           // 🚨 BACKEND ENFORCEMENT: Inject strong redirect for Tier 3 escalation
           if (needsStrongRedirect) {
@@ -211,7 +349,7 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         // OpenAI responses API: Only supported parameters
         model: streamModel,
         messages: manualMessages,
-        system: systemPrompt,
+        system: augmentedSystemPrompt,
         tools: {
           // OpenAI native web search
           web_search: (openai as any).tools.webSearch({
@@ -237,25 +375,42 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            // Infer new workflow state from AI response
-            // Philosophy: Observe LLM behavior (redirects, milestones) from response only
-            const newState = inferStateFromResponse(text, currentWorkflowState);
+            console.log('[DEBUG] OpenAI onFinish called - text length:', text.length);
 
-            // Store workflow state for messageMetadata callback
-            // @ts-ignore - Store on result object for access in toUIMessageStream
-            result.workflowMetadata = {
-              ...newState,
-              model: dynamicConfig.primaryModelName,
-              tokens: usage ? {
+            const structuredState = extractStructuredWorkflowState(text, preComputedMetadata);
+
+            if (structuredState) {
+              const mergedMetadata = mergeStructuredMetadata(
+                preComputedMetadata,
+                structuredState.metadata
+              );
+
+              Object.assign(preComputedMetadata, mergedMetadata);
+              preComputedMetadata.offTopicCount = mergedMetadata.offTopicCount || 0;
+              preComputedMetadata.timestamp =
+                mergedMetadata.timestamp || new Date().toISOString();
+              console.log('[DEBUG] Structured workflow metadata applied.');
+            } else {
+              console.warn('[Workflow] Structured workflow state missing. Skipping phase update.');
+            }
+
+            // Update tokens in pre-computed metadata (now available after streaming)
+            if (usage) {
+              preComputedMetadata.tokens = {
                 prompt: usage.inputTokens || 0,
                 completion: usage.outputTokens || 0,
                 total: usage.totalTokens || 0
-              } : undefined,
-              userId: userId
-            };
-          } catch (metadataError) {
-            // Silent fail - metadata is non-critical
-            console.error('[Workflow] Metadata attachment failed:', metadataError);
+              };
+            }
+
+            console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
+
+            writer.write({
+              type: 'message-metadata',
+              messageMetadata: preComputedMetadata
+            });
+          } catch (error) {
+            console.error('[Workflow] onFinish error:', error);
           }
         }
       })
@@ -264,7 +419,7 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         // :online suffix provides Exa-powered built-in web search
         model: streamModel,
         messages: manualMessages,
-        system: systemPrompt,
+        system: augmentedSystemPrompt,
         // ⚠️ CRITICAL: NO tools for :online models - they have native web search
         // Passing tools would override native search with DuckDuckGo fallback
         temperature: dynamicConfig.config.temperature,
@@ -287,25 +442,42 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            // Infer new workflow state from AI response
-            // Philosophy: Observe LLM behavior (redirects, milestones) from response only
-            const newState = inferStateFromResponse(text, currentWorkflowState);
+            console.log('[DEBUG] OpenRouter onFinish called - text length:', text.length);
 
-            // Store workflow state for messageMetadata callback
-            // @ts-ignore - Store on result object for access in toUIMessageStream
-            result.workflowMetadata = {
-              ...newState,
-              model: dynamicConfig.primaryModelName,
-              tokens: usage ? {
+            const structuredState = extractStructuredWorkflowState(text, preComputedMetadata);
+
+            if (structuredState) {
+              const mergedMetadata = mergeStructuredMetadata(
+                preComputedMetadata,
+                structuredState.metadata
+              );
+
+              Object.assign(preComputedMetadata, mergedMetadata);
+              preComputedMetadata.offTopicCount = mergedMetadata.offTopicCount || 0;
+              preComputedMetadata.timestamp =
+                mergedMetadata.timestamp || new Date().toISOString();
+              console.log('[DEBUG] Structured workflow metadata applied.');
+            } else {
+              console.warn('[Workflow] Structured workflow state missing. Skipping phase update.');
+            }
+
+            // Update tokens in pre-computed metadata (now available after streaming)
+            if (usage) {
+              preComputedMetadata.tokens = {
                 prompt: usage.inputTokens || 0,
                 completion: usage.outputTokens || 0,
                 total: usage.totalTokens || 0
-              } : undefined,
-              userId: userId
-            };
-          } catch (metadataError) {
-            // Silent fail - metadata is non-critical
-            console.error('[Workflow] Metadata attachment failed:', metadataError);
+              };
+            }
+
+            console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
+
+            writer.write({
+              type: 'message-metadata',
+              messageMetadata: preComputedMetadata
+            });
+          } catch (error) {
+            console.error('[Workflow] onFinish error:', error);
           }
         }
       });
@@ -322,10 +494,14 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
                 sendFinish: true,
                 sendSources: sendSources,  // ✅ Sources for all providers
                 messageMetadata: ({ part }) => {
-                  // Attach workflow metadata on finish event
-                  if (part.type === 'finish' && (result as any).workflowMetadata) {
-                    return (result as any).workflowMetadata;
+                  console.log('[DEBUG] messageMetadata called - part.type:', part.type);
+
+                  // Attach updated workflow metadata when the finish event is emitted
+                  if (part.type === 'finish') {
+                    console.log('[DEBUG] ✅ Attaching pre-computed metadata:', JSON.stringify(preComputedMetadata, null, 2));
+                    return preComputedMetadata;
                   }
+
                   return undefined;
                 }
               }));

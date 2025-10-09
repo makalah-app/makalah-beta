@@ -18,6 +18,8 @@
 
 import { UIMessage } from 'ai';
 import { generateUUID, getValidUserUUID } from '../utils/uuid-generator';
+import { normalizePhase } from '../ai/workflow-engine';
+import type { WorkflowPhase } from '../types/academic-message';
 
 // Fallback storage interface
 interface FallbackConversation {
@@ -25,7 +27,7 @@ interface FallbackConversation {
   userId: string;
   title: string;
   messages: UIMessage[];
-  currentPhase: number;
+  currentPhase: WorkflowPhase;
   createdAt: string;
   updatedAt: string;
   metadata: Record<string, any>;
@@ -244,7 +246,7 @@ export async function createChatFallback(userId?: string, title?: string): Promi
     userId: getValidUserUUID(userId),
     title: title || 'New Chat (Offline)',
     messages: [],
-    currentPhase: 1,
+    currentPhase: 'exploring',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {
@@ -267,7 +269,7 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
   title: string;
   messageCount: number;
   lastActivity: string;
-  currentPhase: number;
+  currentPhase: WorkflowPhase;
 }[]> {
   const conversations: any[] = [];
   
@@ -279,7 +281,7 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
         title: conversation.title,
         messageCount: conversation.messages.length,
         lastActivity: conversation.updatedAt,
-        currentPhase: conversation.currentPhase,
+        currentPhase: normalizePhase(conversation.currentPhase),
       });
     }
     
@@ -298,7 +300,7 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
                 title: (conversation as any).title,
                 messageCount: (conversation as any).messages?.length || 0,
                 lastActivity: (conversation as any).updatedAt,
-                currentPhase: (conversation as any).currentPhase || 1,
+                currentPhase: normalizePhase((conversation as any).currentPhase),
               });
             }
           }
@@ -437,15 +439,14 @@ function generateTitleFromMessages(messages: UIMessage[]): string | null {
   return null;
 }
 
-function extractPhaseFromMessages(messages: UIMessage[]): number {
+function extractPhaseFromMessages(messages: UIMessage[]): WorkflowPhase {
   for (let i = messages.length - 1; i >= 0; i--) {
     const metadata = messages[i].metadata as any;
-    if (metadata && typeof metadata === 'object' &&
-        'phase' in metadata && typeof metadata.phase === 'number') {
-      return metadata.phase;
+    if (metadata && typeof metadata === 'object' && 'phase' in metadata) {
+      return normalizePhase(metadata.phase);
     }
   }
-  return 1;
+  return 'exploring';
 }
 
 /**

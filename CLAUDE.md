@@ -13,7 +13,7 @@ Makalah AI is an academic writing platform for Indonesian researchers, students,
 **Development Priorities**:
 1. **Feature Expansion**: Adding new capabilities to enhance user experience and academic writing assistance
 2. **LLM Tools Enhancement**: Building and refining AI tools for better research, citation management, and content generation
-3. **Workflow Strengthening**: Improving the 7-waypoint academic paper writing workflow with better guidance, quality checks, and automation
+3. **Workflow Strengthening**: Improving the 11-phase academic paper writing workflow with better guidance, quality checks, and automation
 
 **Focus Areas**:
 - Strengthen web search quality control with credible source enforcement
@@ -98,9 +98,9 @@ The workflow system tracks academic paper writing progress through **constitutio
 **Key Characteristics**:
 - ✅ **Zero Token Overhead**: State stored in UIMessage.metadata (AI SDK v5 native pattern)
 - ✅ **Pure AI SDK v5**: Uses `writeMessageAnnotation()` for metadata attachment
-- ✅ **Organic Milestones**: 10 natural phases from exploration to delivery
+- ✅ **Organic Milestones**: 11 natural phases from exploration to delivery
 - ✅ **Pattern Detection**: Regex-based inference from AI response text
-- ✅ **Artifact Preservation**: References, keywords, sections persist across conversations
+- ✅ **Workflow Artifacts Preservation**: Academic data (references, keywords, sections) persists across conversations in database JSONB
 - ✅ **Database Persistence**: PostgreSQL JSONB with expression indexes for fast queries
 - ✅ **84% Token Reduction**: From ~3200 to ~500 tokens per request vs. state-in-prompt
 
@@ -108,14 +108,14 @@ The workflow system tracks academic paper writing progress through **constitutio
 
 1. **Type System** (`src/lib/types/academic-message.ts`)
    - `WorkflowMetadata`: milestone, progress, artifacts, timestamp
-   - `WorkflowMilestone`: Union of 10 milestone literals
-   - `WorkflowArtifacts`: topicSummary, researchQuestions, references, keywords, completedSections
+   - `WorkflowMilestone`: Union of 11 milestone literals
+   - `WorkflowArtifacts`: topicSummary, researchQuestions, references, keywords, completedSections (data storage, NOT UI components)
    - `AcademicUIMessage`: Extends AI SDK UIMessage with workflow metadata
 
 2. **Inference Engine** (`src/lib/ai/workflow-inference.ts`)
    - `inferStateFromResponse()`: Detects milestones from AI text using regex patterns
-   - `extractArtifacts()`: Captures academic elements (citations, RQs, keywords)
-   - Pure functions, no side effects, preserves existing artifacts
+   - `extractArtifacts()`: Captures workflow artifacts (data) - academic elements like citations, RQs, keywords
+   - Pure functions, no side effects, preserves existing workflow artifacts
 
 3. **API Integration** (`app/api/chat/route.ts`)
    - Reads current state from conversation history before streaming
@@ -134,18 +134,23 @@ The workflow system tracks academic paper writing progress through **constitutio
    - Expression indexes: `metadata->>'milestone'`, `metadata->>'progress'`
    - Enables fast queries for analytics and debugging
 
-**10 Organic Milestones** (with progress percentages):
+**11 Workflow Phases (Canonical Specification)**
 
-1. **exploring** (5%) - Initial topic exploration, no commitment yet
-2. **topic_locked** (15%) - Topic and research questions defined
+**Source of Truth**: `__references__/workflow/documentation/workflow_infrastructure/README.md`
+
+1. **exploring** (5%) - Initial topic exploration, brainstorming ideas
+2. **topic_locked** (15%) - Topic and research questions confirmed
 3. **researching** (25%) - Literature search, web_search tool active
 4. **foundation_ready** (35%) - Sufficient references gathered (≥5-8 papers)
 5. **outlining** (45%) - Structuring paper sections (IMRaD/standard format)
 6. **outline_locked** (55%) - Outline approved, ready to write
 7. **drafting** (65%) - Writing section content (Abstract, Intro, Methods, etc.)
-8. **integrating** (75%) - Connecting sections, coherence checks, transitions
-9. **polishing** (85%) - Grammar, citations, formatting, final review
-10. **delivered** (100%) - Paper complete and ready for submission
+8. **drafting_locked** (75%) - Draft complete, ready for integration
+9. **integrating** (85%) - Connecting sections, coherence checks, transitions
+10. **polishing** (95%) - Grammar, citations, formatting, final review
+11. **delivered** (100%) - Paper complete and ready for submission
+
+**Compliance**: All phases match `workflow_infrastructure/` specification exactly.
 
 **Token Efficiency Metrics**:
 - **Before**: ~3200 tokens (system prompt includes full workflow instructions)
@@ -155,9 +160,8 @@ The workflow system tracks academic paper writing progress through **constitutio
 
 **Developer References**:
 - Testing: `src/lib/ai/__tests__/workflow-inference.test.ts` (27 test cases)
-- Utilities: `src/lib/utils/workflow-helpers.ts` (milestoneIndex, calculateProgress, formatMilestone)
 - E2E Tests: `tests/e2e/workflow.spec.ts` (Playwright desktop/mobile tests)
-- Implementation Blueprint: `__references__/workflow/index/task/` (7 task specs)
+- Implementation Blueprint: `__references__/workflow/documentation/workflow_infrastructure/`
 
 **Maintenance Notes**:
 - To add new milestone: Update WorkflowMilestone type → Add regex pattern → Update UI labels
@@ -300,7 +304,7 @@ Location: `src/lib/ai/tools/`
    - Query: `SELECT content FROM system_prompts WHERE is_active = true ORDER BY priority_order LIMIT 1`
    - Editable via: Admin Dashboard → Database Prompts → Add/Edit Prompt
    - Character Limit: 15,000 characters (enforced by database constraint)
-   - Current Content: `openai_prompt.md` (Moka persona, 7-waypoint workflow)
+   - Current Content: `openai_prompt.md` (Moka persona, 11-phase workflow)
 
 2. **Fallback Source: Code Constants** (Emergency Mode)
    - Location: `app/admin/prompt/page.tsx:18-41` (DEFAULT_SYSTEM_PROMPT)
@@ -377,9 +381,110 @@ Return systemPrompt to streamText()
   - Current: 15,000 chars (migration `set_system_prompt_limit_to_15000_characters`)
 - **Validation Removed**: No content validation (7-fase, academic keywords) as of cleanup session
 
+### System Prompt Update Workflow
+
+**⚠️ CRITICAL: Reference File Pattern for Claude Code**
+
+When updating the system prompt, follow this workflow:
+
+---
+
+#### Source File (Single Source of Truth)
+
+**Location**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__/workflow/index/openai_prompt.md`
+
+**Content**:
+- Moka persona definition
+- 11-phase workflow guidance
+- Academic instructions and quality standards
+- Tool usage instructions
+- Character limit: 15,000 characters (enforced by database constraint)
+
+---
+
+#### Workflow for Claude Code
+
+1. **Edit Reference File** (`openai_prompt.md`):
+   - When asked to modify system prompt, edit this file (NOT database directly)
+   - This is the **source of truth** for all system prompt content
+   - Make changes to Moka persona, workflow guidance, or instructions as needed
+   - Ensure total content ≤ 15,000 characters
+
+2. **Notify Supervisor**:
+   - **ALWAYS** notify supervisor (erik.supit@gmail.com) after editing
+   - Inform which sections were changed and why
+   - Wait for supervisor review and approval
+
+3. **Supervisor Deployment**:
+   - Supervisor reviews changes in `openai_prompt.md`
+   - Supervisor uploads to database via: **Admin Dashboard → Database Prompts → Add/Edit Prompt**
+   - Upload triggers `clearDynamicConfigCache()` for immediate effect (30s cache TTL)
+
+4. **Do NOT**:
+   - ❌ Edit database directly (Claude has no SQL access)
+   - ❌ Modify fallback constants in code (only for emergency mode)
+   - ❌ Assume changes take effect without supervisor upload
+   - ❌ Skip notification step (supervisor MUST approve before deployment)
+
+---
+
+#### Rationale
+
+This pattern ensures:
+- ✅ **Version control**: System prompt file tracked in git
+- ✅ **Review process**: Supervisor approval required before production deployment
+- ✅ **Single source of truth**: `openai_prompt.md` → database (one-way flow)
+- ✅ **Clear separation**: Claude edits file, supervisor deploys to production
+- ✅ **Rollback capability**: Previous versions in git history
+
+---
+
+#### Quick Reference
+
+| Step | Actor | Action | Tool/Location |
+|------|-------|--------|---------------|
+| 1. Edit | Claude Code | Modify system prompt content | `__references__/workflow/index/openai_prompt.md` |
+| 2. Notify | Claude Code | Inform supervisor of changes | Chat message to user |
+| 3. Review | Supervisor | Verify changes are correct | Git diff / file read |
+| 4. Deploy | Supervisor | Upload to database | Admin Dashboard → Database Prompts |
+| 5. Verify | Supervisor | Check chat uses new prompt | Test conversation |
+
 ## Third-Party AI SDK Tools
 
 This project uses enhanced AI SDK tools from [midday.ai/ai-sdk-tools](https://github.com/midday-ai/ai-sdk-tools) for performance and advanced features:
+
+### Terminology Clarification: "Artifacts"
+
+**IMPORTANT**: The term "artifacts" has TWO distinct meanings in this codebase:
+
+#### 1. Workflow Artifacts (Data Storage)
+- **Definition**: `WorkflowArtifacts` interface in `src/lib/types/academic-message.ts`
+- **Purpose**: Accumulated academic data extracted from conversation (references, topic summary, outline, keywords)
+- **Storage**: Saved in `UIMessage.metadata.artifacts` → persisted to database as JSONB
+- **Analogy**: "Save file" or checkpoint data
+- **Status**: ✅ **Currently Active** - Used throughout workflow system
+- **Examples**:
+  ```typescript
+  {
+    topicSummary: "Gender bias in AI diagnostic algorithms",
+    references: [{author: "Smith", year: 2023, title: "..."}],
+    outline: "## Introduction\n## Literature Review...",
+    keywords: ["AI bias", "healthcare"]
+  }
+  ```
+
+#### 2. AI SDK Artifacts (UI Components)
+- **Definition**: Package `@ai-sdk-tools/artifacts` for streaming structured content to UI
+- **Purpose**: Type-safe streaming for dashboards, analytics, rich documents with real-time updates
+- **Display**: Rendered as UI panels/components (e.g., sidebar showing outline, reference list)
+- **Analogy**: "Display panel" or interactive UI widget
+- **Status**: ❌ **Not Yet Implemented** - Package installed but not used in `src/`
+- **Future Use**: Planned for displaying paper sections, citations panel, progress charts
+
+**Naming Strategy Going Forward**:
+- Use `WorkflowArtifacts` or "workflow artifacts" when referring to **data storage**
+- Use `UI Artifacts` or "AI SDK artifacts" when referring to **display components**
+- In code comments, be explicit: "workflow artifacts (data)" vs "UI artifacts (display)"
 
 ### Installed Packages
 
@@ -391,11 +496,13 @@ This project uses enhanced AI SDK tools from [midday.ai/ai-sdk-tools](https://gi
    - Requires: `zustand@^5.0.8`, `@ai-sdk/react@^2.0.0`
 
 2. **@ai-sdk-tools/artifacts** (v0.7.0-beta.5)
+   - **Type**: UI Artifacts (display components) - NOT workflow artifacts (data)
    - Type-safe streaming for structured data beyond chat
    - Create dashboards, analytics, documents with real-time updates
    - Zod schema validation for artifact payloads
    - Progress tracking and status management
    - Requires: `ai@^5.0.0`, `@ai-sdk-tools/store`
+   - **Status**: Package installed, implementation pending
 
 3. **@ai-sdk-tools/devtools** (v0.6.1)
    - Development-only debugging tool for AI applications

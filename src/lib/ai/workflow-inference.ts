@@ -1,35 +1,32 @@
 import type {
-  WorkflowMilestone,
+  WorkflowPhase,
   WorkflowMetadata,
   WorkflowArtifacts,
   AcademicUIMessage,
   ReferenceMetadata
 } from '../types/academic-message';
-import { calculateProgress } from '../utils/workflow-helpers';
+import { calculateProgress, phaseIndex } from './workflow-engine';
 
 /**
- * Main entry: Infer current workflow state from message history
- * Looks backwards through messages to find latest metadata
+ * Ambil metadata workflow terbaru dari riwayat pesan
  */
 export function inferWorkflowState(
   messages: AcademicUIMessage[]
 ): WorkflowMetadata {
-  // Find latest assistant message with metadata
   const assistantMessages = messages
     .filter(m => m.role === 'assistant')
     .reverse();
 
   const latestWithMetadata = assistantMessages.find(
-    m => m.metadata?.milestone
+    m => m.metadata?.phase
   );
 
   if (latestWithMetadata?.metadata) {
     return latestWithMetadata.metadata;
   }
 
-  // Default initial state
   return {
-    milestone: 'exploring',
+    phase: 'exploring',
     progress: 0.05,
     artifacts: {},
     timestamp: new Date().toISOString()
@@ -37,10 +34,7 @@ export function inferWorkflowState(
 }
 
 /**
- * Detect if LLM response contains redirect attempt
- * Observes what LLM ALREADY DECIDED, doesn't predict user intent
- *
- * Philosophy: Backend observes LLM behavior, not enforces patterns
+ * Deteksi apakah respons LLM mengandung upaya redirect off-topic
  */
 function detectRedirectAttempt(llmResponse: string): {
   isRedirect: boolean;
@@ -48,17 +42,14 @@ function detectRedirectAttempt(llmResponse: string): {
 } {
   const text = llmResponse.toLowerCase();
 
-  // Tier 3: Firm boundary (LLM declining to engage, giving binary choice)
   if (/gue spesifik untuk.*akademik|mau lanjut.*paper.*atau.*selesai/i.test(text)) {
     return { isRedirect: true, tier: 3 };
   }
 
-  // Tier 2: Medium redirect (acknowledged + stronger return to topic)
   if (/noted.*anyway.*(?:paper|topik|outline)|oke.*balik ke.*(?:paper|topik|outline)/i.test(text)) {
     return { isRedirect: true, tier: 2 };
   }
 
-  // Tier 1: Soft redirect (btw/anyway + academic keyword)
   if (/(btw|anyway).*(?:paper|topik|outline|draft|penelitian|riset)/i.test(text)) {
     return { isRedirect: true, tier: 1 };
   }
@@ -67,80 +58,104 @@ function detectRedirectAttempt(llmResponse: string): {
 }
 
 /**
- * Infer new state from AI response text
- * Uses priority-based pattern detection
- *
- * Philosophy: Observes LLM behavior (milestones + redirects) from response only
+ * Infer fase baru dari respons LLM
  */
 export function inferStateFromResponse(
   response: string,
   previousState: WorkflowMetadata
 ): WorkflowMetadata {
   const text = response.toLowerCase();
-  const currentMilestone = previousState.milestone || 'exploring';
+  const currentPhase: WorkflowPhase = previousState.phase || 'exploring';
+  let detectedPhase: WorkflowPhase = currentPhase;
 
-  // Priority-based detection (most specific first)
-  let detectedMilestone = currentMilestone;
+  if (
+    /paper\s+(?:sudah\s+)?selesai|siap\s+diserahkan|dokumen\s+final/i.test(text) ||
+    /(?:ya|oke).*deliver.*(?:final\s+)?package/i.test(text) ||
+    /paper\s+siap\s+submit/i.test(text)
+  ) {
+    detectedPhase = 'delivered';
+  } else if (
+    /polish|grammar.*check|proofreading|formatting/i.test(text) ||
+    /(?:ya|oke).*(?:mulai\s+)?(?:grammar|polish|citation\s+check)/i.test(text) ||
+    /ready.*polish/i.test(text)
+  ) {
+    detectedPhase = 'polishing';
+  } else if (
+    /integrat|transisi|hubung.*bagian|flow.*paper/i.test(text) ||
+    /(?:semua\s+)?(?:oke|approved).*lanjut\s+integra/i.test(text)
+  ) {
+    detectedPhase = 'integrating';
+  } else if (
+    /draft\s+(?:sudah\s+)?(?:selesai|complete|lengkap)/i.test(text) ||
+    /(?:semua\s+)?section.*(?:selesai|complete)/i.test(text) ||
+    /siap.*integra/i.test(text)
+  ) {
+    detectedPhase = 'drafting_locked';
+  } else if (/(?:mulai|menulis|tulis)\s+(?:draft|section|bagian)/i.test(text)) {
+    detectedPhase = 'drafting';
+  } else if (
+    /outline\s+(?:disetujui|approved|oke|locked)/i.test(text) ||
+    /approved.*(?:mulai\s+)?drafting/i.test(text) ||
+    /mari\s+mulai\s+menulis/i.test(text)
+  ) {
+    detectedPhase = 'outline_locked';
+  } else if (/(?:berikut|ini)\s+(?:adalah\s+)?(?:struktur\s+)?outline|struktur\s+paper|kerangka|susunan\s+bagian/i.test(text)) {
+    detectedPhase = 'outlining';
+  } else if (
+    /(?:referensi|sumber)\s+(?:sudah\s+)?(?:cukup|lengkap)/i.test(text) ||
+    /foundation.*ready|siap.*(?:mulai\s+)?outline/i.test(text) ||
+    /(?:punya|ada)\s+\d+.*(?:paper|referensi|sumber)/i.test(text)
+  ) {
+    detectedPhase = 'foundation_ready';
+  } else if (/(?:mencari|cari|search).*(?:paper|artikel|jurnal)|web_search/i.test(text)) {
+    detectedPhase = 'researching';
+  } else if (
+    /topik\s+(?:sudah\s+)?(?:dipilih|ditetapkan|locked|fix)/i.test(text) ||
+    /(?:^|\s)locked!?(?:\s|$)/i.test(text) ||
+    /pertanyaan\s+penelitian|research\s+question/i.test(text)
+  ) {
+    detectedPhase = 'topic_locked';
+  } else if (/eksplorasi|brainstorm|clarify|ide.*topik|pilihan.*topik/i.test(text)) {
+    detectedPhase = 'exploring';
+  }
 
-  // 1. Delivery detection (terminal)
-  if (/paper\s+(?:sudah\s+)?selesai|siap\s+diserahkan|dokumen\s+final/i.test(text)) {
-    detectedMilestone = 'delivered';
-  }
-  // 2. Polishing
-  else if (/polish|grammar.*check|proofreading|formatting/i.test(text)) {
-    detectedMilestone = 'polishing';
-  }
-  // 3. Integration
-  else if (/integrat|transisi|hubung.*bagian|flow.*paper/i.test(text)) {
-    detectedMilestone = 'integrating';
-  }
-  // 4. Drafting
-  else if (/(?:mulai|menulis|tulis)\s+(?:draft|section|bagian)/i.test(text)) {
-    detectedMilestone = 'drafting';
-  }
-  // 5. Outline locked
-  else if (/outline\s+(?:disetujui|approved|oke)|mari\s+mulai\s+menulis/i.test(text)) {
-    detectedMilestone = 'outline_locked';
-  }
-  // 7. Foundation ready (check before outlining to catch readiness signals)
-  else if (/cukup\s+referensi|foundation\s+ready|siap.*(?:membuat|buat)\s+outline/i.test(text)) {
-    detectedMilestone = 'foundation_ready';
-  }
-  // 6. Outlining
-  else if (/(?:berikut|ini)\s+(?:adalah\s+)?(?:struktur\s+)?outline|struktur\s+paper|kerangka|susunan\s+bagian/i.test(text)) {
-    detectedMilestone = 'outlining';
-  }
-  // 8. Researching
-  else if (/(?:mencari|cari|search).*(?:paper|artikel|jurnal)|web_search/i.test(text)) {
-    detectedMilestone = 'researching';
-  }
-  // 9. Topic locked
-  else if (/topik\s+(?:sudah\s+)?(?:dipilih|ditetapkan|fix)|pertanyaan\s+penelitian/i.test(text)) {
-    detectedMilestone = 'topic_locked';
-  }
-  // 10. Exploring (default)
-  else if (/eksplorasi|brainstorm|ide.*topik|pilihan.*topik/i.test(text)) {
-    detectedMilestone = 'exploring';
+  const previousIndex = Math.max(phaseIndex(currentPhase), 0);
+  const detectedIndex = phaseIndex(detectedPhase);
+
+  if (detectedIndex >= 0) {
+    if (detectedIndex < previousIndex) {
+      detectedPhase = currentPhase;
+    } else if (detectedIndex > previousIndex + 1) {
+      const sequence: WorkflowPhase[] = [
+        'exploring',
+        'topic_locked',
+        'researching',
+        'foundation_ready',
+        'outlining',
+        'outline_locked',
+        'drafting',
+        'drafting_locked',
+        'integrating',
+        'polishing',
+        'delivered'
+      ];
+
+      detectedPhase = sequence[Math.min(previousIndex + 1, sequence.length - 1)];
+    }
   }
 
-  // Extract artifacts
   const artifacts = extractArtifacts(response, previousState.artifacts);
-
-  // Calculate progress
-  const progress = calculateProgress(detectedMilestone);
-
-  // Detect redirect attempt from LLM response
+  const progress = calculateProgress(detectedPhase);
   const redirectInfo = detectRedirectAttempt(response);
-
-  // Increment counter ONLY if LLM showed redirect behavior
   const offTopicCount = redirectInfo.isRedirect
     ? (previousState.offTopicCount || 0) + 1
-    : 0; // Reset counter when LLM stops redirecting
+    : 0;
 
   const timestamp = new Date().toISOString();
 
   return {
-    milestone: detectedMilestone,
+    ...previousState,
+    phase: detectedPhase,
     progress,
     artifacts,
     timestamp,
@@ -149,9 +164,6 @@ export function inferStateFromResponse(
   };
 }
 
-/**
- * Extract all artifacts from response text
- */
 function extractArtifacts(
   response: string,
   previousArtifacts?: WorkflowArtifacts
@@ -171,9 +183,6 @@ function extractArtifacts(
   };
 }
 
-/**
- * Extract topic summary from response
- */
 function extractTopicSummary(text: string): string | undefined {
   const patterns = [
     /(?:topik|topic).*(?:adalah|is|:|yaitu)\s*["']?([^"'\n]+)["']?/i,
@@ -190,9 +199,6 @@ function extractTopicSummary(text: string): string | undefined {
   return undefined;
 }
 
-/**
- * Extract research question from response
- */
 function extractResearchQuestion(text: string): string | undefined {
   const patterns = [
     /(?:pertanyaan penelitian|research question).*(?:adalah|is|:|yaitu)\s*["']?([^"'\n.?!]+[.?!]?)["']?/i
@@ -208,12 +214,7 @@ function extractResearchQuestion(text: string): string | undefined {
   return undefined;
 }
 
-/**
- * Extract references from response
- * Simple detection - full parsing would be Phase 3+
- */
 function extractReferences(text: string): ReferenceMetadata[] | undefined {
-  // Pattern: Author (Year). "Title"
   const pattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*\((\d{4})\)[.\s]*["']([^"']+)["']/g;
   const refs: ReferenceMetadata[] = [];
 
@@ -221,7 +222,7 @@ function extractReferences(text: string): ReferenceMetadata[] | undefined {
   while ((match = pattern.exec(text)) !== null) {
     refs.push({
       author: match[1],
-      year: parseInt(match[2]),
+      year: parseInt(match[2], 10),
       title: match[3]
     });
   }
@@ -229,11 +230,7 @@ function extractReferences(text: string): ReferenceMetadata[] | undefined {
   return refs.length > 0 ? refs : undefined;
 }
 
-/**
- * Extract outline from response
- */
 function extractOutline(text: string): string | undefined {
-  // Look for markdown headers or numbered structure
   const outlinePattern = /((?:^|\n)(?:#{1,3}\s+|[\d\.]+\s+)[A-Z][^\n]+\n){4,}/m;
   const match = text.match(outlinePattern);
 
@@ -244,9 +241,6 @@ function extractOutline(text: string): string | undefined {
   return undefined;
 }
 
-/**
- * Extract completed sections from response
- */
 function extractCompletedSections(text: string): string[] | undefined {
   const pattern = /(?:selesai|completed?|done).*(?:section|bagian)\s+["']?([^"'\n]+)["']?/gi;
   const sections: string[] = [];
@@ -259,9 +253,6 @@ function extractCompletedSections(text: string): string[] | undefined {
   return sections.length > 0 ? sections : undefined;
 }
 
-/**
- * Extract keywords from response
- */
 function extractKeywords(text: string): string[] | undefined {
   const pattern = /(?:keywords?|kata kunci).*?[:：]\s*([^\n]+)/i;
   const match = text.match(pattern);

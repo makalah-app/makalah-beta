@@ -79,6 +79,46 @@ async function handleSelectFallback() {
     return data;
   }
 
+  const chatMessagesMatch = query.match(/select\s+(.+)\s+from\s+public\.chat_messages/i);
+
+  if (chatMessagesMatch && !/group\s+by/i.test(query)) {
+    const columns = chatMessagesMatch[1].trim();
+    let builder = supabase.from('chat_messages').select(columns);
+
+    const conversationIdMatch = query.match(/where\s+conversation_id\s*=\s*'([^']+)'/i);
+    if (conversationIdMatch) {
+      builder = builder.eq('conversation_id', conversationIdMatch[1]);
+    }
+
+    const orderMatch = query.match(/order\s+by\s+([a-z0-9_]+)(\s+(asc|desc))?/i);
+    if (orderMatch) {
+      const column = orderMatch[1];
+      const direction = (orderMatch[3] || 'asc').toLowerCase() === 'desc' ? false : true;
+      builder = builder.order(column, { ascending: direction });
+    }
+
+    const limitMatch = query.match(/limit\s+(\d+)/i);
+    let limitValue = limitMatch ? Number(limitMatch[1]) : undefined;
+
+    const offsetMatch = query.match(/offset\s+(\d+)/i);
+    if (offsetMatch) {
+      const offsetValue = Number(offsetMatch[1]);
+      const endValue = limitValue ? offsetValue + limitValue - 1 : offsetValue + 99;
+      builder = builder.range(offsetValue, endValue);
+      limitValue = undefined;
+    }
+
+    if (typeof limitValue === 'number') {
+      builder = builder.limit(limitValue);
+    }
+
+    const { data, error } = await builder;
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
   const chatAggMatch = normalized.match(
     /^select conversation_id, max\(created_at\) as last_msg, count\(\*\) as total from public\.chat_messages group by conversation_id order by last_msg desc(?: limit (\d+))?$/
   );

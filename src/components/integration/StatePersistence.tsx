@@ -12,12 +12,14 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { AcademicUIMessage } from '../chat/ChatContainer';
+import type { WorkflowPhase } from '../../lib/types/academic-message';
+import { normalizePhase } from '../../lib/ai/workflow-engine';
 
 interface PersistedChatSession {
   id: string;
   name: string;
   messages: AcademicUIMessage[];
-  currentPhase: number;
+  currentPhase: WorkflowPhase;
   createdAt: number;
   updatedAt: number;
   metadata?: {
@@ -191,11 +193,15 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       id: sessionId,
       name,
       messages: [],
-      currentPhase: 1,
+      currentPhase: 'exploring',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       ...initialData,
     };
+
+    newSession.currentPhase = normalizePhase(
+      (initialData.currentPhase as WorkflowPhase | number | string | undefined) ?? newSession.currentPhase
+    );
 
     setSavedSessions(prev => {
       const updated = [newSession, ...prev];
@@ -383,7 +389,11 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
   const loadFromStorageAll = useCallback(() => {
     const sessions = loadFromStorage(SESSIONS_KEY);
     if (sessions) {
-      setSavedSessions(sessions);
+      const normalizedSessions = (sessions as Array<PersistedChatSession | any>).map(session => ({
+        ...session,
+        currentPhase: normalizePhase(session.currentPhase ?? 'exploring'),
+      }));
+      setSavedSessions(normalizedSessions);
     }
 
     const configs = loadFromStorage(CONFIGS_KEY);
@@ -393,9 +403,14 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
 
     const currentSessionId = loadFromStorage(CURRENT_SESSION_KEY);
     if (currentSessionId && sessions) {
-      const session = sessions.find((s: PersistedChatSession) => s.id === currentSessionId);
+      const session = (sessions as Array<PersistedChatSession | any>).find(
+        (s: PersistedChatSession) => s.id === currentSessionId
+      );
       if (session) {
-        setCurrentSession(session);
+        setCurrentSession({
+          ...session,
+          currentPhase: normalizePhase(session.currentPhase ?? 'exploring'),
+        });
       }
     }
   }, [loadFromStorage, SESSIONS_KEY, CONFIGS_KEY, CURRENT_SESSION_KEY]);

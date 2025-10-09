@@ -582,10 +582,14 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
 
             {/* Enhanced Metadata Display */}
             {message.metadata && (message.metadata.tokens || message.metadata.model) && (
+              (() => {
+                const tokenInfo = message.metadata.tokens;
+                const totalTokens = typeof tokenInfo === 'number' ? tokenInfo : tokenInfo?.total;
+                return (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {message.metadata.tokens && (
+                {typeof totalTokens === 'number' && Number.isFinite(totalTokens) && (
                   <span className="flex items-center gap-1">
-                    🔢 {message.metadata.tokens} tokens
+                    🔢 {totalTokens} tokens
                   </span>
                 )}
                 {message.metadata.model && (
@@ -594,6 +598,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </span>
                 )}
               </div>
+                );
+              })()
             )}
           </MessageContent>
 

@@ -1,8 +1,8 @@
 // Import AI SDK v5 UIMessage type
 import type { UIMessage } from 'ai';
 
-// 1. Define Milestone type (10 organic states)
-export type WorkflowMilestone =
+// 1. Define Phase type (11 workflow phases)
+export type WorkflowPhase =
   | 'exploring'
   | 'topic_locked'
   | 'researching'
@@ -10,6 +10,7 @@ export type WorkflowMilestone =
   | 'outlining'
   | 'outline_locked'
   | 'drafting'
+  | 'drafting_locked'
   | 'integrating'
   | 'polishing'
   | 'delivered';
@@ -37,7 +38,7 @@ export interface WorkflowArtifacts {
 
 // 4. Define Workflow Metadata (state stored in UIMessage.metadata)
 export interface WorkflowMetadata {
-  milestone?: WorkflowMilestone;
+  phase?: WorkflowPhase;
   progress?: number; // 0.0 - 1.0
   artifacts?: WorkflowArtifacts;
   timestamp?: string;
@@ -54,3 +55,6 @@ export interface WorkflowMetadata {
 
 // 5. Export AcademicUIMessage type (extends AI SDK UIMessage)
 export type AcademicUIMessage = UIMessage<WorkflowMetadata>;
+
+// 6. Re-export workflow engine types for convenience
+export type { PhaseDefinition, WorkflowContext } from '../ai/workflow-engine';

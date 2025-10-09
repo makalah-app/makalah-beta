@@ -16,15 +16,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  getUserConversations, 
-  getConversationDetails, 
+import {
+  getUserConversations,
+  getConversationDetails,
   createChat,
   saveChat,
-  loadChat 
+  loadChat
 } from '../../../src/lib/database/chat-store';
 import { generateId, UIMessage } from 'ai';
 import type { ConversationSummary, ConversationDetails } from '../../../src/lib/types/database-types';
+import { normalizePhase, formatPhase, phaseIndex } from '../../../src/lib/ai/workflow-engine';
+import type { WorkflowPhase } from '../../../src/lib/types/academic-message';
 
 // Allow for database operations
 export const maxDuration = 30;
@@ -99,19 +101,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      userId, 
-      title, 
-      description, 
+    const {
+      userId,
+      title,
+      description,
       initialMessage,
-      phase = 1,
+      phase: incomingPhase = 'exploring',
       workflowTemplate = 'academic_writing'
     }: {
       userId: string;
       title?: string;
       description?: string;
       initialMessage?: string;
-      phase?: number;
+      phase?: WorkflowPhase | number | string;
       workflowTemplate?: string;
     } = body;
     
@@ -122,10 +124,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    const resolvedPhase = normalizePhase(incomingPhase);
+
     // Create new conversation with AI SDK compliant pattern
     const conversationId = await createChat(
       userId, 
-      title || generateConversationTitle(workflowTemplate, phase)
+      title || generateConversationTitle(workflowTemplate, resolvedPhase)
     );
     
     // If initial message provided, save it
@@ -142,7 +146,8 @@ export async function POST(request: NextRequest) {
         ],
         metadata: {
           userId,
-          phase,
+          phase: resolvedPhase,
+          phaseIndex: phaseIndex(resolvedPhase),
           workflowTemplate,
           isInitial: true,
           createdAt
@@ -167,7 +172,8 @@ export async function POST(request: NextRequest) {
       metadata: {
         created: true,
         hasInitialMessage: !!initialMessage,
-        phase,
+        phase: resolvedPhase,
+        phaseIndex: phaseIndex(resolvedPhase),
         workflowTemplate,
         timestamp: Date.now()
       }
@@ -187,13 +193,14 @@ export async function POST(request: NextRequest) {
 /**
  * Helper function to generate conversation titles based on workflow template
  */
-function generateConversationTitle(template: string, phase: number): string {
+function generateConversationTitle(template: string, phase: WorkflowPhase): string {
+  const label = formatPhase(phase);
   const templates = {
-    academic_writing: `Academic Paper - Phase ${phase}`,
-    literature_review: `Literature Review - Phase ${phase}`,
-    research_proposal: `Research Proposal - Phase ${phase}`,
-    thesis_writing: `Thesis Writing - Phase ${phase}`,
-    general: `New Chat - Phase ${phase}`
+    academic_writing: `Academic Paper - ${label}`,
+    literature_review: `Literature Review - ${label}`,
+    research_proposal: `Research Proposal - ${label}`,
+    thesis_writing: `Thesis Writing - ${label}`,
+    general: `New Chat - ${label}`
   };
   
   return templates[template as keyof typeof templates] || templates.general;

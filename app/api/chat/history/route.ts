@@ -24,6 +24,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { getDynamicModelConfig } from '../../../../src/lib/ai/dynamic-config';
 import { SYSTEM_USER_UUID } from '../../../../src/lib/utils/uuid-generator';
 import type { ExtendedUIMessage, ConversationData, SearchResult } from './types';
+import { normalizePhase, phaseIndex } from '../../../../src/lib/ai/workflow-engine';
+import type { WorkflowPhase } from '../../../../src/lib/types/academic-message';
 
 // Allow for database operations
 export const maxDuration = 30;
@@ -35,6 +37,27 @@ function truncateTitle(title: string, maxLength: number = 27): string {
   const cleaned = (title || '').trim();
   if (cleaned.length <= maxLength) return cleaned;
   return cleaned.substring(0, maxLength).trim() + '...';
+}
+
+function parsePhaseParam(value: string | null): WorkflowPhase | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const numeric = Number(trimmed);
+  if (!Number.isNaN(numeric)) {
+    return normalizePhase(numeric);
+  }
+
+  const normalized = normalizePhase(trimmed);
+  return normalized === 'exploring' && trimmed.toLowerCase() !== 'exploring'
+    ? undefined
+    : normalized;
 }
 
 /**
@@ -62,7 +85,7 @@ export async function GET(request: NextRequest) {
     const chatId = searchParams.get('chatId'); // AI SDK v5 pattern support
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
-    const phase = searchParams.get('phase') ? parseInt(searchParams.get('phase')!) : undefined;
+    const phase = parsePhaseParam(searchParams.get('phase'));
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const messageType = searchParams.get('messageType') as 'user' | 'assistant' | 'system' | undefined;
@@ -149,10 +172,14 @@ export async function GET(request: NextRequest) {
       }
       
       // Filter by phase
-      if (phase !== undefined) {
+      if (phase) {
         filteredMessages = filteredMessages.filter(msg => {
           const extMsg = msg as ExtendedUIMessage;
-          return extMsg.metadata?.phase === phase;
+          if (!extMsg.metadata?.phase) {
+            return false;
+          }
+
+          return normalizePhase(extMsg.metadata.phase) === phase;
         });
       }
       
@@ -223,7 +250,7 @@ export async function GET(request: NextRequest) {
           title: conv.title || 'Untitled Chat',
           messageCount: conv.message_count || 0,
           lastActivity: conv.updated_at,
-          currentPhase: conv.current_phase,
+          currentPhase: conv.current_phase ? normalizePhase(conv.current_phase) : undefined,
           workflowId: conv.workflow_id
         }));
       }
@@ -232,8 +259,10 @@ export async function GET(request: NextRequest) {
     // Apply conversation-level filtering
     let filteredConversations = conversations;
     
-    if (phase !== undefined) {
-      filteredConversations = filteredConversations.filter(conv => conv.currentPhase === phase);
+    if (phase) {
+      filteredConversations = filteredConversations.filter(conv =>
+        conv.currentPhase ? normalizePhase(conv.currentPhase) === phase : false
+      );
     }
     
     // Apply pagination to conversations
@@ -486,7 +515,7 @@ export async function POST(request: NextRequest) {
       limit?: number;
       searchInContent?: boolean;
       searchInMetadata?: boolean;
-      phase?: number;
+      phase?: WorkflowPhase | number | string;
       messageType?: 'user' | 'assistant' | 'system';
     } = body;
     
@@ -519,8 +548,15 @@ export async function POST(request: NextRequest) {
     }
     
     // Filter by phase
-    if (phase !== undefined) {
-      searchQuery = searchQuery.eq('conversations.current_phase', phase);
+    if (resolvedPhase) {
+      const numericIndex = phaseIndex(resolvedPhase);
+      const phaseFilters: Array<string | number> = [resolvedPhase];
+
+      if (numericIndex >= 0) {
+        phaseFilters.push(numericIndex, String(numericIndex));
+      }
+
+      searchQuery = searchQuery.in('conversations.current_phase', phaseFilters);
     }
     
     // Filter by message type
@@ -583,7 +619,9 @@ export async function POST(request: NextRequest) {
       conversation: {
         id: result.conversations.id,
         title: result.conversations.title,
-        currentPhase: result.conversations.current_phase,
+        currentPhase: result.conversations.current_phase
+          ? normalizePhase(result.conversations.current_phase)
+          : undefined,
         updatedAt: result.conversations.updated_at
       },
       matchType: searchInContent && searchInMetadata ? 'content_and_metadata' : 
@@ -599,7 +637,7 @@ export async function POST(request: NextRequest) {
         searchCriteria: {
           searchInContent,
           searchInMetadata,
-          phase,
+          phase: resolvedPhase,
           messageType,
           conversationIds: conversationIds?.length || 0
         },

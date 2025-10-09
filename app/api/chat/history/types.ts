@@ -4,6 +4,7 @@
  */
 
 import type { UIMessage } from 'ai';
+import type { WorkflowPhase } from '../../../../src/lib/types/academic-message';
 
 /**
  * Extended UIMessage for database compatibility
@@ -12,7 +13,7 @@ import type { UIMessage } from 'ai';
 export interface ExtendedUIMessage extends UIMessage {
   createdAt?: Date | string;
   metadata?: {
-    phase?: number;
+    phase?: WorkflowPhase;
     workflowId?: string;
     [key: string]: any;
   };
@@ -41,7 +42,7 @@ export interface ConversationData {
   title?: string;
   message_count?: number;
   updated_at: string;
-  current_phase?: number;
+  current_phase?: WorkflowPhase | number | string;
   workflow_id?: string;
   user_id: string;
   archived?: boolean;
@@ -62,7 +63,7 @@ export interface ConversationResponse {
   title: string;
   messageCount: number;
   lastActivity: string;
-  currentPhase?: number;
+  currentPhase?: WorkflowPhase;
   workflowId?: string;
   messages?: ExtendedUIMessage[];
 }

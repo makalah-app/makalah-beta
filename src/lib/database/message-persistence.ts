@@ -13,24 +13,10 @@
  * - No impact on approval gates or HITL system functionality
  */
 
-import { UIMessage } from 'ai';
 import { saveChat, createChat } from './chat-store';
 import { getValidUserUUID } from '../utils/uuid-generator';
-
-// Enhanced academic metadata type - avoid JSX import issues
-interface AcademicMetadata {
-  phase?: number;
-  timestamp?: number;
-  model?: string;
-  tokens?: number;
-  artifacts?: string[];
-  userId?: string;
-  sequenceNumber?: number;
-  persistedAt?: string;
-}
-
-// Standard UIMessage with enhanced academic metadata
-type AcademicUIMessage = UIMessage<AcademicMetadata>;
+import { normalizePhase } from '../ai/workflow-engine';
+import type { AcademicUIMessage, WorkflowMetadata, WorkflowPhase } from '../types/academic-message';
 
 /**
  * PERSISTENCE CONFIGURATION
@@ -55,7 +41,7 @@ const PERSISTENCE_CONFIG: PersistenceConfig = {
 interface PersistenceMetadata {
   conversationId?: string;
   userId?: string;
-  phase?: number;
+  phase?: WorkflowPhase | number | string;
   sessionId?: string;
   streamCoordinationData: {
     primaryExecuted: boolean;
@@ -144,20 +130,40 @@ async function performMessagePersistence(
     }
     
     // Step 2: Enhance messages with persistence metadata
-    const messagesForPersistence = messages.map((message, index) => ({
-      ...message,
-      metadata: {
-        ...message.metadata,
+    const normalizedPhase = normalizePhase(
+      metadata.phase,
+      messages[messages.length - 1]?.metadata?.phase || 'exploring'
+    );
+    const normalizedUserId = getValidUserUUID(metadata.userId);
+    const persistedAt = new Date().toISOString();
+
+    type PersistedMetadata = WorkflowMetadata & {
+      conversationId?: string;
+      sessionId?: string;
+      persistedAt?: string;
+      sequenceNumber?: number;
+      streamCoordination?: PersistenceMetadata['streamCoordinationData'];
+    };
+
+    const messagesForPersistence = messages.map((message, index) => {
+      const existingMetadata = (message.metadata || {}) as PersistedMetadata;
+
+      const mergedMetadata: PersistedMetadata = {
+        ...existingMetadata,
         conversationId,
-        userId: getValidUserUUID(metadata.userId),
-        phase: metadata.phase || 1,
-        sessionId: metadata.sessionId,
-        persistedAt: new Date().toISOString(),
+        userId: normalizedUserId,
+        phase: normalizedPhase,
+        sessionId: metadata.sessionId ?? existingMetadata.sessionId,
+        persistedAt,
         sequenceNumber: index,
-        // Preserve stream coordination data for audit
-        streamCoordination: metadata.streamCoordinationData
-      }
-    }));
+        streamCoordination: metadata.streamCoordinationData,
+      };
+
+      return {
+        ...message,
+        metadata: mergedMetadata,
+      };
+    });
     
     // Step 3: Save messages using existing chat-store
     await saveChat({
@@ -199,11 +205,12 @@ async function attemptFallbackPersistence(
   try {
     
     // Create fallback data structure
+    const normalizedPhase = normalizePhase(metadata.phase);
     const fallbackData = {
       timestamp: Date.now(),
       conversationId: metadata.conversationId || `fallback_${Date.now()}`,
       userId: getValidUserUUID(metadata.userId),
-      phase: metadata.phase || 1,
+      phase: normalizedPhase,
       messageCount: messages.length,
       messages: messages.map(msg => ({
         id: msg.id,
