@@ -20,6 +20,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database-types';
 import { generateUUID, getValidUserUUID } from '../utils/uuid-generator';
 import { getDynamicModelConfig } from '../ai/dynamic-config';
+import { normalizePhase } from '../ai/workflow-engine';
 // DATABASE FALLBACK: Import fallback mode utilities
 import { 
   checkDatabaseHealth, 
@@ -161,40 +162,36 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
     // ⚡ PERFORMANCE: Skip expensive title generation in critical path
     // RELAXED GUARD: allow regeneration when title still generic, regardless of prior flag
     if (isDefaultTitle && messages.length >= 2) {
-      // Fire-and-forget title generation to avoid blocking save
-      process.nextTick(async () => {
-        try {
-          
-          const smartTitle = await generateSmartTitleFromMessages(messages);
-          if (smartTitle && smartTitle !== currentTitle) {
-            await (supabaseAdmin as any)
-              .from('conversations')
-              .update({
-                title: smartTitle,
-                metadata: {
-                  ...metadata,
-                  title_generated: true,
-                  title_generated_at: new Date().toISOString()
-                }
-              })
-              .eq('id', chatId);
+      // Direct async execution - will complete before serverless function terminates
+      try {
+        const smartTitle = await generateSmartTitleFromMessages(messages);
+        if (smartTitle && smartTitle !== currentTitle) {
+          await (supabaseAdmin as any)
+            .from('conversations')
+            .update({
+              title: smartTitle,
+              metadata: {
+                ...metadata,
+                title_generated: true,
+                title_generated_at: new Date().toISOString()
+              }
+            })
+            .eq('id', chatId);
 
-            // Send notification to UI about smart title generation
-            if (typeof window !== 'undefined') {
-              window.postMessage({
-                type: 'smart-title-generated',
-                chatId,
-                title: smartTitle,
-                timestamp: new Date().toISOString()
-              }, '*');
-            }
-          } else {
-            
+          // Send notification to UI about smart title generation
+          if (typeof window !== 'undefined') {
+            window.postMessage({
+              type: 'smart-title-generated',
+              chatId,
+              title: smartTitle,
+              timestamp: new Date().toISOString()
+            }, '*');
           }
-        } catch (error) {
-            // Smart title generation failed - using fallback title
-          }
-      });
+        }
+      } catch (error) {
+        // Smart title generation failed - keep using fallback title
+        // Silent failure to not block conversation save
+      }
     }
   } catch (error) {
   }
@@ -831,9 +828,11 @@ async function trackAIInteraction(
     const responseTime = typeof metadata === 'object' && metadata && 'responseTime' in metadata
       ? Number(metadata.responseTime) || 0
       : 0;
-    const phase = typeof metadata === 'object' && metadata && 'phase' in metadata
-      ? Number(metadata.phase) || 1
-      : 1;
+    const rawPhase =
+      typeof metadata === 'object' && metadata && 'phase' in metadata
+        ? (metadata as any).phase
+        : undefined;
+    const phase = normalizePhase(rawPhase);
 
     await (supabaseAdmin as any)
       .from('ai_interactions')

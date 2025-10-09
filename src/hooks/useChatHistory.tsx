@@ -7,13 +7,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
+import type { WorkflowPhase } from '../lib/types/academic-message';
+import { normalizePhase } from '../lib/ai/workflow-engine';
 
 export interface ConversationItem {
   id: string;
   title: string | null;
   messageCount: number;
   lastActivity: string;
-  currentPhase: number;
+  currentPhase: WorkflowPhase | null;
   workflowId: string | null;
 }
 
@@ -35,6 +37,8 @@ export function useChatHistory(): UseChatHistoryReturn {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  // ✅ FIX AUTH RACE CONDITION: Track auth stability to prevent empty sidebar
+  const [authStable, setAuthStable] = useState<boolean>(false);
 
   // ✅ PERFORMANCE: Add AbortController untuk request deduplication
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -42,6 +46,15 @@ export function useChatHistory(): UseChatHistoryReturn {
 
   // ✅ FIXED: Stable fetch function using useRef to break circular dependencies
   const fetchConversationsRef = useRef<() => Promise<void>>();
+
+  // ✅ AUTH STABILITY DETECTION: Wait for auth to stabilize before fetching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthStable(true);
+    }, 500); // Wait 500ms for auth to stabilize
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const fetchConversations = useCallback(async (currentOffset = 0, isLoadMore = false) => {
     if (!isAuthenticated || !user?.id) {
@@ -94,7 +107,11 @@ export function useChatHistory(): UseChatHistoryReturn {
       // Fetched conversations - silent handling for production
 
       // Handle both array response and object with conversations property
-      const conversationList = Array.isArray(data) ? data : (data.conversations || []);
+      const rawConversationList = Array.isArray(data) ? data : (data.conversations || []);
+      const conversationList: ConversationItem[] = rawConversationList.map((conv: any) => ({
+        ...conv,
+        currentPhase: conv.currentPhase ? normalizePhase(conv.currentPhase) : null,
+      }));
 
       if (isLoadMore) {
         setConversations(prev => [...prev, ...conversationList]);
@@ -128,11 +145,12 @@ export function useChatHistory(): UseChatHistoryReturn {
   }, [user?.id, isAuthenticated]); // Only update ref when actual dependencies change
 
   // ✅ FIXED: Initial fetch with stable dependencies only
+  // ✅ AUTH RACE CONDITION FIX: Wait for auth to stabilize before fetching
   useEffect(() => {
-    if (isAuthenticated && user?.id && fetchConversationsRef.current) {
+    if (authStable && isAuthenticated && user?.id && fetchConversationsRef.current) {
       fetchConversationsRef.current();
     }
-  }, [user?.id, isAuthenticated]); // Only depend on actual data, not function
+  }, [authStable, user?.id, isAuthenticated]); // Wait for authStable before fetching
 
   // ✅ FIXED: Stable refetch function without circular dependencies
   const refetch = useCallback(async () => {

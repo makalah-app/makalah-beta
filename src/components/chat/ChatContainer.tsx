@@ -45,12 +45,10 @@ import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: Unused HITL imports - not used in natural LLM conversation flow
 // - academicTools: Complex tool management not needed
 // - APPROVAL: Approval constants not used in natural conversation
-// Workflow Progress UI Components
-import { WorkflowProgress } from '../workflow/WorkflowProgress';
 import type { WorkflowMetadata } from '../../lib/types/academic-message';
 
 // Import Phase 1 WorkflowMetadata type - invisible workflow tracking
-// Replaces old AcademicMetadata with workflow milestone support
+// Replaces old AcademicMetadata dengan workflow phase support
 export type AcademicMetadata = WorkflowMetadata;
 
 // Standard UIMessage with workflow metadata
@@ -122,6 +120,30 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     // 3. Fallback to SYSTEM_USER_UUID as last resort
     return SYSTEM_USER_UUID;
   }, [user?.id]);
+
+  // ✅ EAGER PERSISTENCE: Ensure conversation exists before sending message
+  // Prevents data loss if user refreshes during streaming
+  const ensureConversationExists = useCallback(async (messageText: string): Promise<void> => {
+    if (!chatId) return;
+
+    try {
+      await fetch('/api/chat/conversations/ensure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': getUserId(),
+        },
+        body: JSON.stringify({
+          conversationId: chatId,
+          initialMessage: messageText
+        })
+      });
+
+      // Success - conversation created or already exists
+    } catch (error) {
+      // Silent failure - normal persistence flow will handle it as fallback
+    }
+  }, [chatId, getUserId]);
 
   // Citations state from native-openai web search
   // citations disabled for now
@@ -753,7 +775,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             {/* Centered Chat Input - Responsive */}
             <ChatInput
               className="transition-all duration-300 ease-in-out"
-              sendMessage={(message) => {
+              sendMessage={async (message) => {
+                // Extract text from message
+                const messageText = typeof message === 'string' ? message : (message.text || '');
+
+                // Ensure conversation exists BEFORE sending message
+                await ensureConversationExists(messageText);
+
                 shouldScrollRef.current = true;
                 sendMessage(message);
               }}
@@ -851,7 +879,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
                 <ChatInput
                   className="transition-all duration-200 ease-in-out"
-                  sendMessage={(message) => {
+                  sendMessage={async (message) => {
+                    // Extract text from message
+                    const messageText = typeof message === 'string' ? message : (message.text || '');
+
+                    // Ensure conversation exists BEFORE sending message
+                    await ensureConversationExists(messageText);
+
                     shouldScrollRef.current = true;
                     sendMessage(message);
                   }}
@@ -865,10 +899,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             </div>
           </div>
 
-          {/* Workflow progress sidebar - desktop only */}
-          <aside className="hidden lg:block w-80 border-l pl-4 overflow-y-auto">
-            <WorkflowProgress messages={messages as any} />
-          </aside>
         </div>
       )}
 
