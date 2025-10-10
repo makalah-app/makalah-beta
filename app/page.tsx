@@ -67,19 +67,19 @@ export default function HomePage() {
           {/* Internal sub-separator between Tutorial and Resources */}
           <div className="w-full max-w-3xl mx-auto mt-6 mb-2" aria-hidden="true">
             <div
-              className="h-[2px] rounded-[3px]"
-              style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.55 }}
+              className="h-[3px] rounded-[3px]"
+              style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.65 }}
             />
             <div
               className="h-px mt-[4px]"
-              style={{ background: 'var(--border)', opacity: 0.45 }}
+              style={{ background: 'var(--border)', opacity: 0.5 }}
             />
           </div>
         </div>
       </section>
 
       {/* Why Makalah Section */}
-      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative section-screen">
+      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative section-screen no-section-separator">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading">
             Kenapa pakai Makalah AI?
