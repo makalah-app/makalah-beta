@@ -196,6 +196,41 @@
   }
 }
 
+/* Global Section Separators (applies to pages wrapped by .global-main) */
+.global-main > section {
+  position: relative;
+}
+
+/* Accent brand bar at the top of every section after the first */
+.global-main > section + section::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Hairline rule below the accent bar for subtle separation */
+.global-main > section + section::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 4px;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Opt-out utility when a section should not show separators */
+.global-main > section.no-section-separator::before,
+.global-main > section.no-section-separator::after {
+  content: none !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
