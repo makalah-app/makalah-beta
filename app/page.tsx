@@ -221,7 +221,7 @@ export default function HomePage() {
 
       {/* Learn + Resources (combined bottom section) */}
       <section className="px-6 py-8 bg-background section-screen-with-footer">
-        <div className="max-w-6xl mx-auto flex flex-col items-center gap-10 my-auto w-full">
+        <div className="w-full flex flex-col items-center gap-10 my-auto">
           {/* Tutorial highlight */}
           <div className="w-full max-w-3xl">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-foreground font-heading text-center md:text-left">
