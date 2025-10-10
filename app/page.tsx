@@ -9,6 +9,7 @@ import { pricingTiers } from "../src/constants/pricing";
 import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+import HeroResearchGrid from "../src/components/layout/HeroResearchGrid";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -39,7 +40,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
-      <section className="px-6 py-20 text-center relative section-screen-with-header hero-aurora">
+      <section className="px-6 py-20 text-center relative section-screen-with-header">
+        <HeroResearchGrid />
 
         <div className="relative z-10">
           <h1 className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading">
