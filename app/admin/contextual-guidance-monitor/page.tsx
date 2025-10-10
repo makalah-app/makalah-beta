@@ -136,7 +136,7 @@ async function ContextualGuidanceDashboard() {
         <Button variant="outline" size="sm" asChild>
           <Link href="/admin/status">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Kembali ke Dashboard
+            Kembali ke Status Konfigurasi
           </Link>
         </Button>
 
@@ -162,7 +162,7 @@ async function ContextualGuidanceDashboard() {
       <Button variant="outline" size="sm" asChild>
         <Link href="/admin/status">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Kembali ke Dashboard
+          Kembali ke Status Konfigurasi
         </Link>
       </Button>
 

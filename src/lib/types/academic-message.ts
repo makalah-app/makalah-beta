@@ -24,7 +24,39 @@ export interface ReferenceMetadata {
   journal?: string;
 }
 
-// 3. Define Workflow Artifacts (accumulated data)
+// 3. Rollout stages for semantic detection feature flag (Task 3.1)
+/**
+ * Rollout stages for semantic detection
+ */
+export type RolloutStage =
+  | 'disabled'
+  | 'shadow'
+  | 'canary_1'
+  | 'beta_10'
+  | 'gradual_50'
+  | 'enabled';
+
+/**
+ * Semantic detection configuration from feature flag
+ */
+export interface SemanticDetectionConfig {
+  rollout_stage: RolloutStage;
+  match_threshold: number;
+  confidence_threshold: number;
+  log_comparisons: boolean;
+}
+
+/**
+ * Status result from feature flag check
+ */
+export interface SemanticDetectionStatus {
+  enabled: boolean;
+  stage: RolloutStage;
+  useSemanticResult: boolean;
+  config: SemanticDetectionConfig;
+}
+
+// 4. Define Workflow Artifacts (accumulated data)
 export interface WorkflowArtifacts {
   topicSummary?: string;
   researchQuestion?: string;
@@ -36,7 +68,7 @@ export interface WorkflowArtifacts {
   keywords?: string[];
 }
 
-// 4. Define Workflow Metadata (state stored in UIMessage.metadata)
+// 5. Define Workflow Metadata (state stored in UIMessage.metadata)
 export interface WorkflowMetadata {
   phase?: WorkflowPhase;
   progress?: number; // 0.0 - 1.0
@@ -59,12 +91,20 @@ export interface WorkflowMetadata {
     retrieval_time?: number; // milliseconds
     chunk_count?: number;
   };
+  // Semantic detection comparison log (Task 3.2 - for debugging)
+  semantic_comparison?: {
+    regex_phase: WorkflowPhase;
+    semantic_phase: WorkflowPhase;
+    agreement: boolean;
+    confidence: number;
+    method_used: 'regex' | 'semantic';
+  };
 }
 
-// 5. Export AcademicUIMessage type (extends AI SDK UIMessage)
+// 6. Export AcademicUIMessage type (extends AI SDK UIMessage)
 export type AcademicUIMessage = UIMessage<WorkflowMetadata>;
 
-// 6. Semantic Detection Result (Task 2.1)
+// 7. Semantic Detection Result (Task 2.1)
 /**
  * Result from semantic phase detection
  *
@@ -78,7 +118,7 @@ export interface SemanticDetectionResult {
   method: 'semantic' | 'fallback';
 }
 
-// 7. Detection Comparison (Task 2.2)
+// 8. Detection Comparison (Task 2.2)
 /**
  * Comparison result between detection methods
  */
@@ -98,5 +138,5 @@ export interface HybridDetectionResult {
   comparison: DetectionComparison;
 }
 
-// 8. Re-export workflow engine types for convenience
+// 9. Re-export workflow engine types for convenience
 export type { PhaseDefinition, WorkflowContext } from '../ai/workflow-engine';

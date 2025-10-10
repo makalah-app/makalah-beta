@@ -28,6 +28,8 @@ import { detectConfusionOrStuck } from '../../../src/lib/ai/contextual-guidance/
 import { getContextualGuidance, formatGuidanceForInjection } from '../../../src/lib/ai/contextual-guidance/retrieval';
 import { guidanceMetrics } from '../../../src/lib/ai/contextual-guidance/metrics';
 import { isContextualGuidanceEnabled } from '../../../src/lib/ai/contextual-guidance/feature-flag';
+import { hybridDetection } from '../../../src/lib/ai/hybrid-detection';
+import { isSemanticDetectionEnabled } from '../../../src/lib/ai/semantic-detection/feature-flag';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -321,6 +323,18 @@ export async function POST(req: Request) {
           });
         }
 
+        // ✅ SEMANTIC DETECTION: Check feature flag for hybrid workflow detection (Task 3.1)
+        // Feature flag controls gradual rollout: disabled → shadow → canary → beta → gradual → enabled
+        const semanticStatus = await isSemanticDetectionEnabled(userId);
+
+        console.log('[Semantic Detection] Feature flag check:', {
+          userId: userId,
+          stage: semanticStatus.stage,
+          enabled: semanticStatus.enabled,
+          useSemanticResult: semanticStatus.useSemanticResult,
+          config: semanticStatus.config
+        });
+
         // 🔧 FIX RACE CONDITION: Pre-compute workflow metadata BEFORE streaming starts
         // This ensures metadata is available synchronously for messageMetadata callback
         // Solution: Use closure variable instead of waiting for onFinish
@@ -512,17 +526,68 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
           try {
             console.log('[DEBUG] OpenAI onFinish called - text length:', text.length);
 
-            // ✅ ASYNC WORKFLOW INFERENCE: Call semantic detection
-            const inferredState = await inferStateFromResponse(text, currentWorkflowState);
+            // ✅ HYBRID DETECTION: Use feature-flag controlled detection (Task 3.2)
+            let finalMetadata: WorkflowMetadata;
+            let comparisonLog = null;
 
-            console.log('[DEBUG] Async workflow inference complete:', {
-              phase: inferredState.phase,
-              progress: Math.round((inferredState.progress || 0) * 100) + '%'
+            if (semanticStatus.enabled) {
+              // Semantic detection enabled - run hybrid detection
+              try {
+                const { result: detectionResult, comparison } = await hybridDetection(
+                  text,
+                  currentWorkflowState,
+                  semanticStatus.useSemanticResult
+                );
+
+                finalMetadata = detectionResult;
+                comparisonLog = comparison;
+
+                // Log comparison for monitoring
+                if (semanticStatus.config.log_comparisons) {
+                  if (comparison.agreement) {
+                    console.log('[Hybrid Detection] ✅ Agreement (OpenAI):', {
+                      phase: comparison.regex_phase,
+                      confidence: comparison.confidence,
+                      method: comparison.method_used
+                    });
+                  } else {
+                    console.warn('[Hybrid Detection] ⚠️  Disagreement (OpenAI):', {
+                      regex: comparison.regex_phase,
+                      semantic: comparison.semantic_phase,
+                      confidence: comparison.confidence,
+                      method_used: comparison.method_used,
+                      stage: semanticStatus.stage
+                    });
+                  }
+                }
+              } catch (error) {
+                // Fallback to regex on hybrid detection error
+                console.error('[Hybrid Detection] Error (OpenAI), falling back to regex:', error);
+                finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
+              }
+            } else {
+              // Semantic disabled - use regex only
+              finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
+              console.log('[Workflow] Using regex detection - semantic disabled (OpenAI):', {
+                phase: finalMetadata.phase,
+                progress: finalMetadata.progress
+              });
+            }
+
+            console.log('[DEBUG] Async workflow inference complete (OpenAI):', {
+              phase: finalMetadata.phase,
+              progress: Math.round((finalMetadata.progress || 0) * 100) + '%',
+              method: semanticStatus.enabled ? (semanticStatus.useSemanticResult ? 'semantic' : 'regex') : 'regex'
             });
 
             // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
-            Object.assign(preComputedMetadata, inferredState);
-            preComputedMetadata.timestamp = inferredState.timestamp || new Date().toISOString();
+            Object.assign(preComputedMetadata, finalMetadata);
+            preComputedMetadata.timestamp = finalMetadata.timestamp || new Date().toISOString();
+
+            // Attach comparison log for debugging (if available)
+            if (comparisonLog && semanticStatus.config.log_comparisons) {
+              preComputedMetadata.semantic_comparison = comparisonLog;
+            }
 
             // Update tokens in pre-computed metadata (now available after streaming)
             if (usage) {
@@ -602,17 +667,68 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
           try {
             console.log('[DEBUG] OpenRouter onFinish called - text length:', text.length);
 
-            // ✅ ASYNC WORKFLOW INFERENCE: Call semantic detection
-            const inferredState = await inferStateFromResponse(text, currentWorkflowState);
+            // ✅ HYBRID DETECTION: Use feature-flag controlled detection (Task 3.2)
+            let finalMetadata: WorkflowMetadata;
+            let comparisonLog = null;
 
-            console.log('[DEBUG] Async workflow inference complete:', {
-              phase: inferredState.phase,
-              progress: Math.round((inferredState.progress || 0) * 100) + '%'
+            if (semanticStatus.enabled) {
+              // Semantic detection enabled - run hybrid detection
+              try {
+                const { result: detectionResult, comparison } = await hybridDetection(
+                  text,
+                  currentWorkflowState,
+                  semanticStatus.useSemanticResult
+                );
+
+                finalMetadata = detectionResult;
+                comparisonLog = comparison;
+
+                // Log comparison for monitoring
+                if (semanticStatus.config.log_comparisons) {
+                  if (comparison.agreement) {
+                    console.log('[Hybrid Detection] ✅ Agreement (OpenRouter):', {
+                      phase: comparison.regex_phase,
+                      confidence: comparison.confidence,
+                      method: comparison.method_used
+                    });
+                  } else {
+                    console.warn('[Hybrid Detection] ⚠️  Disagreement (OpenRouter):', {
+                      regex: comparison.regex_phase,
+                      semantic: comparison.semantic_phase,
+                      confidence: comparison.confidence,
+                      method_used: comparison.method_used,
+                      stage: semanticStatus.stage
+                    });
+                  }
+                }
+              } catch (error) {
+                // Fallback to regex on hybrid detection error
+                console.error('[Hybrid Detection] Error (OpenRouter), falling back to regex:', error);
+                finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
+              }
+            } else {
+              // Semantic disabled - use regex only
+              finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
+              console.log('[Workflow] Using regex detection - semantic disabled (OpenRouter):', {
+                phase: finalMetadata.phase,
+                progress: finalMetadata.progress
+              });
+            }
+
+            console.log('[DEBUG] Async workflow inference complete (OpenRouter):', {
+              phase: finalMetadata.phase,
+              progress: Math.round((finalMetadata.progress || 0) * 100) + '%',
+              method: semanticStatus.enabled ? (semanticStatus.useSemanticResult ? 'semantic' : 'regex') : 'regex'
             });
 
             // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
-            Object.assign(preComputedMetadata, inferredState);
-            preComputedMetadata.timestamp = inferredState.timestamp || new Date().toISOString();
+            Object.assign(preComputedMetadata, finalMetadata);
+            preComputedMetadata.timestamp = finalMetadata.timestamp || new Date().toISOString();
+
+            // Attach comparison log for debugging (if available)
+            if (comparisonLog && semanticStatus.config.log_comparisons) {
+              preComputedMetadata.semantic_comparison = comparisonLog;
+            }
 
             // Update tokens in pre-computed metadata (now available after streaming)
             if (usage) {

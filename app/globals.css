@@ -215,18 +215,8 @@
   pointer-events: none;
 }
 
-/* Hairline rule below the accent bar for subtle separation */
-.global-main section + section::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 2px;
-  height: 1px;
-  background: var(--border);
-  opacity: 0.45;
-  pointer-events: none;
-}
+/* Remove hairline under section separators globally (header/footer manage their own) */
+.global-main section + section::after { content: none; }
 
 /* Opt-out utility when a section should not show separators */
 .global-main section.no-section-separator::before,
@@ -238,10 +228,7 @@
 .global-main section.separator-accent-only::after {
   content: none !important;
 }
-.global-main section.separator-accent-only::before {
-  height: 4px !important;
-  opacity: 0.8 !important;
-}
+.global-main section.separator-accent-only::before { height: 2px !important; opacity: 0.55 !important; }
 
 /* Full viewport section helpers */
 .section-screen {
