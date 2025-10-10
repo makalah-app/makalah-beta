@@ -64,5 +64,39 @@ export interface WorkflowMetadata {
 // 5. Export AcademicUIMessage type (extends AI SDK UIMessage)
 export type AcademicUIMessage = UIMessage<WorkflowMetadata>;
 
-// 6. Re-export workflow engine types for convenience
+// 6. Semantic Detection Result (Task 2.1)
+/**
+ * Result from semantic phase detection
+ *
+ * @property phase - Detected workflow phase
+ * @property confidence - Similarity score (0-1)
+ * @property method - Detection method used ('semantic' or 'fallback')
+ */
+export interface SemanticDetectionResult {
+  phase: WorkflowPhase;
+  confidence: number;
+  method: 'semantic' | 'fallback';
+}
+
+// 7. Detection Comparison (Task 2.2)
+/**
+ * Comparison result between detection methods
+ */
+export interface DetectionComparison {
+  regex_phase: WorkflowPhase;
+  semantic_phase: WorkflowPhase;
+  agreement: boolean;
+  confidence: number;
+  method_used: 'regex' | 'semantic';
+}
+
+/**
+ * Hybrid detection result with comparison data
+ */
+export interface HybridDetectionResult {
+  result: WorkflowMetadata;
+  comparison: DetectionComparison;
+}
+
+// 8. Re-export workflow engine types for convenience
 export type { PhaseDefinition, WorkflowContext } from '../ai/workflow-engine';
