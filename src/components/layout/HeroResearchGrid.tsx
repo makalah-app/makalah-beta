@@ -23,6 +23,11 @@ export function HeroResearchGrid() {
             <feGaussianBlur stdDeviation="26" />
           </filter>
 
+          {/* Large aurora blur for full-canvas warmth */}
+          <filter id="rg-blur-aurora" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="80" />
+          </filter>
+
           {/* Gradients based on brand color */}
           <linearGradient id="rg-grad-primary" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
@@ -32,10 +37,31 @@ export function HeroResearchGrid() {
             <stop offset="0%" stopColor="rgba(56,189,248,0.16)" />
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </linearGradient>
+
+          {/* Radial aurora fills (warm + cool) */}
+          <radialGradient id="rg-aurora-warm-1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 0) rotate(0) scale(1 1)">
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.32" />
+            <stop offset="70%" stopColor="var(--primary)" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="rg-aurora-warm-2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.20" />
+            <stop offset="75%" stopColor="var(--primary)" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="rg-aurora-cool" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="rgba(56,189,248,0.18)" />
+            <stop offset="75%" stopColor="rgba(56,189,248,0)" />
+          </radialGradient>
         </defs>
 
         {/* Background grid */}
         <rect x="0" y="0" width="1440" height="720" fill="url(#rg-grid)" />
+
+        {/* Full-canvas aurora layers (blurred, no hard edges) */}
+        <g filter="url(#rg-blur-aurora)">
+          <circle cx="220" cy="140" r="520" fill="url(#rg-aurora-warm-1)" />
+          <circle cx="1240" cy="160" r="420" fill="url(#rg-aurora-warm-2)" />
+          <circle cx="1120" cy="560" r="520" fill="url(#rg-aurora-cool)" />
+        </g>
 
         {/* Soft axes (very subtle) */}
         <g stroke="var(--muted-foreground)" strokeOpacity="0.18">
@@ -79,7 +105,7 @@ export function HeroResearchGrid() {
         </g>
       </svg>
       {/* Subtle scrim to ensure text contrast on bright hues */}
-      <div className="absolute inset-0 bg-black/10" />
+      <div className="absolute inset-0 bg-black/6" />
     </div>
   );
 }
