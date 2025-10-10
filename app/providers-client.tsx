@@ -23,19 +23,32 @@ function LayoutShell({ children }: ProvidersProps) {
   useEffect(() => {
     const root = document.documentElement;
     const headerEl = document.querySelector('.global-header') as HTMLElement | null;
+    const footerEl = document.querySelector('.global-footer') as HTMLElement | null;
 
-    const updateHeaderVar = () => {
+    const updateLayoutVars = () => {
       const h = headerEl?.offsetHeight ?? 0;
+      const f = footerEl?.offsetHeight ?? 0;
       root.style.setProperty('--header-h', `${h}px`);
+      root.style.setProperty('--footer-h', `${f}px`);
     };
 
-    updateHeaderVar();
-    const ro = headerEl ? new ResizeObserver(updateHeaderVar) : null;
-    if (headerEl && ro) ro.observe(headerEl);
-    window.addEventListener('resize', updateHeaderVar);
+    updateLayoutVars();
+    const ros: ResizeObserver[] = [];
+    if (headerEl) {
+      const ro = new ResizeObserver(updateLayoutVars);
+      ro.observe(headerEl);
+      ros.push(ro);
+    }
+    if (footerEl) {
+      const ro = new ResizeObserver(updateLayoutVars);
+      ro.observe(footerEl);
+      ros.push(ro);
+    }
+
+    window.addEventListener('resize', updateLayoutVars);
     return () => {
-      if (headerEl && ro) ro.unobserve(headerEl);
-      window.removeEventListener('resize', updateHeaderVar);
+      ros.forEach((ro) => ro.disconnect());
+      window.removeEventListener('resize', updateLayoutVars);
     };
   }, [pathname]);
 

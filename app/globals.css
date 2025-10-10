@@ -251,6 +251,14 @@
   justify-content: center;
 }
 
+.section-screen-with-footer {
+  min-height: calc(100vh - var(--footer-h, 0px));
+  min-height: calc(100dvh - var(--footer-h, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

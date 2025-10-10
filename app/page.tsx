@@ -149,60 +149,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Value Proposition */}
-      <section className="px-6 py-20 text-center border-t border-border section-screen">
-        <h2 className="text-4xl md:text-5xl font-medium mb-4 leading-tight text-foreground font-heading">
-          AI yang akan <span className="text-primary">bekerja dengan Anda</span>,
-        </h2>
-        <h2 className="text-4xl md:text-5xl font-medium mb-6 leading-tight text-foreground font-heading">bukan menggantikan Anda</h2>
-        <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
-          Bergabunglah dengan ribuan peneliti dan mahasiswa yang telah mempercayai MAKALAH AI untuk menghasilkan karya
-          akademik berkualitas tinggi.
-        </p>
-        <div className="flex justify-center mb-12">
-          <Link href="/tutorial">
-            <Button
-              variant="outline"
-              size="lg"
-              className="font-medium transition-all hover:-translate-y-1 hover:scale-105 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              Lihat Tutorial
-            </Button>
-          </Link>
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px]">
-            <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
-              {/* Play button overlay */}
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-20 transition-all">
-                <div className="w-20 h-20 rounded-[3px] bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Video duration badge */}
-              <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded-[3px]">
-                12:34
-              </div>
-            </div>
-
-            {/* Video title and description */}
-            <div className="p-6 border-t border-border bg-card">
-              <h3 className="text-xl font-bold mb-2 text-foreground font-heading">
-                Tutorial Lengkap: Menulis Makalah Akademik dengan MAKALAH AI
-              </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Pelajari cara menggunakan platform MAKALAH AI untuk menghasilkan makalah akademik berkualitas tinggi
-                melalui 7 fase terstruktur dengan panduan AI yang cerdas.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section className="px-6 py-20 border-t border-border bg-background section-screen">
         <div className="max-w-5xl mx-auto space-y-12">
@@ -272,12 +218,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Learn + Resources (combined bottom section) */}
+      <section className="px-6 py-16 border-t border-border bg-background section-screen-with-footer">
+        <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-2 items-start">
+          {/* Tutorial highlight */}
+          <div>
+            <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-foreground font-heading text-center md:text-left">
+              Pelajari cara pakai Makalah AI
+            </h2>
+            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px]">
+              <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
+                  <div className="w-20 h-20 rounded-[3px] bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded-[3px]">
+                  12:34
+                </div>
+              </div>
+              <div className="p-6 border-t border-border bg-card">
+                <h3 className="text-xl font-bold mb-2 text-foreground font-heading">
+                  Tutorial Lengkap: Menulis Makalah Akademik dengan MAKALAH AI
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  7 fase terstruktur, sitasi akurat, dan kontrol penuh di tangan Anda.
+                </p>
+              </div>
+            </div>
+          </div>
 
-      {/* Resources Section */}
-      <section className="px-6 py-16 border-t border-border section-screen">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-center gap-48 text-center md:text-left">
-            {/* Sumber Daya Column */}
+          {/* Resources + Company */}
+          <div className="grid grid-cols-2 gap-12 text-center md:text-left">
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
               <ul className="space-y-4 text-xs">
@@ -303,32 +277,21 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-
-            {/* Perusahaan Column */}
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
               <ul className="space-y-4 text-xs">
                 <li>
-                  <Link
-                    href="#"
-                    className="transition-colors hover:text-primary text-muted-foreground"
-                  >
+                  <Link href="#" className="transition-colors hover:text-primary text-muted-foreground">
                     Karir
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="#"
-                    className="transition-colors hover:text-primary text-muted-foreground"
-                  >
+                  <Link href="#" className="transition-colors hover:text-primary text-muted-foreground">
                     Kontak
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/docs#privacy-policy"
-                    className="transition-colors hover:text-primary text-muted-foreground"
-                  >
+                  <Link href="/docs#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
                     Kebijakan Privasi
                   </Link>
                 </li>
