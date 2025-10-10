@@ -20,7 +20,7 @@ import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
 // Removed: academicTools import - search tools deleted for rebuild with search_literature
 import type { AcademicUIMessage as WorkflowUIMessage, WorkflowMetadata } from '../../../src/lib/types/academic-message';
-import { inferWorkflowState } from '../../../src/lib/ai/workflow-inference';
+import { inferWorkflowState, inferStateFromResponse } from '../../../src/lib/ai/workflow-inference';
 import { getWorkflowContext, calculateProgress } from '../../../src/lib/ai/workflow-engine';
 import { getWorkflowSpec, getWorkflowSpecSummary } from '../../../src/lib/ai/workflow-spec';
 import { extractStructuredWorkflowState } from '../../../src/lib/ai/structured-workflow-parser';
@@ -389,22 +389,17 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
           try {
             console.log('[DEBUG] OpenAI onFinish called - text length:', text.length);
 
-            const structuredState = extractStructuredWorkflowState(text, preComputedMetadata);
+            // ✅ ASYNC WORKFLOW INFERENCE: Call semantic detection
+            const inferredState = await inferStateFromResponse(text, currentWorkflowState);
 
-            if (structuredState) {
-              const mergedMetadata = mergeStructuredMetadata(
-                preComputedMetadata,
-                structuredState.metadata
-              );
+            console.log('[DEBUG] Async workflow inference complete:', {
+              phase: inferredState.phase,
+              progress: Math.round((inferredState.progress || 0) * 100) + '%'
+            });
 
-              Object.assign(preComputedMetadata, mergedMetadata);
-              preComputedMetadata.offTopicCount = mergedMetadata.offTopicCount || 0;
-              preComputedMetadata.timestamp =
-                mergedMetadata.timestamp || new Date().toISOString();
-              console.log('[DEBUG] Structured workflow metadata applied.');
-            } else {
-              console.warn('[Workflow] Structured workflow state missing. Skipping phase update.');
-            }
+            // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
+            Object.assign(preComputedMetadata, inferredState);
+            preComputedMetadata.timestamp = inferredState.timestamp || new Date().toISOString();
 
             // Update tokens in pre-computed metadata (now available after streaming)
             if (usage) {
@@ -484,22 +479,17 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
           try {
             console.log('[DEBUG] OpenRouter onFinish called - text length:', text.length);
 
-            const structuredState = extractStructuredWorkflowState(text, preComputedMetadata);
+            // ✅ ASYNC WORKFLOW INFERENCE: Call semantic detection
+            const inferredState = await inferStateFromResponse(text, currentWorkflowState);
 
-            if (structuredState) {
-              const mergedMetadata = mergeStructuredMetadata(
-                preComputedMetadata,
-                structuredState.metadata
-              );
+            console.log('[DEBUG] Async workflow inference complete:', {
+              phase: inferredState.phase,
+              progress: Math.round((inferredState.progress || 0) * 100) + '%'
+            });
 
-              Object.assign(preComputedMetadata, mergedMetadata);
-              preComputedMetadata.offTopicCount = mergedMetadata.offTopicCount || 0;
-              preComputedMetadata.timestamp =
-                mergedMetadata.timestamp || new Date().toISOString();
-              console.log('[DEBUG] Structured workflow metadata applied.');
-            } else {
-              console.warn('[Workflow] Structured workflow state missing. Skipping phase update.');
-            }
+            // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
+            Object.assign(preComputedMetadata, inferredState);
+            preComputedMetadata.timestamp = inferredState.timestamp || new Date().toISOString();
 
             // Update tokens in pre-computed metadata (now available after streaming)
             if (usage) {

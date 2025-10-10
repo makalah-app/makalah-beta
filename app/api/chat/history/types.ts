@@ -36,16 +36,17 @@ export interface ChatMessage {
 
 /**
  * Conversation data type from conversations table
+ * Note: current_phase and workflow_id removed in migration 20251006050000
+ * Phase is now stored in chat_messages.metadata, not conversations table
  */
 export interface ConversationData {
   id: string;
   title?: string;
   message_count?: number;
   updated_at: string;
-  current_phase?: WorkflowPhase | number | string;
-  workflow_id?: string;
   user_id: string;
   archived?: boolean;
+  metadata?: any; // JSONB field for conversation-level metadata
 }
 
 /**

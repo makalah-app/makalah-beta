@@ -12,6 +12,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { supabaseAdmin } from '../database/supabase-client';
 import type { ModelConfigRow, AdminSettingRow, SystemPromptRow } from '../types/database-types';
+import { selectPromptForUser } from './prompt-cohort';
 
 // ⚡ PERFORMANCE: In-memory cache with 30-second TTL
 const CONFIG_CACHE = {
@@ -74,8 +75,10 @@ Contact system administrator to restore full AI capabilities.`;
 
 /**
  * Get dynamic model configuration based on current database state
+ *
+ * @param userId - Optional user ID for cohort-based prompt selection (A/B testing)
  */
-export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
+export async function getDynamicModelConfig(userId?: string): Promise<DynamicModelConfig> {
   try {
     // ⚡ PERFORMANCE: Check cache first
     const now = Date.now();
@@ -150,16 +153,31 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       }
     } else {
       // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
-      const { data: openaiPrompt, error: openaiError } = await supabaseAdmin
+      // ✅ A/B TESTING: Query ALL active prompts with cohort_percentage
+      const { data: openaiPrompts, error: openaiError } = await supabaseAdmin
         .from('system_prompts')
-        .select('content')
+        .select('id, content, cohort_percentage, priority_order, version')
         .eq('is_active', true)
-        .order('priority_order')
-        .limit(1)
-        .maybeSingle() as { data: SystemPromptRow | null; error: any };
+        .order('priority_order') as { data: Array<{
+          id: string;
+          content: string;
+          cohort_percentage: number;
+          priority_order: number;
+          version: number;
+        }> | null; error: any };
 
-      if (openaiPrompt?.content && !openaiError) {
-        systemPromptContent = openaiPrompt.content;
+      if (openaiPrompts && openaiPrompts.length > 0 && !openaiError) {
+        // ✅ COHORT SELECTION: Use userId for deterministic assignment
+        if (userId && openaiPrompts.length > 1) {
+          // Multi-prompt A/B testing mode
+          const selectedContent = selectPromptForUser(userId, openaiPrompts);
+          systemPromptContent = selectedContent || openaiPrompts[0].content;
+          console.log(`[Dynamic Config] Selected prompt via cohort assignment for user ${userId.substring(0, 8)}`);
+        } else {
+          // Single prompt mode (backward compatible)
+          systemPromptContent = openaiPrompts[0].content;
+          console.log('[Dynamic Config] Using single active prompt (backward compatible mode)');
+        }
         promptSource = 'openai_system_prompts';
       } else if (openaiError) {
         // OpenAI prompt error - will use emergency fallback

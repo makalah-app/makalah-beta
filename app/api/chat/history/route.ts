@@ -75,12 +75,27 @@ function parsePhaseParam(value: string | null): WorkflowPhase | undefined {
  */
 export async function GET(request: NextRequest) {
   try {
+    console.log('[API /api/chat/history] GET request received');
     const { searchParams } = new URL(request.url);
+    console.log('[API /api/chat/history] Search params:', {
+      userId: searchParams.get('userId'),
+      conversationId: searchParams.get('conversationId'),
+      chatId: searchParams.get('chatId'),
+      limit: searchParams.get('limit'),
+      offset: searchParams.get('offset')
+    });
+
     // Auth debug disabled
     const session = await getServerSessionUserId();
     const sessionUserId = session.userId;
     const qpUserId = searchParams.get('userId') || undefined;
     const userId = sessionUserId || undefined; // prefer session; query param used only for fallback
+
+    console.log('[API /api/chat/history] Auth info:', {
+      sessionUserId,
+      qpUserId,
+      finalUserId: userId
+    });
     const conversationId = searchParams.get('conversationId');
     const chatId = searchParams.get('chatId'); // AI SDK v5 pattern support
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -208,51 +223,82 @@ export async function GET(request: NextRequest) {
     }
     
     // Load user conversations for general history
+    console.log('[API /api/chat/history] Loading conversations for userId:', userId);
     let conversations: Array<{
       id: string;
       title: string;
       messageCount: number;
       lastActivity: string;
-      currentPhase?: number;
+      currentPhase?: WorkflowPhase | number;
       workflowId?: string;
       messages?: ExtendedUIMessage[];
     }> = [];
     if (userId) {
+      console.log('[API /api/chat/history] Fetching conversations with getUserConversations()');
       conversations = await getUserConversations(userId, supabase);
+      console.log('[API /api/chat/history] getUserConversations returned:', {
+        count: conversations.length,
+        conversations: conversations.map(c => ({ id: c.id, title: c.title }))
+      });
     } else {
+      console.log('[API /api/chat/history] No userId - using fallback with qpUserId:', qpUserId);
       // Fallback: no session, use admin client with qpUserId (dev-only scenario)
       const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
       // Include conversations owned by SYSTEM user to surface recent chats persisted without SSR
-      const { data, error } = await (supabaseAdmin as any)
-        .from('conversations')
-        .select(`
-          id,
-          title,
-          message_count,
-          current_phase,
-          workflow_id,
-          updated_at,
-          metadata,
-          user_id
-        `)
-        .in('user_id', [qpUserId as string, SYSTEM_USER_UUID])
-        .eq('archived', false)
-        .order('updated_at', { ascending: false })
-        .limit(50) as {
-          data: ConversationData[] | null;
-          error: any
-        };
-      if (error) {
+      // ⚠️ SAFETY CHECK: Validate qpUserId before using in query
+      if (!qpUserId) {
+        console.error('[API /api/chat/history] CRITICAL: Fallback path entered but qpUserId is undefined!');
         conversations = [];
       } else {
-        conversations = (data || []).map((conv: ConversationData) => ({
-          id: conv.id,
-          title: conv.title || 'Untitled Chat',
-          messageCount: conv.message_count || 0,
-          lastActivity: conv.updated_at,
-          currentPhase: conv.current_phase ? normalizePhase(conv.current_phase) : undefined,
-          workflowId: conv.workflow_id
-        }));
+        console.log('[API /api/chat/history] Querying with fallback qpUserId:', qpUserId);
+
+        const { data, error } = await (supabaseAdmin as any)
+          .from('conversations')
+          .select(`
+            id,
+            title,
+            message_count,
+            updated_at,
+            metadata,
+            user_id
+          `)
+          .in('user_id', [qpUserId, SYSTEM_USER_UUID])
+          .eq('archived', false)
+          .order('updated_at', { ascending: false })
+          .limit(50) as {
+            data: ConversationData[] | null;
+            error: any
+          };
+
+        console.log('[API /api/chat/history] Fallback query result:', {
+          hasError: !!error,
+          errorMessage: error?.message,
+          dataCount: data?.length || 0
+        });
+
+        if (error) {
+          console.error('[API /api/chat/history] Fallback query error:', error);
+          conversations = [];
+        } else {
+          console.log('[API /api/chat/history] Fallback query returned data:', {
+            count: data?.length || 0,
+            rawData: data
+          });
+
+          conversations = (data || []).map((conv: ConversationData) => ({
+            id: conv.id,
+            title: conv.title || 'Untitled Chat',
+            messageCount: conv.message_count || 0,
+            lastActivity: conv.updated_at,
+            currentPhase: undefined, // Phase removed from conversations table (migration 20251006050000)
+            workflowId: undefined // Workflow_id removed from conversations table
+          }));
+
+          console.log('[API /api/chat/history] Fallback conversations mapped:', {
+            count: conversations.length,
+            conversations: conversations.map(c => ({ id: c.id, title: c.title }))
+          });
+        }
       }
     }
     
@@ -395,7 +441,6 @@ export async function GET(request: NextRequest) {
                   const envOpenAIKey = process.env.OPENAI_API_KEY;
                   if (envOpenAIKey) {
                     const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
-                    const dynamic2 = await getDynamicModelConfig();
                     const titleModel = 'gpt-4o'; // Always use GPT-4o for title generation via OpenAI
                     const result2 = await generateText({
                       model: titleOpenAI(titleModel),
@@ -472,11 +517,22 @@ export async function GET(request: NextRequest) {
       }
     };
 
+    console.log('[API /api/chat/history] Returning response:', {
+      conversationsCount: conversationsWithMessages.length,
+      total: filteredConversations.length,
+      limit,
+      offset,
+      hasMore: filteredConversations.length > offset + limit
+    });
+
     return NextResponse.json(response);
 
   } catch (error) {
+    console.error('[API /api/chat/history] Error occurred:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load chat history';
+    console.error('[API /api/chat/history] Error message:', errorMessage);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Failed to load chat history',
+      error: errorMessage,
       code: 'LOAD_HISTORY_FAILED',
       timestamp: Date.now()
     }, { status: 500 });
@@ -536,7 +592,6 @@ export async function POST(request: NextRequest) {
           id,
           user_id,
           title,
-          current_phase,
           updated_at
         )
       `)
@@ -546,18 +601,21 @@ export async function POST(request: NextRequest) {
     if (conversationIds && conversationIds.length > 0) {
       searchQuery = searchQuery.in('conversation_id', conversationIds);
     }
-    
-    // Filter by phase
-    if (resolvedPhase) {
-      const numericIndex = phaseIndex(resolvedPhase);
-      const phaseFilters: Array<string | number> = [resolvedPhase];
 
-      if (numericIndex >= 0) {
-        phaseFilters.push(numericIndex, String(numericIndex));
-      }
+    // Normalize phase parameter
+    const resolvedPhase = phase ? (typeof phase === 'string' || typeof phase === 'number' ? normalizePhase(phase) : phase) : undefined;
 
-      searchQuery = searchQuery.in('conversations.current_phase', phaseFilters);
-    }
+    // ⚠️ PHASE FILTERING DISABLED: Phase column removed from conversations table (migration 20251006050000)
+    // Phase is now stored in chat_messages.metadata, not conversations.current_phase
+    // TODO: Implement phase filtering using metadata->'phase' if needed
+    // if (resolvedPhase) {
+    //   const numericIndex = phaseIndex(resolvedPhase);
+    //   const phaseFilters: Array<string | number> = [resolvedPhase];
+    //   if (numericIndex >= 0) {
+    //     phaseFilters.push(numericIndex, String(numericIndex));
+    //   }
+    //   searchQuery = searchQuery.in('conversations.current_phase', phaseFilters);
+    // }
     
     // Filter by message type
     if (messageType) {
@@ -619,12 +677,10 @@ export async function POST(request: NextRequest) {
       conversation: {
         id: result.conversations.id,
         title: result.conversations.title,
-        currentPhase: result.conversations.current_phase
-          ? normalizePhase(result.conversations.current_phase)
-          : undefined,
+        currentPhase: undefined, // Phase removed from conversations table (migration 20251006050000)
         updatedAt: result.conversations.updated_at
       },
-      matchType: searchInContent && searchInMetadata ? 'content_and_metadata' : 
+      matchType: searchInContent && searchInMetadata ? 'content_and_metadata' :
                  searchInContent ? 'content' : 'metadata'
     }));
     

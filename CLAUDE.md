@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+USE BAHASA INDONESIA COLLOQUIAL JAKARTA STYLE WITH GUE-LU PRONOUNS IN CONVERSATION WITH USER/SUPERVISOR
+
+YOUR USER/SUPERVISOR NAME IS ERIK SUPIT
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

@@ -438,8 +438,12 @@ export async function createChat(userId?: string, title?: string): Promise<strin
  * Supports chat history and conversation management
  */
 export async function getUserConversations(userId: string, client?: SupabaseClient<Database>): Promise<ConversationSummary[]> {
+  console.log('[getUserConversations] Called with userId:', userId, 'using client:', client ? 'custom' : 'supabaseServer');
+
   try {
     const clientToUse = client ?? supabaseServer;
+
+    console.log('[getUserConversations] Executing database query...');
     const { data: conversations, error } = await (clientToUse as any)
       .from('conversations')
       .select(`
@@ -454,9 +458,27 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       .order('updated_at', { ascending: false })
       .limit(50);
 
+    console.log('[getUserConversations] Database query result:', {
+      hasError: !!error,
+      errorMessage: error?.message,
+      errorCode: (error as any)?.code,
+      dataCount: conversations?.length || 0
+    });
+
     if (error) {
+      console.error('[getUserConversations] Database error:', {
+        message: error.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint
+      });
       throw new Error(`Failed to load conversations: ${error.message}`);
     }
+
+    console.log('[getUserConversations] Raw conversations data:', {
+      count: conversations?.length || 0,
+      conversations: conversations?.map((c: any) => ({ id: c.id, title: c.title }))
+    });
 
     const summaries: ConversationSummary[] = (conversations || []).map((conv: any) => ({
       id: conv.id,
@@ -465,9 +487,19 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       lastActivity: conv.updated_at,
     }));
 
+    console.log('[getUserConversations] Returning summaries:', {
+      count: summaries.length,
+      summaries: summaries.map(s => ({ id: s.id, title: s.title }))
+    });
+
     return summaries;
 
   } catch (error) {
+    console.error('[getUserConversations] CRITICAL ERROR - Returning empty array:', {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     // Return empty array as graceful fallback to prevent UI breakage
     return [];
   }
