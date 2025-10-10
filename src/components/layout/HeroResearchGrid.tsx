@@ -40,15 +40,15 @@ export function HeroResearchGrid() {
 
           {/* Radial aurora fills (warm + cool) */}
           <radialGradient id="rg-aurora-warm-1">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.38)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.48)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-warm-2">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.24)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.32)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-cool">
-            <stop offset="0%" stopColor="rgba(56,189,248,0.18)" />
+            <stop offset="0%" stopColor="rgba(56,189,248,0.22)" />
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </radialGradient>
         </defs>
