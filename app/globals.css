@@ -494,6 +494,42 @@
 }
 
 /* Tooltip green styling for consistent UI across app */
+
+/* Striped hairline (2px) for header/footer tests */
+.hairline-stripe-2 {
+  height: 2px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 2px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* 4px tall striped bar with thin diagonal strokes */
+.hairline-stripe-4 {
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 2px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* 10px tall striped bar with sparser thin diagonal strokes */
+.hairline-stripe-10 {
+  height: 10px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 6px
+  );
+  opacity: 0.3;
+  pointer-events: none;
+}
 .tooltip-green {
   @apply bg-green-600 text-white rounded-[3px] px-3 py-1.5 text-xs font-medium shadow-md;
 }

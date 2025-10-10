@@ -111,7 +111,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
 
   return (
     <header className={cn(
-      'flex items-center justify-between px-6 py-4 border-b border-border bg-background',
+      'flex items-center justify-between px-6 pt-4 pb-6 bg-background relative',
       className
     )}>
       {/* Brand Section */}
@@ -239,6 +239,8 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           )}
         </div>
       )}
+      {/* Striped hairline separator (10px, sparser thin diagonal strokes) */}
+      <div className="hairline-stripe-10 absolute inset-x-0 bottom-0" aria-hidden="true" />
     </header>
   );
 };
