@@ -592,3 +592,12 @@
 .sidebar-invisible-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.3);
 }
+/* Warm Aurora gradient background for hero (CSS-only) */
+.hero-aurora {
+  position: relative;
+  background:
+    radial-gradient(1200px 800px at 20% 18%, color-mix(in oklch, var(--primary) 32%, transparent) 0 60%, transparent 60%),
+    conic-gradient(from 220deg at 80% 28%, color-mix(in oklch, var(--primary) 55%, white) 0 22%, transparent 22% 100%),
+    radial-gradient(900px 600px at 82% 72%, oklch(0.78 0.06 200 / 0.22) 0 60%, transparent 60%);
+  filter: saturate(1.04);
+}

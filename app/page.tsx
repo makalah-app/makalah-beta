@@ -39,8 +39,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
-      <section className="px-6 py-20 text-center relative section-screen-with-header">
-        <div className={`absolute inset-0 opacity-30 ${theme === "light" ? "hero-pattern-light" : "hero-pattern-dark"}`}></div>
+      <section className="px-6 py-20 text-center relative section-screen-with-header hero-aurora">
 
         <div className="relative z-10">
           <h1 className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading">
@@ -49,8 +48,7 @@ export default function HomePage() {
             Jadi Lebih Mudah
           </h1>
           <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
-            Platform penulisan makalah akademik berbahasa Indonesia berbasis Generatif AI. Dipandu agen AI melalui fase-fase penyusunan paper yang
-            terstruktur dengan kontrol penuh di tangan Anda.
+            Obrolkan gagasan, lalu biarkan Agen Ai memandu Anda mengelaborasi topik hingga paper utuh
           </p>
           <div className="flex justify-center">
             <Button
