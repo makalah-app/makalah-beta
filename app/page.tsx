@@ -65,9 +65,15 @@ export default function HomePage() {
           </div>
 
           {/* Internal sub-separator between Tutorial and Resources */}
-          <div className="w-full max-w-3xl mx-auto mt-2" aria-hidden="true">
-            <div className="h-[2px] bg-gradient-to-r from-transparent via-primary/55 to-transparent rounded-[3px]"></div>
-            <div className="h-px bg-border/45 mt-[2px]"></div>
+          <div className="w-full max-w-3xl mx-auto mt-6 mb-2" aria-hidden="true">
+            <div
+              className="h-[2px] rounded-[3px]"
+              style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.55 }}
+            />
+            <div
+              className="h-px mt-[4px]"
+              style={{ background: 'var(--border)', opacity: 0.45 }}
+            />
           </div>
         </div>
       </section>
