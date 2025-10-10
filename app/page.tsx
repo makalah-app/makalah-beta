@@ -71,7 +71,7 @@ export default function HomePage() {
       <section id="why-makalah" className="px-6 py-16 bg-background relative section-screen separator-accent-only">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading">
-            Kenapa pakai Makalah AI?
+            Kenapa Makalah AI?
           </h2>
 
           {/* Benefits Grid - hero-style static boxes */}
@@ -142,7 +142,7 @@ export default function HomePage() {
             <h3 className="text-2xl md:text-3xl font-semibold text-foreground font-heading tracking-tight">
               Anda adalah pawang, AI hanya tukang.
             </h3>
-            <p className="text-base md:text-3xl text-muted-foreground mt-2">
+            <p className="text-base md:text-4xl text-muted-foreground mt-2">
               Karya tulis tetap orisinal.
             </p>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
@@ -224,10 +224,13 @@ export default function HomePage() {
         <div className="w-full flex flex-col items-center gap-10 my-auto">
           {/* Tutorial highlight */}
           <div className="w-full max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-foreground font-heading text-center md:text-left">
-              Pelajari cara pakai Makalah AI
+            <h2 className="text-3xl md:text-4xl font-semibold text-foreground font-heading text-center">
+              Pelajari cara bekerja dengan Agen Makalah
             </h2>
-            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px]">
+            <p className="mt-3 text-base md:text-lg text-muted-foreground text-center">
+              Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi Anda menyusun paper akademik dan melakukan riset.
+            </p>
+            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px] mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
                   <div className="w-20 h-20 rounded-[3px] bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -240,14 +243,7 @@ export default function HomePage() {
                   12:34
                 </div>
               </div>
-              <div className="p-6 border-t border-border bg-card">
-                <h3 className="text-xl font-bold mb-2 text-foreground font-heading">
-                  Tutorial Lengkap: Menulis Makalah Akademik dengan MAKALAH AI
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  7 fase terstruktur, sitasi akurat, dan kontrol penuh di tangan Anda.
-                </p>
-              </div>
+              {/* Video stands alone without title/description */}
             </div>
           </div>
 
