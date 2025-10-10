@@ -39,7 +39,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
-      <section className="px-6 py-20 text-center relative">
+      <section className="px-6 py-20 text-center relative section-screen-with-header">
         <div className={`absolute inset-0 opacity-30 ${theme === "light" ? "hero-pattern-light" : "hero-pattern-dark"}`}></div>
 
         <div className="relative z-10">
@@ -67,7 +67,7 @@ export default function HomePage() {
       </section>
 
       {/* Why Makalah Section */}
-      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative">
+      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative section-screen">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading">
             Kenapa pakai Makalah AI?
@@ -150,7 +150,7 @@ export default function HomePage() {
       </section>
 
       {/* Value Proposition */}
-      <section className="px-6 py-20 text-center border-t border-border">
+      <section className="px-6 py-20 text-center border-t border-border section-screen">
         <h2 className="text-4xl md:text-5xl font-medium mb-4 leading-tight text-foreground font-heading">
           AI yang akan <span className="text-primary">bekerja dengan Anda</span>,
         </h2>
@@ -204,7 +204,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="px-6 py-20 border-t border-border bg-background">
+      <section className="px-6 py-20 border-t border-border bg-background section-screen">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h3 className="text-3xl md:text-4xl font-semibold font-heading">
@@ -274,7 +274,7 @@ export default function HomePage() {
 
 
       {/* Resources Section */}
-      <section className="px-6 py-16 border-t border-border">
+      <section className="px-6 py-16 border-t border-border section-screen">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-center gap-48 text-center md:text-left">
             {/* Sumber Daya Column */}

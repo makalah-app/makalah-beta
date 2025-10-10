@@ -234,6 +234,23 @@
   content: none !important;
 }
 
+/* Full viewport section helpers */
+.section-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-screen-with-header {
+  min-height: calc(100vh - var(--header-h, 0px));
+  min-height: calc(100dvh - var(--header-h, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
