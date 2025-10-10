@@ -219,8 +219,8 @@ export default function HomePage() {
       </section>
 
       {/* Learn + Resources (combined bottom section) */}
-      <section className="px-6 py-16 border-t border-border bg-background section-screen-with-footer">
-        <div className="max-w-6xl mx-auto flex flex-col items-center gap-10">
+      <section className="px-6 py-8 border-t border-border bg-background section-screen-with-footer">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-10 my-auto w-full">
           {/* Tutorial highlight */}
           <div className="w-full max-w-3xl">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-foreground font-heading text-center md:text-left">
@@ -251,7 +251,7 @@ export default function HomePage() {
           </div>
 
           {/* Resources + Company (narrow) */}
-          <div className="w-full max-w-lg grid grid-cols-1 sm:grid-cols-2 gap-12 text-center md:text-left">
+          <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-10 text-center md:text-left justify-items-center md:justify-items-start">
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
               <ul className="space-y-4 text-xs">
