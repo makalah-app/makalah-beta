@@ -9,7 +9,7 @@ export function HeroResearchGrid() {
         <defs>
           {/* Grid pattern */}
           <pattern id="rg-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-            <path d="M48 0H0V48" fill="none" stroke="var(--muted-foreground)" strokeOpacity="0.15" strokeWidth="1" />
+            <path d="M48 0H0V48" fill="none" stroke="var(--muted-foreground)" strokeOpacity="0.12" strokeWidth="1" />
           </pattern>
 
           {/* Soft blur filters for abstract areas */}
@@ -39,17 +39,17 @@ export function HeroResearchGrid() {
           </linearGradient>
 
           {/* Radial aurora fills (warm + cool) */}
-          <radialGradient id="rg-aurora-warm-1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 0) rotate(0) scale(1 1)">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.32)" />
-            <stop offset="70%" stopColor="rgba(255,138,0,0)" />
+          <radialGradient id="rg-aurora-warm-1">
+            <stop offset="0%" stopColor="rgba(255,138,0,0.38)" />
+            <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
-          <radialGradient id="rg-aurora-warm-2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.20)" />
-            <stop offset="75%" stopColor="rgba(255,138,0,0)" />
+          <radialGradient id="rg-aurora-warm-2">
+            <stop offset="0%" stopColor="rgba(255,138,0,0.24)" />
+            <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
-          <radialGradient id="rg-aurora-cool" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse">
+          <radialGradient id="rg-aurora-cool">
             <stop offset="0%" stopColor="rgba(56,189,248,0.18)" />
-            <stop offset="75%" stopColor="rgba(56,189,248,0)" />
+            <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </radialGradient>
         </defs>
 
@@ -57,7 +57,7 @@ export function HeroResearchGrid() {
         <rect x="0" y="0" width="1440" height="720" fill="url(#rg-grid)" />
 
         {/* Full-canvas aurora layers (blurred, no hard edges) */}
-        <g filter="url(#rg-blur-aurora)">
+        <g filter="url(#rg-blur-aurora)" style={{ mixBlendMode: 'screen' }}>
           <circle cx="220" cy="140" r="600" fill="url(#rg-aurora-warm-1)" />
           <circle cx="1240" cy="160" r="500" fill="url(#rg-aurora-warm-2)" />
           <circle cx="1120" cy="560" r="600" fill="url(#rg-aurora-cool)" />
