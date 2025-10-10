@@ -12,8 +12,12 @@
  *   - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key (admin)
  *   - NEXT_PUBLIC_SUPABASE_URL: Supabase project URL
  *
- * @task Phase 3, Task 3.3 - Embedding Pipeline
+ * @task Phase 3, Task 3.3 - Embedding Pipeline (Tier 1 - Detection)
+ * @task Phase 4, Task 4.2 - Retrieval Integration (Tier 2 - Guidance)
  * @reference __references__/workflow/documentation/workflow_infrastructure/workflow_task/phase_03/task_3-3_embedding_pipeline.md
+ * @reference __references__/workflow/documentation/workflow_infrastructure/workflow_task/phase_04/task_4-2_retrieval_integration.md
+ *
+ * Total files: 41 (26 Phase 3 + 15 Phase 4)
  */
 
 import { OpenAIEmbeddings } from '@langchain/openai';
@@ -87,9 +91,9 @@ function processMarkdownFile(filePath: string): Omit<KnowledgeChunk, 'embedding'
   let chunk_type: KnowledgeChunk['chunk_type'];
   if (dirName === 'phase_definitions') {
     chunk_type = 'phase_definition';
-  } else if (dirName === 'transitions') {
+  } else if (dirName === 'transitions' || dirName === 'guidance_transitions') {
     chunk_type = 'transition';
-  } else if (dirName === 'artifacts') {
+  } else if (dirName === 'artifacts' || dirName === 'guidance_artifacts') {
     chunk_type = 'artifact';
   } else {
     throw new Error(`Unknown directory: ${dirName}`);
@@ -130,7 +134,13 @@ function processMarkdownFile(filePath: string): Omit<KnowledgeChunk, 'embedding'
 async function getAllMarkdownFiles(baseDir: string): Promise<string[]> {
   const files: string[] = [];
 
-  const subdirs = ['phase_definitions', 'transitions', 'artifacts'];
+  const subdirs = [
+    'phase_definitions',
+    'transitions',
+    'artifacts',
+    'guidance_transitions',  // Phase 4 - Tier 2 guidance
+    'guidance_artifacts'     // Phase 4 - Tier 2 guidance
+  ];
 
   for (const subdir of subdirs) {
     const dirPath = join(baseDir, subdir);
@@ -227,8 +237,8 @@ async function main() {
     const files = await getAllMarkdownFiles(KB_BASE_DIR);
     console.log(`✓ Found ${files.length} markdown files`);
 
-    if (files.length !== 26) {
-      console.warn(`⚠ Expected 26 files, found ${files.length}`);
+    if (files.length !== 41) {  // 26 Phase 3 + 15 Phase 4
+      console.warn(`⚠ Expected 41 files, found ${files.length}`);
     }
 
     // Step 2: Clear existing data
@@ -318,8 +328,8 @@ async function main() {
 
     console.log(`✓ Database contains ${count} rows`);
 
-    if (count !== 26) {
-      console.warn(`⚠ Expected 26 rows, found ${count}`);
+    if (count !== 41) {  // 26 Phase 3 + 15 Phase 4
+      console.warn(`⚠ Expected 41 rows, found ${count}`);
     }
 
     console.log('\n' + '='.repeat(60));

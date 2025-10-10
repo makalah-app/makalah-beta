@@ -24,6 +24,10 @@ import { inferWorkflowState, inferStateFromResponse } from '../../../src/lib/ai/
 import { getWorkflowContext, calculateProgress } from '../../../src/lib/ai/workflow-engine';
 import { getWorkflowSpec, getWorkflowSpecSummary } from '../../../src/lib/ai/workflow-spec';
 import { extractStructuredWorkflowState } from '../../../src/lib/ai/structured-workflow-parser';
+import { detectConfusionOrStuck } from '../../../src/lib/ai/contextual-guidance/detection';
+import { getContextualGuidance, formatGuidanceForInjection } from '../../../src/lib/ai/contextual-guidance/retrieval';
+import { guidanceMetrics } from '../../../src/lib/ai/contextual-guidance/metrics';
+import { isContextualGuidanceEnabled } from '../../../src/lib/ai/contextual-guidance/feature-flag';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -211,6 +215,112 @@ export async function POST(req: Request) {
         // Infer current workflow state from conversation history
         const currentWorkflowState = inferWorkflowState(validatedMessages as WorkflowUIMessage[]);
 
+        // 🔍 CONTEXTUAL GUIDANCE: RAG Tier 2 - Task 4.4 (Feature Flag + Detection + Retrieval + Injection)
+        // Feature flag controls gradual rollout: shadow → canary → beta → gradual → enabled
+        let guidanceInjected = false;
+        let guidanceMetadata: {
+          triggered: boolean;
+          trigger_type?: string;
+          token_count?: number;
+          retrieval_time?: number;
+          chunk_count?: number;
+        } = { triggered: false };
+
+        // STEP 1: Check feature flag for rollout stage
+        const { enabled: guidanceEnabled, stage, reason } = await isContextualGuidanceEnabled(userId);
+
+        console.log('[Contextual Guidance] Feature flag check:', {
+          userId: userId,
+          stage: stage,
+          enabled: guidanceEnabled,
+          reason: reason
+        });
+
+        // STEP 2: Run detection and retrieval if enabled AND user has workflow phase
+        if (guidanceEnabled && currentWorkflowState.phase) {
+          // Extract user's latest message
+          const userMessages = validatedMessages.filter(msg => msg.role === 'user');
+          const latestUserMessage = userMessages[userMessages.length - 1];
+          const userMessageText = latestUserMessage?.parts
+            ?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '')
+            .join('') || '';
+
+          if (userMessageText) {
+            try {
+              // Step 1: Detect if user needs guidance
+              const detectionResult = await detectConfusionOrStuck(
+                userMessageText,
+                validatedMessages as WorkflowUIMessage[],
+                currentWorkflowState.phase
+              );
+
+              // Step 2: Retrieve and inject guidance if needed
+              if (detectionResult.needsGuidance) {
+                const guidanceResult = await getContextualGuidance(
+                  userMessageText,
+                  currentWorkflowState.phase
+                );
+
+                if (guidanceResult && guidanceResult.chunks.length > 0) {
+                  const formattedGuidance = formatGuidanceForInjection(guidanceResult.chunks);
+
+                  // Inject guidance as system message (will be added to manualMessages later)
+                  // Store for injection after message conversion
+                  (validatedMessages as any)._guidanceToInject = formattedGuidance;
+                  guidanceInjected = true;
+
+                  // 📊 STORE GUIDANCE METADATA FOR DATABASE PERSISTENCE (Task 4.3)
+                  guidanceMetadata = {
+                    triggered: true,
+                    trigger_type: detectionResult.triggerType || undefined,
+                    token_count: guidanceResult.totalTokens,
+                    retrieval_time: guidanceResult.retrievalTime,
+                    chunk_count: guidanceResult.chunks.length
+                  };
+
+                  // Log metrics
+                  console.log('[Contextual Guidance] Guidance injected:', {
+                    stage: stage, // Rollout stage for monitoring
+                    triggerType: detectionResult.triggerType,
+                    phase: currentWorkflowState.phase,
+                    chunkCount: guidanceResult.chunks.length,
+                    tokenCount: guidanceResult.totalTokens,
+                    retrievalTime: guidanceResult.retrievalTime,
+                    userId: userId,
+                    chatId: chatId,
+                    timestamp: new Date().toISOString()
+                  });
+
+                  // Record metrics
+                  guidanceMetrics.recordMessage(
+                    true,
+                    detectionResult.triggerType || undefined,
+                    guidanceResult.totalTokens,
+                    guidanceResult.retrievalTime
+                  );
+                } else {
+                  console.log('[Contextual Guidance] Detection triggered but no relevant chunks found');
+                  guidanceMetrics.recordMessage(false);
+                }
+              } else {
+                console.log('[Contextual Guidance] No guidance needed - normal conversation');
+                guidanceMetrics.recordMessage(false);
+              }
+            } catch (detectionError) {
+              // Non-blocking - detection failure should not break chat
+              console.error('[Contextual Guidance] Detection/retrieval error:', detectionError);
+              guidanceMetrics.recordMessage(false);
+            }
+          }
+        } else if (!guidanceEnabled) {
+          // Feature flag disabled or user not in rollout percentage
+          console.log('[Contextual Guidance] Skipped - feature flag disabled or user not in rollout:', {
+            stage: stage,
+            reason: reason,
+            userId: userId
+          });
+        }
+
         // 🔧 FIX RACE CONDITION: Pre-compute workflow metadata BEFORE streaming starts
         // This ensures metadata is available synchronously for messageMetadata callback
         // Solution: Use closure variable instead of waiting for onFinish
@@ -221,7 +331,9 @@ export async function POST(req: Request) {
           timestamp: new Date().toISOString(),
           offTopicCount: currentWorkflowState.offTopicCount || 0,
           model: dynamicConfig.primaryModelName,
-          userId: userId
+          userId: userId,
+          // 📊 ATTACH GUIDANCE METADATA FOR PRODUCTION MONITORING (Task 4.3)
+          guidance: guidanceMetadata
         };
 
         console.log('[DEBUG] Pre-computed workflow metadata:', JSON.stringify(preComputedMetadata, null, 2));
@@ -297,6 +409,17 @@ ${workflowSpecSummary}${
           });
 
           console.log('[DEBUG] Injected workflow context as first system message:', workflowContext.contextMessage);
+
+          // 🔍 INJECT CONTEXTUAL GUIDANCE (if retrieved)
+          // Insert guidance AFTER workflow context but BEFORE user messages
+          const guidanceToInject = (validatedMessages as any)._guidanceToInject;
+          if (guidanceToInject) {
+            manualMessages.splice(1, 0, {
+              role: 'system',
+              content: guidanceToInject
+            });
+            console.log('[Contextual Guidance] Guidance injected as 2nd system message');
+          }
 
           // 🚨 BACKEND ENFORCEMENT: Inject strong redirect for Tier 3 escalation
           if (needsStrongRedirect) {

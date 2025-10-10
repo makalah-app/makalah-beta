@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, RefreshCw } from 'lucide-react';
+import { Shield, RefreshCw, Activity } from 'lucide-react';
+import Link from 'next/link';
 
 interface ConfigStatus {
   primaryProvider: string;
@@ -378,6 +379,22 @@ function AdminStatusContent() {
               <Badge variant="secondary">v{configStatus.promptVersion}</Badge>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Feature Monitoring */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Feature Monitoring</CardTitle>
+          <CardDescription>Monitor advanced features and system performance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" asChild className="w-full">
+            <Link href="/admin/contextual-guidance-monitor">
+              <Activity className="mr-2 h-4 w-4" />
+              Contextual Guidance Monitor
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 

@@ -51,6 +51,14 @@ export interface WorkflowMetadata {
   userId?: string;
   offTopicCount?: number; // Track consecutive off-topic messages
   lastRedirectAttempt?: string; // ISO timestamp of last redirect
+  // Contextual Guidance metadata (Task 4.3 - Production Monitoring)
+  guidance?: {
+    triggered: boolean;
+    trigger_type?: string; // 'clarifying_question' | 'confusion_signal' | 'stuck_detection'
+    token_count?: number;
+    retrieval_time?: number; // milliseconds
+    chunk_count?: number;
+  };
 }
 
 // 5. Export AcademicUIMessage type (extends AI SDK UIMessage)
