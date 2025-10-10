@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="px-6 py-20 text-center border-b border-border">
+      <section className="px-6 py-20 text-center border-b border-border section-screen-with-header">
         <div className="max-w-3xl mx-auto space-y-4">
           <h1 className="text-4xl md:text-5xl font-semibold leading-tight font-heading">
             Tak Perlu Bayar Mahal Untuk Karya Yang Masuk Akal
@@ -26,7 +26,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="px-6 py-16">
+      <section className="px-6 py-16 section-screen">
         <div className="max-w-5xl mx-auto grid gap-6 md:grid-cols-3">
           {pricingTiers.map((tier) => (
             <Card
