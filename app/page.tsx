@@ -67,7 +67,12 @@ export default function HomePage() {
       </section>
 
       {/* Why Makalah Section */}
-      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background">
+      <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative">
+        {/* Accent top bar - subtle brand separator */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-px h-[3px] bg-gradient-to-r from-transparent via-primary/60 to-transparent rounded-[3px]"
+          aria-hidden="true"
+        />
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading">
             Kenapa pakai Makalah AI?
