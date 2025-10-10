@@ -63,6 +63,12 @@ export default function HomePage() {
               {isLoading ? 'Loading...' : 'Diskusi dengan Agen AI'}
             </Button>
           </div>
+
+          {/* Internal sub-separator between Tutorial and Resources */}
+          <div className="w-full max-w-3xl mx-auto mt-2" aria-hidden="true">
+            <div className="h-[2px] bg-gradient-to-r from-transparent via-primary/55 to-transparent rounded-[3px]"></div>
+            <div className="h-px bg-border/45 mt-[2px]"></div>
+          </div>
         </div>
       </section>
 
