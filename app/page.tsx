@@ -220,9 +220,9 @@ export default function HomePage() {
 
       {/* Learn + Resources (combined bottom section) */}
       <section className="px-6 py-16 border-t border-border bg-background section-screen-with-footer">
-        <div className="max-w-6xl mx-auto grid gap-10 md:grid-cols-2 items-start">
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-10">
           {/* Tutorial highlight */}
-          <div>
+          <div className="w-full max-w-3xl">
             <h2 className="text-3xl md:text-4xl font-semibold mb-6 text-foreground font-heading text-center md:text-left">
               Pelajari cara pakai Makalah AI
             </h2>
@@ -250,8 +250,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Resources + Company */}
-          <div className="grid grid-cols-2 gap-12 text-center md:text-left">
+          {/* Resources + Company (narrow) */}
+          <div className="w-full max-w-lg grid grid-cols-1 sm:grid-cols-2 gap-12 text-center md:text-left">
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
               <ul className="space-y-4 text-xs">
