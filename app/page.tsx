@@ -70,7 +70,7 @@ export default function HomePage() {
       <section id="why-makalah" className="px-6 py-16 border-t border-border bg-background relative">
         {/* Accent top bar - subtle brand separator */}
         <div
-          className="pointer-events-none absolute inset-x-0 -top-px h-[3px] bg-gradient-to-r from-transparent via-primary/60 to-transparent rounded-[3px]"
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[4px] bg-gradient-to-r from-primary/0 via-primary/80 to-primary/0 rounded-[3px]"
           aria-hidden="true"
         />
         <div className="max-w-6xl mx-auto">
