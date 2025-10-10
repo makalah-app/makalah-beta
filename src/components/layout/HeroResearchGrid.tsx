@@ -9,7 +9,7 @@ export function HeroResearchGrid() {
         <defs>
           {/* Grid pattern */}
           <pattern id="rg-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-            <path d="M48 0H0V48" fill="none" stroke="var(--muted-foreground)" strokeOpacity="0.12" strokeWidth="1" />
+            <path d="M48 0H0V48" fill="none" stroke="var(--muted-foreground)" strokeOpacity="0.08" strokeWidth="1" />
           </pattern>
 
           {/* Soft blur filters for abstract areas */}
@@ -40,16 +40,24 @@ export function HeroResearchGrid() {
 
           {/* Radial aurora fills (warm + cool) */}
           <radialGradient id="rg-aurora-warm-1">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.48)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.58)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-warm-2">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.32)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.42)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-cool">
-            <stop offset="0%" stopColor="rgba(56,189,248,0.22)" />
+            <stop offset="0%" stopColor="rgba(56,189,248,0.36)" />
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
+          </radialGradient>
+          <radialGradient id="rg-aurora-cool-2">
+            <stop offset="0%" stopColor="rgba(56,189,248,0.20)" />
+            <stop offset="100%" stopColor="rgba(56,189,248,0)" />
+          </radialGradient>
+          <radialGradient id="rg-aurora-deepblue">
+            <stop offset="0%" stopColor="rgba(37,99,235,0.28)" />
+            <stop offset="100%" stopColor="rgba(37,99,235,0)" />
           </radialGradient>
         </defs>
 
@@ -60,7 +68,9 @@ export function HeroResearchGrid() {
         <g filter="url(#rg-blur-aurora)" style={{ mixBlendMode: 'screen' }}>
           <circle cx="220" cy="140" r="600" fill="url(#rg-aurora-warm-1)" />
           <circle cx="1240" cy="160" r="500" fill="url(#rg-aurora-warm-2)" />
-          <circle cx="1120" cy="560" r="600" fill="url(#rg-aurora-cool)" />
+          <circle cx="1120" cy="560" r="680" fill="url(#rg-aurora-cool)" />
+          <circle cx="960" cy="260" r="420" fill="url(#rg-aurora-cool-2)" />
+          <circle cx="380" cy="520" r="480" fill="url(#rg-aurora-deepblue)" />
         </g>
 
         {/* Soft axes (very subtle) */}
