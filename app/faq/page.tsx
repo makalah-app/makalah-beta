@@ -130,7 +130,7 @@ export default function FAQPage() {
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="px-6 py-20 text-center section-screen-with-header">
+        <section className="px-6 py-20 text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
               <HelpCircle className="w-8 h-8 text-primary" />
@@ -145,7 +145,7 @@ export default function FAQPage() {
         </section>
 
         {/* Search Section */}
-        <section className="px-6 py-8 border-t border-border section-screen">
+        <section className="px-6 py-8 border-t border-border">
           <div className="max-w-2xl mx-auto">
             <Card className="border-border bg-card hover:bg-card/80 transition-all duration-300">
               <div className="p-6">
@@ -164,7 +164,7 @@ export default function FAQPage() {
         </section>
 
         {/* FAQ Categories */}
-        <section className="px-6 py-12 border-t border-border section-screen">
+        <section className="px-6 py-12 border-t border-border">
           <div className="max-w-4xl mx-auto space-y-8">
             {filteredCategories.map((category, categoryIndex) => (
               <Card
@@ -202,7 +202,7 @@ export default function FAQPage() {
         </section>
 
         {/* Contact Support Section */}
-        <section className="px-6 py-20 border-t border-border section-screen">
+        <section className="px-6 py-20 border-t border-border">
           <div className="max-w-2xl mx-auto">
             <Card className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]">
               <div className="p-8 text-center">

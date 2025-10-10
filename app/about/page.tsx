@@ -31,7 +31,7 @@ export default function AboutPage() {
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="px-6 py-20 text-center section-screen-with-header">
+        <section className="px-6 py-20 text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />

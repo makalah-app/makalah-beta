@@ -156,7 +156,7 @@ export default function TutorialPage() {
 
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="px-6 py-16 text-center section-screen-with-header">
+        <section className="px-6 py-16 text-center">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-semibold mb-6 leading-tight text-foreground font-heading">
               Tutorial <span className="text-primary">MAKALAH AI</span>
@@ -169,7 +169,7 @@ export default function TutorialPage() {
         </section>
 
         {/* Featured Tutorials */}
-        <section className="px-6 py-12 section-screen">
+        <section className="px-6 py-12">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl font-semibold mb-8 text-foreground font-heading">
               Tutorial Unggulan
