@@ -234,6 +234,15 @@
   content: none !important;
 }
 
+/* Accent-only utility: keep brand bar, remove hairline and strengthen bar */
+.global-main section.separator-accent-only::after {
+  content: none !important;
+}
+.global-main section.separator-accent-only::before {
+  height: 4px !important;
+  opacity: 0.8 !important;
+}
+
 /* Full viewport section helpers */
 .section-screen {
   min-height: 100vh;
