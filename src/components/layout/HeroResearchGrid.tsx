@@ -4,7 +4,7 @@ import React from "react";
 
 export function HeroResearchGrid() {
   return (
-    <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
       <svg className="w-full h-full" viewBox="0 0 1440 720" preserveAspectRatio="xMidYMid slice" aria-hidden>
         <defs>
           {/* Grid pattern */}
@@ -29,8 +29,8 @@ export function HeroResearchGrid() {
             <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="rg-grad-cool" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.78 0.06 200 / 0.16)" />
-            <stop offset="100%" stopColor="oklch(0.78 0.06 200 / 0)" />
+            <stop offset="0%" stopColor="rgba(56,189,248,0.16)" />
+            <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </linearGradient>
         </defs>
 
@@ -85,4 +85,3 @@ export function HeroResearchGrid() {
 }
 
 export default HeroResearchGrid;
-
