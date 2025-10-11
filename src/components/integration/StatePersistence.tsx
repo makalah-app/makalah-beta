@@ -17,7 +17,6 @@ interface PersistedChatSession {
   id: string;
   name: string;
   messages: UIMessage[];
-  currentPhase?: string; // Removed workflow phase - pure chat now
   createdAt: number;
   updatedAt: number;
   metadata?: {

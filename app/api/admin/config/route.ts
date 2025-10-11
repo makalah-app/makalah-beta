@@ -15,7 +15,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
-import { apiKeyManager, generateAPIKeyHint } from '../../../../src/lib/security/api-key-encryption';
 import { validateAdminAccess as validateAdmin } from '../../../../src/lib/admin/admin-auth';
 
 // Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
@@ -535,26 +534,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update API keys (legacy support)
+    // Update API keys (stored as plaintext in database)
+    // Note: Environment variables take precedence at runtime
     if (apiKeys) {
       for (const [provider, apiKey] of Object.entries(apiKeys)) {
         if (apiKey && typeof apiKey === 'string') {
           const keySettingName = `${provider}_api_key`;
-          
+
           try {
-            // Encrypt the API key
-            const encryptedKey = await apiKeyManager.encryptKey(apiKey);
-            const keyHint = generateAPIKeyHint(apiKey);
-            
             const { data: keyResult, error: keyError } = await supabaseAdmin
               .from('admin_settings')
               .upsert({
                 setting_key: keySettingName,
-                setting_value: encryptedKey,
+                setting_value: apiKey,
                 setting_type: 'string',
                 category: 'model_config',
                 is_sensitive: true,
-                metadata: { hint: keyHint },
                 updated_by: adminUserId,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
@@ -565,9 +560,9 @@ export async function POST(request: NextRequest) {
             if (!keyError && keyResult) {
               results.updated[`${provider}ApiKey`] = keyResult;
               results.timestamps[`${provider}ApiKey`] = new Date().toISOString();
-            } else {
             }
-          } catch (encryptError) {
+          } catch (keyError) {
+            // Silent fail - API keys are optional, environment variables used as fallback
           }
         }
       }

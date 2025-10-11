@@ -8,7 +8,7 @@
  * @see Task 1.2 - System Prompt A/B Testing Infrastructure
  */
 
-import { createHash } from 'crypto';
+import { createSHA256Hash } from '@/lib/utils/crypto-polyfill';
 
 /**
  * System prompt with cohort distribution metadata
@@ -76,7 +76,7 @@ export function assignUserToCohort(userId: string): number {
   }
 
   // Create SHA-256 hash of user ID
-  const hash = createHash('sha256').update(userId).digest('hex');
+  const hash = createSHA256Hash(userId);
 
   // Convert first 8 hex characters to integer and mod 100
   // This gives uniform distribution across 0-99 range

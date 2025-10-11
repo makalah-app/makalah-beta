@@ -18,7 +18,13 @@ function isDefaultLikeTitle(title?: string | null): boolean {
   );
 }
 
-function sanitizeTitle(input: string, maxLength: number = 27): string {
+/**
+ * Sanitize and truncate title with smart word boundary logic
+ * @param input - Raw title string to sanitize
+ * @param maxLength - Maximum allowed length (default: 35 chars for UI consistency)
+ * @returns Sanitized and truncated title with "..." if exceeded
+ */
+function sanitizeTitle(input: string, maxLength: number = 35): string {
   let s = (input || '').trim();
   // remove wrapping quotes
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\''))) s = s.slice(1, -1).trim();
@@ -28,9 +34,19 @@ function sanitizeTitle(input: string, maxLength: number = 27): string {
   s = s.split(' ').map(w => (w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase())).join(' ');
   if (/^test\s+chat(\s+history)?$/i.test(s)) return '';
 
-  // Truncate title with ellipsis if too long
+  // Truncate title with ellipsis if too long (smart word boundary)
   if (s.length <= maxLength) return s;
-  return s.substring(0, maxLength).trim() + '...';
+
+  const truncated = s.substring(0, maxLength - 3); // Reserve 3 chars for "..."
+  const lastSpace = truncated.lastIndexOf(' ');
+
+  // If last space is near the end (within 8 chars), truncate at space to avoid breaking words
+  if (lastSpace > maxLength - 11) {
+    return truncated.substring(0, lastSpace).trim() + '...';
+  }
+
+  // Otherwise, hard truncate
+  return truncated.trim() + '...';
 }
 
 async function buildSmartTitle(conversationId: string): Promise<string | null> {
@@ -68,13 +84,15 @@ async function buildSmartTitle(conversationId: string): Promise<string | null> {
   const result = await generateText({
     model: titleOpenAI(titleModel),
     prompt: [
-      'Buat judul singkat dan spesifik (maksimal 25 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
+      'Buat judul singkat dan spesifik (maksimal 35 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
       'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
+      'Fokus pada keyword utama. Maksimal 4-5 kata.',
       'Dasarkan pada 1-3 prompt awal user di bawah ini:',
       ...userTexts.map((t, i) => `${i + 1}. ${t}`),
       'Output hanya judulnya saja.'
     ].join('\n'),
     temperature: Math.min(0.5, Math.max(0.1, dynamic.config.temperature || 0.3)),
+    maxOutputTokens: 48,
   });
   const raw = (result as any)?.text || '';
   const cleaned = sanitizeTitle(raw);
@@ -105,8 +123,14 @@ export async function POST(req: NextRequest) {
     const results: any[] = [];
     for (const conv of targets) {
       try {
-        const title = await buildSmartTitle((conv as any).id);
+        let title = await buildSmartTitle((conv as any).id);
         if (title) {
+          // Pre-insert validation: Ensure title doesn't exceed 35 chars (database constraint)
+          if (title.length > 35) {
+            console.warn(`[Backfill Titles] Generated title exceeds 35 chars (${title.length}), forcing truncation: "${title}"`);
+            title = title.substring(0, 32).trim() + '...';
+          }
+
           const { error: updateError } = await supabaseAdmin
             .from('conversations')
             // @ts-ignore - Supabase type inference issue with dynamic table updates

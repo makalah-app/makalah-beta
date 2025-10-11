@@ -9,7 +9,7 @@ Makalah AI adalah aplikasi web yang dirancang untuk membantu mahasiswa, peneliti
 ## Fitur Utama
 
 - **Asisten Penulisan AI** - Bantuan penulisan dengan konteks akademik
-- **Metodologi 7 Fase** - Pendekatan terstruktur untuk penelitian berkualitas
+- **Panduan Akademik Terstruktur** - Pendekatan sistematis untuk penelitian berkualitas
 - **Pencarian Literatur** - Integrasi dengan sumber-sumber akademik
 - **Manajemen Referensi** - Pengelolaan sitasi otomatis
 - **Format Standar** - Dukungan berbagai format penulisan akademik
@@ -62,7 +62,7 @@ Setelah aplikasi berjalan:
 1. Buka browser dan akses `http://localhost:3000`
 2. Daftar atau masuk dengan akun Anda
 3. Mulai percakapan baru untuk memulai penelitian
-4. Ikuti panduan 7 fase untuk hasil optimal
+4. Ikuti panduan asisten AI untuk hasil optimal
 
 ## Kontribusi
 

@@ -499,6 +499,10 @@
 .hero-vivid {
   position: relative;
   isolation: isolate;
+  /* Prevent oversized background pseudo-elements from creating horizontal scroll */
+  overflow-x: hidden;       /* fallback */
+  overflow-x: clip;         /* modern browsers */
+  overflow-clip-margin: 0;  /* ensure no extra clip margin */
 }
 .hero-vivid::before {
   content: "";

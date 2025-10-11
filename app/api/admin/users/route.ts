@@ -1,10 +1,9 @@
-/* @ts-nocheck */
 /**
  * Admin Users Statistics API Endpoint
- * 
+ *
  * Provides user statistics and management for admin dashboard.
  * Restricted to admin access only (makalah.app@gmail.com).
- * 
+ *
  * Features:
  * - User count and statistics using Supabase client
  * - Active users within 30 days
@@ -86,16 +85,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Get role distribution
-    // Getting role distribution - silent handling for production
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('users')
       .select('role');
-    
+
     if (roleError) {
       // Error getting roles - silent handling for production
     }
-    
-    const roleDistribution = (roleData || []).reduce((acc: any[], user: any) => {
+
+    interface RoleCount {
+      role: string;
+      count: number;
+    }
+
+    const roleDistribution = (roleData || []).reduce((acc: RoleCount[], user: { role: string }) => {
       const existingRole = acc.find(r => r.role === user.role);
       if (existingRole) {
         existingRole.count++;
@@ -103,7 +106,7 @@ export async function GET(request: NextRequest) {
         acc.push({ role: user.role, count: 1 });
       }
       return acc;
-    }, []);
+    }, [] as RoleCount[]);
 
     // Get recent users (last 7 days)
     // Getting recent users count - silent handling for production
@@ -120,7 +123,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build base response
-    const response: any = {
+    const response = {
       success: true,
       data: {
         statistics: {
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest) {
           activeUsers: activeUsers || 0,
           recentUsers: recentUsers || 0,
           inactiveUsers: (totalUsers || 0) - (activeUsers || 0),
-          roleDistribution: roleDistribution.map((role: any) => ({
+          roleDistribution: roleDistribution.map((role) => ({
             role: role.role,
             count: role.count
           }))
@@ -136,49 +139,72 @@ export async function GET(request: NextRequest) {
         metadata: {
           generatedAt: new Date().toISOString(),
           includesDetails: includeDetails,
-          includesInactive: includeInactive
+          includesInactive: includeInactive,
+          userCount: 0
         }
-      }
+      },
+      users: [] as Array<{
+        id: string;
+        email: string;
+        name: string;
+        role: string;
+        institution?: string;
+        isVerified: boolean;
+        createdAt: string;
+        lastLogin: string | null;
+        updatedAt: string;
+        isActive: boolean;
+      }>
     };
 
     // Include user details if requested
     if (includeDetails) {
-      // Getting user details - silent handling for production
-      
       let usersQuery = supabaseAdmin
         .from('users')
         .select('id, email, role, email_verified_at, is_active, created_at, last_login_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(limit);
-      
+
       // Filter active users if requested
       if (!includeInactive) {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        usersQuery = usersQuery.gte('last_login', thirtyDaysAgo.toISOString());
+        usersQuery = usersQuery.gte('last_login_at', thirtyDaysAgo.toISOString());
       }
-      
+
       const { data: userDetailsData, error: userDetailsError } = await usersQuery;
-      
+
       if (userDetailsError) {
-        // Error getting user details - silent handling for production
         throw new Error('Failed to get user details');
       }
-      
-      response.data.users = (userDetailsData || []).map((user: any) => ({
-        id: user.id,
-        email: user.email,
-        name: user.full_name || user.email?.split('@')[0] || 'Unknown',
-        role: user.role,
-        institution: user.institution,
-        isVerified: user.email_verified,
-        createdAt: user.created_at,
-        lastLogin: user.last_login,
-        updatedAt: user.updated_at,
-        isActive: user.last_login && new Date(user.last_login) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+      // Type assertion to work around Supabase PostgREST type inference issue
+      // See CLAUDE.md "Supabase Type Inference Workarounds" section
+      type UserRow = {
+        id: string;
+        email: string;
+        role: string;
+        email_verified_at: string | null;
+        is_active: boolean;
+        created_at: string;
+        last_login_at: string | null;
+        updated_at: string;
+      };
+
+      response.users = ((userDetailsData || []) as UserRow[]).map((user) => ({
+        id: user.id || '',
+        email: user.email || '',
+        name: user.email?.split('@')[0] || 'Unknown',
+        role: user.role || 'user',
+        institution: undefined,
+        isVerified: !!user.email_verified_at,
+        createdAt: user.created_at || '',
+        lastLogin: user.last_login_at || null,
+        updatedAt: user.updated_at || '',
+        isActive: user.last_login_at ? new Date(user.last_login_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : false
       }));
 
-      response.data.metadata.userCount = response.data.users.length;
+      response.data.metadata.userCount = response.users.length;
     }
 
     // Admin users response generated - silent handling for production
@@ -250,20 +276,19 @@ export async function POST(request: NextRequest) {
           }, { status: 400 });
         }
 
-        // Updating user role - silent handling for production
-        
+        // Type assertion to work around Supabase PostgREST type inference issue
+        // See CLAUDE.md "Supabase Type Inference Workarounds" section (commit 95c46e7)
         const { data: updateResult, error: updateError } = await (supabaseAdmin as any)
           .from('users')
-          .update({ 
+          .update({
             role: data.role,
             updated_at: new Date().toISOString()
-          } as any)
+          })
           .eq('id', userId)
           .select('id, email, role')
           .maybeSingle();
 
         if (updateError || !updateResult) {
-          // Role update failed - silent handling for production
           return Response.json({
             success: false,
             error: {
@@ -274,8 +299,6 @@ export async function POST(request: NextRequest) {
           }, { status: 404 });
         }
 
-        // Role updated successfully - silent handling for production
-        
         return Response.json({
           success: true,
           data: {

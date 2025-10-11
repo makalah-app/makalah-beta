@@ -13,7 +13,6 @@ export interface ConversationItem {
   title: string | null;
   messageCount: number;
   lastActivity: string;
-  workflowId: string | null;
 }
 
 interface UseChatHistoryReturn {

@@ -1,12 +1,12 @@
 /**
  * Role-Based Permission System
- * 
+ *
  * Manages role-based access control for Makalah AI platform with
- * granular permissions for academic workflows and admin functions.
- * 
+ * granular permissions for chat operations and admin functions.
+ *
  * Features:
- * - Role hierarchy (admin > researcher > student)
- * - Academic chat permissions
+ * - Role hierarchy (superadmin > admin > user > guest)
+ * - AI Agent chat permissions
  * - Resource-based access control
  * - Dynamic permission checking
  * - Admin privilege management
@@ -16,25 +16,10 @@
 // Permission Types
 export type UserRole = 'superadmin' | 'admin' | 'user' | 'guest';
 
-export type Permission = 
-  // Academic Workflow Permissions
-  | 'workflow.create'
+export type Permission =
+  // Basic Chat Permissions (legacy workflow.read kept for backward compatibility)
   | 'workflow.read'
-  | 'workflow.update' 
-  | 'workflow.delete'
-  | 'workflow.approve'
-  | 'workflow.reject'
-  | 'workflow.export'
-  
-  // Phase-Specific Permissions
-  | 'phase.topic_selection'
-  | 'phase.literature_review'
-  | 'phase.research_methodology'
-  | 'phase.data_collection'
-  | 'phase.analysis'
-  | 'phase.writing'
-  | 'phase.review'
-  
+
   // Resource Permissions
   | 'resources.upload'
   | 'resources.download'
@@ -105,13 +90,8 @@ const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
   superadmin: {
     role: 'superadmin',
     permissions: [
-      // Full access to everything (inherits all admin permissions)
-      'workflow.create', 'workflow.read', 'workflow.update', 'workflow.delete',
-      'workflow.approve', 'workflow.reject', 'workflow.export',
-
-      // All phases
-      'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
-      'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
+      // Legacy permission (backward compatibility)
+      'workflow.read',
 
       // All resources
       'resources.upload', 'resources.download', 'resources.share', 'resources.manage',
@@ -138,13 +118,8 @@ const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
   admin: {
     role: 'admin',
     permissions: [
-      // Full access to workflows
-      'workflow.create', 'workflow.read', 'workflow.update', 'workflow.delete',
-      'workflow.approve', 'workflow.reject', 'workflow.export',
-
-      // All phases
-      'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
-      'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
+      // Legacy permission (backward compatibility)
+      'workflow.read',
 
       // All resources
       'resources.upload', 'resources.download', 'resources.share', 'resources.manage',
@@ -166,16 +141,12 @@ const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
       inheritsFrom: []
     }
   },
-  
+
   user: {
     role: 'user',
     permissions: [
-      // Full workflow permissions (merged from researcher + student)
-      'workflow.create', 'workflow.read', 'workflow.update', 'workflow.export',
-
-      // All academic phases
-      'phase.topic_selection', 'phase.literature_review', 'phase.research_methodology',
-      'phase.data_collection', 'phase.analysis', 'phase.writing', 'phase.review',
+      // Legacy permission (backward compatibility)
+      'workflow.read',
 
       // Full resource access
       'resources.upload', 'resources.download', 'resources.share',
@@ -188,18 +159,17 @@ const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
       'system.read', 'system.write'
     ],
     limitations: {
-      maxWorkflows: 50,
-      maxFileUpload: 500, // MB (generous limit)
+      maxFileUpload: 500, // MB
       aiRequestsPerDay: 5000,
       collaboratorsLimit: 10
     },
     metadata: {
-      description: 'Pengguna reguler dengan akses penuh workflow akademik',
+      description: 'Pengguna reguler dengan akses penuh AI Agent chat',
       level: 2,
       inheritsFrom: ['guest']
     }
   },
-  
+
   guest: {
     role: 'guest',
     permissions: [
@@ -211,7 +181,6 @@ const ROLE_DEFINITIONS: Record<UserRole, RolePermissions> = {
       'system.read'
     ],
     limitations: {
-      maxWorkflows: 0,
       maxFileUpload: 0,
       aiRequestsPerDay: 10,
       readOnly: true,
@@ -368,17 +337,16 @@ export class PermissionManager {
   }
 
   /**
-   * Check if user can perform academic operations
+   * Check if user can use AI Agent features
    */
-  canPerformAcademicOperations(context: UserPermissionContext): boolean {
-    const academicPermissions: Permission[] = [
-      'workflow.create',
-      'phase.topic_selection',
+  canUseAIAgent(context: UserPermissionContext): boolean {
+    const aiPermissions: Permission[] = [
+      'ai.chat',
       'ai.analysis',
       'tools.academic_tools'
     ];
 
-    return academicPermissions.every(
+    return aiPermissions.every(
       perm => this.hasPermission(context, perm).granted
     );
   }
@@ -542,23 +510,23 @@ export class PermissionManager {
  */
 export function createPermissionHook(context: UserPermissionContext) {
   const manager = PermissionManager.getInstance();
-  
+
   return {
     hasPermission: (permission: Permission, resourceId?: string) =>
       manager.hasPermission(context, permission, resourceId),
-    
+
     hasAnyPermission: (permissions: Permission[], resourceId?: string) =>
       permissions.some(perm => manager.hasPermission(context, perm, resourceId).granted),
-    
+
     hasAllPermissions: (permissions: Permission[], resourceId?: string) =>
       permissions.every(perm => manager.hasPermission(context, perm, resourceId).granted),
-    
+
     isAdmin: () => manager.isAdmin(context),
-    
-    canPerformAcademicOperations: () => manager.canPerformAcademicOperations(context),
-    
+
+    canUseAIAgent: () => manager.canUseAIAgent(context),
+
     getUserPermissions: () => manager.getUserPermissions(context),
-    
+
     getRoleInfo: () => manager.getRolePermissions(context.role)
   };
 }

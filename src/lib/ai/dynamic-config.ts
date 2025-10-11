@@ -57,7 +57,7 @@ This is a fallback prompt with minimal instructions. The system is operating in 
 
 **Administrator Actions Required:**
 1. Check database connection to Supabase
-2. Verify system_prompts table contains active prompt (is_active = true)
+2. Verify system_prompts or fallback_system_prompts table contains active prompt (is_active = true)
 3. Upload system prompt via: Admin Dashboard → Database Prompts → Add Prompt
 
 **Current Fallback Capabilities:**
@@ -66,7 +66,7 @@ This is a fallback prompt with minimal instructions. The system is operating in 
 - Reduced functionality until primary prompt is restored
 
 **Technical Details:**
-- Expected Source: system_prompts or openrouter_system_prompts table
+- Expected Source: system_prompts or fallback_system_prompts table
 - Actual Source: Emergency fallback (hardcoded)
 - Recovery: Upload new prompt or activate existing prompt
 
@@ -136,9 +136,9 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
 
     if (primaryProvider === 'openrouter') {
-      // OpenRouter always uses openrouter_system_prompts (optimized for Gemini)
+      // OpenRouter always uses fallback_system_prompts (optimized for Gemini)
       const { data: openrouterPrompt, error: openrouterError } = await supabaseAdmin
-        .from('openrouter_system_prompts')
+        .from('fallback_system_prompts')
         .select('content')
         .eq('is_active', true)
         .maybeSingle() as { data: { content: string } | null; error: any };

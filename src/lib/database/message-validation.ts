@@ -35,7 +35,6 @@ const academicMetadataSchema = z.object({
   tokens: z.number().optional(),
   artifacts: z.array(z.string()).optional(),
   conversationId: z.string().optional(),
-  workflowId: z.string().optional(),
   approvalRequired: z.boolean().optional(),
   provider: z.string().optional(),
   promptTokens: z.number().optional(),

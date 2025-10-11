@@ -10,7 +10,7 @@
 
 import * as React from 'react';
 import { X, RefreshCw } from 'lucide-react';
-import { cn } from '../../lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 interface BannerProps {
   variant?: 'error' | 'warning' | 'info';

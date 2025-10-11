@@ -1,4 +1,3 @@
-/* @ts-nocheck */
 /**
  * Admin System Prompt Management API Endpoint
  *
@@ -15,9 +14,6 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/database/supabase-client';
 import { validateAdminAccess as validateAdmin } from '@/lib/admin/admin-auth';
-
-// Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
-const ADMIN_EMAIL = 'makalah.app@gmail.com';
 
 // COMPLETE crypto polyfill handling for ALL environments - NO MORE ERRORS
 let crypto: any;
@@ -84,35 +80,7 @@ const SavePromptRequestSchema = z.object({
   changeReason: z.string().optional().default('System Prompt Update')
 });
 
-const GetPromptHistoryRequestSchema = z.object({
-  limit: z.number().min(1).max(50).default(10)
-});
-
 type SavePromptRequest = z.infer<typeof SavePromptRequestSchema>;
-type GetPromptHistoryRequest = z.infer<typeof GetPromptHistoryRequestSchema>;
-
-/**
- * Generate next version number based on current version
- */
-function generateNextVersion(currentVersion: string): string {
-  // Parse version like v2.1 or 2.1.0
-  const versionMatch = currentVersion.match(/v?(\d+)\.(\d+)(?:\.(\d+))?/);
-
-  if (versionMatch) {
-    const major = parseInt(versionMatch[1]);
-    const minor = parseInt(versionMatch[2]);
-    const patch = parseInt(versionMatch[3] || '0');
-
-    // Increment minor version for content changes
-    return `v${major}.${minor + 1}`;
-  }
-
-  // Fallback to incrementing based on current date
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const day = today.getDate();
-  return `v${month}.${day}`;
-}
 
 /**
  * Generate prompt name with timestamp and description
@@ -278,7 +246,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const validatedRequest: SavePromptRequest = SavePromptRequestSchema.parse(body);
-    const { content, version, changeReason } = validatedRequest;
+    const { content, changeReason } = validatedRequest;
 
     // Get current prompt to determine next version
     const { data: currentPrompt } = await (supabaseAdmin as any)

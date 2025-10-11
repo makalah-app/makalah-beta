@@ -91,9 +91,9 @@ export const SystemMessage: React.FC<SystemMessageProps> = ({
               </p>
 
               {/* Timestamp */}
-              {message.metadata?.timestamp && (
+              {(message.metadata as any)?.timestamp && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(message.metadata.timestamp).toLocaleTimeString()}
+                  {new Date((message.metadata as any).timestamp).toLocaleTimeString()}
                 </p>
               )}
             </div>

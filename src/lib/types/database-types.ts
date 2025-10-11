@@ -289,6 +289,7 @@ export interface ConversationSummary {
   messageCount: number;
   lastActivity: string;
   archived?: boolean;
+  metadata?: any;  // Required for smart_title_pending check in history route
 }
 
 export interface ConversationDetails {

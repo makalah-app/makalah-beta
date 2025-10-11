@@ -380,7 +380,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <CardContent className="p-3 text-xs">
                 <div>ID: {message.id}</div>
                 <div>Parts: {message.parts.length}</div>
-                {message.metadata && (
+                {!!message.metadata && (
                   <div>Metadata: {JSON.stringify(message.metadata, null, 2)}</div>
                 )}
               </CardContent>
@@ -441,8 +441,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                 // ✅ Display tool execution results using clean component
                 if (part.state === 'output-available' && toolCallId) {
                   // Check if this is a historical message (created more than 5 seconds ago)
-                  const messageAge = message.metadata?.timestamp
-                    ? Date.now() - message.metadata.timestamp
+                  const messageAge = (message.metadata as any)?.timestamp
+                    ? Date.now() - (message.metadata as any).timestamp
                     : 0;
                   const isHistorical = messageAge > 5000; // More than 5 seconds old
 
@@ -613,7 +613,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <CardContent className="p-3 text-xs">
                 <div>ID: {message.id}</div>
                 <div>Parts: {message.parts.length}</div>
-                {message.metadata && (
+                {!!message.metadata && (
                   <div>Metadata: {JSON.stringify(message.metadata, null, 2)}</div>
                 )}
               </CardContent>

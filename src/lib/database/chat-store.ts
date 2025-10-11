@@ -20,7 +20,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database-types';
 import { generateUUID, getValidUserUUID } from '../utils/uuid-generator';
 import { getDynamicModelConfig } from '../ai/dynamic-config';
-import { normalizePhase } from '../ai/workflow-engine';
 // DATABASE FALLBACK: Import fallback mode utilities
 import { 
   checkDatabaseHealth, 
@@ -860,11 +859,6 @@ async function trackAIInteraction(
     const responseTime = typeof metadata === 'object' && metadata && 'responseTime' in metadata
       ? Number(metadata.responseTime) || 0
       : 0;
-    const rawPhase =
-      typeof metadata === 'object' && metadata && 'phase' in metadata
-        ? (metadata as any).phase
-        : undefined;
-    const phase = normalizePhase(rawPhase);
 
     await (supabaseAdmin as any)
       .from('ai_interactions')
@@ -879,8 +873,7 @@ async function trackAIInteraction(
         response_time: responseTime,
         interaction_data: {
           message_id: latestMessage.id,
-          has_tool_calls: latestMessage.parts?.some(p => p.type === 'tool-result') || false,
-          phase
+          has_tool_calls: latestMessage.parts?.some(p => p.type === 'tool-result') || false
         }
       });
     

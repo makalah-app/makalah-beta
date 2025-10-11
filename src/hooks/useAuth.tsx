@@ -106,7 +106,7 @@ export interface AuthContextType extends AuthState {
   // Permission Methods
   hasPermission: (permission: string, resourceId?: string) => boolean;
   isAdmin: () => boolean;
-  canPerformAcademicOperations: () => boolean;
+  canUseAIAgent: () => boolean;
 
   // Utility Methods
   clearError: () => void;
@@ -911,7 +911,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (authState.user?.role === 'superadmin' || authState.user?.role === 'admin') && hasPermission('admin.system');
   }, [authState.user?.role, hasPermission]); // ✅ CRITICAL FIX: Depend only on role value, not full user object
 
-  const canPerformAcademicOperations = useCallback((): boolean => {
+  const canUseAIAgent = useCallback((): boolean => {
     if (!authState.user) return false;
 
     const permissionContext: UserPermissionContext = {
@@ -921,7 +921,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isVerified: authState.user.isVerified
     };
 
-    return permissionManager.canPerformAcademicOperations(permissionContext);
+    return permissionManager.canUseAIAgent(permissionContext);
   }, [authState.user?.id, authState.user?.role, authState.user?.isVerified, permissionManager]); // ✅ CRITICAL FIX: Depend only on specific user properties
 
   /**
@@ -1157,7 +1157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resendVerificationEmail,
     hasPermission,
     isAdmin,
-    canPerformAcademicOperations,
+    canUseAIAgent,
     clearError,
     updateProfile,
     changePassword
@@ -1193,7 +1193,7 @@ export function usePermissions() {
       hasAnyPermission: () => false,
       hasAllPermissions: () => false,
       isAdmin: () => false,
-      canPerformAcademicOperations: () => false,
+      canUseAIAgent: () => false,
       getUserPermissions: () => [],
       getRoleInfo: () => null
     };

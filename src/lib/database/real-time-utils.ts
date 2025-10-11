@@ -33,7 +33,6 @@ export interface PresenceState {
   typing: boolean;
   lastSeen: number;
   activeConversation?: string;
-  currentPhase?: number;
 }
 
 export interface TypingIndicator {

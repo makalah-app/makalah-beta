@@ -479,7 +479,6 @@ export async function searchConversations(
         title,
         description,
         message_count,
-        workflow_id,
         updated_at,
         metadata
       `)
@@ -505,7 +504,6 @@ export async function searchConversations(
         title: convData.title || 'Untitled Chat',
         messageCount: convData.message_count,
         lastActivity: convData.updated_at,
-        workflowId: convData.workflow_id,
         metadata: convData.metadata
       };
     });

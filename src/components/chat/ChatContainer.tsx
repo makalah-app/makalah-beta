@@ -395,7 +395,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         createdAt: createdAtIso,
         metadata: {
           ...baseMetadata,
-          userId: baseMetadata?.userId || effectiveUserId,
+          userId: (baseMetadata as any)?.userId || effectiveUserId,
           sequenceNumber: index,
           persistedAt: timestamp,
         },
