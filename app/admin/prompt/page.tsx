@@ -43,7 +43,7 @@ Contact system administrator to restore full AI capabilities.`;
 // Default prompt history (will be replaced by API data)
 const defaultPromptHistory = [
   { version: "v2.1", date: "2025-01-26", description: "Current - Enhanced academic structure" },
-  { version: "v2.0", date: "2025-01-20", description: "Added 7-phase methodology" },
+  { version: "v2.0", date: "2025-01-20", description: "Added academic writing methodology" },
   { version: "v1.5", date: "2025-01-15", description: "Improved Indonesian language support" },
   { version: "v1.0", date: "2025-01-10", description: "Initial system prompt" },
 ];

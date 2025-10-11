@@ -110,10 +110,18 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   };
 
   return (
-    <header className={cn(
-      'flex items-center justify-between px-6 pt-4 pb-6 bg-background relative',
-      className
-    )}>
+    <header
+      className={cn(
+        'relative bg-background shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_3px_12px_-2px_rgba(0,0,0,0.45)]',
+        className
+      )}
+    >
+      {/* Soft scrim under header for readability (fade to transparent) */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-b from-black/12 via-black/8 to-transparent"
+        aria-hidden="true"
+      />
+      <div className="flex items-center justify-between px-6 pt-4 pb-6 relative z-10">
       {/* Brand Section */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -158,7 +166,10 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('md:hidden h-12 w-12 rounded-[3px] border border-border text-muted-foreground hover:text-primary', !showNavigation && 'ml-2')}
+                className={cn(
+                  'md:hidden h-12 w-12 rounded-[3px] border dark:border-white/25 border-black/15 text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0',
+                  !showNavigation && 'ml-2'
+                )}
                 aria-label="Buka menu utama"
               >
                 <ViewVerticalIcon className="h-9 w-9" />
@@ -239,6 +250,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
           )}
         </div>
       )}
+      </div>
       {/* Striped hairline separator (10px, sparser thin diagonal strokes) */}
       <div className="hairline-stripe-10 absolute inset-x-0 bottom-0" aria-hidden="true" />
     </header>

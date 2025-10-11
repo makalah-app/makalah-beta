@@ -7,15 +7,12 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './useAuth';
-import type { WorkflowPhase } from '../lib/types/academic-message';
-import { normalizePhase } from '../lib/ai/workflow-engine';
 
 export interface ConversationItem {
   id: string;
   title: string | null;
   messageCount: number;
   lastActivity: string;
-  currentPhase: WorkflowPhase | null;
   workflowId: string | null;
 }
 
@@ -140,7 +137,6 @@ export function useChatHistory(): UseChatHistoryReturn {
       const rawConversationList = Array.isArray(data) ? data : (data.conversations || []);
       const conversationList: ConversationItem[] = rawConversationList.map((conv: any) => ({
         ...conv,
-        currentPhase: conv.currentPhase ? normalizePhase(conv.currentPhase) : null,
       }));
 
       console.log('[useChatHistory] Processed conversations:', {

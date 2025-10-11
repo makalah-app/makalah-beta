@@ -15,8 +15,7 @@
 
 import { saveChat, createChat } from './chat-store';
 import { getValidUserUUID } from '../utils/uuid-generator';
-import { normalizePhase } from '../ai/workflow-engine';
-import type { AcademicUIMessage, WorkflowMetadata, WorkflowPhase } from '../types/academic-message';
+import type { UIMessage } from 'ai';
 
 /**
  * PERSISTENCE CONFIGURATION
@@ -41,7 +40,6 @@ const PERSISTENCE_CONFIG: PersistenceConfig = {
 interface PersistenceMetadata {
   conversationId?: string;
   userId?: string;
-  phase?: WorkflowPhase | number | string;
   sessionId?: string;
   streamCoordinationData: {
     primaryExecuted: boolean;
@@ -72,7 +70,7 @@ interface PersistenceResult {
  * It only executes AFTER primarySuccess = true to ensure stream completion.
  */
 export async function persistMessagesAsync(
-  messages: AcademicUIMessage[],
+  messages: UIMessage[],
   metadata: PersistenceMetadata
 ): Promise<void> {
   const startTime = Date.now();
@@ -111,7 +109,7 @@ export async function persistMessagesAsync(
  * CORE PERSISTENCE IMPLEMENTATION
  */
 async function performMessagePersistence(
-  messages: AcademicUIMessage[],
+  messages: UIMessage[],
   metadata: PersistenceMetadata
 ): Promise<PersistenceResult> {
   const startTime = Date.now();
@@ -130,29 +128,16 @@ async function performMessagePersistence(
     }
     
     // Step 2: Enhance messages with persistence metadata
-    const normalizedPhase = normalizePhase(
-      metadata.phase,
-      messages[messages.length - 1]?.metadata?.phase || 'exploring'
-    );
     const normalizedUserId = getValidUserUUID(metadata.userId);
     const persistedAt = new Date().toISOString();
 
-    type PersistedMetadata = WorkflowMetadata & {
-      conversationId?: string;
-      sessionId?: string;
-      persistedAt?: string;
-      sequenceNumber?: number;
-      streamCoordination?: PersistenceMetadata['streamCoordinationData'];
-    };
-
     const messagesForPersistence = messages.map((message, index) => {
-      const existingMetadata = (message.metadata || {}) as PersistedMetadata;
+      const existingMetadata = message.metadata || {};
 
-      const mergedMetadata: PersistedMetadata = {
+      const mergedMetadata = {
         ...existingMetadata,
         conversationId,
         userId: normalizedUserId,
-        phase: normalizedPhase,
         sessionId: metadata.sessionId ?? existingMetadata.sessionId,
         persistedAt,
         sequenceNumber: index,
@@ -199,18 +184,16 @@ async function performMessagePersistence(
  * FALLBACK PERSISTENCE - Simple local storage backup
  */
 async function attemptFallbackPersistence(
-  messages: AcademicUIMessage[],
+  messages: UIMessage[],
   metadata: PersistenceMetadata
 ): Promise<void> {
   try {
-    
+
     // Create fallback data structure
-    const normalizedPhase = normalizePhase(metadata.phase);
     const fallbackData = {
       timestamp: Date.now(),
       conversationId: metadata.conversationId || `fallback_${Date.now()}`,
       userId: getValidUserUUID(metadata.userId),
-      phase: normalizedPhase,
       messageCount: messages.length,
       messages: messages.map(msg => ({
         id: msg.id,
@@ -244,7 +227,7 @@ async function attemptFallbackPersistence(
 /**
  * CONVERSATION TITLE EXTRACTION
  */
-function extractConversationTitle(messages: AcademicUIMessage[]): string {
+function extractConversationTitle(messages: UIMessage[]): string {
   // Find first user message with substantial content
   for (const message of messages) {
     if (message.role === 'user' && message.parts) {

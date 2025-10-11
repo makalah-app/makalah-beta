@@ -6,7 +6,7 @@
  * 
  * Features:
  * - Role hierarchy (admin > researcher > student)
- * - Academic workflow permissions (11-phase system)
+ * - Academic chat permissions
  * - Resource-based access control
  * - Dynamic permission checking
  * - Admin privilege management

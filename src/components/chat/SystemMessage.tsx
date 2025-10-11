@@ -15,13 +15,13 @@
  */
 
 import React from 'react';
-import { AcademicUIMessage } from './ChatContainer';
+import type { UIMessage } from 'ai';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 
 interface SystemMessageProps {
-  message: AcademicUIMessage;
+  message: UIMessage;
   className?: string;
   debugMode?: boolean;
 }

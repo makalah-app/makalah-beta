@@ -11,15 +11,13 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { AcademicUIMessage } from '../chat/ChatContainer';
-import type { WorkflowPhase } from '../../lib/types/academic-message';
-import { normalizePhase } from '../../lib/ai/workflow-engine';
+import type { UIMessage } from 'ai';
 
 interface PersistedChatSession {
   id: string;
   name: string;
-  messages: AcademicUIMessage[];
-  currentPhase: WorkflowPhase;
+  messages: UIMessage[];
+  currentPhase?: string; // Removed workflow phase - pure chat now
   createdAt: number;
   updatedAt: number;
   metadata?: {
@@ -49,8 +47,8 @@ interface StatePersistenceContextType {
   updateSession: (sessionId: string, updates: Partial<PersistedChatSession>) => void;
   
   // Message management
-  addMessage: (sessionId: string, message: AcademicUIMessage) => void;
-  updateMessage: (sessionId: string, messageId: string, updates: Partial<AcademicUIMessage>) => void;
+  addMessage: (sessionId: string, message: UIMessage) => void;
+  updateMessage: (sessionId: string, messageId: string, updates: Partial<UIMessage>) => void;
   removeMessage: (sessionId: string, messageId: string) => void;
   clearMessages: (sessionId: string) => void;
   
@@ -193,15 +191,10 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
       id: sessionId,
       name,
       messages: [],
-      currentPhase: 'exploring',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       ...initialData,
     };
-
-    newSession.currentPhase = normalizePhase(
-      (initialData.currentPhase as WorkflowPhase | number | string | undefined) ?? newSession.currentPhase
-    );
 
     setSavedSessions(prev => {
       const updated = [newSession, ...prev];
@@ -294,7 +287,7 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
   }, [currentSession, autoSave, saveToStorage, SESSIONS_KEY, CURRENT_SESSION_KEY]);
 
   // Message management
-  const addMessage = useCallback((sessionId: string, message: AcademicUIMessage) => {
+  const addMessage = useCallback((sessionId: string, message: UIMessage) => {
     updateSession(sessionId, {
       messages: [...(savedSessions.find(s => s.id === sessionId)?.messages || []), message],
     });
@@ -303,7 +296,7 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
   const updateMessage = useCallback((
     sessionId: string,
     messageId: string,
-    updates: Partial<AcademicUIMessage>
+    updates: Partial<UIMessage>
   ) => {
     const session = savedSessions.find(s => s.id === sessionId);
     if (session) {
@@ -389,11 +382,7 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
   const loadFromStorageAll = useCallback(() => {
     const sessions = loadFromStorage(SESSIONS_KEY);
     if (sessions) {
-      const normalizedSessions = (sessions as Array<PersistedChatSession | any>).map(session => ({
-        ...session,
-        currentPhase: normalizePhase(session.currentPhase ?? 'exploring'),
-      }));
-      setSavedSessions(normalizedSessions);
+      setSavedSessions(sessions);
     }
 
     const configs = loadFromStorage(CONFIGS_KEY);
@@ -407,10 +396,7 @@ export const StatePersistenceProvider: React.FC<StatePersistenceProviderProps> =
         (s: PersistedChatSession) => s.id === currentSessionId
       );
       if (session) {
-        setCurrentSession({
-          ...session,
-          currentPhase: normalizePhase(session.currentPhase ?? 'exploring'),
-        });
+        setCurrentSession(session);
       }
     }
   }, [loadFromStorage, SESSIONS_KEY, CONFIGS_KEY, CURRENT_SESSION_KEY]);

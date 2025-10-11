@@ -495,6 +495,73 @@
 
 /* Tooltip green styling for consistent UI across app */
 
+/* CSS-only vivid aurora for hero */
+.hero-vivid {
+  position: relative;
+  isolation: isolate;
+}
+.hero-vivid::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  background:
+    radial-gradient(900px 700px at 20% 18%, rgba(255,138,0,0.50) 0 32%, transparent 58%),
+    radial-gradient(720px 580px at 86% 14%, rgba(37,99,235,0.45) 0 28%, transparent 56%),
+    radial-gradient(780px 560px at 80% 78%, rgba(124,58,237,0.38) 0 26%, transparent 54%),
+    radial-gradient(680px 520px at 14% 82%, rgba(255,213,0,0.22) 0 22%, transparent 52%);
+  filter: blur(80px) saturate(1.18) brightness(1.02);
+  pointer-events: none;
+  z-index: -1;
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
+.hero-vivid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  /* Darken only top-left area behind header brand */
+  background:
+    radial-gradient(
+      500px 320px at 8% 10%,
+      rgba(0,0,0,0.26) 0%,
+      rgba(0,0,0,0.16) 55%,
+      rgba(0,0,0,0.08) 80%,
+      rgba(0,0,0,0.00) 100%
+    );
+}
+
+/* Optional ultra-thin research grid */
+.hero-grid-thin {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(148,163,184,0.12) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgba(148,163,184,0.12) 0 1px, transparent 1px 48px);
+}
+
+@media (max-width: 640px) {
+  .hero-vivid::before {
+    /* Keep orientation natural on mobile */
+    transform: none;
+    transform-origin: center;
+    /* Slightly tighter blur/brightness for small screens */
+    filter: blur(60px) saturate(1.18) brightness(1.02);
+    /* Scale aurora by percentage for proportional look */
+    background:
+      radial-gradient(70% 55% at 75% 18%, rgba(255,138,0,0.50) 0 30%, transparent 55%),
+      radial-gradient(65% 45% at 20% 16%, rgba(37,99,235,0.45) 0 26%, transparent 52%),
+      radial-gradient(68% 50% at 22% 78%, rgba(124,58,237,0.38) 0 22%, transparent 50%),
+      radial-gradient(58% 42% at 86% 82%, rgba(255,213,0,0.18) 0 18%, transparent 48%);
+  }
+
+  .hero-grid-thin {
+    background-image:
+      repeating-linear-gradient(0deg, rgba(148,163,184,0.10) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(148,163,184,0.10) 0 1px, transparent 1px 40px);
+  }
+}
+
 /* Striped hairline (2px) for header/footer tests */
 .hairline-stripe-2 {
   height: 2px;

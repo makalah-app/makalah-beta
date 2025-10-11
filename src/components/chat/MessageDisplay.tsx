@@ -6,7 +6,7 @@
  * MIGRATED TO AI ELEMENTS:
  * - Uses AI Elements Message, MessageContent, MessageAvatar components
  * - Preserves existing markdown rendering dan tool result display logic
- * - Integrates dengan existing AcademicUIMessage structure
+ * - Uses standard UIMessage from AI SDK v5
  *
  * DESIGN COMPLIANCE:
  * - AI Elements styling dengan shadcn/ui base components
@@ -16,7 +16,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { AcademicUIMessage } from './ChatContainer';
+import type { UIMessage } from 'ai';
 import { SystemMessage } from './SystemMessage';
 // AI Elements Message components
 import {
@@ -38,7 +38,6 @@ import { cn } from '../../lib/utils';
 import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
 import { ToolResult } from './ToolResult';
-import { WorkflowArtifactDisplay } from './WorkflowArtifactDisplay';
 
 type SourcePart = {
   type: 'source-url';
@@ -66,7 +65,7 @@ const normalizeCitationKey = (value: string | undefined) => {
 };
 
 interface MessageDisplayProps {
-  message: AcademicUIMessage;
+  message: UIMessage;
   onRegenerate?: () => void;
   debugMode?: boolean;
   className?: string;
@@ -75,7 +74,7 @@ interface MessageDisplayProps {
   sendMessage?: () => void;
   citations?: Array<{ title?: string; url: string; snippet?: string }>;
   // 🔧 Add global messages context for approval gate logic
-  allMessages?: AcademicUIMessage[];
+  allMessages?: UIMessage[];
   // 📝 EDIT MESSAGE PROPS: Enhanced edit functionality
   isEditing?: boolean;
   editingText?: string;
@@ -605,10 +604,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               })()
             )} */}
 
-            {/* Workflow Artifact Display - Task 2.2 */}
-            {message.metadata && message.metadata.phase && (
-              <WorkflowArtifactDisplay metadata={message.metadata} />
-            )}
+            {/* Workflow artifact display removed - pure chat now */}
           </MessageContent>
 
           {/* Debug Info */}

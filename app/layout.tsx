@@ -41,7 +41,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Makalah AI - Academic Paper Writing Assistant',
   description:
-    'AI-powered academic paper writing platform dengan 7-phase workflow dan human approval gates',
+    'AI-powered academic paper writing platform with intelligent chat assistance',
   keywords: ['AI', 'academic writing', 'research', 'Makalah', 'Indonesia', 'academic assistant'],
   icons: {
     icon: [

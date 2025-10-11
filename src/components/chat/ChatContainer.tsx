@@ -42,26 +42,17 @@ import { useAuth } from '../../hooks/useAuth';
 import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: WorkflowProvider import - rigid phase state management
 // Natural LLM conversation doesn't need complex workflow state synchronization
-// ❌ REMOVED: Unused HITL imports - not used in natural LLM conversation flow
-// - academicTools: Complex tool management not needed
-// - APPROVAL: Approval constants not used in natural conversation
-import type { WorkflowMetadata } from '../../lib/types/academic-message';
-
-// Import Phase 1 WorkflowMetadata type - invisible workflow tracking
-// Replaces old AcademicMetadata dengan workflow phase support
-export type AcademicMetadata = WorkflowMetadata;
-
-// Standard UIMessage with workflow metadata
-export type AcademicUIMessage = UIMessage<WorkflowMetadata>;
+// Pure chat - workflow types removed
+// Now using standard UIMessage from AI SDK v5
 
 interface ChatContainerProps {
   className?: string;
-  initialMessages?: AcademicUIMessage[];
+  initialMessages?: UIMessage[];
   chatId?: string;
   // Testing & Development props
   debugMode?: boolean;
   testMode?: boolean;
-  onMessageStream?: (message: AcademicUIMessage) => void;
+  onMessageStream?: (message: UIMessage) => void;
   onError?: (error: Error) => void;
 }
 
@@ -83,7 +74,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   // - phaseStartIndexRef: Phase start index tracking
   // - lastCountRef: Discussion count tracking
   const [isLoadingInitialMessages, setIsLoadingInitialMessages] = useState<boolean>(false);
-  const [loadedMessages, setLoadedMessages] = useState<AcademicUIMessage[]>(initialMessages);
+  const [loadedMessages, setLoadedMessages] = useState<UIMessage[]>(initialMessages);
   // 🔥 ERROR HANDLING STATE: Enhanced error management
   const [errorState, setErrorState] = useState<{
     message: string;
@@ -154,7 +145,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const [editingText, setEditingText] = useState<string>('');
 
   // AI SDK useChat integration with native OpenAI web search
-  const chatHookResult = useChat<AcademicUIMessage>({
+  const chatHookResult = useChat<UIMessage>({
     id: chatId || `academic-chat-${reactId}`,
     transport: new DefaultChatTransport({
       api: '/api/chat',
@@ -593,9 +584,9 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               const filteredParts = msg.parts.filter(part =>
                 part.type !== 'tool-call'
               );
-              return { ...msg, parts: filteredParts } as AcademicUIMessage;
+              return { ...msg, parts: filteredParts } as UIMessage;
             }
-            return msg as AcademicUIMessage;
+            return msg as UIMessage;
           });
 
           setLoadedMessages(historicalMessages);

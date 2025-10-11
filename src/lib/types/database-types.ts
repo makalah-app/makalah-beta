@@ -267,8 +267,8 @@ export interface Database {
 }
 
 /**
- * Extended UIMessage type with academic metadata
- * Matches AcademicUIMessage from ChatContainer
+ * Extended UIMessage type with simple metadata
+ * Standard AI SDK v5 UIMessage structure
  */
 export interface DatabaseUIMessage extends UIMessage {
   metadata?: {
@@ -276,6 +276,7 @@ export interface DatabaseUIMessage extends UIMessage {
     model?: string;
     tokens?: number;
     conversationId?: string;
+    userId?: string;
   };
 }
 

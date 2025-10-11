@@ -38,17 +38,24 @@ export function HeroResearchGrid() {
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </linearGradient>
 
+          {/* Base wash gradient for vivid background */}
+          <linearGradient id="rg-base-wash" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="rgba(255,138,0,0.45)" />
+            <stop offset="55%" stopColor="rgba(124,58,237,0.28)" />
+            <stop offset="100%" stopColor="rgba(37,99,235,0.35)" />
+          </linearGradient>
+
           {/* Radial aurora fills (warm + cool) */}
           <radialGradient id="rg-aurora-warm-1">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.58)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.65)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-warm-2">
-            <stop offset="0%" stopColor="rgba(255,138,0,0.42)" />
+            <stop offset="0%" stopColor="rgba(255,138,0,0.50)" />
             <stop offset="100%" stopColor="rgba(255,138,0,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-cool">
-            <stop offset="0%" stopColor="rgba(56,189,248,0.36)" />
+            <stop offset="0%" stopColor="rgba(56,189,248,0.50)" />
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-cool-2">
@@ -56,25 +63,29 @@ export function HeroResearchGrid() {
             <stop offset="100%" stopColor="rgba(56,189,248,0)" />
           </radialGradient>
           <radialGradient id="rg-aurora-deepblue">
-            <stop offset="0%" stopColor="rgba(37,99,235,0.28)" />
+            <stop offset="0%" stopColor="rgba(37,99,235,0.40)" />
             <stop offset="100%" stopColor="rgba(37,99,235,0)" />
           </radialGradient>
         </defs>
 
+        {/* Base wash behind grid */}
+        <rect x="0" y="0" width="1440" height="720" fill="url(#rg-base-wash)" style={{ mixBlendMode: 'screen' }} />
+
         {/* Background grid */}
         <rect x="0" y="0" width="1440" height="720" fill="url(#rg-grid)" />
 
-        {/* Full-canvas aurora layers (blurred, no hard edges) */}
+        {/* Full-canvas aurora layers (max vivid) */}
         <g filter="url(#rg-blur-aurora)" style={{ mixBlendMode: 'screen' }}>
           <circle cx="220" cy="140" r="600" fill="url(#rg-aurora-warm-1)" />
           <circle cx="1240" cy="160" r="500" fill="url(#rg-aurora-warm-2)" />
           <circle cx="1120" cy="560" r="680" fill="url(#rg-aurora-cool)" />
           <circle cx="960" cy="260" r="420" fill="url(#rg-aurora-cool-2)" />
           <circle cx="380" cy="520" r="480" fill="url(#rg-aurora-deepblue)" />
+          {/* central warm boost removed for contrast */}
         </g>
 
         {/* Soft axes (very subtle) */}
-        <g stroke="var(--muted-foreground)" strokeOpacity="0.18">
+        <g stroke="var(--muted-foreground)" strokeOpacity="0.10">
           <line x1="0" y1="540" x2="1440" y2="540" />
           <line x1="240" y1="0" x2="240" y2="720" />
         </g>
@@ -98,7 +109,7 @@ export function HeroResearchGrid() {
           d="M0,460 C220,390 480,430 720,410 C960,390 1200,450 1440,430"
           fill="none"
           stroke="var(--primary)"
-          strokeOpacity="0.16"
+          strokeOpacity="0.12"
           strokeWidth="24"
           filter="url(#rg-blur-2)"
         />
@@ -114,8 +125,7 @@ export function HeroResearchGrid() {
           <circle cx="1180" cy="420" r="3" />
         </g>
       </svg>
-      {/* Subtle scrim to ensure text contrast on bright hues */}
-      <div className="absolute inset-0 bg-black/4" />
+      {/* No scrim for maximum vividness */}
     </div>
   );
 }

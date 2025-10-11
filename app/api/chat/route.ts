@@ -18,106 +18,9 @@ import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
-// Removed: academicTools import - search tools deleted for rebuild with search_literature
-import type { AcademicUIMessage as WorkflowUIMessage, WorkflowMetadata } from '../../../src/lib/types/academic-message';
-import { inferWorkflowState, inferStateFromResponse } from '../../../src/lib/ai/workflow-inference';
-import { getWorkflowContext, calculateProgress } from '../../../src/lib/ai/workflow-engine';
-import { getWorkflowSpec, getWorkflowSpecSummary } from '../../../src/lib/ai/workflow-spec';
-import { extractStructuredWorkflowState } from '../../../src/lib/ai/structured-workflow-parser';
-import { detectConfusionOrStuck } from '../../../src/lib/ai/contextual-guidance/detection';
-import { getContextualGuidance, formatGuidanceForInjection } from '../../../src/lib/ai/contextual-guidance/retrieval';
-import { guidanceMetrics } from '../../../src/lib/ai/contextual-guidance/metrics';
-import { isContextualGuidanceEnabled } from '../../../src/lib/ai/contextual-guidance/feature-flag';
-import { hybridDetection } from '../../../src/lib/ai/hybrid-detection';
-import { isSemanticDetectionEnabled } from '../../../src/lib/ai/semantic-detection/feature-flag';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
-
-// Define custom message type extending AI SDK v5 UIMessage
-export type AcademicUIMessage = WorkflowUIMessage; // Use Phase 1 type
-
-function hasOutlineContent(outline: unknown): boolean {
-  if (typeof outline === 'string') {
-    return outline.trim().length >= 20;
-  }
-
-  if (Array.isArray(outline)) {
-    return outline.length > 0;
-  }
-
-  if (outline && typeof outline === 'object') {
-    return Object.keys(outline as Record<string, unknown>).length > 0;
-  }
-
-  return false;
-}
-
-function enforceOutlinePhase(
-  metadata: WorkflowMetadata,
-  previous: WorkflowMetadata
-): WorkflowMetadata {
-  const nextPhase = metadata.phase;
-
-  if (
-    !nextPhase ||
-    (nextPhase !== 'outlining' && nextPhase !== 'outline_locked')
-  ) {
-    return metadata;
-  }
-
-  const outlinePayload = metadata.artifacts?.outline;
-  if (hasOutlineContent(outlinePayload)) {
-    return metadata;
-  }
-
-  console.warn(
-    '[Workflow] Outline phase requested without outline content. Maintaining previous phase:',
-    previous.phase || 'researching'
-  );
-
-  const sanitizedArtifacts = metadata.artifacts
-    ? { ...metadata.artifacts }
-    : undefined;
-
-  if (sanitizedArtifacts && 'outline' in sanitizedArtifacts) {
-    delete (sanitizedArtifacts as Record<string, unknown>).outline;
-  }
-
-  return {
-    ...metadata,
-    phase: previous.phase || 'researching',
-    progress: previous.progress ?? calculateProgress('researching'),
-    artifacts: sanitizedArtifacts
-  };
-}
-
-function mergeStructuredMetadata(
-  previous: WorkflowMetadata,
-  structured: WorkflowMetadata | undefined | null
-): WorkflowMetadata {
-  if (!structured) {
-    return previous;
-  }
-
-  const sanitized = enforceOutlinePhase(structured, previous);
-
-  const previousArtifacts = previous.artifacts;
-  const sanitizedArtifacts = sanitized.artifacts;
-  const mergedArtifacts =
-    previousArtifacts || sanitizedArtifacts
-      ? {
-          ...(previousArtifacts || {}),
-          ...(sanitizedArtifacts || {})
-        }
-      : undefined;
-
-  return {
-    ...previous,
-    ...sanitized,
-    artifacts: mergedArtifacts
-  };
-}
 
 export async function POST(req: Request) {
   try {
@@ -134,7 +37,7 @@ export async function POST(req: Request) {
       testMode = false,
       userId: clientUserId
     }: {
-      messages: AcademicUIMessage[];
+      messages: UIMessage[];
       testMode?: boolean;
       customKey?: string;
       userId?: string;
@@ -167,7 +70,7 @@ export async function POST(req: Request) {
 
     // Simple message validation - trust LLM intelligence
     // Ensure messages have proper AI SDK v5 UIMessage structure
-    const validatedMessages: AcademicUIMessage[] = messages.map(msg => {
+    const validatedMessages: UIMessage[] = messages.map(msg => {
       // If message already has proper v5 structure, use it
       if (msg.id && msg.parts) {
         return msg;
@@ -183,7 +86,7 @@ export async function POST(req: Request) {
         role: msg.role,
         parts: [{ type: 'text' as const, text: textContent }],
         metadata: msg.metadata
-      } as AcademicUIMessage;
+      } as UIMessage;
     });
 
     // Use simple validated messages - trust LLM intelligence
@@ -193,280 +96,31 @@ export async function POST(req: Request) {
 
     // ✅ A/B TESTING: Pass userId to dynamic config for cohort-based prompt selection
     const dynamicConfig = await getDynamicModelConfig(userId);
-    
-    // Use database system prompt AS-IS - no hardcoded additions
-    const specForPrompt = getWorkflowSpec();
-    const phaseOrderForPrompt = specForPrompt.phases.map(phase => phase.id).join(' -> ');
-    const baseSystemPrompt = dynamicConfig.systemPrompt?.trim() || '';
-    const workflowGuardrails = `[Workflow Guardrails]
-- Jalankan 11-phase Makalah: ${phaseOrderForPrompt}.
-- Tulis metadata.phase sebagai string dari daftar tersebut.
-- Jika perlu detail fase, panggil tool workflow_spec dengan format 'summary' atau 'full'.
-- Gunakan artifacts dalam metadata sebagai memori permanen pengguna.`.trim();
-    const augmentedSystemPrompt = `${baseSystemPrompt}\n\n${workflowGuardrails}`.trim();
+
+    // Use database system prompt without workflow augmentation
+    const systemPrompt = dynamicConfig.systemPrompt?.trim() || '';
 
     // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        // Simple phase sync - trust LLM flow
-
-        // 🔧 CLEANUP: Removed rigid approval tool processing
-        // User requirement: Natural LLM flow without programmatic approval gates
+        // Simple message processing - no workflow tracking
         const finalProcessedMessages = validatedMessages;
-
-        // Infer current workflow state from conversation history
-        const currentWorkflowState = inferWorkflowState(validatedMessages as WorkflowUIMessage[]);
-
-        // 🔍 CONTEXTUAL GUIDANCE: RAG Tier 2 - Task 4.4 (Feature Flag + Detection + Retrieval + Injection)
-        // Feature flag controls gradual rollout: shadow → canary → beta → gradual → enabled
-        let guidanceInjected = false;
-        let guidanceMetadata: {
-          triggered: boolean;
-          trigger_type?: string;
-          token_count?: number;
-          retrieval_time?: number;
-          chunk_count?: number;
-        } = { triggered: false };
-
-        // STEP 1: Check feature flag for rollout stage
-        const { enabled: guidanceEnabled, stage, reason } = await isContextualGuidanceEnabled(userId);
-
-        console.log('[Contextual Guidance] Feature flag check:', {
-          userId: userId,
-          stage: stage,
-          enabled: guidanceEnabled,
-          reason: reason
-        });
-
-        // STEP 2: Run detection and retrieval if enabled AND user has workflow phase
-        if (guidanceEnabled && currentWorkflowState.phase) {
-          // Extract user's latest message
-          const userMessages = validatedMessages.filter(msg => msg.role === 'user');
-          const latestUserMessage = userMessages[userMessages.length - 1];
-          const userMessageText = latestUserMessage?.parts
-            ?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '')
-            .join('') || '';
-
-          if (userMessageText) {
-            try {
-              // Step 1: Detect if user needs guidance
-              const detectionResult = await detectConfusionOrStuck(
-                userMessageText,
-                validatedMessages as WorkflowUIMessage[],
-                currentWorkflowState.phase
-              );
-
-              // Step 2: Retrieve and inject guidance if needed
-              if (detectionResult.needsGuidance) {
-                const guidanceResult = await getContextualGuidance(
-                  userMessageText,
-                  currentWorkflowState.phase
-                );
-
-                if (guidanceResult && guidanceResult.chunks.length > 0) {
-                  const formattedGuidance = formatGuidanceForInjection(guidanceResult.chunks);
-
-                  // Inject guidance as system message (will be added to manualMessages later)
-                  // Store for injection after message conversion
-                  (validatedMessages as any)._guidanceToInject = formattedGuidance;
-                  guidanceInjected = true;
-
-                  // 📊 STORE GUIDANCE METADATA FOR DATABASE PERSISTENCE (Task 4.3)
-                  guidanceMetadata = {
-                    triggered: true,
-                    trigger_type: detectionResult.triggerType || undefined,
-                    token_count: guidanceResult.totalTokens,
-                    retrieval_time: guidanceResult.retrievalTime,
-                    chunk_count: guidanceResult.chunks.length
-                  };
-
-                  // Log metrics
-                  console.log('[Contextual Guidance] Guidance injected:', {
-                    stage: stage, // Rollout stage for monitoring
-                    triggerType: detectionResult.triggerType,
-                    phase: currentWorkflowState.phase,
-                    chunkCount: guidanceResult.chunks.length,
-                    tokenCount: guidanceResult.totalTokens,
-                    retrievalTime: guidanceResult.retrievalTime,
-                    userId: userId,
-                    chatId: chatId,
-                    timestamp: new Date().toISOString()
-                  });
-
-                  // Record metrics
-                  guidanceMetrics.recordMessage(
-                    true,
-                    detectionResult.triggerType || undefined,
-                    guidanceResult.totalTokens,
-                    guidanceResult.retrievalTime
-                  );
-                } else {
-                  console.log('[Contextual Guidance] Detection triggered but no relevant chunks found');
-                  guidanceMetrics.recordMessage(false);
-                }
-              } else {
-                console.log('[Contextual Guidance] No guidance needed - normal conversation');
-                guidanceMetrics.recordMessage(false);
-              }
-            } catch (detectionError) {
-              // Non-blocking - detection failure should not break chat
-              console.error('[Contextual Guidance] Detection/retrieval error:', detectionError);
-              guidanceMetrics.recordMessage(false);
-            }
-          }
-        } else if (!guidanceEnabled) {
-          // Feature flag disabled or user not in rollout percentage
-          console.log('[Contextual Guidance] Skipped - feature flag disabled or user not in rollout:', {
-            stage: stage,
-            reason: reason,
-            userId: userId
-          });
-        }
-
-        // ✅ SEMANTIC DETECTION: Check feature flag for hybrid workflow detection (Task 3.1)
-        // Feature flag controls gradual rollout: disabled → shadow → canary → beta → gradual → enabled
-        const semanticStatus = await isSemanticDetectionEnabled(userId);
-
-        console.log('[Semantic Detection] Feature flag check:', {
-          userId: userId,
-          stage: semanticStatus.stage,
-          enabled: semanticStatus.enabled,
-          useSemanticResult: semanticStatus.useSemanticResult,
-          config: semanticStatus.config
-        });
-
-        // 🔧 FIX RACE CONDITION: Pre-compute workflow metadata BEFORE streaming starts
-        // This ensures metadata is available synchronously for messageMetadata callback
-        // Solution: Use closure variable instead of waiting for onFinish
-        const preComputedMetadata: WorkflowMetadata = {
-          phase: currentWorkflowState.phase || 'exploring',
-          progress: currentWorkflowState.progress || 0.05,
-          artifacts: currentWorkflowState.artifacts || {},
-          timestamp: new Date().toISOString(),
-          offTopicCount: currentWorkflowState.offTopicCount || 0,
-          model: dynamicConfig.primaryModelName,
-          userId: userId,
-          // 📊 ATTACH GUIDANCE METADATA FOR PRODUCTION MONITORING (Task 4.3)
-          guidance: guidanceMetadata
-        };
-
-        console.log('[DEBUG] Pre-computed workflow metadata:', JSON.stringify(preComputedMetadata, null, 2));
-
-        // 🚨 BACKEND ENFORCEMENT: Off-topic escalation for extreme cases
-        // If user has been off-topic 3+ times, inject strong redirect
-        const needsStrongRedirect = (currentWorkflowState.offTopicCount || 0) >= 3;
-        const mildRedirectReminder =
-          !needsStrongRedirect && (currentWorkflowState.offTopicCount || 0) >= 2;
-
-        const workflowSpec = getWorkflowSpec();
-        const workflowSpecSummary = getWorkflowSpecSummary();
-        const phaseChoices = workflowSpec.phases.map(phase => `"${phase.id}"`).join(', ');
-
-        // Simple processing - trust LLM intelligence
-
-        // ❌ REMOVED: Hardcoded phase progression context - all instructions must come from centralized database system prompt
 
         let writerUsed = false;
 
         try {
-          // 🚀 HIGH PRIORITY FIX 1: DYNAMIC EXECUTION PATTERN
-          // PRIMARY: Dynamic provider based on database configuration
-
-          // Simple message processing
-          const filteredDebugMessages = finalProcessedMessages;
-
           // Use AI SDK v5 convertToModelMessages for proper tool part handling
           let manualMessages;
           try {
             // AI SDK v5 compliant conversion that preserves supported tool parts
-            manualMessages = convertToModelMessages(filteredDebugMessages);
+            manualMessages = convertToModelMessages(finalProcessedMessages);
           } catch (conversionError) {
             // Fallback: Preserve essential message structure while extracting text
-            manualMessages = filteredDebugMessages.map(msg => ({
+            manualMessages = finalProcessedMessages.map(msg => ({
               role: msg.role,
               content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
             }));
           }
-
-          // 🔄 WORKFLOW CONTEXT INJECTION: LLM-Native "Permanent RAG" Pattern
-          // Inject current workflow state as FIRST system message
-          // This tells LLM "what's happening now" without telling it "what to do"
-          const workflowContext = getWorkflowContext(currentWorkflowState);
-          console.log('[DEBUG] Workflow context generated:', JSON.stringify(workflowContext, null, 2));
-
-          // 🔍 WEB SEARCH TOOL REMINDER: Contextual reminder for exploration/research phases
-          const isSearchPhase = currentWorkflowState.phase === 'exploring' ||
-                                currentWorkflowState.phase === 'researching';
-          const hasMinimumReferences = (currentWorkflowState.artifacts?.references?.length || 0) >= 5;
-          const needsSearchReminder = isSearchPhase && !hasMinimumReferences;
-
-          const workflowContextBlueprint = `${workflowContext.contextMessage}
-
-[Workflow Blueprint]
-${workflowSpecSummary}${
-            mildRedirectReminder
-              ? '\n\n[Reminder]\nFokus ke tugas akademik dan lanjutkan fase sesuai urutan di atas.'
-              : ''
-          }${
-            needsSearchReminder
-              ? '\n\n[Tool Reminder]\nKamu punya akses web_search - gunakan untuk cari literatur peer-reviewed saat user butuh referensi atau sedang eksplorasi topik.'
-              : ''
-          }`.trim();
-
-          // ❌ REMOVED: Structured metadata instruction (Phase 02 cleanup)
-          // HTML comment instruction removed - backend observes natural language via regex instead
-          // const structuredMetadataInstruction = `\n[Metadata Contract]\nAlways end responses with:\n<!--workflow-state:{"phase":"exploring","progress":0.05,"artifacts":{...}}-->\nUse one of these phase strings: ${phaseChoices}. Keep progress 0-1.`;
-
-          manualMessages.unshift({
-            role: 'system',
-            content: workflowContextBlueprint  // No metadata instruction appended
-          });
-
-          console.log('[DEBUG] Injected workflow context as first system message:', workflowContext.contextMessage);
-
-          // 🔍 INJECT CONTEXTUAL GUIDANCE (if retrieved)
-          // Insert guidance AFTER workflow context but BEFORE user messages
-          const guidanceToInject = (validatedMessages as any)._guidanceToInject;
-          if (guidanceToInject) {
-            manualMessages.splice(1, 0, {
-              role: 'system',
-              content: guidanceToInject
-            });
-            console.log('[Contextual Guidance] Guidance injected as 2nd system message');
-          }
-
-          // 🚨 BACKEND ENFORCEMENT: Inject strong redirect for Tier 3 escalation
-          if (needsStrongRedirect) {
-            // Inject system message at the end to enforce Tier 3 redirect
-            manualMessages.push({
-              role: 'system',
-              content: `[SYSTEM ENFORCEMENT - TIER 3 OFF-TOPIC ESCALATION]
-
-User telah off-topic sebanyak ${currentWorkflowState.offTopicCount || 0} kali berturut-turut. Ini adalah batas maksimum.
-
-WAJIB LAKUKAN SEKARANG:
-1. Politely decline untuk melanjutkan topik off-topic
-2. Restate purpose kamu: "Gue spesifik untuk paper akademik"
-3. Berikan binary choice: "Mau lanjut nulis paper atau selesai dulu?"
-4. Jangan engage dengan topik off-topic sama sekali
-5. Jangan explain atau elaborate tentang kenapa tidak bisa bantu
-
-Contoh response:
-"Gue spesifik untuk paper akademik, bukan info [topik off-topic]. Mau lanjut nulis paper atau selesai dulu?"
-
-Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User harus memilih untuk kembali ke paper atau mengakhiri percakapan.`
-            });
-          }
-
-          // Removed unused persistAndBroadcast function
-
-  // AI SDK v5: Phase approval state is handled by processToolCalls automatically
-  // 🔧 NOTE: Phase detection logic moved earlier in the flow for proper progressive tracking
-
-  // 🔧 CLEANUP: Simplified tool configuration - web search only
-  // Removing complex conversation-aware tools per user requirement:
-  // "Tools yang ada hanyalah web search"
-  // Removed unused availableTools and toolNames variables
 
   // ✅ AI SDK COMPLIANT: Prepare model based on provider
   let streamModel = dynamicConfig.primaryModel;
@@ -498,7 +152,7 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         // OpenAI responses API: Only supported parameters
         model: streamModel,
         messages: manualMessages,
-        system: augmentedSystemPrompt,
+        system: systemPrompt,
         tools: {
           // OpenAI native web search
           web_search: (openai as any).tools.webSearch({
@@ -524,116 +178,25 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            console.log('[DEBUG] OpenAI onFinish called - text length:', text.length);
+            console.log('[DEBUG] onFinish called - text length:', text.length);
 
-            // ✅ HYBRID DETECTION: Use feature-flag controlled detection (Task 3.2)
-            let finalMetadata: WorkflowMetadata;
-            let comparisonLog = null;
-
-            if (semanticStatus.enabled) {
-              // Semantic detection enabled - run hybrid detection
-              try {
-                const { result: detectionResult, comparison } = await hybridDetection(
-                  text,
-                  currentWorkflowState,
-                  semanticStatus.useSemanticResult
-                );
-
-                finalMetadata = detectionResult;
-                comparisonLog = comparison;
-
-                // Log comparison for monitoring
-                if (semanticStatus.config.log_comparisons) {
-                  if (comparison.agreement) {
-                    console.log('[Hybrid Detection] ✅ Agreement (OpenAI):', {
-                      phase: comparison.regex_phase,
-                      confidence: comparison.confidence,
-                      method: comparison.method_used
-                    });
-                  } else {
-                    console.warn('[Hybrid Detection] ⚠️  Disagreement (OpenAI):', {
-                      regex: comparison.regex_phase,
-                      semantic: comparison.semantic_phase,
-                      confidence: comparison.confidence,
-                      method_used: comparison.method_used,
-                      stage: semanticStatus.stage
-                    });
-                  }
-                }
-              } catch (error) {
-                // Fallback to regex on hybrid detection error
-                console.error('[Hybrid Detection] Error (OpenAI), falling back to regex:', error);
-                finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
-              }
-            } else {
-              // Semantic disabled - use regex only
-              finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
-              console.log('[Workflow] Using regex detection - semantic disabled (OpenAI):', {
-                phase: finalMetadata.phase,
-                progress: finalMetadata.progress
-              });
-            }
-
-            console.log('[DEBUG] Async workflow inference complete (OpenAI):', {
-              phase: finalMetadata.phase,
-              progress: Math.round((finalMetadata.progress || 0) * 100) + '%',
-              method: semanticStatus.enabled ? (semanticStatus.useSemanticResult ? 'semantic' : 'regex') : 'regex'
-            });
-
-            // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
-            Object.assign(preComputedMetadata, finalMetadata);
-            preComputedMetadata.timestamp = finalMetadata.timestamp || new Date().toISOString();
-
-            // Attach comparison log for debugging (if available)
-            if (comparisonLog && semanticStatus.config.log_comparisons) {
-              preComputedMetadata.semantic_comparison = comparisonLog;
-            }
-
-            // Update tokens in pre-computed metadata (now available after streaming)
-            if (usage) {
-              preComputedMetadata.tokens = {
+            const simpleMetadata = {
+              timestamp: new Date().toISOString(),
+              model: dynamicConfig.primaryModelName,
+              userId: userId,
+              tokens: usage ? {
                 prompt: usage.inputTokens || 0,
                 completion: usage.outputTokens || 0,
                 total: usage.totalTokens || 0
-              };
-            }
-
-            console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
-
-            // 📊 WEB SEARCH USAGE ANALYTICS: Detect and log web_search tool usage
-            const completionTokens = preComputedMetadata.tokens?.completion || 0;
-            const textLength = text.length;
-            const referenceCount = preComputedMetadata.artifacts?.references?.length || 0;
-            const currentPhase = preComputedMetadata.phase;
-
-            // Heuristic: web_search likely used if completion tokens >800 OR text >5000 chars with citations
-            const webSearchLikelyUsed = completionTokens > 800 ||
-                                       (textLength > 5000 && referenceCount > 0);
-
-            if (webSearchLikelyUsed) {
-              console.log('[Analytics] 🔍 Web search likely used (OpenAI):', {
-                phase: currentPhase,
-                completionTokens: completionTokens,
-                textLength: textLength,
-                referenceCount: referenceCount,
-                userId: userId,
-                chatId: chatId,
-                timestamp: new Date().toISOString()
-              });
-            } else {
-              console.log('[Analytics] 💬 Regular response - no search (OpenAI):', {
-                phase: currentPhase,
-                completionTokens: completionTokens,
-                textLength: textLength
-              });
-            }
+              } : undefined
+            };
 
             writer.write({
               type: 'message-metadata',
-              messageMetadata: preComputedMetadata
+              messageMetadata: simpleMetadata
             });
           } catch (error) {
-            console.error('[Workflow] onFinish error:', error);
+            console.error('[onFinish] error:', error);
           }
         }
       })
@@ -642,7 +205,7 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         // :online suffix provides Exa-powered built-in web search
         model: streamModel,
         messages: manualMessages,
-        system: augmentedSystemPrompt,
+        system: systemPrompt,
         // ⚠️ CRITICAL: NO tools for :online models - they have native web search
         // Passing tools would override native search with DuckDuckGo fallback
         temperature: dynamicConfig.config.temperature,
@@ -665,116 +228,25 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
         },
         onFinish: async ({ text, usage }) => {
           try {
-            console.log('[DEBUG] OpenRouter onFinish called - text length:', text.length);
+            console.log('[DEBUG] onFinish called - text length:', text.length);
 
-            // ✅ HYBRID DETECTION: Use feature-flag controlled detection (Task 3.2)
-            let finalMetadata: WorkflowMetadata;
-            let comparisonLog = null;
-
-            if (semanticStatus.enabled) {
-              // Semantic detection enabled - run hybrid detection
-              try {
-                const { result: detectionResult, comparison } = await hybridDetection(
-                  text,
-                  currentWorkflowState,
-                  semanticStatus.useSemanticResult
-                );
-
-                finalMetadata = detectionResult;
-                comparisonLog = comparison;
-
-                // Log comparison for monitoring
-                if (semanticStatus.config.log_comparisons) {
-                  if (comparison.agreement) {
-                    console.log('[Hybrid Detection] ✅ Agreement (OpenRouter):', {
-                      phase: comparison.regex_phase,
-                      confidence: comparison.confidence,
-                      method: comparison.method_used
-                    });
-                  } else {
-                    console.warn('[Hybrid Detection] ⚠️  Disagreement (OpenRouter):', {
-                      regex: comparison.regex_phase,
-                      semantic: comparison.semantic_phase,
-                      confidence: comparison.confidence,
-                      method_used: comparison.method_used,
-                      stage: semanticStatus.stage
-                    });
-                  }
-                }
-              } catch (error) {
-                // Fallback to regex on hybrid detection error
-                console.error('[Hybrid Detection] Error (OpenRouter), falling back to regex:', error);
-                finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
-              }
-            } else {
-              // Semantic disabled - use regex only
-              finalMetadata = await inferStateFromResponse(text, currentWorkflowState);
-              console.log('[Workflow] Using regex detection - semantic disabled (OpenRouter):', {
-                phase: finalMetadata.phase,
-                progress: finalMetadata.progress
-              });
-            }
-
-            console.log('[DEBUG] Async workflow inference complete (OpenRouter):', {
-              phase: finalMetadata.phase,
-              progress: Math.round((finalMetadata.progress || 0) * 100) + '%',
-              method: semanticStatus.enabled ? (semanticStatus.useSemanticResult ? 'semantic' : 'regex') : 'regex'
-            });
-
-            // ✅ Store state for messageMetadata callback (AI SDK v5 pattern)
-            Object.assign(preComputedMetadata, finalMetadata);
-            preComputedMetadata.timestamp = finalMetadata.timestamp || new Date().toISOString();
-
-            // Attach comparison log for debugging (if available)
-            if (comparisonLog && semanticStatus.config.log_comparisons) {
-              preComputedMetadata.semantic_comparison = comparisonLog;
-            }
-
-            // Update tokens in pre-computed metadata (now available after streaming)
-            if (usage) {
-              preComputedMetadata.tokens = {
+            const simpleMetadata = {
+              timestamp: new Date().toISOString(),
+              model: dynamicConfig.primaryModelName,
+              userId: userId,
+              tokens: usage ? {
                 prompt: usage.inputTokens || 0,
                 completion: usage.outputTokens || 0,
                 total: usage.totalTokens || 0
-              };
-            }
-
-            console.log('[DEBUG] Updated metadata after response inference:', JSON.stringify(preComputedMetadata, null, 2));
-
-            // 📊 WEB SEARCH USAGE ANALYTICS: Detect and log web_search tool usage
-            const completionTokens = preComputedMetadata.tokens?.completion || 0;
-            const textLength = text.length;
-            const referenceCount = preComputedMetadata.artifacts?.references?.length || 0;
-            const currentPhase = preComputedMetadata.phase;
-
-            // Heuristic: web_search likely used if completion tokens >800 OR text >5000 chars with citations
-            const webSearchLikelyUsed = completionTokens > 800 ||
-                                       (textLength > 5000 && referenceCount > 0);
-
-            if (webSearchLikelyUsed) {
-              console.log('[Analytics] 🔍 Web search likely used (OpenRouter):', {
-                phase: currentPhase,
-                completionTokens: completionTokens,
-                textLength: textLength,
-                referenceCount: referenceCount,
-                userId: userId,
-                chatId: chatId,
-                timestamp: new Date().toISOString()
-              });
-            } else {
-              console.log('[Analytics] 💬 Regular response - no search (OpenRouter):', {
-                phase: currentPhase,
-                completionTokens: completionTokens,
-                textLength: textLength
-              });
-            }
+              } : undefined
+            };
 
             writer.write({
               type: 'message-metadata',
-              messageMetadata: preComputedMetadata
+              messageMetadata: simpleMetadata
             });
           } catch (error) {
-            console.error('[Workflow] onFinish error:', error);
+            console.error('[onFinish] error:', error);
           }
         }
       });
@@ -789,18 +261,7 @@ Ini adalah backend enforcement untuk melindungi specialized purpose kamu. User h
               writer.merge(result.toUIMessageStream({
                 originalMessages: finalProcessedMessages,
                 sendFinish: true,
-                sendSources: sendSources,  // ✅ Sources for all providers
-                messageMetadata: ({ part }) => {
-                  console.log('[DEBUG] messageMetadata called - part.type:', part.type);
-
-                  // Attach updated workflow metadata when the finish event is emitted
-                  if (part.type === 'finish') {
-                    console.log('[DEBUG] ✅ Attaching pre-computed metadata:', JSON.stringify(preComputedMetadata, null, 2));
-                    return preComputedMetadata;
-                  }
-
-                  return undefined;
-                }
+                sendSources: sendSources  // ✅ Sources for all providers
               }));
               writerUsed = true;
             }

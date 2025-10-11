@@ -19,8 +19,6 @@ import { supabaseServer } from './supabase-client';
 import { loadChat } from './chat-store';
 import type { ConversationSummary, ConversationDetails } from '../types/database-types';
 import type { UIMessage } from 'ai';
-import { normalizePhase } from '../ai/workflow-engine';
-import type { WorkflowPhase } from '../types/academic-message';
 
 /**
  * HISTORY FILTER OPTIONS
@@ -59,13 +57,12 @@ export interface PaginatedHistoryResponse {
  */
 export interface ConversationTimelineEntry {
   id: string;
-  type: 'message' | 'phase_change' | 'artifact_created' | 'session_started' | 'session_ended';
+  type: 'message' | 'artifact_created' | 'session_started' | 'session_ended';
   timestamp: string;
   title: string;
   description: string;
   metadata: {
     messageId?: string;
-    phase?: WorkflowPhase;
     artifactId?: string;
     sessionId?: string;
     [key: string]: any;
@@ -80,7 +77,6 @@ export interface HistoryStatistics {
   totalMessages: number;
   averageMessagesPerConversation: number;
   totalTimeSpent: number; // in milliseconds
-  phaseDistribution: Partial<Record<WorkflowPhase, number>>;
   dailyActivity: { [date: string]: number };
   topTopics: Array<{ topic: string; count: number }>;
 }
@@ -250,8 +246,7 @@ export async function getConversationTimeline(
       title: 'Conversation Started',
       description: `New academic writing session: "${conversationData.title}"`,
       metadata: {
-        conversationId: conversationData.id,
-        initialPhase: 1
+        conversationId: conversationData.id
       }
     });
     
@@ -273,25 +268,9 @@ export async function getConversationTimeline(
         description: extractMessagePreview(messageData.content, messageData.parts),
         metadata: {
           messageId: messageData.message_id,
-          role: messageData.role,
-          phase: messageData.metadata?.phase
+          role: messageData.role
         }
       });
-
-      // Add phase change events if detected
-      if (messageData.metadata?.phaseChanged) {
-        timeline.push({
-          id: `phase_${messageData.id}`,
-          type: 'phase_change',
-          timestamp: messageData.created_at,
-          title: `Phase ${messageData.metadata.phaseChanged.to} Started`,
-          description: `Progressed from Phase ${messageData.metadata.phaseChanged.from} to Phase ${messageData.metadata.phaseChanged.to}`,
-          metadata: {
-            phase: messageData.metadata.phaseChanged.to,
-            previousPhase: messageData.metadata.phaseChanged.from
-          }
-        });
-      }
     });
     
     // Get artifacts
@@ -311,8 +290,7 @@ export async function getConversationTimeline(
         description: `Created artifact: "${artifactData.title}"`,
         metadata: {
           artifactId: artifactData.id,
-          artifactType: artifactData.type,
-          phase: artifactData.metadata?.phase
+          artifactType: artifactData.type
         }
       });
     });
@@ -383,7 +361,6 @@ export async function getHistoryStatistics(
       .select(`
         id,
         title,
-        current_phase,
         message_count,
         metadata,
         created_at,
@@ -415,7 +392,6 @@ export async function getHistoryStatistics(
       totalMessages: 0,
       averageMessagesPerConversation: 0,
       totalTimeSpent: 0,
-      phaseDistribution: {},
       dailyActivity: {},
       topTopics: []
     };
@@ -430,10 +406,6 @@ export async function getHistoryStatistics(
     conversations.forEach(conv => {
       const convData = conv as any;
       stats.totalMessages += convData.message_count;
-
-      // Phase distribution
-      const phase = normalizePhase(convData.current_phase);
-      stats.phaseDistribution[phase] = (stats.phaseDistribution[phase] || 0) + 1;
 
       // Daily activity
       const date = new Date(convData.created_at).toISOString().split('T')[0];
@@ -482,7 +454,6 @@ export async function getHistoryStatistics(
       totalMessages: 0,
       averageMessagesPerConversation: 0,
       totalTimeSpent: 0,
-      phaseDistribution: {},
       dailyActivity: {},
       topTopics: []
     };
@@ -507,7 +478,6 @@ export async function searchConversations(
         id,
         title,
         description,
-        current_phase,
         message_count,
         workflow_id,
         updated_at,
@@ -517,17 +487,17 @@ export async function searchConversations(
       .eq('archived', false)
       .order('updated_at', { ascending: false })
       .limit(limit);
-    
+
     if (userId) {
       query = query.eq('user_id', userId);
     }
-    
+
     const { data: conversations, error } = await query;
-    
+
     if (error) {
       throw new Error(`Search failed: ${error.message}`);
     }
-    
+
     const results = (conversations || []).map(conv => {
       const convData = conv as any;
       return {
@@ -535,7 +505,6 @@ export async function searchConversations(
         title: convData.title || 'Untitled Chat',
         messageCount: convData.message_count,
         lastActivity: convData.updated_at,
-        currentPhase: normalizePhase(convData.current_phase),
         workflowId: convData.workflow_id,
         metadata: convData.metadata
       };
@@ -634,16 +603,15 @@ function formatDuration(milliseconds: number): string {
 
 function convertToCSV(data: any[]): string {
   // Simple CSV conversion - would need more sophisticated implementation for production
-  const headers = ['ID', 'Title', 'Phase', 'Messages', 'Created', 'Updated'];
+  const headers = ['ID', 'Title', 'Messages', 'Created', 'Updated'];
   const rows = data.map(item => [
     item.conversation.id,
     item.conversation.title,
-    item.conversation.current_phase,
     item.conversation.message_count,
     item.conversation.created_at,
     item.conversation.updated_at
   ]);
-  
+
   return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
@@ -653,7 +621,6 @@ function convertToMarkdown(data: any[]): string {
 # ${item.conversation.title}
 
 **ID:** ${item.conversation.id}
-**Phase:** ${item.conversation.current_phase}/7
 **Messages:** ${item.conversation.message_count}
 **Created:** ${item.conversation.created_at}
 
