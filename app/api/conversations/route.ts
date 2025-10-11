@@ -16,13 +16,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  getUserConversations, 
-  getConversationDetails, 
+import {
+  getUserConversations,
+  getConversationDetails,
   createChat,
   saveChat,
-  loadChat 
+  loadChat
 } from '../../../src/lib/database/chat-store';
+import { supabaseAdmin } from '../../../src/lib/database/supabase-client';
 import { generateId, UIMessage } from 'ai';
 import type { ConversationSummary, ConversationDetails } from '../../../src/lib/types/database-types';
 
@@ -51,8 +52,8 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Load user conversations with enhanced filtering
-    const conversations = await getUserConversations(userId);
+    // Load user conversations with enhanced filtering (use supabaseAdmin to bypass RLS)
+    const conversations = await getUserConversations(userId, supabaseAdmin);
     
     // Filter archived if needed
     const filteredConversations = includeArchived 
