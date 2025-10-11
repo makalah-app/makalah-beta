@@ -14,20 +14,13 @@ import {
   type UIMessage
 } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import type { AcademicMetadata } from '../../../src/components/chat/ChatContainer';
 import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
-// Removed: academicTools import - search tools deleted for rebuild with search_literature
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
-
-// Define custom message type extending AI SDK v5 UIMessage
-export type AcademicUIMessage = UIMessage & {
-  metadata?: AcademicMetadata;
-};
 
 export async function POST(req: Request) {
   try {
@@ -44,7 +37,7 @@ export async function POST(req: Request) {
       testMode = false,
       userId: clientUserId
     }: {
-      messages: AcademicUIMessage[];
+      messages: UIMessage[];
       testMode?: boolean;
       customKey?: string;
       userId?: string;
@@ -77,7 +70,7 @@ export async function POST(req: Request) {
 
     // Simple message validation - trust LLM intelligence
     // Ensure messages have proper AI SDK v5 UIMessage structure
-    const validatedMessages: AcademicUIMessage[] = messages.map(msg => {
+    const validatedMessages: UIMessage[] = messages.map(msg => {
       // If message already has proper v5 structure, use it
       if (msg.id && msg.parts) {
         return msg;
@@ -93,94 +86,41 @@ export async function POST(req: Request) {
         role: msg.role,
         parts: [{ type: 'text' as const, text: textContent }],
         metadata: msg.metadata
-      } as AcademicUIMessage;
+      } as UIMessage;
     });
 
     // Use simple validated messages - trust LLM intelligence
 
-    // Convert UI messages to model messages using AI SDK function
-    // This is the CRITICAL fix - harus menggunakan convertToModelMessages
-    let processedMessages;
-    try {
-      processedMessages = convertToModelMessages(validatedMessages);
-    } catch (conversionError) {
-      
-      // 🛠️ FIX 4: Enhanced error recovery - create minimal valid AI SDK v5 UIMessage structure
-      try {
-        // Extract text from the most recent message as fallback
-        const lastMessage = validatedMessages[validatedMessages.length - 1];
-        const textPart = lastMessage?.parts?.find((part: any) => part.type === 'text') as { type: 'text'; text: string } | undefined;
-        const textContent = textPart?.text || 'Hello';
-
-        // Create proper AI SDK v5 UIMessage structure
-        const fallbackMessages: AcademicUIMessage[] = [{
-          id: `fallback-msg-${Date.now()}`,
-          role: 'user' as const,
-          parts: [{ type: 'text' as const, text: textContent }]
-        }];
-
-        processedMessages = convertToModelMessages(fallbackMessages);
-      } catch (fallbackError) {
-        throw new Error(`Message processing failed completely. Original: ${conversionError instanceof Error ? conversionError.message : String(conversionError)}`);
-      }
-    }
-    
     // Get provider manager
     const providerManager = getProviderManager();
 
-    // Get dynamic configuration
-    const dynamicConfig = await getDynamicModelConfig();
-    
-    // Use database system prompt AS-IS - no hardcoded additions
-    const systemPrompt = dynamicConfig.systemPrompt;
+    // ✅ A/B TESTING: Pass userId to dynamic config for cohort-based prompt selection
+    const dynamicConfig = await getDynamicModelConfig(userId);
+
+    // Use database system prompt without workflow augmentation
+    const systemPrompt = dynamicConfig.systemPrompt?.trim() || '';
 
     // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
-        // Simple phase sync - trust LLM flow
-
-        // 🔧 CLEANUP: Removed rigid approval tool processing
-        // User requirement: Natural LLM flow without programmatic approval gates
+        // Simple message processing - no workflow tracking
         const finalProcessedMessages = validatedMessages;
 
-        // Simple processing - trust LLM intelligence
-
-        // ❌ REMOVED: Hardcoded phase progression context - all instructions must come from centralized database system prompt
-
-        let primaryExecuted = false;
-        let primarySuccess = false;
         let writerUsed = false;
 
         try {
-          // 🚀 HIGH PRIORITY FIX 1: DYNAMIC EXECUTION PATTERN
-          // PRIMARY: Dynamic provider based on database configuration
-          primaryExecuted = true;
-
-          // Simple message processing
-          const filteredDebugMessages = finalProcessedMessages;
-
           // Use AI SDK v5 convertToModelMessages for proper tool part handling
           let manualMessages;
           try {
             // AI SDK v5 compliant conversion that preserves supported tool parts
-            manualMessages = convertToModelMessages(filteredDebugMessages);
+            manualMessages = convertToModelMessages(finalProcessedMessages);
           } catch (conversionError) {
             // Fallback: Preserve essential message structure while extracting text
-            manualMessages = filteredDebugMessages.map(msg => ({
+            manualMessages = finalProcessedMessages.map(msg => ({
               role: msg.role,
               content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
             }));
           }
-
-          // Removed unused persistAndBroadcast function
-
-  // AI SDK v5: Phase approval state is handled by processToolCalls automatically
-  // 🔧 NOTE: Phase detection logic moved earlier in the flow for proper progressive tracking
-
-  // 🔧 CLEANUP: Simplified tool configuration - web search only
-  // Removing complex conversation-aware tools per user requirement:
-  // "Tools yang ada hanyalah web search"
-  // Removed unused availableTools and toolNames variables
 
   // ✅ AI SDK COMPLIANT: Prepare model based on provider
   let streamModel = dynamicConfig.primaryModel;
@@ -235,6 +175,29 @@ export async function POST(req: Request) {
         abortSignal: abortController.signal,
         onAbort: () => {
           // Cleanup jika diperlukan - stream akan automatically close
+        },
+        onFinish: async ({ text, usage }) => {
+          try {
+            console.log('[DEBUG] onFinish called - text length:', text.length);
+
+            const simpleMetadata = {
+              timestamp: new Date().toISOString(),
+              model: dynamicConfig.primaryModelName,
+              userId: userId,
+              tokens: usage ? {
+                prompt: usage.inputTokens || 0,
+                completion: usage.outputTokens || 0,
+                total: usage.totalTokens || 0
+              } : undefined
+            };
+
+            writer.write({
+              type: 'message-metadata',
+              messageMetadata: simpleMetadata
+            });
+          } catch (error) {
+            console.error('[onFinish] error:', error);
+          }
         }
       })
     : streamText({
@@ -262,6 +225,29 @@ export async function POST(req: Request) {
         abortSignal: abortController.signal,
         onAbort: () => {
           // Cleanup jika diperlukan - stream akan automatically close
+        },
+        onFinish: async ({ text, usage }) => {
+          try {
+            console.log('[DEBUG] onFinish called - text length:', text.length);
+
+            const simpleMetadata = {
+              timestamp: new Date().toISOString(),
+              model: dynamicConfig.primaryModelName,
+              userId: userId,
+              tokens: usage ? {
+                prompt: usage.inputTokens || 0,
+                completion: usage.outputTokens || 0,
+                total: usage.totalTokens || 0
+              } : undefined
+            };
+
+            writer.write({
+              type: 'message-metadata',
+              messageMetadata: simpleMetadata
+            });
+          } catch (error) {
+            console.error('[onFinish] error:', error);
+          }
         }
       });
 
@@ -275,7 +261,7 @@ export async function POST(req: Request) {
               writer.merge(result.toUIMessageStream({
                 originalMessages: finalProcessedMessages,
                 sendFinish: true,
-                sendSources: sendSources,  // ✅ Sources for all providers
+                sendSources: sendSources  // ✅ Sources for all providers
               }));
               writerUsed = true;
             }
@@ -290,8 +276,6 @@ export async function POST(req: Request) {
               dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
               responseTime
             );
-
-            primarySuccess = true;
 
           } catch (responseError: any) {
             // Record failure for circuit breaker tracking

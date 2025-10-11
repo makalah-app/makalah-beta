@@ -161,40 +161,36 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
     // ⚡ PERFORMANCE: Skip expensive title generation in critical path
     // RELAXED GUARD: allow regeneration when title still generic, regardless of prior flag
     if (isDefaultTitle && messages.length >= 2) {
-      // Fire-and-forget title generation to avoid blocking save
-      process.nextTick(async () => {
-        try {
-          
-          const smartTitle = await generateSmartTitleFromMessages(messages);
-          if (smartTitle && smartTitle !== currentTitle) {
-            await (supabaseAdmin as any)
-              .from('conversations')
-              .update({
-                title: smartTitle,
-                metadata: {
-                  ...metadata,
-                  title_generated: true,
-                  title_generated_at: new Date().toISOString()
-                }
-              })
-              .eq('id', chatId);
+      // Direct async execution - will complete before serverless function terminates
+      try {
+        const smartTitle = await generateSmartTitleFromMessages(messages);
+        if (smartTitle && smartTitle !== currentTitle) {
+          await (supabaseAdmin as any)
+            .from('conversations')
+            .update({
+              title: smartTitle,
+              metadata: {
+                ...metadata,
+                title_generated: true,
+                title_generated_at: new Date().toISOString()
+              }
+            })
+            .eq('id', chatId);
 
-            // Send notification to UI about smart title generation
-            if (typeof window !== 'undefined') {
-              window.postMessage({
-                type: 'smart-title-generated',
-                chatId,
-                title: smartTitle,
-                timestamp: new Date().toISOString()
-              }, '*');
-            }
-          } else {
-            
+          // Send notification to UI about smart title generation
+          if (typeof window !== 'undefined') {
+            window.postMessage({
+              type: 'smart-title-generated',
+              chatId,
+              title: smartTitle,
+              timestamp: new Date().toISOString()
+            }, '*');
           }
-        } catch (error) {
-            // Smart title generation failed - using fallback title
-          }
-      });
+        }
+      } catch (error) {
+        // Smart title generation failed - keep using fallback title
+        // Silent failure to not block conversation save
+      }
     }
   } catch (error) {
   }
@@ -441,8 +437,12 @@ export async function createChat(userId?: string, title?: string): Promise<strin
  * Supports chat history and conversation management
  */
 export async function getUserConversations(userId: string, client?: SupabaseClient<Database>): Promise<ConversationSummary[]> {
+  console.log('[getUserConversations] Called with userId:', userId, 'using client:', client ? 'custom' : 'supabaseServer');
+
   try {
     const clientToUse = client ?? supabaseServer;
+
+    console.log('[getUserConversations] Executing database query...');
     const { data: conversations, error } = await (clientToUse as any)
       .from('conversations')
       .select(`
@@ -457,9 +457,27 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       .order('updated_at', { ascending: false })
       .limit(50);
 
+    console.log('[getUserConversations] Database query result:', {
+      hasError: !!error,
+      errorMessage: error?.message,
+      errorCode: (error as any)?.code,
+      dataCount: conversations?.length || 0
+    });
+
     if (error) {
+      console.error('[getUserConversations] Database error:', {
+        message: error.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint
+      });
       throw new Error(`Failed to load conversations: ${error.message}`);
     }
+
+    console.log('[getUserConversations] Raw conversations data:', {
+      count: conversations?.length || 0,
+      conversations: conversations?.map((c: any) => ({ id: c.id, title: c.title }))
+    });
 
     const summaries: ConversationSummary[] = (conversations || []).map((conv: any) => ({
       id: conv.id,
@@ -468,9 +486,19 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       lastActivity: conv.updated_at,
     }));
 
+    console.log('[getUserConversations] Returning summaries:', {
+      count: summaries.length,
+      summaries: summaries.map(s => ({ id: s.id, title: s.title }))
+    });
+
     return summaries;
 
   } catch (error) {
+    console.error('[getUserConversations] CRITICAL ERROR - Returning empty array:', {
+      error: error instanceof Error ? error.message : String(error),
+      userId,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     // Return empty array as graceful fallback to prevent UI breakage
     return [];
   }
@@ -831,9 +859,6 @@ async function trackAIInteraction(
     const responseTime = typeof metadata === 'object' && metadata && 'responseTime' in metadata
       ? Number(metadata.responseTime) || 0
       : 0;
-    const phase = typeof metadata === 'object' && metadata && 'phase' in metadata
-      ? Number(metadata.phase) || 1
-      : 1;
 
     await (supabaseAdmin as any)
       .from('ai_interactions')
@@ -848,8 +873,7 @@ async function trackAIInteraction(
         response_time: responseTime,
         interaction_data: {
           message_id: latestMessage.id,
-          has_tool_calls: latestMessage.parts?.some(p => p.type === 'tool-result') || false,
-          phase
+          has_tool_calls: latestMessage.parts?.some(p => p.type === 'tool-result') || false
         }
       });
     

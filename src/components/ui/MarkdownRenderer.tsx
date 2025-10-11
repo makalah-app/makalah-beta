@@ -242,12 +242,26 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               )}
             />
           ),
-          li: ({ node, ...props }) => (
-            <li
-              {...props}
-              className={cn("text-foreground", props.className)}
-            />
-          ),
+          li: ({ node, ...props }) => {
+            const { className: liClassName, children, ...rest } = props as {
+              className?: string;
+              children?: React.ReactNode;
+            };
+            const keySeed = paragraphCounter++;
+            const processedChildren = transformParagraphChildren(
+              React.Children.toArray(children ?? []),
+              keySeed
+            );
+
+            return (
+              <li
+                {...rest}
+                className={cn("text-foreground", liClassName)}
+              >
+                {processedChildren}
+              </li>
+            );
+          },
           // Bold text
           strong: ({ node, ...props }) => (
             <strong

@@ -1,4 +1,3 @@
-/* @ts-nocheck */
 /**
  * Demote Admin to User API Endpoint
  *
@@ -49,11 +48,13 @@ export async function POST(request: NextRequest) {
     const { userId } = validatedRequest;
 
     // Check if target user exists and get their current role
-    const { data: targetUser, error: userError } = await supabaseAdmin
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: targetUser, error: userError } = await (supabaseAdmin as any)
       .from('users')
       .select('id, email, role')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (userError || !targetUser) {
       return Response.json({
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Check if user is superadmin (protected)
+    // Validate role eligibility (only admin can be demoted)
     if (targetUser.role === 'superadmin') {
       return Response.json({
         success: false,
@@ -78,37 +79,32 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if user is already a regular user
-    if (targetUser.role === 'user') {
-      return Response.json({
-        success: false,
-        error: {
-          message: 'User is already a regular user',
-          type: 'validation_error',
-          code: 'ALREADY_USER'
-        }
-      }, { status: 400 });
-    }
-
-    // Check if user is admin (only admins can be demoted)
     if (targetUser.role !== 'admin') {
+      // Covers: user (already demoted), guest (invalid), or unknown roles
+      const message = targetUser.role === 'user'
+        ? 'User is already a regular user'
+        : 'Only admin users can be demoted to user role';
+      const code = targetUser.role === 'user' ? 'ALREADY_USER' : 'INVALID_ROLE';
+
       return Response.json({
         success: false,
         error: {
-          message: 'Only admin users can be demoted to user role',
+          message,
           type: 'validation_error',
-          code: 'INVALID_ROLE'
+          code
         }
       }, { status: 400 });
     }
 
     // Call database function to demote user
-    const { data: demoteResult, error: demoteError } = await supabaseAdmin.rpc(
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: demoteResult, error: demoteError } = await (supabaseAdmin as any).rpc(
       'demote_to_user',
       {
         target_user_id: userId,
         demoted_by: adminCheck.userId
-      } as any
+      }
     );
 
     if (demoteError) {
@@ -135,11 +131,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated user data
-    const { data: updatedUser, error: updateError } = await supabaseAdmin
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: updatedUser, error: updateError } = await (supabaseAdmin as any)
       .from('users')
       .select('id, email, role, updated_at')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (updateError || !updatedUser) {
       // Demotion succeeded but couldn't fetch updated data

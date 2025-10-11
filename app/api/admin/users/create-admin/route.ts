@@ -15,7 +15,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/database/supabase-client';
 import { validateSuperAdminAccess } from '@/lib/admin/admin-auth';
-import { validatePassword, validatePasswordConfirmation } from '@/lib/auth/form-validation';
+import { validatePassword } from '@/lib/auth/form-validation';
 
 // Request validation schema
 const CreateAdminSchema = z.object({
@@ -92,7 +92,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert into public.users
-    const { error: userInsertError } = await supabaseAdmin
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { error: userInsertError } = await (supabaseAdmin as any)
       .from('users')
       .insert({
         id: authUser.user.id,
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      } as any);
+      });
 
     if (userInsertError) {
       // Rollback: delete from auth if public.users insert fails
@@ -115,7 +117,9 @@ export async function POST(request: NextRequest) {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      const { error: profileInsertError } = await supabaseAdmin
+      // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+      // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+      const { error: profileInsertError } = await (supabaseAdmin as any)
         .from('user_profiles')
         .insert({
           user_id: authUser.user.id,
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest) {
           institution: validated.institution,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        } as any);
+        });
 
       // Don't rollback if profile insert fails - user can update profile later
       if (profileInsertError) {

@@ -283,15 +283,75 @@ export function getEnvironmentInfo() {
 }
 
 /**
+ * Create SHA-256 hash of input string
+ * Cross-environment compatible (Node.js and browser)
+ *
+ * @param input String to hash
+ * @returns Hexadecimal hash string
+ * @example
+ * const hash = createSHA256Hash('hello'); // "2cf24dba5fb0a30e..."
+ */
+export function createSHA256Hash(input: string): string {
+  // Server environment - use Node.js crypto
+  if (ENV_DETECTION.isServer && ENV_DETECTION.hasRequire) {
+    try {
+      const crypto = require('crypto');
+      return crypto.createHash('sha256').update(input).digest('hex');
+    } catch (error) {
+      throw new Error(`Failed to create hash in Node.js: ${error}`);
+    }
+  }
+
+  // Browser/client environment - throw error (SHA-256 needs async Web Crypto API)
+  throw new Error('SHA-256 hashing is only available in server environment. Use createSHA256HashAsync() for browser.');
+}
+
+/**
+ * Create SHA-256 hash asynchronously (browser-compatible)
+ *
+ * @param input String to hash
+ * @returns Promise<hexadecimal hash string>
+ * @example
+ * const hash = await createSHA256HashAsync('hello');
+ */
+export async function createSHA256HashAsync(input: string): Promise<string> {
+  // Try Web Crypto API (browser/modern Node.js)
+  try {
+    const crypto = getCrypto();
+    if ('subtle' in crypto && crypto.subtle) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(input);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch {
+    // Continue to fallback
+  }
+
+  // Node.js fallback
+  if (ENV_DETECTION.isServer && ENV_DETECTION.hasRequire) {
+    try {
+      const crypto = require('crypto');
+      return crypto.createHash('sha256').update(input).digest('hex');
+    } catch (error) {
+      throw new Error(`Failed to create async hash: ${error}`);
+    }
+  }
+
+  throw new Error('No SHA-256 implementation available');
+}
+
+/**
  * Test crypto functionality
- * 
+ *
  * @returns Test results with generated UUID and validation
  */
 export function testCryptoPolyfill() {
   const uuid = randomUUID();
   const isValid = isValidUUID(uuid);
   const envInfo = getEnvironmentInfo();
-  
+
   return {
     generatedUUID: uuid,
     isValidFormat: isValid,

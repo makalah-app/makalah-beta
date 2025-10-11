@@ -18,12 +18,12 @@
 
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabaseClient, supabaseChatClient, CHAT_CONFIG } from './supabase-client';
-import { UIMessage, generateId } from 'ai';
-import type { AcademicMetadata } from '../../components/chat/ChatContainer';
+import type { UIMessage } from 'ai';
+import { generateId } from 'ai';
 import { Database } from '../types/database-types';
 
 // Type definitions for real-time operations
-export type AcademicUIMessage = UIMessage<AcademicMetadata>;
+// Using standard UIMessage from AI SDK v5 - workflow types removed
 export type ChatMessage = Database['public']['Tables']['chat_messages']['Row'];
 export type Conversation = Database['public']['Tables']['conversations']['Row'];
 
@@ -33,7 +33,6 @@ export interface PresenceState {
   typing: boolean;
   lastSeen: number;
   activeConversation?: string;
-  currentPhase?: number;
 }
 
 export interface TypingIndicator {

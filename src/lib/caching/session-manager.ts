@@ -22,11 +22,6 @@ export interface UserSession {
     language?: string;
     academicDiscipline?: string;
   };
-  workflowState?: {
-    currentPhase?: number;
-    activeWorkflowId?: string;
-    lastCheckpoint?: Date;
-  };
   permissions: string[];
   metadata: {
     ipAddress?: string;

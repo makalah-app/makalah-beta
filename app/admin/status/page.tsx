@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, RefreshCw } from 'lucide-react';
+import { Shield, RefreshCw, Activity } from 'lucide-react';
+import Link from 'next/link';
 
 interface ConfigStatus {
   primaryProvider: string;
@@ -126,8 +127,20 @@ function AdminStatusContent() {
             if (openrouterPromptResult.success && openrouterPromptResult.data?.prompt) {
               activePromptCharCount = openrouterPromptResult.data.prompt.content?.length || 0;
               activePromptVersion = openrouterPromptResult.data.prompt.version || 'v1.0';
+            } else if (!openrouterPromptResult.success) {
+              // Log API error for debugging
+              console.error('[Admin Status] OpenRouter prompt API error:', {
+                error: openrouterPromptResult.error,
+                timestamp: new Date().toISOString()
+              });
+              activePromptCharCount = 0;
             }
           } catch (openrouterError) {
+            // Log fetch/network errors for debugging
+            console.error('[Admin Status] Failed to fetch OpenRouter prompt:', {
+              error: openrouterError instanceof Error ? openrouterError.message : String(openrouterError),
+              timestamp: new Date().toISOString()
+            });
             activePromptCharCount = 0;
           }
         } else {
@@ -378,6 +391,22 @@ function AdminStatusContent() {
               <Badge variant="secondary">v{configStatus.promptVersion}</Badge>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Feature Monitoring */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Feature Monitoring</CardTitle>
+          <CardDescription>Monitor advanced features and system performance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" asChild className="w-full">
+            <Link href="/admin/contextual-guidance-monitor">
+              <Activity className="mr-2 h-4 w-4" />
+              Contextual Guidance Monitor
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 

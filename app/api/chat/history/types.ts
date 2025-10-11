@@ -1,6 +1,8 @@
 /**
  * Type definitions for chat history API
  * Extended types to handle database compatibility and AI SDK v5 compliance
+ *
+ * CLEAN VERSION: All workflow references removed
  */
 
 import type { UIMessage } from 'ai';
@@ -12,8 +14,6 @@ import type { UIMessage } from 'ai';
 export interface ExtendedUIMessage extends UIMessage {
   createdAt?: Date | string;
   metadata?: {
-    phase?: number;
-    workflowId?: string;
     [key: string]: any;
   };
 }
@@ -35,16 +35,16 @@ export interface ChatMessage {
 
 /**
  * Conversation data type from conversations table
+ * Clean version: workflow columns removed (dropped in migration 20251006042353)
  */
 export interface ConversationData {
   id: string;
   title?: string;
   message_count?: number;
   updated_at: string;
-  current_phase?: number;
-  workflow_id?: string;
   user_id: string;
   archived?: boolean;
+  metadata?: any;
 }
 
 /**
@@ -62,8 +62,6 @@ export interface ConversationResponse {
   title: string;
   messageCount: number;
   lastActivity: string;
-  currentPhase?: number;
-  workflowId?: string;
   messages?: ExtendedUIMessage[];
 }
 

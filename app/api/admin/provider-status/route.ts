@@ -11,12 +11,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { supabaseAdmin } from '@/lib/database/supabase-client';
 import { getProviderManager } from '@/lib/ai/providers';
 import { validateAdminAccess as validateAdmin } from '@/lib/admin/admin-auth';
-
-// Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
-const ADMIN_EMAIL = 'makalah.app@gmail.com';
 
 /**
  * GET /api/admin/provider-status - Get current failover state

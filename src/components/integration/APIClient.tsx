@@ -11,7 +11,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { AcademicUIMessage } from '../chat/ChatContainer';
+import type { UIMessage } from 'ai';
 
 interface APIClientConfig {
   baseUrl: string;
@@ -41,7 +41,7 @@ interface APIClientContextType {
   updateConfig: (updates: Partial<APIClientConfig>) => void;
   
   // Core API methods
-  sendMessage: (message: string, options?: RequestInit) => Promise<APIResponse<AcademicUIMessage>>;
+  sendMessage: (message: string, options?: RequestInit) => Promise<APIResponse<UIMessage>>;
   streamMessage: (message: string, options?: StreamingOptions) => Promise<ReadableStream>;
 
   // Academic workflow specific endpoints
@@ -253,8 +253,8 @@ export const APIClientProvider: React.FC<APIClientProviderProps> = ({
   const sendMessage = useCallback(async (
     message: string, 
     options: RequestInit = {}
-  ): Promise<APIResponse<AcademicUIMessage>> => {
-    return makeRequest<AcademicUIMessage>('/chat/academic', {
+  ): Promise<APIResponse<UIMessage>> => {
+    return makeRequest<UIMessage>('/chat/academic', {
       method: 'POST',
       body: JSON.stringify({ message }),
       ...options,

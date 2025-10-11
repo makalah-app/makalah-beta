@@ -6,7 +6,7 @@
  * MIGRATED TO AI ELEMENTS:
  * - Uses AI Elements Message, MessageContent, MessageAvatar components
  * - Preserves existing markdown rendering dan tool result display logic
- * - Integrates dengan existing AcademicUIMessage structure
+ * - Uses standard UIMessage from AI SDK v5
  *
  * DESIGN COMPLIANCE:
  * - AI Elements styling dengan shadcn/ui base components
@@ -16,7 +16,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { AcademicUIMessage } from './ChatContainer';
+import type { UIMessage } from 'ai';
 import { SystemMessage } from './SystemMessage';
 // AI Elements Message components
 import {
@@ -65,7 +65,7 @@ const normalizeCitationKey = (value: string | undefined) => {
 };
 
 interface MessageDisplayProps {
-  message: AcademicUIMessage;
+  message: UIMessage;
   onRegenerate?: () => void;
   debugMode?: boolean;
   className?: string;
@@ -74,7 +74,7 @@ interface MessageDisplayProps {
   sendMessage?: () => void;
   citations?: Array<{ title?: string; url: string; snippet?: string }>;
   // 🔧 Add global messages context for approval gate logic
-  allMessages?: AcademicUIMessage[];
+  allMessages?: UIMessage[];
   // 📝 EDIT MESSAGE PROPS: Enhanced edit functionality
   isEditing?: boolean;
   editingText?: string;
@@ -380,7 +380,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <CardContent className="p-3 text-xs">
                 <div>ID: {message.id}</div>
                 <div>Parts: {message.parts.length}</div>
-                {message.metadata && (
+                {!!message.metadata && (
                   <div>Metadata: {JSON.stringify(message.metadata, null, 2)}</div>
                 )}
               </CardContent>
@@ -441,8 +441,8 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                 // ✅ Display tool execution results using clean component
                 if (part.state === 'output-available' && toolCallId) {
                   // Check if this is a historical message (created more than 5 seconds ago)
-                  const messageAge = message.metadata?.timestamp
-                    ? Date.now() - message.metadata.timestamp
+                  const messageAge = (message.metadata as any)?.timestamp
+                    ? Date.now() - (message.metadata as any).timestamp
                     : 0;
                   const isHistorical = messageAge > 5000; // More than 5 seconds old
 
@@ -580,12 +580,18 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               />
             </AssistantActions>
 
-            {/* Enhanced Metadata Display */}
-            {message.metadata && (message.metadata.tokens || message.metadata.model) && (
+            {/* Enhanced Metadata Display - HIDDEN for cleaner UX (Phase 02 cleanup) */}
+            {/* Token and model info hidden but still available in metadata for debugging */}
+            {/* Uncomment to restore: message.metadata && (message.metadata.tokens || message.metadata.model) */}
+            {/* {message.metadata && (message.metadata.tokens || message.metadata.model) && (
+              (() => {
+                const tokenInfo = message.metadata.tokens;
+                const totalTokens = typeof tokenInfo === 'number' ? tokenInfo : tokenInfo?.total;
+                return (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                {message.metadata.tokens && (
+                {typeof totalTokens === 'number' && Number.isFinite(totalTokens) && (
                   <span className="flex items-center gap-1">
-                    🔢 {message.metadata.tokens} tokens
+                    🔢 {totalTokens} tokens
                   </span>
                 )}
                 {message.metadata.model && (
@@ -594,7 +600,11 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </span>
                 )}
               </div>
-            )}
+                );
+              })()
+            )} */}
+
+            {/* Workflow artifact display removed - pure chat now */}
           </MessageContent>
 
           {/* Debug Info */}
@@ -603,7 +613,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
               <CardContent className="p-3 text-xs">
                 <div>ID: {message.id}</div>
                 <div>Parts: {message.parts.length}</div>
-                {message.metadata && (
+                {!!message.metadata && (
                   <div>Metadata: {JSON.stringify(message.metadata, null, 2)}</div>
                 )}
               </CardContent>

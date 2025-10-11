@@ -42,31 +42,17 @@ import { useAuth } from '../../hooks/useAuth';
 import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: WorkflowProvider import - rigid phase state management
 // Natural LLM conversation doesn't need complex workflow state synchronization
-// ❌ REMOVED: Unused HITL imports - not used in natural LLM conversation flow
-// - academicTools: Complex tool management not needed
-// - APPROVAL: Approval constants not used in natural conversation
-
-// Enhanced academic metadata type - simplified for native OpenAI web search
-export interface AcademicMetadata {
-  timestamp?: number;
-  model?: string;
-  tokens?: number;
-  userId?: string;
-  sequenceNumber?: number;
-  persistedAt?: string;
-}
-
-// Standard UIMessage with enhanced academic metadata
-export type AcademicUIMessage = UIMessage<AcademicMetadata>;
+// Pure chat - workflow types removed
+// Now using standard UIMessage from AI SDK v5
 
 interface ChatContainerProps {
   className?: string;
-  initialMessages?: AcademicUIMessage[];
+  initialMessages?: UIMessage[];
   chatId?: string;
   // Testing & Development props
   debugMode?: boolean;
   testMode?: boolean;
-  onMessageStream?: (message: AcademicUIMessage) => void;
+  onMessageStream?: (message: UIMessage) => void;
   onError?: (error: Error) => void;
 }
 
@@ -88,7 +74,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   // - phaseStartIndexRef: Phase start index tracking
   // - lastCountRef: Discussion count tracking
   const [isLoadingInitialMessages, setIsLoadingInitialMessages] = useState<boolean>(false);
-  const [loadedMessages, setLoadedMessages] = useState<AcademicUIMessage[]>(initialMessages);
+  const [loadedMessages, setLoadedMessages] = useState<UIMessage[]>(initialMessages);
   // 🔥 ERROR HANDLING STATE: Enhanced error management
   const [errorState, setErrorState] = useState<{
     message: string;
@@ -126,6 +112,30 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     return SYSTEM_USER_UUID;
   }, [user?.id]);
 
+  // ✅ EAGER PERSISTENCE: Ensure conversation exists before sending message
+  // Prevents data loss if user refreshes during streaming
+  const ensureConversationExists = useCallback(async (messageText: string): Promise<void> => {
+    if (!chatId) return;
+
+    try {
+      await fetch('/api/chat/conversations/ensure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': getUserId(),
+        },
+        body: JSON.stringify({
+          conversationId: chatId,
+          initialMessage: messageText
+        })
+      });
+
+      // Success - conversation created or already exists
+    } catch (error) {
+      // Silent failure - normal persistence flow will handle it as fallback
+    }
+  }, [chatId, getUserId]);
+
   // Citations state from native-openai web search
   // citations disabled for now
   const [citations] = useState<Array<{ title?: string; url: string; snippet?: string }>>([]);
@@ -135,7 +145,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const [editingText, setEditingText] = useState<string>('');
 
   // AI SDK useChat integration with native OpenAI web search
-  const chatHookResult = useChat<AcademicUIMessage>({
+  const chatHookResult = useChat<UIMessage>({
     id: chatId || `academic-chat-${reactId}`,
     transport: new DefaultChatTransport({
       api: '/api/chat',
@@ -385,7 +395,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         createdAt: createdAtIso,
         metadata: {
           ...baseMetadata,
-          userId: baseMetadata?.userId || effectiveUserId,
+          userId: (baseMetadata as any)?.userId || effectiveUserId,
           sequenceNumber: index,
           persistedAt: timestamp,
         },
@@ -574,9 +584,9 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               const filteredParts = msg.parts.filter(part =>
                 part.type !== 'tool-call'
               );
-              return { ...msg, parts: filteredParts } as AcademicUIMessage;
+              return { ...msg, parts: filteredParts } as UIMessage;
             }
-            return msg as AcademicUIMessage;
+            return msg as UIMessage;
           });
 
           setLoadedMessages(historicalMessages);
@@ -756,7 +766,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             {/* Centered Chat Input - Responsive */}
             <ChatInput
               className="transition-all duration-300 ease-in-out"
-              sendMessage={(message) => {
+              sendMessage={async (message) => {
+                // Extract text from message
+                const messageText = typeof message === 'string' ? message : (message.text || '');
+
+                // Ensure conversation exists BEFORE sending message
+                await ensureConversationExists(messageText);
+
                 shouldScrollRef.current = true;
                 sendMessage(message);
               }}
@@ -769,11 +785,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           </div>
         </div>
       ) : (
-        /* WITH MESSAGES: Scrollable messages + Fixed bottom input */
-        <>
-          {/* Messages Area - Scrollable */}
-          <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
-            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
+        /* WITH MESSAGES: 2-column layout with sidebar (desktop only) */
+        <div className="flex h-full gap-4">
+          {/* Main chat area */}
+          <div className="flex-1 flex flex-col">
+            {/* Messages Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
+              <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
               {/* Enhanced Error Display */}
               {(error || errorState) && (
                 <div className="mb-4">
@@ -847,24 +865,32 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             </div>
           </div>
 
-          {/* Fixed Bottom Input Area - Responsive */}
-          <div className="shrink-0 border-t border-border bg-background">
-            <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
-              <ChatInput
-                className="transition-all duration-200 ease-in-out"
-                sendMessage={(message) => {
-                  shouldScrollRef.current = true;
-                  sendMessage(message);
-                }}
-                disabled={status !== 'ready'}
-                status={status}
-                placeholder="Kirim percakapan..."
-                testMode={testMode}
-                onStop={handleStopStreaming}
-              />
+            {/* Fixed Bottom Input Area - Responsive */}
+            <div className="shrink-0 border-t border-border bg-background">
+              <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
+                <ChatInput
+                  className="transition-all duration-200 ease-in-out"
+                  sendMessage={async (message) => {
+                    // Extract text from message
+                    const messageText = typeof message === 'string' ? message : (message.text || '');
+
+                    // Ensure conversation exists BEFORE sending message
+                    await ensureConversationExists(messageText);
+
+                    shouldScrollRef.current = true;
+                    sendMessage(message);
+                  }}
+                  disabled={status !== 'ready'}
+                  status={status}
+                  placeholder="Kirim percakapan..."
+                  testMode={testMode}
+                  onStop={handleStopStreaming}
+                />
+              </div>
             </div>
           </div>
-        </>
+
+        </div>
       )}
 
       {/* Pass HITL functions to MessageDisplay */}

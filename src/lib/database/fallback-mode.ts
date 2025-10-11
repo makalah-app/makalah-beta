@@ -25,7 +25,6 @@ interface FallbackConversation {
   userId: string;
   title: string;
   messages: UIMessage[];
-  currentPhase: number;
   createdAt: string;
   updatedAt: string;
   metadata: Record<string, any>;
@@ -153,7 +152,6 @@ export async function saveChatFallback({
       userId: getValidUserUUID(null), // Use system UUID for fallback mode
       title: generateTitleFromMessages(messages) || 'Chat Conversation',
       messages,
-      currentPhase: extractPhaseFromMessages(messages),
       createdAt: sessionStorage.get(chatId)?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {
@@ -244,7 +242,6 @@ export async function createChatFallback(userId?: string, title?: string): Promi
     userId: getValidUserUUID(userId),
     title: title || 'New Chat (Offline)',
     messages: [],
-    currentPhase: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     metadata: {
@@ -267,10 +264,9 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
   title: string;
   messageCount: number;
   lastActivity: string;
-  currentPhase: number;
 }[]> {
   const conversations: any[] = [];
-  
+
   try {
     // Get from session storage
     for (const conversation of Array.from(sessionStorage.values())) {
@@ -279,17 +275,16 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
         title: conversation.title,
         messageCount: conversation.messages.length,
         lastActivity: conversation.updatedAt,
-        currentPhase: conversation.currentPhase,
       });
     }
-    
+
     // Get from localStorage if available
     if (typeof localStorage !== 'undefined') {
       try {
         const existingData = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
         if (existingData) {
           const stored = JSON.parse(existingData);
-          
+
           for (const [id, conversation] of Object.entries(stored)) {
             // Don't duplicate session storage entries
             if (!sessionStorage.has(id)) {
@@ -298,7 +293,6 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
                 title: (conversation as any).title,
                 messageCount: (conversation as any).messages?.length || 0,
                 lastActivity: (conversation as any).updatedAt,
-                currentPhase: (conversation as any).currentPhase || 1,
               });
             }
           }
@@ -306,12 +300,12 @@ export async function getUserConversationsFallback(_userId: string): Promise<{
       } catch (error) {
       }
     }
-    
+
     // Sort by last activity
     conversations.sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime());
-    
+
     return conversations;
-    
+
   } catch (error) {
     return [];
   }
@@ -435,17 +429,6 @@ function generateTitleFromMessages(messages: UIMessage[]): string | null {
   }
 
   return null;
-}
-
-function extractPhaseFromMessages(messages: UIMessage[]): number {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const metadata = messages[i].metadata as any;
-    if (metadata && typeof metadata === 'object' &&
-        'phase' in metadata && typeof metadata.phase === 'number') {
-      return metadata.phase;
-    }
-  }
-  return 1;
 }
 
 /**

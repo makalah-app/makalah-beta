@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
 import { generateUUID } from '../../src/lib/utils/uuid-generator';
@@ -165,7 +165,7 @@ function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, logout, isLoading } = useAuth();
-  const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore } = useChatHistory();
+  const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore, refetch: refreshChatHistory } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
   const [appVersion, setAppVersion] = useState('');
 
@@ -532,19 +532,24 @@ function ChatPageContent() {
                 );
               })}
 
-              {/* Empty State */}
+              {/* Empty State with Retry */}
               {filteredConversations.length === 0 && !historyLoading && (
                 <SidebarGroup>
                   <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton disabled>
-                          <span className="text-muted-foreground text-sm">
-                            {searchQuery ? 'No matching conversations' : 'No conversations yet'}
-                          </span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
+                    <div className="flex flex-col items-center justify-center p-4 space-y-3">
+                      <p className="text-muted-foreground text-sm text-center">
+                        {searchQuery ? 'No matching conversations' : 'No conversations yet'}
+                      </p>
+                      {!searchQuery && (
+                        <button
+                          onClick={() => refreshChatHistory()}
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-[3px] hover:bg-primary/90 transition-colors"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Refresh
+                        </button>
+                      )}
+                    </div>
                   </SidebarGroupContent>
                 </SidebarGroup>
               )}

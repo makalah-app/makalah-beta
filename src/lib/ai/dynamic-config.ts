@@ -12,6 +12,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { supabaseAdmin } from '../database/supabase-client';
 import type { ModelConfigRow, AdminSettingRow, SystemPromptRow } from '../types/database-types';
+import { selectPromptForUser } from './prompt-cohort';
 
 // ⚡ PERFORMANCE: In-memory cache with 30-second TTL
 const CONFIG_CACHE = {
@@ -56,26 +57,38 @@ This is a fallback prompt with minimal instructions. The system is operating in 
 
 **Administrator Actions Required:**
 1. Check database connection to Supabase
-2. Verify system_prompts table contains active prompt (is_active = true)
+2. Verify system_prompts or openrouter_system_prompts table contains active prompt (is_active = true)
 3. Upload system prompt via: Admin Dashboard → Database Prompts → Add Prompt
 
 **Current Fallback Capabilities:**
 - Basic conversation in Indonesian (Jakarta style: gue-lu)
-- Limited academic writing assistance
+- Academic-writing-only assistance (every exchange must drive toward a publishable manuscript)
 - Reduced functionality until primary prompt is restored
 
 **Technical Details:**
-- Expected Source: system_prompts or openrouter_system_prompts table
+- Expected Source: system_prompts (OpenAI) or openrouter_system_prompts (OpenRouter) table
 - Actual Source: Emergency fallback (hardcoded)
 - Recovery: Upload new prompt or activate existing prompt
+
+---
+
+### Emergency Behavior Contract (while primary prompt is unavailable)
+- Scope: You MUST refuse any task that does not clearly advance an academic manuscript (e.g., poetry, casual chat, coding help, jokes). Warmly decline, restate the “paper-only” scope, and suggest a paper-focused alternative.
+- Workflow: Encourage the user to define topic, research questions, outline, drafting, revision, and formatting steps that lead to a formal Indonesian academic paper.
+- Evidence: Prefer verifiable sources; if web search is unavailable, admit the limitation and work with provided information while urging verification.
+- Citations: Use inline markdown citations and provide a References list whenever external facts are mentioned.
+- Tone: Friendly but focused Jakarta-style conversation; academic outputs remain formal Indonesian.
+- Structure: Reply with acknowledgement → main analysis → references → next steps (or refusal plus redirection if off-scope).
 
 Contact system administrator to restore full AI capabilities.`;
 }
 
 /**
  * Get dynamic model configuration based on current database state
+ *
+ * @param userId - Optional user ID for cohort-based prompt selection (A/B testing)
  */
-export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
+export async function getDynamicModelConfig(userId?: string): Promise<DynamicModelConfig> {
   try {
     // ⚡ PERFORMANCE: Check cache first
     const now = Date.now();
@@ -133,7 +146,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
 
     if (primaryProvider === 'openrouter') {
-      // OpenRouter always uses openrouter_system_prompts (optimized for Gemini)
+      // OpenRouter uses openrouter_system_prompts table (optimized for Gemini models)
       const { data: openrouterPrompt, error: openrouterError } = await supabaseAdmin
         .from('openrouter_system_prompts')
         .select('content')
@@ -150,16 +163,31 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       }
     } else {
       // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
-      const { data: openaiPrompt, error: openaiError } = await supabaseAdmin
+      // ✅ A/B TESTING: Query ALL active prompts with cohort_percentage
+      const { data: openaiPrompts, error: openaiError } = await supabaseAdmin
         .from('system_prompts')
-        .select('content')
+        .select('id, content, cohort_percentage, priority_order, version')
         .eq('is_active', true)
-        .order('priority_order')
-        .limit(1)
-        .maybeSingle() as { data: SystemPromptRow | null; error: any };
+        .order('priority_order') as { data: Array<{
+          id: string;
+          content: string;
+          cohort_percentage: number;
+          priority_order: number;
+          version: number;
+        }> | null; error: any };
 
-      if (openaiPrompt?.content && !openaiError) {
-        systemPromptContent = openaiPrompt.content;
+      if (openaiPrompts && openaiPrompts.length > 0 && !openaiError) {
+        // ✅ COHORT SELECTION: Use userId for deterministic assignment
+        if (userId && openaiPrompts.length > 1) {
+          // Multi-prompt A/B testing mode
+          const selectedContent = selectPromptForUser(userId, openaiPrompts);
+          systemPromptContent = selectedContent || openaiPrompts[0].content;
+          console.log(`[Dynamic Config] Selected prompt via cohort assignment for user ${userId.substring(0, 8)}`);
+        } else {
+          // Single prompt mode (backward compatible)
+          systemPromptContent = openaiPrompts[0].content;
+          console.log('[Dynamic Config] Using single active prompt (backward compatible mode)');
+        }
         promptSource = 'openai_system_prompts';
       } else if (openaiError) {
         // OpenAI prompt error - will use emergency fallback

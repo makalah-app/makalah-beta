@@ -15,13 +15,13 @@
  */
 
 import React from 'react';
-import { AcademicUIMessage } from './ChatContainer';
+import type { UIMessage } from 'ai';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 
 interface SystemMessageProps {
-  message: AcademicUIMessage;
+  message: UIMessage;
   className?: string;
   debugMode?: boolean;
 }
@@ -91,9 +91,9 @@ export const SystemMessage: React.FC<SystemMessageProps> = ({
               </p>
 
               {/* Timestamp */}
-              {message.metadata?.timestamp && (
+              {(message.metadata as any)?.timestamp && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(message.metadata.timestamp).toLocaleTimeString()}
+                  {new Date((message.metadata as any).timestamp).toLocaleTimeString()}
                 </p>
               )}
             </div>

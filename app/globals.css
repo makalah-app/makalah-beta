@@ -196,6 +196,65 @@
   }
 }
 
+/* Global Section Separators (applies to pages wrapped by .global-main) */
+.global-main section {
+  position: relative;
+}
+
+/* Accent brand bar at the top of every section after the first */
+.global-main section + section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0.55;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Remove hairline under section separators globally (header/footer manage their own) */
+.global-main section + section::after { content: none; }
+
+/* Opt-out utility when a section should not show separators */
+.global-main section.no-section-separator::before,
+.global-main section.no-section-separator::after {
+  content: none !important;
+}
+
+/* Accent-only utility: keep brand bar, remove hairline and strengthen bar */
+.global-main section.separator-accent-only::after {
+  content: none !important;
+}
+.global-main section.separator-accent-only::before { height: 2px !important; opacity: 0.55 !important; }
+
+/* Full viewport section helpers */
+.section-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-screen-with-header {
+  min-height: calc(100vh - var(--header-h, 0px));
+  min-height: calc(100dvh - var(--header-h, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-screen-with-footer {
+  min-height: calc(100vh - var(--footer-h, 0px));
+  min-height: calc(100dvh - var(--footer-h, 0px));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -435,6 +494,113 @@
 }
 
 /* Tooltip green styling for consistent UI across app */
+
+/* CSS-only vivid aurora for hero */
+.hero-vivid {
+  position: relative;
+  isolation: isolate;
+  /* Prevent oversized background pseudo-elements from creating horizontal scroll */
+  overflow-x: hidden;       /* fallback */
+  overflow-x: clip;         /* modern browsers */
+  overflow-clip-margin: 0;  /* ensure no extra clip margin */
+}
+.hero-vivid::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  background:
+    radial-gradient(900px 700px at 20% 18%, rgba(255,138,0,0.50) 0 32%, transparent 58%),
+    radial-gradient(720px 580px at 86% 14%, rgba(37,99,235,0.45) 0 28%, transparent 56%),
+    radial-gradient(780px 560px at 80% 78%, rgba(124,58,237,0.38) 0 26%, transparent 54%),
+    radial-gradient(680px 520px at 14% 82%, rgba(255,213,0,0.22) 0 22%, transparent 52%);
+  filter: blur(80px) saturate(1.18) brightness(1.02);
+  pointer-events: none;
+  z-index: -1;
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
+.hero-vivid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  /* Darken only top-left area behind header brand */
+  background:
+    radial-gradient(
+      500px 320px at 8% 10%,
+      rgba(0,0,0,0.26) 0%,
+      rgba(0,0,0,0.16) 55%,
+      rgba(0,0,0,0.08) 80%,
+      rgba(0,0,0,0.00) 100%
+    );
+}
+
+/* Optional ultra-thin research grid */
+.hero-grid-thin {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(148,163,184,0.12) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgba(148,163,184,0.12) 0 1px, transparent 1px 48px);
+}
+
+@media (max-width: 640px) {
+  .hero-vivid::before {
+    /* Keep orientation natural on mobile */
+    transform: none;
+    transform-origin: center;
+    /* Slightly tighter blur/brightness for small screens */
+    filter: blur(60px) saturate(1.18) brightness(1.02);
+    /* Scale aurora by percentage for proportional look */
+    background:
+      radial-gradient(70% 55% at 75% 18%, rgba(255,138,0,0.50) 0 30%, transparent 55%),
+      radial-gradient(65% 45% at 20% 16%, rgba(37,99,235,0.45) 0 26%, transparent 52%),
+      radial-gradient(68% 50% at 22% 78%, rgba(124,58,237,0.38) 0 22%, transparent 50%),
+      radial-gradient(58% 42% at 86% 82%, rgba(255,213,0,0.18) 0 18%, transparent 48%);
+  }
+
+  .hero-grid-thin {
+    background-image:
+      repeating-linear-gradient(0deg, rgba(148,163,184,0.10) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, rgba(148,163,184,0.10) 0 1px, transparent 1px 40px);
+  }
+}
+
+/* Striped hairline (2px) for header/footer tests */
+.hairline-stripe-2 {
+  height: 2px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 2px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* 4px tall striped bar with thin diagonal strokes */
+.hairline-stripe-4 {
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 2px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* 10px tall striped bar with sparser thin diagonal strokes */
+.hairline-stripe-10 {
+  height: 10px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--muted-foreground) 0 1px,
+    transparent 1px 6px
+  );
+  opacity: 0.3;
+  pointer-events: none;
+}
 .tooltip-green {
   @apply bg-green-600 text-white rounded-[3px] px-3 py-1.5 text-xs font-medium shadow-md;
 }
@@ -496,4 +662,13 @@
 
 .sidebar-invisible-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.3);
+}
+/* Warm Aurora gradient background for hero (CSS-only) */
+.hero-aurora {
+  position: relative;
+  background:
+    radial-gradient(1200px 800px at 20% 18%, color-mix(in oklch, var(--primary) 32%, transparent) 0 60%, transparent 60%),
+    conic-gradient(from 220deg at 80% 28%, color-mix(in oklch, var(--primary) 55%, white) 0 22%, transparent 22% 100%),
+    radial-gradient(900px 600px at 82% 72%, oklch(0.78 0.06 200 / 0.22) 0 60%, transparent 60%);
+  filter: saturate(1.04);
 }

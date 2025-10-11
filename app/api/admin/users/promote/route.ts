@@ -1,4 +1,3 @@
-/* @ts-nocheck */
 /**
  * Promote User to Admin API Endpoint
  *
@@ -48,11 +47,13 @@ export async function POST(request: NextRequest) {
     const { userId } = validatedRequest;
 
     // Check if target user exists and get their current role
-    const { data: targetUser, error: userError } = await supabaseAdmin
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: targetUser, error: userError } = await (supabaseAdmin as any)
       .from('users')
       .select('id, email, role')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (userError || !targetUser) {
       return Response.json({
@@ -89,12 +90,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Call database function to promote user
-    const { data: promoteResult, error: promoteError } = await supabaseAdmin.rpc(
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: promoteResult, error: promoteError } = await (supabaseAdmin as any).rpc(
       'promote_to_admin',
       {
         target_user_id: userId,
         promoted_by: adminCheck.userId
-      } as any
+      }
     );
 
     if (promoteError) {
@@ -121,11 +124,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated user data
-    const { data: updatedUser, error: updateError } = await supabaseAdmin
+    // Type assertion needed due to Supabase PostgREST type inference returning 'never'
+    // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
+    const { data: updatedUser, error: updateError } = await (supabaseAdmin as any)
       .from('users')
       .select('id, email, role, updated_at')
       .eq('id', userId)
-      .maybeSingle() as any;
+      .maybeSingle();
 
     if (updateError || !updatedUser) {
       // Promotion succeeded but couldn't fetch updated data

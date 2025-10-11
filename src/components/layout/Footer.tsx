@@ -31,7 +31,8 @@ export const Footer: React.FC<FooterProps> = ({
   }
 
   return (
-    <footer className={cn('border-t border-border px-6 py-12 transition-colors duration-300', className)}>
+    <footer className={cn('px-6 py-12 transition-colors duration-300 relative', className)}>
+      <div className="hairline-stripe-10 absolute inset-x-0 top-0" aria-hidden="true" />
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between">
           {/* Brand Section */}

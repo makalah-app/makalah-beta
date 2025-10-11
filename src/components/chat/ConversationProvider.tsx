@@ -16,8 +16,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { UIMessage } from 'ai';
-import { AcademicUIMessage, AcademicMetadata } from './ChatContainer';
+import type { UIMessage } from 'ai';
 import { 
   loadChat, 
   createChat, 
@@ -47,7 +46,7 @@ export interface ConversationContextState {
   
   // Actions
   createNewConversation: () => Promise<string>;
-  loadConversation: (conversationId: string) => Promise<AcademicUIMessage[]>;
+  loadConversation: (conversationId: string) => Promise<UIMessage[]>;
   loadUserConversations: () => Promise<void>;
   switchConversation: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
@@ -110,7 +109,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
   /**
    * Load conversation messages (AI SDK compliant)
    */
-  const loadConversation = useCallback(async (conversationId: string): Promise<AcademicUIMessage[]> => {
+  const loadConversation = useCallback(async (conversationId: string): Promise<UIMessage[]> => {
     try {
       setIsLoading(true);
       setError(undefined);
@@ -126,7 +125,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({
         setCurrentConversationId(conversationId);
       }
       
-      return messages as AcademicUIMessage[];
+      return messages as UIMessage[];
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load conversation';
