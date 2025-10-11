@@ -51,6 +51,7 @@ export interface User {
   fullName?: string;
   role: UserRole;
   institution?: string;
+  predikat?: string; // Academic metadata: "Mahasiswa" or "Peneliti"
   isVerified: boolean;
   createdAt: string;
   lastLogin?: string;
