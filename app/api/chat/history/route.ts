@@ -309,17 +309,10 @@ export async function GET(request: NextRequest) {
                 model: dynamic.primaryModel,
                 prompt: [
                   // SEMANTIC INTELLIGENCE MURNI: Capture unique essence, NOT keyword extraction
-                  'Tangkap esensi semantik UNIK dari percakapan ini dalam maksimal 35 karakter Bahasa Indonesia.',
-                  '',
-                  // DIVERSITY ENFORCEMENT: Avoid generic academic patterns
-                  'Hindari pola generik akademis seperti:',
-                  '- "Analisis...", "Pengaruh...", "Studi...", "Penelitian..."',
-                  '- "Aspek...", "Tinjauan...", "Kajian...", "Pemahaman..."',
-                  '- "Peranan...", "Hubungan...", "Dampak...", "Faktor..."',
+                  'Capture the semantic essence of this conversation JUST FROM YOUR RESPONSE in a maximum of 35 Bahasa Indonesia characters, in concise, literal',
                   '',
                   // UNIQUENESS: Focus on what makes THIS conversation distinct
-                  'Fokus pada sudut pandang SPESIFIK yang membedakan percakapan INI dari topik serupa.',
-                  'Be creative, precise, memorable.',
+                  'concise, literal, not poetic.',
                   '',
                   // CONTEXT: User's actual messages
                   'Konteks percakapan:',

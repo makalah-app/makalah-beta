@@ -1,14 +1,14 @@
 /**
- * Admin Fallback System Prompt Management API Endpoint
+ * Admin OpenRouter System Prompt Management API Endpoint
  *
- * Simplified CRUD for fallback system prompt (used by OpenRouter/Gemini during failover).
+ * Simplified CRUD for OpenRouter system prompt (used by Gemini models).
  * Restricted to admin access only.
  *
  * Features:
- * - GET: Retrieve active fallback prompt
- * - PUT: Update/create fallback prompt
+ * - GET: Retrieve active OpenRouter prompt
+ * - PUT: Update/create OpenRouter prompt
  * - Single active prompt enforced by database constraint
- * - Table: fallback_system_prompts
+ * - Table: openrouter_system_prompts
  */
 
 import { NextRequest } from 'next/server';
@@ -28,7 +28,7 @@ const UpdateOpenRouterPromptSchema = z.object({
 type UpdateOpenRouterPromptRequest = z.infer<typeof UpdateOpenRouterPromptSchema>;
 
 /**
- * GET /api/admin/openrouter-prompt - Retrieve active fallback prompt
+ * GET /api/admin/openrouter-prompt - Retrieve active OpenRouter prompt
  */
 export async function GET(request: NextRequest) {
   try {
@@ -48,22 +48,31 @@ export async function GET(request: NextRequest) {
     // Type assertion needed due to Supabase PostgREST type inference returning 'never'
     // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
     const { data: prompt, error } = await (supabaseAdmin as any)
-      .from('fallback_system_prompts')
+      .from('openrouter_system_prompts')
       .select('*')
       .eq('is_active', true)
       .maybeSingle();
 
+    // Detailed error logging for debugging
     if (error) {
-      throw new Error('Failed to get fallback prompt');
+      console.error('[OpenRouter Prompt API] Supabase query error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        timestamp: new Date().toISOString()
+      });
+      throw new Error(`Failed to get OpenRouter prompt: ${error.message || 'Unknown database error'}`);
     }
 
+    // Success: return prompt (or null if no active prompt found)
     const message = prompt
-      ? 'Fallback prompt loaded successfully'
-      : 'No active fallback prompt found';
+      ? 'OpenRouter prompt loaded successfully'
+      : 'No active OpenRouter prompt found';
 
     return Response.json({
       success: true,
-      data: { prompt },
+      data: { prompt: prompt || null },
       message,
       metadata: {
         hasPrompt: !!prompt,
@@ -72,6 +81,13 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    // Log detailed error for server-side debugging
+    console.error('[OpenRouter Prompt API] Unexpected error in GET handler:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+
     return Response.json({
       success: false,
       error: {
@@ -84,7 +100,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * PUT /api/admin/openrouter-prompt - Update or create fallback prompt
+ * PUT /api/admin/openrouter-prompt - Update or create OpenRouter prompt
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -108,7 +124,7 @@ export async function PUT(request: NextRequest) {
     // Type assertion needed due to Supabase PostgREST type inference returning 'never'
     // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
     const { data: currentPrompt } = await (supabaseAdmin as any)
-      .from('fallback_system_prompts')
+      .from('openrouter_system_prompts')
       .select('id')
       .eq('is_active', true)
       .maybeSingle();
@@ -118,11 +134,11 @@ export async function PUT(request: NextRequest) {
       // Type assertion needed due to Supabase PostgREST type inference returning 'never'
       // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
       const { data: newPrompt, error: insertError } = await (supabaseAdmin as any)
-        .from('fallback_system_prompts')
+        .from('openrouter_system_prompts')
         .insert({
           content: validated.content,
           version: validated.version || 'v1.0',
-          description: validated.description || 'Fallback system prompt for OpenRouter Gemini models',
+          description: validated.description || 'System prompt for OpenRouter Gemini models',
           is_active: true,
           created_by: adminCheck.userId
           // created_at and updated_at will use database defaults
@@ -131,13 +147,20 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (insertError) {
-        throw new Error('Failed to create fallback prompt');
+        console.error('[OpenRouter Prompt API] Failed to create OpenRouter prompt:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          timestamp: new Date().toISOString()
+        });
+        throw new Error(`Failed to create OpenRouter prompt: ${insertError.message || 'Unknown database error'}`);
       }
 
       return Response.json({
         success: true,
         data: { prompt: newPrompt },
-        message: 'Fallback prompt created successfully',
+        message: 'OpenRouter prompt created successfully',
         metadata: {
           action: 'created',
           generatedAt: new Date().toISOString()
@@ -149,7 +172,7 @@ export async function PUT(request: NextRequest) {
     // Type assertion needed due to Supabase PostgREST type inference returning 'never'
     // See CLAUDE.md "Supabase Type Inference Workarounds" (commit 95c46e7)
     const { data: updatedPrompt, error: updateError } = await (supabaseAdmin as any)
-      .from('fallback_system_prompts')
+      .from('openrouter_system_prompts')
       .update({
         content: validated.content,
         version: validated.version,
@@ -162,13 +185,20 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (updateError) {
-      throw new Error('Failed to update fallback prompt');
+      console.error('[OpenRouter Prompt API] Failed to update OpenRouter prompt:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        timestamp: new Date().toISOString()
+      });
+      throw new Error(`Failed to update OpenRouter prompt: ${updateError.message || 'Unknown database error'}`);
     }
 
     return Response.json({
       success: true,
       data: { prompt: updatedPrompt },
-      message: 'Fallback prompt updated successfully',
+      message: 'OpenRouter prompt updated successfully',
       metadata: {
         action: 'updated',
         generatedAt: new Date().toISOString()
@@ -177,6 +207,10 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.warn('[OpenRouter Prompt API] Validation error in PUT handler:', {
+        errors: error.errors,
+        timestamp: new Date().toISOString()
+      });
       return Response.json({
         success: false,
         error: {
@@ -188,10 +222,17 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Log detailed error for server-side debugging
+    console.error('[OpenRouter Prompt API] Unexpected error in PUT handler:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+
     return Response.json({
       success: false,
       error: {
-        message: error instanceof Error ? error.message : 'Failed to update fallback prompt',
+        message: error instanceof Error ? error.message : 'Failed to update OpenRouter prompt',
         type: 'internal_error',
         code: 'UPDATE_ERROR'
       }

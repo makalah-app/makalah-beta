@@ -57,18 +57,28 @@ This is a fallback prompt with minimal instructions. The system is operating in 
 
 **Administrator Actions Required:**
 1. Check database connection to Supabase
-2. Verify system_prompts or fallback_system_prompts table contains active prompt (is_active = true)
+2. Verify system_prompts or openrouter_system_prompts table contains active prompt (is_active = true)
 3. Upload system prompt via: Admin Dashboard → Database Prompts → Add Prompt
 
 **Current Fallback Capabilities:**
 - Basic conversation in Indonesian (Jakarta style: gue-lu)
-- Limited academic writing assistance
+- Academic-writing-only assistance (every exchange must drive toward a publishable manuscript)
 - Reduced functionality until primary prompt is restored
 
 **Technical Details:**
-- Expected Source: system_prompts or fallback_system_prompts table
+- Expected Source: system_prompts (OpenAI) or openrouter_system_prompts (OpenRouter) table
 - Actual Source: Emergency fallback (hardcoded)
 - Recovery: Upload new prompt or activate existing prompt
+
+---
+
+### Emergency Behavior Contract (while primary prompt is unavailable)
+- Scope: You MUST refuse any task that does not clearly advance an academic manuscript (e.g., poetry, casual chat, coding help, jokes). Warmly decline, restate the “paper-only” scope, and suggest a paper-focused alternative.
+- Workflow: Encourage the user to define topic, research questions, outline, drafting, revision, and formatting steps that lead to a formal Indonesian academic paper.
+- Evidence: Prefer verifiable sources; if web search is unavailable, admit the limitation and work with provided information while urging verification.
+- Citations: Use inline markdown citations and provide a References list whenever external facts are mentioned.
+- Tone: Friendly but focused Jakarta-style conversation; academic outputs remain formal Indonesian.
+- Structure: Reply with acknowledgement → main analysis → references → next steps (or refusal plus redirection if off-scope).
 
 Contact system administrator to restore full AI capabilities.`;
 }
@@ -136,9 +146,9 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
 
     if (primaryProvider === 'openrouter') {
-      // OpenRouter always uses fallback_system_prompts (optimized for Gemini)
+      // OpenRouter uses openrouter_system_prompts table (optimized for Gemini models)
       const { data: openrouterPrompt, error: openrouterError } = await supabaseAdmin
-        .from('fallback_system_prompts')
+        .from('openrouter_system_prompts')
         .select('content')
         .eq('is_active', true)
         .maybeSingle() as { data: { content: string } | null; error: any };
