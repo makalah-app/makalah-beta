@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, User, Lock, Palette, Shield, LucideIcon } from 'lucide-react';
+import { Settings, User, Lock, Palette, Shield, MessageSquare, LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface SettingsSidebarProps {
@@ -48,6 +48,13 @@ const navigationItems: NavigationItem[] = [
     href: '/settings/account',
     icon: Shield,
     description: 'Role & status akun'
+  },
+  {
+    id: 'conversations',
+    label: 'Log Percakapan',
+    href: '/settings/conversations',
+    icon: MessageSquare,
+    description: 'Riwayat & pengelolaan chat'
   }
 ];
 

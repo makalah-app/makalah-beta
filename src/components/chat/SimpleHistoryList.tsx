@@ -38,6 +38,19 @@ export const SimpleHistoryList: React.FC<SimpleHistoryListProps> = ({ onRefresh 
     }
   }, [onRefresh]);
 
+  // Real-time sync: Listen for conversation deletions from settings page
+  useEffect(() => {
+    const handleConversationDeleted = (event: MessageEvent) => {
+      if (event.data.type === 'conversations-deleted') {
+        // Reload conversation list when deletions occur in settings
+        loadConversations();
+      }
+    };
+
+    window.addEventListener('message', handleConversationDeleted);
+    return () => window.removeEventListener('message', handleConversationDeleted);
+  }, []);
+
   if (conversations.length === 0) {
     return (
       <div>
