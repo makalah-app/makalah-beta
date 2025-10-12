@@ -146,7 +146,7 @@ export default function HomePage() {
             <h3 className="text-2xl md:text-3xl font-semibold text-foreground font-heading tracking-tight">
               Anda adalah pawang, AI hanya tukang.
             </h3>
-            <p className="text-base md:text-4xl text-muted-foreground mt-2">
+            <p className="text-2xl md:text-4xl text-muted-foreground mt-2">
               Karya tulis tetap orisinal.
             </p>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
