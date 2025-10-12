@@ -344,6 +344,7 @@ export default function ConversationsPage() {
                   <th className="w-[5%] px-3 py-2 text-center">
                     <Checkbox
                       checked={selected.size === conversations.length && conversations.length > 0}
+                      indeterminate={selected.size > 0 && selected.size < conversations.length}
                       onCheckedChange={handleSelectAll}
                       aria-label="Pilih semua percakapan"
                     />
