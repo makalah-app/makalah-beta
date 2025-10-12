@@ -45,32 +45,17 @@ export function useChatHistory(): UseChatHistoryReturn {
 
   // ✅ AUTH STABILITY DETECTION: Wait for auth to stabilize before fetching
   useEffect(() => {
-    console.log('[useChatHistory] Setting up auth stability timer');
     const timer = setTimeout(() => {
-      console.log('[useChatHistory] Auth stability timeout reached - setting authStable to true');
       setAuthStable(true);
     }, 500); // Wait 500ms for auth to stabilize
 
     return () => {
-      console.log('[useChatHistory] Clearing auth stability timer');
       clearTimeout(timer);
     };
   }, []);
 
   const fetchConversations = useCallback(async (currentOffset = 0, isLoadMore = false) => {
-    console.log('[useChatHistory] fetchConversations called:', {
-      currentOffset,
-      isLoadMore,
-      isAuthenticated,
-      userId: user?.id,
-      userEmail: user?.email
-    });
-
     if (!isAuthenticated || !user?.id) {
-      console.warn('[useChatHistory] Skipping fetch - not authenticated or no user ID:', {
-        isAuthenticated,
-        userId: user?.id
-      });
       setLoading(false);
       return;
     }
@@ -78,7 +63,6 @@ export function useChatHistory(): UseChatHistoryReturn {
     // ✅ PREVENT DUPLICATE REQUESTS: Check if same params already being fetched
     const fetchParams = `${user.id}-${currentOffset}-${isLoadMore}`;
     if (fetchParams === lastFetchParamsRef.current) {
-      console.warn('[useChatHistory] Duplicate request prevented:', fetchParams);
       return;
     }
 
@@ -97,14 +81,11 @@ export function useChatHistory(): UseChatHistoryReturn {
     setError(null);
 
     try {
-      console.log('[useChatHistory] Starting fetch request...');
-
       // Create new AbortController for this request
       abortControllerRef.current = new AbortController();
 
       const limit = 20;
       const url = `/api/chat/history?userId=${user.id}&limit=${limit}&offset=${currentOffset}`;
-      console.log('[useChatHistory] Fetching from URL:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -114,23 +95,11 @@ export function useChatHistory(): UseChatHistoryReturn {
         signal: abortControllerRef.current.signal,
       });
 
-      console.log('[useChatHistory] Response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
       if (!response.ok) {
         throw new Error(`Failed to fetch conversations: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('[useChatHistory] Data received:', {
-        isArray: Array.isArray(data),
-        hasConversations: !!data.conversations,
-        dataLength: Array.isArray(data) ? data.length : data.conversations?.length || 0,
-        rawData: data
-      });
 
       // Handle both array response and object with conversations property
       const rawConversationList = Array.isArray(data) ? data : (data.conversations || []);
@@ -138,37 +107,22 @@ export function useChatHistory(): UseChatHistoryReturn {
         ...conv,
       }));
 
-      console.log('[useChatHistory] Processed conversations:', {
-        count: conversationList.length,
-        isLoadMore,
-        conversations: conversationList.map(c => ({ id: c.id, title: c.title }))
-      });
-
       if (isLoadMore) {
-        setConversations(prev => {
-          const updated = [...prev, ...conversationList];
-          console.log('[useChatHistory] Updated conversations (load more):', updated.length);
-          return updated;
-        });
+        setConversations(prev => [...prev, ...conversationList]);
       } else {
-        console.log('[useChatHistory] Setting conversations (fresh):', conversationList.length);
         setConversations(conversationList);
       }
 
       // Check if there are more conversations to load
       setHasMore(conversationList.length === limit);
       setOffset(currentOffset + limit);
-      console.log('[useChatHistory] Fetch completed successfully');
     } catch (err) {
       // ✅ HANDLE ABORTED REQUESTS: Don't treat aborted requests as errors
       if (err instanceof Error && err.name === 'AbortError') {
-        console.log('[useChatHistory] Request aborted');
         return;
       }
-      console.error('[useChatHistory] Error fetching conversations:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load chat history';
       setError(errorMessage);
-      console.error('[useChatHistory] Error message set:', errorMessage);
     } finally {
       // Clear fetch params on completion
       lastFetchParamsRef.current = '';
@@ -180,42 +134,23 @@ export function useChatHistory(): UseChatHistoryReturn {
 
   // ✅ CRITICAL FIX: Only update ref when dependencies actually change to prevent loop
   useEffect(() => {
-    console.log('[useChatHistory] Updating fetchConversationsRef.current');
     fetchConversationsRef.current = fetchConversations;
   }, [fetchConversations]); // Depend on the function itself to capture latest closure
 
   // ✅ FIXED: Initial fetch with stable dependencies only
   // ✅ AUTH RACE CONDITION FIX: Wait for auth to stabilize before fetching
   useEffect(() => {
-    console.log('[useChatHistory] Initial fetch effect triggered:', {
-      authStable,
-      isAuthenticated,
-      userId: user?.id,
-      hasRefFunction: !!fetchConversationsRef.current
-    });
-
     if (authStable && isAuthenticated && user?.id && fetchConversationsRef.current) {
-      console.log('[useChatHistory] Calling fetchConversationsRef.current()');
       fetchConversationsRef.current();
-    } else {
-      console.log('[useChatHistory] Conditions not met for fetch:', {
-        authStable,
-        isAuthenticated,
-        hasUserId: !!user?.id,
-        hasRefFunction: !!fetchConversationsRef.current
-      });
     }
   }, [authStable, user?.id, isAuthenticated]); // Wait for authStable before fetching
 
   // ✅ FIXED: Stable refetch function without circular dependencies
   const refetch = useCallback(async () => {
-    console.log('[useChatHistory] refetch called');
     if (fetchConversationsRef.current) {
       setOffset(0);
       setHasMore(true);
       await fetchConversationsRef.current();
-    } else {
-      console.warn('[useChatHistory] refetch called but fetchConversationsRef.current is null');
     }
   }, []); // No dependencies = stable function
 
@@ -235,18 +170,6 @@ export function useChatHistory(): UseChatHistoryReturn {
       };
     }
   }, []); // No dependencies = runs once only
-
-  // Log state on every render for debugging
-  console.log('[useChatHistory] Hook state:', {
-    conversationsCount: conversations.length,
-    loading,
-    loadingMore,
-    error,
-    hasMore,
-    authStable,
-    isAuthenticated,
-    userId: user?.id
-  });
 
   return {
     conversations,

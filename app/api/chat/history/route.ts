@@ -86,7 +86,6 @@ export async function GET(request: NextRequest) {
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
       }
-      console.log(`[Chat History API] AI SDK v5 pattern: Loading messages for chat ${chatId}`);
       try {
         // verify ownership first
         const { data: conv, error: convErr } = await supabase
@@ -99,10 +98,8 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Forbidden', code: 'FORBIDDEN' }, { status: 403 });
         }
         const messages = await loadChat(chatId, supabase);
-        console.log(`[Chat History API] Successfully loaded ${messages.length} messages for chat ${chatId}`);
         return NextResponse.json(messages);
       } catch (error) {
-        console.error(`[Chat History API] Failed to load chat ${chatId}:`, error);
         return NextResponse.json([]);
       }
     }
@@ -120,15 +117,6 @@ export async function GET(request: NextRequest) {
       };
       return NextResponse.json(response);
     }
-
-    console.log(`[Chat History API] Loading history for user ${userId || qpUserId}`, {
-      conversationId,
-      limit,
-      offset,
-      dateFrom,
-      dateTo,
-      messageType
-    });
 
     // If specific conversation requested, load its messages
     if (conversationId) {
@@ -188,7 +176,6 @@ export async function GET(request: NextRequest) {
         }
       };
 
-      console.log(`[Chat History API] Returning ${paginatedMessages.length} messages from conversation ${conversationId}`);
       return NextResponse.json(response);
     }
 
@@ -247,7 +234,6 @@ export async function GET(request: NextRequest) {
       if (!userId) {
         const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
         clientForMessages = supabaseAdmin as any;
-        console.log('[Chat History API] Fetching messages via admin client (no session)');
       }
 
       const { data: allMessages, error: messagesError } = await clientForMessages
@@ -271,8 +257,6 @@ export async function GET(request: NextRequest) {
             metadata: msg.metadata || {}
           });
         });
-      } else if (messagesError) {
-        console.warn('[Chat History API] Messages query failed:', messagesError.message);
       }
     }
 
@@ -333,7 +317,6 @@ export async function GET(request: NextRequest) {
 
                 // Pre-insert validation: Ensure title doesn't exceed 35 chars (database constraint)
                 if (fixedTitle.length > 35) {
-                  console.warn(`[Chat History API] Generated title exceeds 35 chars (${fixedTitle.length}), forcing truncation: "${fixedTitle}"`);
                   fixedTitle = fixedTitle.substring(0, 32).trim() + '...';
                 }
 
@@ -397,7 +380,6 @@ export async function GET(request: NextRequest) {
 
                     // Pre-insert validation: Ensure title doesn't exceed 35 chars (database constraint)
                     if (fixedTitle.length > 35) {
-                      console.warn(`[Chat History API] Assistant fallback title exceeds 35 chars (${fixedTitle.length}), forcing truncation: "${fixedTitle}"`);
                       fixedTitle = fixedTitle.substring(0, 32).trim() + '...';
                     }
 
@@ -405,7 +387,7 @@ export async function GET(request: NextRequest) {
                     await (supabaseAdmin as any).from('conversations').update({ title: fixedTitle }).eq('id', conv.id);
                   }
                 } catch (e) {
-                  console.warn('[Chat History API] Assistant-based title generation failed:', e);
+                  // Silent fail - fallback to next title generation method
                 }
               }
             }
@@ -429,7 +411,6 @@ export async function GET(request: NextRequest) {
 
                   // Pre-insert validation: Ensure title doesn't exceed 35 chars (database constraint)
                   if (fixedTitle.length > 35) {
-                    console.warn(`[Chat History API] Heuristic fallback title exceeds 35 chars (${fixedTitle.length}), forcing truncation: "${fixedTitle}"`);
                     fixedTitle = fixedTitle.substring(0, 32).trim() + '...';
                   }
 
@@ -448,7 +429,6 @@ export async function GET(request: NextRequest) {
             totalMessages: recentMessages.length
           };
         } catch (error) {
-          console.warn(`[Chat History API] Failed to load messages for conversation ${conv.id}:`, error);
           return {
             ...conv,
             recentMessages: [],
@@ -469,12 +449,9 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    console.log(`[Chat History API] Returning ${paginatedConversations.length} conversations for user ${userId}`);
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[Chat History API] GET error:', error);
-
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to load chat history',
       code: 'LOAD_HISTORY_FAILED',
@@ -522,14 +499,6 @@ export async function POST(request: NextRequest) {
         code: 'MISSING_REQUIRED_FIELDS'
       }, { status: 400 });
     }
-
-    console.log(`[Chat History Search API] Searching for "${query}" for user ${userId}`, {
-      conversationIds,
-      limit,
-      searchInContent,
-      searchInMetadata,
-      messageType
-    });
 
     // Build search conditions
     const supabase = createSupabaseServerClient();
@@ -633,12 +602,9 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    console.log(`[Chat History Search API] Found ${enhancedResults.length} results for query "${query}"`);
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('[Chat History Search API] POST error:', error);
-
     return NextResponse.json({
       error: error instanceof Error ? error.message : 'Search failed',
       code: 'SEARCH_FAILED',
