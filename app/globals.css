@@ -75,6 +75,11 @@
   --user-message-bg: oklch(94.309% 0.00011 271.152); /* Same as input color for light mode */
   --user-message-border: oklch(0.922 0 0 / 0.2); /* Ultra thin border with 20% opacity */
   --chat-input: oklch(0.97 0 0); /* Lebih terang untuk area input chat di light mode */
+
+  /* List interaction colors (global - light mode) */
+  --list-accent: oklch(0.35 0 0);
+  --list-hover-bg: oklch(0.35 0 0 / 0.12);
+  --list-selected-bg: oklch(0.35 0 0 / 0.30);
 }
 
 .dark {
@@ -123,6 +128,11 @@
   --user-message-bg: oklch(0.269 0 0); /* Same as sidebar-accent for dark mode */
   --user-message-border: oklch(0.269 0 0 / 0.3); /* Slightly more visible in dark mode */
   --chat-input: oklch(0.205 0 0); /* Samakan dengan kartu rujukan saat mode gelap */
+
+  /* List interaction colors for dark mode (brighter for contrast) */
+  --list-accent: oklch(0.62 0 0);
+  --list-hover-bg: oklch(0.62 0 0 / 0.22);
+  --list-selected-bg: oklch(0.62 0 0 / 0.36);
 }
 
 @layer base {
@@ -199,6 +209,31 @@
 /* Global Section Separators (applies to pages wrapped by .global-main) */
 .global-main section {
   position: relative;
+}
+
+/* Global list interaction helpers (reusable across list/table/card items) */
+.ui-list-row {
+  transition: background-color 140ms ease-in-out, color 140ms ease-in-out;
+}
+
+.ui-list-row:hover {
+  background-color: var(--list-hover-bg);
+}
+
+.ui-list-row--selected {
+  background-color: var(--list-selected-bg);
+}
+
+.ui-list-row--selected:hover {
+  background-color: var(--list-accent);
+}
+
+/* Prominent section divider to separate header vs list body */
+.ui-section-divider {
+  height: 3px;
+  background: color-mix(in oklch, var(--primary) 42%, var(--border) 58%);
+  opacity: 0.9;
+  border-radius: 2px;
 }
 
 /* Accent brand bar at the top of every section after the first */
@@ -306,6 +341,16 @@
 }
 
 @layer utilities {
+  /* Ensure equal inner gutters for first/last table columns */
+  .ui-table-balanced th:first-child,
+  .ui-table-balanced td:first-child { padding-left: 0.75rem; }
+  .ui-table-balanced th:last-child,
+  .ui-table-balanced td:last-child { padding-right: 0.75rem; }
+
+  /* Table header row: thick bottom separator without affecting height */
+  .ui-table-headRow {
+    box-shadow: inset 0 -6px 0 0 var(--border);
+  }
   .logo-spinner-frame {
     @apply absolute inset-0 opacity-0 transition-opacity duration-500 ease-in-out;
     will-change: opacity;

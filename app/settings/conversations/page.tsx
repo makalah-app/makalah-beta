@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useRouter } from 'next/navigation';
 import { MessageSquare, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -102,9 +103,10 @@ export default function ConversationsPage() {
   }, [user?.id, page]);
 
   // Selection handlers
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelected(new Set(conversations.map(c => c.id)));
+  const handleSelectAll = (checked: CheckedState) => {
+    // Hanya set semua saat benar-benar checked === true
+    if (checked === true) {
+      setSelected(new Set(conversations.map((c) => c.id)));
     } else {
       setSelected(new Set());
     }
@@ -287,13 +289,11 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      {/* Bulk Action Bar (Sticky, shows when selected > 0) */}
+      {/* Bulk Action Bar - diletakkan tepat di bawah subheader halaman */}
       {selected.size > 0 && (
-        <Card className="sticky top-20 z-10 bg-primary/5 border-primary/20">
+        <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex items-center justify-between p-4">
-            <span className="text-sm font-medium">
-              {selected.size} percakapan dipilih
-            </span>
+            <span className="text-sm font-medium">{selected.size} percakapan dipilih</span>
             <Button
               variant="destructive"
               size="sm"
@@ -306,6 +306,8 @@ export default function ConversationsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Divider dihapus: garis tebal akan ditempatkan tepat di bawah header tabel */}
 
       {/* Main Table Card */}
       <Card>
@@ -338,25 +340,39 @@ export default function ConversationsPage() {
 
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-[900px] table-fixed border-collapse text-sm">
-              <thead className="bg-muted/40 text-left">
-                <tr>
-                  <th className="w-[5%] px-3 py-2 text-center">
-                    <Checkbox
-                      checked={selected.size === conversations.length && conversations.length > 0}
-                      indeterminate={selected.size > 0 && selected.size < conversations.length}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Pilih semua percakapan"
-                    />
-                  </th>
-                  <th className="w-[5%] px-3 py-2 font-semibold text-center">No.</th>
-                  <th className="w-[40%] px-3 py-2 font-semibold">Judul Percakapan</th>
-                  <th className="w-[12%] px-3 py-2 font-semibold text-center">Jumlah Pesan</th>
-                  <th className="w-[18%] px-3 py-2 font-semibold">Dibuat</th>
-                  <th className="w-[15%] px-3 py-2 font-semibold">Aktivitas Terakhir</th>
-                  <th className="w-[5%] px-3 py-2 font-semibold text-center">Aksi</th>
-                </tr>
-              </thead>
+            <div className="rounded-[3px] overflow-hidden">
+              <table className="ui-table-balanced w-full min-w-[900px] table-fixed border-collapse text-sm">
+                <thead className="text-left">
+                  <tr>
+                    <th className="w-12 h-12 px-3 py-0 align-middle text-left bg-[oklch(0.145_0_0)] text-primary-foreground">
+                      {(() => {
+                        const headerChecked: CheckedState =
+                          conversations.length === 0
+                            ? false
+                            : selected.size === conversations.length
+                            ? true
+                            : selected.size > 0
+                            ? 'indeterminate'
+                            : false;
+                        return (
+                          <Checkbox
+                            checked={headerChecked}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Pilih semua percakapan"
+                          />
+                        );
+                      })()}
+                    </th>
+                    <th className="w-12 h-12 px-3 py-0 align-middle font-semibold text-center bg-[oklch(0.145_0_0)] text-primary-foreground">No.</th>
+                    <th className="w-[40%] h-12 px-3 py-0 align-middle font-semibold bg-[oklch(0.145_0_0)] text-primary-foreground">Judul Percakapan</th>
+                    <th className="w-[12%] h-12 px-3 py-0 align-middle font-semibold text-center bg-[oklch(0.145_0_0)] text-primary-foreground">Jumlah Pesan</th>
+                    <th className="w-[18%] h-12 px-3 py-0 align-middle font-semibold bg-[oklch(0.145_0_0)] text-primary-foreground">Dibuat</th>
+                    <th className="w-[15%] h-12 px-3 py-0 align-middle font-semibold bg-[oklch(0.145_0_0)] text-primary-foreground">Aktivitas Terakhir</th>
+                    <th className="w-16 h-12 pl-3 pr-3 py-0 align-middle font-semibold text-right bg-[oklch(0.145_0_0)] text-primary-foreground">
+                      <div className="inline-block w-9 text-left">Aksi</div>
+                    </th>
+                  </tr>
+                </thead>
               <tbody>
                 {loading ? (
                   <tr>
@@ -380,11 +396,11 @@ export default function ConversationsPage() {
                       <tr
                         key={conv.id}
                         className={cn(
-                          "border-b border-border last:border-0",
-                          selected.has(conv.id) && "bg-primary/5"
+                          "ui-list-row border-b border-border last:border-0",
+                          selected.has(conv.id) && "ui-list-row--selected"
                         )}
                       >
-                        <td className="px-3 py-3 text-center">
+                        <td className="w-12 h-12 px-3 py-0 align-middle text-left">
                           <Checkbox
                             checked={selected.has(conv.id)}
                             onCheckedChange={(checked) =>
@@ -393,24 +409,24 @@ export default function ConversationsPage() {
                             aria-label={`Pilih ${conv.title}`}
                           />
                         </td>
-                        <td className="px-3 py-3 text-center text-xs text-muted-foreground">
+                        <td className="h-12 px-3 py-0 align-middle text-center text-xs text-muted-foreground">
                           {rowNumber}
                         </td>
-                        <td className="px-3 py-3 truncate font-medium">
+                        <td className="h-12 px-3 py-0 align-middle truncate font-medium">
                           {conv.title || 'Untitled Chat'}
                         </td>
-                        <td className="px-3 py-3 text-center">
+                        <td className="h-12 px-3 py-0 align-middle text-center">
                           {conv.messageCount}
                         </td>
-                        <td className="px-3 py-3 text-xs text-muted-foreground">
+                        <td className="h-12 px-3 py-0 align-middle text-xs text-muted-foreground">
                           {formatDate(conv.metadata?.created_at || conv.lastActivity)}
                         </td>
-                        <td className="px-3 py-3 text-xs text-muted-foreground">
+                        <td className="h-12 px-3 py-0 align-middle text-xs text-muted-foreground">
                           {formatDateTime(conv.lastActivity)}
                         </td>
-                        <td className="px-3 py-3 text-center">
+                        <td className="w-16 h-12 pl-3 pr-3 py-0 align-middle text-right">
                           <Button
-                            size="sm"
+                            size="icon"
                             variant="destructive"
                             onClick={() => setDeleteTarget({ single: conv.id, bulk: false })}
                             disabled={isDeleting}
@@ -423,7 +439,8 @@ export default function ConversationsPage() {
                   })
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
 
           {/* Mobile Cards */}
@@ -442,7 +459,8 @@ export default function ConversationsPage() {
                 <Card
                   key={conv.id}
                   className={cn(
-                    selected.has(conv.id) && "border-primary bg-primary/5"
+                    "ui-list-row",
+                    selected.has(conv.id) && "ui-list-row--selected"
                   )}
                 >
                   <CardContent className="p-4 space-y-3">
