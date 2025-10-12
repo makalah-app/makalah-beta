@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
     const includeArchived = searchParams.get('archived') === 'true';
-    
+
     if (!userId) {
       return NextResponse.json({
         error: 'userId parameter is required',
@@ -54,21 +55,21 @@ export async function GET(request: NextRequest) {
 
     // Load user conversations with enhanced filtering (use supabaseAdmin to bypass RLS)
     const conversations = await getUserConversations(userId, supabaseAdmin);
-    
+
     // Filter archived if needed
-    const filteredConversations = includeArchived 
-      ? conversations 
+    const filteredConversations = includeArchived
+      ? conversations
       : conversations.filter(conv => !conv.archived);
-    
-    // Apply limit
-    const limitedConversations = filteredConversations.slice(0, limit);
-    
+
+    // Apply offset and limit for server-side pagination
+    const limitedConversations = filteredConversations.slice(offset, offset + limit);
+
     // Enhanced response with metadata
     const response = {
       conversations: limitedConversations,
       metadata: {
-        total: limitedConversations.length,
-        hasMore: filteredConversations.length > limit,
+        total: filteredConversations.length, // Total available conversations (not limited)
+        hasMore: (offset + limit) < filteredConversations.length,
         userId,
         includeArchived,
         timestamp: Date.now()
