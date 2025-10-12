@@ -127,19 +127,10 @@ function AdminStatusContent() {
               activePromptCharCount = openrouterPromptResult.data.prompt.content?.length || 0;
               activePromptVersion = openrouterPromptResult.data.prompt.version || 'v1.0';
             } else if (!openrouterPromptResult.success) {
-              // Log API error for debugging
-              console.error('[Admin Status] OpenRouter prompt API error:', {
-                error: openrouterPromptResult.error,
-                timestamp: new Date().toISOString()
-              });
               activePromptCharCount = 0;
             }
           } catch (openrouterError) {
-            // Log fetch/network errors for debugging
-            console.error('[Admin Status] Failed to fetch OpenRouter prompt:', {
-              error: openrouterError instanceof Error ? openrouterError.message : String(openrouterError),
-              timestamp: new Date().toISOString()
-            });
+            // Silent fail - use default values
             activePromptCharCount = 0;
           }
         } else {

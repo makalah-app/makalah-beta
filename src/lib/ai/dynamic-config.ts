@@ -264,14 +264,7 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
     };
 
     // AI SDK compliance: System prompt fallback handled by emergency mode
-    if (!systemPromptContent) {
-      // EMERGENCY FALLBACK: No system prompt found in database - using emergency mode
-      try {
-        // Lightweight server log for observability in logs aggregator
-        // Note: kept minimal to respect global policy; remove if noisy.
-        console.warn('[EmergencyFallback] using degraded system prompt', { reason: 'empty_content' });
-      } catch {}
-    }
+    // EMERGENCY FALLBACK: No system prompt found in database - using emergency mode
 
     // ⚡ PERFORMANCE: Cache the result
     CONFIG_CACHE.data = config;
@@ -309,10 +302,6 @@ export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
       // ⚠️ EMERGENCY FALLBACK PROMPT when database fails
       const dbError = error instanceof Error ? error.message : 'Unknown database connection error';
       const emergencyPrompt = generateEmergencyFallback('database_error', dbError);
-
-      try {
-        console.warn('[EmergencyFallback] using degraded system prompt', { reason: 'database_error', error: dbError });
-      } catch {}
 
       return {
         primaryProvider: 'openai',

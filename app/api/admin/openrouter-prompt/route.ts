@@ -53,15 +53,7 @@ export async function GET(request: NextRequest) {
       .eq('is_active', true)
       .maybeSingle();
 
-    // Detailed error logging for debugging
     if (error) {
-      console.error('[OpenRouter Prompt API] Supabase query error:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        timestamp: new Date().toISOString()
-      });
       throw new Error(`Failed to get OpenRouter prompt: ${error.message || 'Unknown database error'}`);
     }
 
@@ -81,13 +73,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    // Log detailed error for server-side debugging
-    console.error('[OpenRouter Prompt API] Unexpected error in GET handler:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
-
     return Response.json({
       success: false,
       error: {
@@ -147,13 +132,6 @@ export async function PUT(request: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error('[OpenRouter Prompt API] Failed to create OpenRouter prompt:', {
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-          timestamp: new Date().toISOString()
-        });
         throw new Error(`Failed to create OpenRouter prompt: ${insertError.message || 'Unknown database error'}`);
       }
 
@@ -185,13 +163,6 @@ export async function PUT(request: NextRequest) {
       .single();
 
     if (updateError) {
-      console.error('[OpenRouter Prompt API] Failed to update OpenRouter prompt:', {
-        code: updateError.code,
-        message: updateError.message,
-        details: updateError.details,
-        hint: updateError.hint,
-        timestamp: new Date().toISOString()
-      });
       throw new Error(`Failed to update OpenRouter prompt: ${updateError.message || 'Unknown database error'}`);
     }
 
@@ -207,10 +178,6 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.warn('[OpenRouter Prompt API] Validation error in PUT handler:', {
-        errors: error.errors,
-        timestamp: new Date().toISOString()
-      });
       return Response.json({
         success: false,
         error: {
@@ -221,13 +188,6 @@ export async function PUT(request: NextRequest) {
         }
       }, { status: 400 });
     }
-
-    // Log detailed error for server-side debugging
-    console.error('[OpenRouter Prompt API] Unexpected error in PUT handler:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
-    });
 
     return Response.json({
       success: false,
