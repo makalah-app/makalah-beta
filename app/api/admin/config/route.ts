@@ -15,6 +15,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
+import { getDynamicModelConfig, clearDynamicConfigCache } from '../../../../src/lib/ai/dynamic-config';
 import { validateAdminAccess as validateAdmin } from '../../../../src/lib/admin/admin-auth';
 
 // Admin email hardcoded for backward compatibility (deprecated - use role-based check instead)
@@ -120,11 +121,13 @@ export async function GET(request: NextRequest) {
     const parsedParams = {
       ...queryParams,
       includeSecrets: queryParams.includeSecrets === 'true',
-      includeStats: queryParams.includeStats !== 'false'
+      includeStats: queryParams.includeStats !== 'false',
+      bypassCache: queryParams.bypassCache === 'true'
     };
 
     const validatedRequest: GetConfigRequest = GetConfigRequestSchema.parse(parsedParams);
     const { scope, includeSecrets, includeStats, includeHealth } = validatedRequest;
+    const bypassCache = (parsedParams as any).bypassCache === true;
 
 
     const response: any = {
@@ -364,6 +367,25 @@ export async function GET(request: NextRequest) {
         adminEmail: ADMIN_EMAIL,
         healthMonitored: !!response.data.health
       };
+    }
+
+    // Attach runtime telemetry flags
+    try {
+      if (bypassCache) {
+        try { clearDynamicConfigCache(); } catch {}
+      }
+      const dynamic = await getDynamicModelConfig();
+      response.data.runtime = {
+        emergency_fallback_active: !!dynamic.emergencyFallbackActive,
+        emergency_fallback_reason: dynamic.emergencyReason || null,
+        emergency_error: dynamic.emergencyError,
+        primary_provider: dynamic.primaryProvider,
+        fallback_provider: dynamic.fallbackProvider,
+        primary_model: dynamic.primaryModelName,
+        fallback_model: dynamic.fallbackModelName,
+      };
+    } catch (e) {
+      // Silent: runtime info not critical for admin config response
     }
 
     return Response.json(response);

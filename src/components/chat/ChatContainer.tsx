@@ -92,6 +92,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const { user } = useAuth();
   const lastPersistedCountRef = useRef<number>(0);
   const isPersistingRef = useRef<boolean>(false);
+  const refreshCountRef = useRef<number>(0); // Track history refresh count (limit to 3 per conversation)
 
   // ✅ CRITICAL FIX: Enhanced user ID extraction with multiple fallbacks
   const getUserId = useCallback((): string => {
@@ -184,13 +185,18 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         onMessageStream(message as any);
       }
 
-      // Refresh chat history shortly after stream completes to surface new item with smart title
+      // Refresh chat history ONLY for first 3 messages to update sidebar with new conversation
+      // After 3 messages, conversation already visible in sidebar, no need to refresh
       try {
-        if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
-          // Single refresh to prevent multiple history updates
-          setTimeout(() => {
-            try { (window as any).refreshChatHistory(); } catch {}
-          }, 500);
+        if (refreshCountRef.current < 3) {
+          if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
+            setTimeout(() => {
+              try {
+                (window as any).refreshChatHistory();
+                refreshCountRef.current++; // Increment after successful refresh call
+              } catch {}
+            }, 500);
+          }
         }
       } catch {}
 
@@ -257,22 +263,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     },
     
     onData: (dataPart: any) => {
-      
-      // Handle AI SDK v5 compliant history refresh notification (transient)
-      if (dataPart.type === 'data-history') {
-        try {
-          // Always refresh sidebar list
-          if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
-            (window as any).refreshChatHistory();
-          }
-
-          // ❌ REMOVED: Complex message reloading logic - 7 lines of rigid database sync
-          // Natural LLM conversation doesn't need complex artifact-based reloading
-        } catch (e) {
-          // History refresh failed - silent handling for production
-        }
-      }
-
       // 🔥 HANDLE ERROR EVENTS FROM STREAM
       if (dataPart.type === 'error') {
         try {
@@ -472,17 +462,8 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           timestamp: new Date().toISOString()
         }, '*');
 
-        // Also try legacy refresh method
-        const refreshHistory = (window as any).refreshChatHistory;
-        if (typeof refreshHistory === 'function') {
-          setTimeout(() => {
-            try {
-              refreshHistory();
-            } catch (refreshError) {
-              // Refresh chat history failed - silent handling for production
-            }
-          }, 500);
-        }
+        // History refresh handled by onFinish callback for real-time updates
+        // No refresh needed here as onFinish already triggers sidebar update
       }
     } else {
       // Chat persistence failed - silent handling for production
@@ -529,6 +510,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     if (!chatId) {
       isExistingConversation.current = false;
       lastPersistedCountRef.current = 0;
+      refreshCountRef.current = 0; // Reset refresh counter for new conversation
       return;
     }
 
@@ -560,6 +542,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         hasLoadedRef.current = false;
         lastChatIdRef.current = chatId;
         setLoadedMessages([]); // Reset messages for new chat
+        refreshCountRef.current = 0; // Reset refresh counter for new chat
       }
 
       // Only load if we haven't loaded for this chatId yet

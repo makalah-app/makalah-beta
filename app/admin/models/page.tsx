@@ -107,6 +107,10 @@ function AdminModelsContent() {
   // Health check state
   const [healthChecking, setHealthChecking] = useState(false);
   const [lastHealthCheck, setLastHealthCheck] = useState<string | null>(null);
+  // Runtime telemetry (emergency fallback)
+  const [emergencyFallbackActive, setEmergencyFallbackActive] = useState(false);
+  const [emergencyReason, setEmergencyReason] = useState<string | null>(null);
+  const [emergencyError, setEmergencyError] = useState<string | undefined>(undefined);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -186,7 +190,7 @@ function AdminModelsContent() {
       setLoading(true);
       setError(null);
 
-      const response = await authenticatedFetch('/api/admin/config?includeSecrets=true');
+      const response = await authenticatedFetch('/api/admin/config?includeSecrets=true&bypassCache=true');
       const result = await response.json();
 
       if (!response.ok) {
@@ -195,6 +199,16 @@ function AdminModelsContent() {
 
       if (result.success && result.data) {
         setConfigData(result.data);
+        // Runtime telemetry
+        if (result.data.runtime) {
+          setEmergencyFallbackActive(!!result.data.runtime.emergency_fallback_active);
+          setEmergencyReason(result.data.runtime.emergency_fallback_reason ?? null);
+          setEmergencyError(result.data.runtime.emergency_error);
+        } else {
+          setEmergencyFallbackActive(false);
+          setEmergencyReason(null);
+          setEmergencyError(undefined);
+        }
 
         // Initialize provider states based on loaded database configuration
         const primaryProviderFromDB = result.data.models?.primary?.provider;
@@ -409,7 +423,7 @@ function AdminModelsContent() {
         },
       };
 
-      const configResponse = await authenticatedFetch('/api/admin/config', {
+      const configResponse = await authenticatedFetch('/api/admin/config?bypassCache=true', {
         method: 'POST',
         body: JSON.stringify(swapUpdateData),
       });
@@ -467,7 +481,7 @@ function AdminModelsContent() {
         }
       };
 
-      const configResponse = await authenticatedFetch('/api/admin/config', {
+      const configResponse = await authenticatedFetch('/api/admin/config?bypassCache=true', {
         method: 'POST',
         body: JSON.stringify(modelUpdateData),
       });
@@ -564,13 +578,32 @@ function AdminModelsContent() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <Brain className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <Brain className="h-6 w-6 text-primary mt-1" />
         <div>
           <h1 className="text-2xl font-semibold">Konfigurasi Model</h1>
           <p className="text-muted-foreground">Atur provider dan parameter model LLM untuk AI akademik</p>
         </div>
       </div>
+
+      {emergencyFallbackActive && (
+        <Alert variant="destructive">
+          <AlertTitle>Emergency Fallback Aktif</AlertTitle>
+          <AlertDescription>
+            Sistem lagi pakai degraded system prompt.
+            {emergencyReason && (
+              <>
+                {' '}Alasan: <span className="font-mono">{emergencyReason}</span>
+              </>
+            )}
+            {emergencyError && (
+              <>
+                {' '}• Error: <span className="font-mono">{emergencyError}</span>
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && (
         <Alert variant="destructive">
@@ -591,8 +624,8 @@ function AdminModelsContent() {
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
                 <Brain className="h-5 w-5" />
               </div>
               <div className="space-y-1">

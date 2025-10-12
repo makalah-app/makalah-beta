@@ -321,7 +321,7 @@ export default function DocumentationPage() {
 
       <div className="relative z-10 flex">
         {/* Sidebar */}
-        <div className="w-80 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30">
+        <div className="w-64 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30">
           {/* Search */}
           <div className="mb-8">
             <div className="relative">

@@ -12,7 +12,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { supabaseAdmin } from '../database/supabase-client';
 import type { ModelConfigRow, AdminSettingRow, SystemPromptRow } from '../types/database-types';
-import { selectPromptForUser } from './prompt-cohort';
 
 // ⚡ PERFORMANCE: In-memory cache with 30-second TTL
 const CONFIG_CACHE = {
@@ -29,6 +28,11 @@ export interface DynamicModelConfig {
   primaryModelName: string; // Model identifier for identity
   fallbackModelName: string; // Fallback model identifier
   systemPrompt: string;
+  // Telemetry: indicates degraded mode using emergency fallback prompt
+  emergencyFallbackActive: boolean;
+  // Telemetry details
+  emergencyReason: 'empty_content' | 'database_error' | null;
+  emergencyError?: string;
   config: {
     temperature: number;
     maxTokens: number;
@@ -46,7 +50,7 @@ function generateEmergencyFallback(reason: 'empty_content' | 'database_error', e
     ? `Database Error: ${errorDetails || 'Unknown error'}`
     : 'Database query succeeded but returned empty/null content';
 
-  return `You are Moka, an AI research assistant for academic paper writing.
+  return `You are MAKALAH, an AI research executor and expert for academic paper writing.
 
 ⚠️ SYSTEM NOTICE: Failed to load primary system prompt from database.
 
@@ -85,10 +89,8 @@ Contact system administrator to restore full AI capabilities.`;
 
 /**
  * Get dynamic model configuration based on current database state
- *
- * @param userId - Optional user ID for cohort-based prompt selection (A/B testing)
  */
-export async function getDynamicModelConfig(userId?: string): Promise<DynamicModelConfig> {
+export async function getDynamicModelConfig(): Promise<DynamicModelConfig> {
   try {
     // ⚡ PERFORMANCE: Check cache first
     const now = Date.now();
@@ -125,23 +127,30 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
       settings?.map((s: AdminSettingRow) => [s.setting_key, s.setting_value]) || []
     );
 
-    // Dynamic provider assignment based on timestamp (newest = primary, older = fallback)
-    // Sort configs by created_at DESC to get most recent first
+    // Dynamic provider assignment
+    // Prefer explicit role mapping if available; otherwise fallback to created_at ordering
     let primaryConfig: ModelConfigRow | null = null;
     let fallbackConfig: ModelConfigRow | null = null;
 
     if (modelConfigs && modelConfigs.length > 0) {
-      const sortedConfigs = [...modelConfigs].sort((a: ModelConfigRow, b: ModelConfigRow) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      const activeConfigs = modelConfigs.filter((c: any) => c?.is_active);
+      const withPrimaryRole = activeConfigs.find((c: any) => (c as any).role === 'primary');
+      const withFallbackRole = activeConfigs.find((c: any) => (c as any).role === 'fallback');
 
-      primaryConfig = sortedConfigs[0];  // Most recent = Primary
-      fallbackConfig = sortedConfigs[1] || null;  // Second most recent = Fallback
+      if (withPrimaryRole) primaryConfig = withPrimaryRole as any;
+      if (withFallbackRole) fallbackConfig = withFallbackRole as any;
+
+      if (!primaryConfig || (!fallbackConfig && activeConfigs.length > 1)) {
+        const sortedConfigs = [...activeConfigs].sort((a: ModelConfigRow, b: ModelConfigRow) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        if (!primaryConfig) primaryConfig = sortedConfigs[0] || null;
+        if (!fallbackConfig) fallbackConfig = sortedConfigs.find((c) => c !== primaryConfig) || null;
+      }
     }
 
     // Get system prompt based on provider (simple 2-source logic)
     let systemPromptContent = '';
-    let promptSource: 'openrouter_system_prompts' | 'openai_system_prompts' | 'none' = 'none';
 
     const primaryProvider: 'openai' | 'openrouter' = primaryConfig?.provider || 'openai';
 
@@ -155,40 +164,27 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
 
       if (openrouterPrompt?.content && !openrouterError) {
         systemPromptContent = openrouterPrompt.content;
-        promptSource = 'openrouter_system_prompts';
       } else if (openrouterError) {
         // OpenRouter prompt error - will use emergency fallback
       } else {
         // No active OpenRouter prompt found - will use emergency fallback
       }
     } else {
-      // OpenAI uses openai_system_prompts (logical name, table still "system_prompts")
-      // ✅ A/B TESTING: Query ALL active prompts with cohort_percentage
+      // OpenAI uses system_prompts
+      // Safe select: avoid non-standard columns to prevent query errors
       const { data: openaiPrompts, error: openaiError } = await supabaseAdmin
         .from('system_prompts')
-        .select('id, content, cohort_percentage, priority_order, version')
+        .select('id, content, priority_order')
         .eq('is_active', true)
         .order('priority_order') as { data: Array<{
           id: string;
           content: string;
-          cohort_percentage: number;
           priority_order: number;
-          version: number;
         }> | null; error: any };
 
       if (openaiPrompts && openaiPrompts.length > 0 && !openaiError) {
-        // ✅ COHORT SELECTION: Use userId for deterministic assignment
-        if (userId && openaiPrompts.length > 1) {
-          // Multi-prompt A/B testing mode
-          const selectedContent = selectPromptForUser(userId, openaiPrompts);
-          systemPromptContent = selectedContent || openaiPrompts[0].content;
-          console.log(`[Dynamic Config] Selected prompt via cohort assignment for user ${userId.substring(0, 8)}`);
-        } else {
-          // Single prompt mode (backward compatible)
-          systemPromptContent = openaiPrompts[0].content;
-          console.log('[Dynamic Config] Using single active prompt (backward compatible mode)');
-        }
-        promptSource = 'openai_system_prompts';
+        // Use highest-priority active prompt (deterministic)
+        systemPromptContent = openaiPrompts[0].content;
       } else if (openaiError) {
         // OpenAI prompt error - will use emergency fallback
       } else {
@@ -256,6 +252,8 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
         ? fallbackConfig?.model_name || 'google/gemini-2.5-flash'
         : fallbackConfig?.model_name || 'gpt-4o',
       systemPrompt: systemPromptContent || generateEmergencyFallback('empty_content'),
+      emergencyFallbackActive: !systemPromptContent,
+      emergencyReason: systemPromptContent ? null : 'empty_content',
       config: {
         temperature,
         maxTokens,
@@ -268,6 +266,11 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
     // AI SDK compliance: System prompt fallback handled by emergency mode
     if (!systemPromptContent) {
       // EMERGENCY FALLBACK: No system prompt found in database - using emergency mode
+      try {
+        // Lightweight server log for observability in logs aggregator
+        // Note: kept minimal to respect global policy; remove if noisy.
+        console.warn('[EmergencyFallback] using degraded system prompt', { reason: 'empty_content' });
+      } catch {}
     }
 
     // ⚡ PERFORMANCE: Cache the result
@@ -307,6 +310,10 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
       const dbError = error instanceof Error ? error.message : 'Unknown database connection error';
       const emergencyPrompt = generateEmergencyFallback('database_error', dbError);
 
+      try {
+        console.warn('[EmergencyFallback] using degraded system prompt', { reason: 'database_error', error: dbError });
+      } catch {}
+
       return {
         primaryProvider: 'openai',
         fallbackProvider: 'openrouter',
@@ -315,6 +322,9 @@ export async function getDynamicModelConfig(userId?: string): Promise<DynamicMod
         primaryModelName: 'gpt-4o',
         fallbackModelName: 'google/gemini-2.5-flash',
         systemPrompt: emergencyPrompt,
+        emergencyFallbackActive: true,
+        emergencyReason: 'database_error',
+        emergencyError: dbError,
         config: {
           temperature: 0.3,
           maxTokens: 12288,

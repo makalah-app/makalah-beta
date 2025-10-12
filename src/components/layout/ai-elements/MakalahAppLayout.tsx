@@ -120,7 +120,7 @@ export const MakalahAppLayout: React.FC<MakalahAppLayoutProps> = ({
               className="fixed inset-0 z-50 bg-black/50 lg:hidden"
               onClick={closeMobileSidebar}
             />
-            <div className="fixed left-0 top-0 bottom-0 z-50 w-80 bg-bg-850 border-r border-line-600 lg:hidden">
+            <div className="fixed left-0 top-0 bottom-0 z-50 w-64 bg-bg-850 border-r border-line-600 lg:hidden">
               {sidebar}
             </div>
           </>
@@ -162,7 +162,7 @@ export const MakalahAppLayout: React.FC<MakalahAppLayoutProps> = ({
       <div className="flex-1 overflow-hidden flex gap-0">
         {/* Sidebar Panel - Fixed Width */}
         {sidebar && !isSidebarCollapsed && (
-          <div className="w-80 bg-bg-850 flex-shrink-0 m-0 p-0">
+          <div className="w-64 bg-bg-850 flex-shrink-0 m-0 p-0">
             {sidebar}
           </div>
         )}

@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Shield, RefreshCw, Activity } from 'lucide-react';
-import Link from 'next/link';
+import { Shield, RefreshCw } from 'lucide-react';
 
 interface ConfigStatus {
   primaryProvider: string;
@@ -236,8 +235,8 @@ function AdminStatusContent() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Shield className="h-6 w-6 text-primary" />
+        <div className="flex items-start gap-3">
+          <Shield className="h-6 w-6 text-primary mt-1" />
           <div>
             <h1 className="text-2xl font-semibold">Status Konfigurasi</h1>
             <p className="text-muted-foreground">
@@ -253,8 +252,8 @@ function AdminStatusContent() {
   if (error || !configStatus) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Shield className="h-6 w-6 text-primary" />
+        <div className="flex items-start gap-3">
+          <Shield className="h-6 w-6 text-primary mt-1" />
           <div>
             <h1 className="text-2xl font-semibold">Status Konfigurasi</h1>
             <p className="text-muted-foreground">
@@ -284,8 +283,8 @@ function AdminStatusContent() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <Shield className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <Shield className="h-6 w-6 text-primary mt-1" />
         <div>
           <h1 className="text-2xl font-semibold">Status Konfigurasi</h1>
           <p className="text-muted-foreground">Ringkasan setup yang sedang aktif</p>
@@ -313,7 +312,7 @@ function AdminStatusContent() {
                   </p>
                 </div>
                 <button
-                  className="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 border border-primary hover:bg-primary/5 rounded-md transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 border border-primary hover:bg-primary/5 rounded-[3px] transition-colors"
                   onClick={handleEditVersion}
                 >
                   Edit
@@ -391,22 +390,6 @@ function AdminStatusContent() {
               <Badge variant="secondary">v{configStatus.promptVersion}</Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Feature Monitoring */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Feature Monitoring</CardTitle>
-          <CardDescription>Monitor advanced features and system performance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/admin/contextual-guidance-monitor">
-              <Activity className="mr-2 h-4 w-4" />
-              Contextual Guidance Monitor
-            </Link>
-          </Button>
         </CardContent>
       </Card>
 

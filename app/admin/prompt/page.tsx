@@ -406,8 +406,8 @@ function AdminPromptContent() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <Cpu className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <Cpu className="h-6 w-6 text-primary mt-1" />
         <div>
           <h1 className="text-2xl font-semibold">System Prompt Management</h1>
           <p className="text-muted-foreground">Atur instruksi dasar untuk OpenAI dan OpenRouter Gemini workflows</p>
@@ -464,17 +464,17 @@ function AdminPromptContent() {
         <TabsContent value="system-prompt" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
                     <Cpu className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
                     <CardTitle className="text-xl">System Prompt OpenAI</CardTitle>
-                    <CardDescription>System prompt untuk OpenAI models (GPT-4o, GPT-4o-mini). Aktif saat primary provider = OpenAI.</CardDescription>
+                    <CardDescription>System prompt untuk OpenAI models</CardDescription>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   {hasUnsavedChanges && (
                     <Badge variant="destructive" className="text-xs font-medium">
                       Unsaved Changes
@@ -518,7 +518,6 @@ function AdminPromptContent() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="system-prompt">Instruksi sistem</Label>
                 <Textarea
                   id="system-prompt"
                   value={systemPrompt}
@@ -591,8 +590,8 @@ function AdminPromptContent() {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
                     <Zap className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
@@ -679,8 +678,8 @@ function AdminPromptContent() {
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
                     <Database className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">

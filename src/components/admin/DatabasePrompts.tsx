@@ -12,8 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Database, Eye, Edit, Trash2, Plus, Save, Loader2, AlertTriangle, Check, X, FileText, Hash, Calendar, User, Layers2, ToggleLeft, ToggleRight, Percent } from 'lucide-react';
+import { Eye, Edit, Trash2, Plus, Save, Loader2, AlertTriangle, Check, X, FileText, ToggleLeft, ToggleRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -24,7 +23,6 @@ interface SystemPrompt {
   is_active: boolean;
   version: number;
   priority_order: number;
-  cohort_percentage: number; // ✅ A/B TESTING: Percentage of users assigned to this prompt (0-100)
   metadata?: any;
   parameters?: any;
   created_by: string;
@@ -100,13 +98,11 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
         content: formData.content || editingPrompt.content,
         isActive: formData.is_active ?? editingPrompt.is_active,
         priorityOrder: formData.priority_order ?? editingPrompt.priority_order,
-        cohortPercentage: formData.cohort_percentage ?? editingPrompt.cohort_percentage ?? 0, // ✅ A/B TESTING
         metadata: formData.metadata || editingPrompt.metadata
       } : {
         content: formData.content || '',
         version: formData.version || '1',
-        changeReason: 'System Prompt Update',
-        cohortPercentage: formData.cohort_percentage ?? 0 // ✅ A/B TESTING: Default 0% for new prompts
+        changeReason: 'System Prompt Update'
       };
 
       const response = await authenticatedFetch(url, {
@@ -226,8 +222,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
               content: '',
               is_active: false,
               priority_order: 1,
-              version: 1,
-              cohort_percentage: 0 // ✅ Default: 0% (must be configured before activation)
+              version: 1
             });
           }}
         >
@@ -251,70 +246,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
           <AlertDescription>Operation completed successfully!</AlertDescription>
         </Alert>
       )}
-
-      {/* ✅ A/B TESTING: Cohort Distribution Visualization */}
-      {(() => {
-        const activePrompts = prompts.filter(p => p.is_active);
-        const totalCohort = activePrompts.reduce((sum, p) => sum + (p.cohort_percentage || 0), 0);
-        const isValid = totalCohort === 100 || activePrompts.length === 0;
-
-        return activePrompts.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Percent className="h-4 w-4" />
-                    Active Prompts Distribution
-                  </CardTitle>
-                  <CardDescription>
-                    Current A/B testing cohort allocation
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={isValid ? "default" : "destructive"} className="text-sm">
-                    Total: {totalCohort}%
-                  </Badge>
-                  {isValid ? (
-                    <Check className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {activePrompts.map((prompt) => (
-                <div key={prompt.id} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium truncate max-w-[60%]">
-                      {prompt.name} (v{prompt.version})
-                    </span>
-                    <span className="text-muted-foreground">
-                      {prompt.cohort_percentage || 0}%
-                    </span>
-                  </div>
-                  <Progress value={prompt.cohort_percentage || 0} className="h-2" />
-                </div>
-              ))}
-
-              {!isValid && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Invalid Distribution</AlertTitle>
-                  <AlertDescription>
-                    Total cohort percentage must equal 100%. Current: {totalCohort}%
-                    <br />
-                    <span className="text-xs">
-                      Adjust cohort percentages so all active prompts sum to exactly 100%.
-                    </span>
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })()}
 
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-3">
@@ -563,7 +494,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="version">Version</Label>
                 <Input
@@ -581,27 +512,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                   value={formData.priority_order || 1}
                   onChange={(e) => setFormData({ ...formData, priority_order: parseInt(e.target.value) })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cohort" className="flex items-center gap-1">
-                  <Percent className="h-3 w-3" />
-                  Cohort %
-                </Label>
-                <Input
-                  id="cohort"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.cohort_percentage ?? 0}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    setFormData({ ...formData, cohort_percentage: Math.max(0, Math.min(100, val)) });
-                  }}
-                  placeholder="0-100"
-                />
-                <p className="text-xs text-muted-foreground">
-                  % of users for A/B test
-                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="active">Active Status</Label>
@@ -627,22 +537,6 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                 </div>
               </div>
             </div>
-
-            {/* ✅ A/B TESTING: Cohort distribution info */}
-            {formData.is_active && (formData.cohort_percentage ?? 0) > 0 && (
-              <Alert>
-                <Percent className="h-4 w-4" />
-                <AlertTitle>A/B Testing Enabled</AlertTitle>
-                <AlertDescription className="text-xs">
-                  This prompt will be assigned to <strong>{formData.cohort_percentage}%</strong> of users.
-                  All active prompts must sum to exactly 100%.
-                  <br />
-                  <span className="text-muted-foreground">
-                    User assignment is deterministic (same user always gets same prompt).
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="content">Prompt Content</Label>

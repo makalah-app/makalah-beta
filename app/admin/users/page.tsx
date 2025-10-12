@@ -132,8 +132,8 @@ function AdminUsersContent() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <Users className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <Users className="h-6 w-6 text-primary mt-1" />
         <div>
           <h1 className="text-2xl font-semibold">Statistik Pengguna</h1>
           <p className="text-muted-foreground">Monitor aktivitas dan pemakaian platform Makalah AI</p>
@@ -151,8 +151,8 @@ function AdminUsersContent() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
               <Users className="h-5 w-5" />
             </div>
             <div className="space-y-1">

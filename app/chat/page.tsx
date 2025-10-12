@@ -140,10 +140,9 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
               <TooltipContent
                 side="top"
                 align="center"
-                sideOffset={1}
-                className="pointer-events-none max-w-xs rounded-[3px] bg-green-600 text-white shadow-lg translate-x-24"
+                className="max-w-xs"
               >
-                <p className="text-xs">{fullTitle}</p>
+                <p>{fullTitle}</p>
               </TooltipContent>
             )}
           </Tooltip>

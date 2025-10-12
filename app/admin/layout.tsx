@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import AdminAccess from '@/components/auth/AdminAccess';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { GlobalHeader } from '@/components/layout/GlobalHeader';
+import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -19,14 +20,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <AdminAccess>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Global Header */}
         <GlobalHeader showNavigation={true} />
 
         {/* Admin Content Area */}
-        <div className="flex">
+        <div className="flex flex-1">
           {/* Desktop Sidebar */}
-          <div className="hidden md:block w-64 border-r border-border min-h-screen">
+          <div className="hidden md:block w-64 border-r border-border">
             <AdminSidebar currentPath={pathname} />
           </div>
 
@@ -58,6 +59,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
         </div>
+
+        {/* Global Footer */}
+        <Footer />
       </div>
     </AdminAccess>
   );
