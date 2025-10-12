@@ -178,8 +178,6 @@ export async function POST(req: Request) {
         },
         onFinish: async ({ text, usage }) => {
           try {
-            console.log('[DEBUG] onFinish called - text length:', text.length);
-
             const simpleMetadata = {
               timestamp: new Date().toISOString(),
               model: dynamicConfig.primaryModelName,
@@ -196,7 +194,7 @@ export async function POST(req: Request) {
               messageMetadata: simpleMetadata
             });
           } catch (error) {
-            console.error('[onFinish] error:', error);
+            // Silent fail - metadata write is non-critical
           }
         }
       })
@@ -228,8 +226,6 @@ export async function POST(req: Request) {
         },
         onFinish: async ({ text, usage }) => {
           try {
-            console.log('[DEBUG] onFinish called - text length:', text.length);
-
             const simpleMetadata = {
               timestamp: new Date().toISOString(),
               model: dynamicConfig.primaryModelName,
@@ -246,7 +242,7 @@ export async function POST(req: Request) {
               messageMetadata: simpleMetadata
             });
           } catch (error) {
-            console.error('[onFinish] error:', error);
+            // Silent fail - metadata write is non-critical
           }
         }
       });

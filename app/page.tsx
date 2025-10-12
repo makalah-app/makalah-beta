@@ -48,7 +48,7 @@ export default function HomePage() {
             Jadi Lebih Mudah
           </h1>
           <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
-            Obrolkan gagasan, lalu biarkan Agen Ai memandu Anda mengelaborasi topik hingga paper utuh
+            Obrolkan gagasan, lalu biarkan Agen Ai memandu elaborasi topik hingga paper utuh
           </p>
           <div className="flex justify-center">
             <Button

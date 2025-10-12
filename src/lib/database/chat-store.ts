@@ -115,11 +115,6 @@ async function updateConversationMetadata(
     .in('role', ['user', 'assistant']);
 
   if (countError) {
-    console.error('[chat-store] Failed to count messages:', {
-      chatId,
-      error: countError,
-      timestamp: new Date().toISOString()
-    });
     throw new Error(`Failed to count messages for conversation ${chatId}: ${countError.message}`);
   }
 
@@ -140,12 +135,6 @@ async function updateConversationMetadata(
     .eq('id', chatId);
 
   if (conversationError) {
-    console.error('[chat-store] Failed to update conversation metadata:', {
-      chatId,
-      messageCount,
-      error: conversationError,
-      timestamp: new Date().toISOString()
-    });
     throw new Error(`Failed to update conversation metadata: ${conversationError.message}`);
   }
 }
@@ -452,12 +441,9 @@ export async function createChat(userId?: string, title?: string): Promise<strin
  * Supports chat history and conversation management
  */
 export async function getUserConversations(userId: string, client?: SupabaseClient<Database>): Promise<ConversationSummary[]> {
-  console.log('[getUserConversations] Called with userId:', userId, 'using client:', client ? 'custom' : 'supabaseServer');
-
   try {
     const clientToUse = client ?? supabaseServer;
 
-    console.log('[getUserConversations] Executing database query...');
     const { data: conversations, error } = await (clientToUse as any)
       .from('conversations')
       .select(`
@@ -472,27 +458,9 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       .order('updated_at', { ascending: false })
       .limit(50);
 
-    console.log('[getUserConversations] Database query result:', {
-      hasError: !!error,
-      errorMessage: error?.message,
-      errorCode: (error as any)?.code,
-      dataCount: conversations?.length || 0
-    });
-
     if (error) {
-      console.error('[getUserConversations] Database error:', {
-        message: error.message,
-        code: (error as any)?.code,
-        details: (error as any)?.details,
-        hint: (error as any)?.hint
-      });
       throw new Error(`Failed to load conversations: ${error.message}`);
     }
-
-    console.log('[getUserConversations] Raw conversations data:', {
-      count: conversations?.length || 0,
-      conversations: conversations?.map((c: any) => ({ id: c.id, title: c.title }))
-    });
 
     // ✅ PHASE 3 FIX: Auto-correction for message count mismatches
     // Verify and fix count inconsistencies in real-time as safety net
@@ -507,11 +475,7 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
             .in('role', ['user', 'assistant']);
 
           if (countError) {
-            // If count query fails, use stored value and log warning
-            console.warn('[getUserConversations] Failed to verify message count:', {
-              conversationId: conv.id,
-              error: countError
-            });
+            // If count query fails, use stored value
             return {
               id: conv.id,
               title: conv.title || 'Untitled Chat',
@@ -522,26 +486,13 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
 
           // Auto-fix if mismatch detected
           if (actualCount !== conv.message_count) {
-            console.warn('[getUserConversations] Message count mismatch detected - auto-fixing:', {
-              conversationId: conv.id,
-              title: conv.title,
-              storedCount: conv.message_count,
-              actualCount: actualCount,
-              timestamp: new Date().toISOString()
-            });
-
             // Update database with correct count (non-blocking)
             await (clientToUse as any)
               .from('conversations')
               .update({ message_count: actualCount })
               .eq('id', conv.id)
               .then(({ error: updateError }: any) => {
-                if (updateError) {
-                  console.error('[getUserConversations] Failed to update message count:', {
-                    conversationId: conv.id,
-                    error: updateError
-                  });
-                }
+                // Silent fail - non-blocking update
               });
 
             // Return corrected count immediately
@@ -562,10 +513,6 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
           };
         } catch (verifyError) {
           // If verification fails entirely, return stored value
-          console.error('[getUserConversations] Count verification failed:', {
-            conversationId: conv.id,
-            error: verifyError instanceof Error ? verifyError.message : String(verifyError)
-          });
           return {
             id: conv.id,
             title: conv.title || 'Untitled Chat',
@@ -576,19 +523,9 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       })
     );
 
-    console.log('[getUserConversations] Returning summaries:', {
-      count: summaries.length,
-      summaries: summaries.map(s => ({ id: s.id, title: s.title }))
-    });
-
     return summaries;
 
   } catch (error) {
-    console.error('[getUserConversations] CRITICAL ERROR - Returning empty array:', {
-      error: error instanceof Error ? error.message : String(error),
-      userId,
-      stack: error instanceof Error ? error.stack : undefined
-    });
     // Return empty array as graceful fallback to prevent UI breakage
     return [];
   }
