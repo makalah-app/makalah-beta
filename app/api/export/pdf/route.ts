@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Generate HTML content
     const htmlContent = generateConversationHTML(details.messages, {
-      title: details.conversation.title,
+      title: details.conversation.title || 'Untitled Chat',
       created_at: details.conversation.created_at,
       updated_at: details.conversation.updated_at,
       message_count: details.messages.length
@@ -73,11 +73,14 @@ export async function POST(request: NextRequest) {
       args: isDev
         ? puppeteer.defaultArgs()
         : chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: {
+        width: 1280,
+        height: 720
+      },
       executablePath: isDev
         ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' // macOS local Chrome
         : await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: true,
     });
 
     const page = await browser.newPage();
@@ -103,7 +106,7 @@ export async function POST(request: NextRequest) {
     await browser.close();
 
     // Sanitize title for filename
-    const sanitizedTitle = details.conversation.title
+    const sanitizedTitle = (details.conversation.title || 'untitled-chat')
       .replace(/[^a-z0-9\s-]/gi, '')
       .replace(/\s+/g, '-')
       .toLowerCase()
@@ -115,7 +118,7 @@ export async function POST(request: NextRequest) {
     const filename = `percakapan-${sanitizedTitle}-${year}-${month}-${day}.pdf`;
 
     // Return PDF as response
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,

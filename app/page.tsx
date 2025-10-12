@@ -63,6 +63,12 @@ export default function HomePage() {
           </div>
 
         </div>
+        {/* Bottom fade to background to soften edge while keeping separator on next section */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 md:h-28 z-0"
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0), var(--background))' }}
+          aria-hidden
+        />
       </section>
 
       {/* Why Makalah Section */}
@@ -284,17 +290,17 @@ export default function HomePage() {
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
               <ul className="space-y-4 text-xs">
                 <li>
-                  <Link href="#" className="transition-colors hover:text-primary text-muted-foreground">
+                  <Link href="/about#bergabung-dengan-tim" className="transition-colors hover:text-primary text-muted-foreground">
                     Karir
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="transition-colors hover:text-primary text-muted-foreground">
+                  <Link href="/about#hubungi-kami" className="transition-colors hover:text-primary text-muted-foreground">
                     Kontak
                   </Link>
                 </li>
                 <li>
-                  <Link href="/docs#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
+                  <Link href="/documentation#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
                     Kebijakan Privasi
                   </Link>
                 </li>

@@ -20,18 +20,9 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Pattern Background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-
-      <div className="relative z-10">
-        {/* Hero Section */}
-        <section className="px-6 py-20 text-center">
+      {/* Hero Section (CSS-only background) */}
+      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+        <div className="relative z-10">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
@@ -40,12 +31,15 @@ export default function AboutPage() {
           <h1 className="text-4xl md:text-5xl font-semibold mb-6 leading-tight text-foreground font-heading">
             Tentang <span className="text-primary">Makalah AI</span>
           </h1>
-          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-muted-foreground">
+          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-white">
             Platform kolaborasi penulisan makalah akademik berbahasa Indonesia yang menggunakan kecerdasan buatan untuk
             membantu peneliti dan mahasiswa menghasilkan karya akademik berkualitas tinggi melalui metodologi
             terstruktur.
           </p>
-        </section>
+        </div>
+      </section>
+
+      <div className="relative z-10">
 
         {/* Mission & Vision */}
         <section className="px-6 py-16 border-t border-border">

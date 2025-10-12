@@ -119,18 +119,9 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Pattern Background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-
-      <div className="relative z-10">
-        {/* Hero Section */}
-        <section className="px-6 py-20 text-center">
+      {/* Hero Section with CSS illustration (non full-viewport) */}
+      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+        <div className="relative z-10">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
               <HelpCircle className="w-8 h-8 text-primary" />
@@ -139,11 +130,13 @@ export default function FAQPage() {
           <h1 className="text-4xl md:text-5xl font-semibold mb-6 leading-tight text-foreground font-heading">
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
-          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-muted-foreground">
+          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-white">
             Temukan jawaban untuk pertanyaan yang sering diajukan tentang platform Makalah AI
           </p>
-        </section>
+        </div>
+      </section>
 
+      <div className="relative z-10">
         {/* Search Section */}
         <section className="px-6 py-8 border-t border-border">
           <div className="max-w-2xl mx-auto">

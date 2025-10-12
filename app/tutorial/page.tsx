@@ -145,29 +145,20 @@ export default function TutorialPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Pattern Background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }}
-      />
+      {/* Hero Section with CSS illustration (non full-viewport) */}
+      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-semibold mb-6 leading-tight text-foreground font-heading">
+            Tutorial <span className="text-primary">MAKALAH AI</span>
+          </h1>
+          <p className="text-xl mb-8 leading-relaxed text-white">
+            Pelajari cara menggunakan platform MAKALAH AI untuk menghasilkan karya akademik berkualitas tinggi melalui
+            tutorial video komprehensif.
+          </p>
+        </div>
+      </section>
 
       <div className="relative z-10">
-        {/* Hero Section */}
-        <section className="px-6 py-16 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-semibold mb-6 leading-tight text-foreground font-heading">
-              Tutorial <span className="text-primary">MAKALAH AI</span>
-            </h1>
-            <p className="text-xl mb-8 leading-relaxed text-muted-foreground">
-              Pelajari cara menggunakan platform MAKALAH AI untuk menghasilkan karya akademik berkualitas tinggi melalui
-              tutorial video komprehensif.
-            </p>
-          </div>
-        </section>
-
         {/* Featured Tutorials */}
         <section className="px-6 py-12">
           <div className="max-w-7xl mx-auto">

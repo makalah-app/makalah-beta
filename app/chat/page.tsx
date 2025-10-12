@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
@@ -50,9 +51,7 @@ function MobileHeader() {
       <div className="flex items-center gap-3">
         <SidebarTrigger />
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-[3px] flex items-center justify-center text-sm font-semibold">
-            M
-          </div>
+          <BrandLogo variant="color" size="sm" />
           <span className="font-semibold">Makalah AI</span>
         </div>
       </div>
@@ -449,23 +448,17 @@ function ChatPageContent() {
       enableSystem={false}
       disableTransitionOnChange={false}
     >
+      
       <SidebarProvider>
         <div className="flex h-screen w-full bg-background">
           <Sidebar className="border-r border-border bg-card/30">
             <SidebarHeader className="p-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <a href="/" className="flex items-center gap-2 text-decoration-none cursor-pointer">
-                  <Image
-                    src="/logo/makalah_logo_500x500.png"
-                    alt="Makalah AI - Academic Paper Writing Assistant"
-                    width={32}
-                    height={32}
-                    className="rounded-[3px]"
-                    priority
-                  />
+                  <BrandLogo variant="color" size="sm" priority />
                   <div className="flex flex-col">
                     <div className="text-sm font-medium text-foreground">Makalah AI</div>
-                    <div className="text-xs font-light text-muted-foreground">
+                    <div className="text-xs font-light text-white">
                       {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
                     </div>
                   </div>

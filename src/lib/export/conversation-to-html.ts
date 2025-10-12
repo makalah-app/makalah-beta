@@ -28,12 +28,9 @@ interface MessagePart {
 
 /**
  * Extract text content from UIMessage
+ * AI SDK v5 uses parts array for message content
  */
 function extractMessageContent(message: UIMessage): string {
-  if (typeof message.content === 'string') {
-    return message.content;
-  }
-
   if (Array.isArray(message.parts) && message.parts.length > 0) {
     return message.parts
       .map((part: MessagePart) => {

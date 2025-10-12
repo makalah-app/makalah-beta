@@ -14,7 +14,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
@@ -103,6 +103,29 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     [customNavItems]
   );
 
+  // Build ordered navigation: Harga, Chat, Blog, Tutorial, Dokumentasi, Tentang
+  const byLabel = useMemo(() => {
+    const m = new Map<string, MainMenuItem>();
+    navItems.forEach((i) => m.set(i.label, i));
+    return m;
+  }, [navItems]);
+
+  const orderedNav = useMemo(() => {
+    const list: (MainMenuItem | 'CHAT')[] = [];
+    const harga = byLabel.get('Harga');
+    if (harga) list.push(harga);
+    list.push('CHAT');
+    const blog = byLabel.get('Blog');
+    if (blog) list.push(blog);
+    const tutorial = byLabel.get('Tutorial');
+    if (tutorial) list.push(tutorial);
+    const docs = byLabel.get('Dokumentasi');
+    if (docs) list.push(docs);
+    const tentang = byLabel.get('Tentang');
+    if (tentang) list.push(tentang);
+    return list;
+  }, [byLabel]);
+
   const showChatLink = isAuthenticated && Boolean(user);
 
   const handleMobileMenuSelect = () => {
@@ -125,17 +148,10 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       {/* Brand Section */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Image
-            src="/logo/makalah_logo_500x500.png"
-            alt="Makalah AI - Academic Paper Writing Assistant"
-            width={40}
-            height={40}
-            className="rounded-[3px]"
-            priority
-          />
+          <BrandLogo variant="color" size="md" priority />
           <div className="flex flex-col">
             <div className="text-xl font-medium text-foreground">Makalah AI</div>
-            <div className="text-xs font-light text-muted-foreground mt-0.5">
+            <div className="text-xs font-light text-white mt-0.5">
               {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
             </div>
           </div>
@@ -147,17 +163,21 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
         <div className="flex items-center gap-2 md:gap-4">
           {showNavigation && (
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide mr-6">
-              {showChatLink && (
-                <NavLink href="/chat" label="Chat" isActive={pathname === '/chat'} />
-              )}
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  isActive={pathname === item.href}
-                />
-              ))}
+              {orderedNav.map((item) => {
+                if (item === 'CHAT') {
+                  return showChatLink ? (
+                    <NavLink key="/chat" href="/chat" label="Chat" isActive={pathname === '/chat'} />
+                  ) : null;
+                }
+                return (
+                  <NavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    isActive={pathname === item.href}
+                  />
+                );
+              })}
             </nav>
           )}
 
@@ -209,23 +229,28 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 )}
 
                 <div className="flex flex-col gap-3 text-sm font-medium">
-                  {showChatLink && (
-                    <MobileNavItem
-                      href="/chat"
-                      label="Chat"
-                      isActive={pathname === '/chat'}
-                    onSelect={handleMobileMenuSelect}
-                  />
-                )}
-                {showNavigation && navItems.map((item) => (
-                  <MobileNavItem
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    isActive={pathname === item.href}
-                    onSelect={handleMobileMenuSelect}
-                  />
-                ))}
+                  {showNavigation && orderedNav.map((item) => {
+                    if (item === 'CHAT') {
+                      return showChatLink ? (
+                        <MobileNavItem
+                          key="/chat"
+                          href="/chat"
+                          label="Chat"
+                          isActive={pathname === '/chat'}
+                          onSelect={handleMobileMenuSelect}
+                        />
+                      ) : null;
+                    }
+                    return (
+                      <MobileNavItem
+                        key={item.href}
+                        href={item.href}
+                        label={item.label}
+                        isActive={pathname === item.href}
+                        onSelect={handleMobileMenuSelect}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             </SheetContent>
@@ -267,8 +292,8 @@ const NavLink: React.FC<NavLinkProps> = ({ href, label, isActive }) => (
   <Link
     href={href}
     className={cn(
-      'transition-colors duration-200 text-muted-foreground hover:text-primary',
-      isActive && 'text-primary'
+      'transition-colors duration-200 text-white hover:text-white/80',
+      isActive && 'text-white'
     )}
     aria-current={isActive ? 'page' : undefined}
   >
@@ -286,7 +311,7 @@ const MobileNavItem: React.FC<MobileNavItemProps> = ({ href, label, isActive, on
     onClick={onSelect}
     className={cn(
       'flex items-center justify-between rounded-[3px] px-3 py-2 text-base transition-colors duration-200',
-      isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:bg-accent/60 hover:text-primary'
+      isActive ? 'bg-accent text-white' : 'text-white hover:bg-accent/60 hover:text-white/80'
     )}
     aria-current={isActive ? 'page' : undefined}
   >

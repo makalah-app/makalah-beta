@@ -9,4 +9,5 @@ export const MAIN_MENU_ITEMS: MainMenuItem[] = [
   { label: 'Tutorial', href: '/tutorial' },
   { label: 'Blog', href: '/blog' },
   { label: 'Harga', href: '/pricing' },
+  { label: 'Tentang', href: '/about' },
 ];

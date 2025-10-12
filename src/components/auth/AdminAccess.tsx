@@ -181,9 +181,7 @@ function AdminAccessDenied({
             <div className="text-center">
               <div className="flex justify-center mb-4">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <div className="logo-m-small">
-                    M
-                  </div>
+                  <BrandLogo variant="color" size="sm" priority />
                 </Link>
               </div>
 
@@ -245,4 +243,4 @@ export function AdminPanel({
     </AdminAccess>
   );
 }
-
+import BrandLogo from '@/components/ui/BrandLogo';

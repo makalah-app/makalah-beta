@@ -17,7 +17,7 @@ export function LogoLoadingSpinner({ className }: LogoLoadingSpinnerProps) {
       aria-hidden="true"
     >
       <Image
-        src="/logo/makalah_logo_48x48.png"
+        src="/logo/makalah_logo_500x500.png"
         alt="Makalah logo animasi frame utama"
         width={48}
         height={48}
@@ -25,7 +25,7 @@ export function LogoLoadingSpinner({ className }: LogoLoadingSpinnerProps) {
         priority
       />
       <Image
-        src="/logo/makalah_logo_48x48_grey.png"
+        src="/logo/makalah_logo_500x500_grey.png"
         alt="Makalah logo animasi frame sekunder"
         width={48}
         height={48}

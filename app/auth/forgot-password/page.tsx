@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTheme } from '@/components/theme/ThemeProvider';
 import { supabaseClient } from '../../../src/lib/database/supabase-client';
 
 export default function ForgotPasswordPage() {
-  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -69,18 +67,16 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="h-screen transition-colors duration-300 bg-background text-foreground">
-      <div className="flex items-center justify-center h-full px-6 relative">
-        <div className={`absolute inset-0 opacity-30 ${resolvedTheme === "light" ? "hero-pattern-light" : "hero-pattern-dark"}`}></div>
+    <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
+      <section className="relative h-[100dvh] min-h-[100dvh] overflow-hidden hero-vivid hero-grid-thin flex items-center justify-center px-6 py-8">
+        <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" />
 
-        <div className="w-full max-w-md relative z-10">
+        <div className="w-full max-w-md max-h-[calc(100dvh-3rem)] overflow-auto relative z-10">
           <Card className="p-6 border-border bg-card shadow-lg">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-3">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <div className="logo-m-small">
-                    M
-                  </div>
+                  <BrandLogo variant="color" size="sm" priority />
                 </Link>
               </div>
               <h1 className="text-3xl font-medium mb-2 text-foreground font-heading">
@@ -175,7 +171,8 @@ export default function ForgotPasswordPage() {
             </div>
           </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
+import BrandLogo from '@/components/ui/BrandLogo';

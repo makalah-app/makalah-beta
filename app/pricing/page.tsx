@@ -15,12 +15,13 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <section className="px-6 py-20 text-center border-b border-border">
-        <div className="max-w-3xl mx-auto space-y-4">
+      {/* Hero Section with CSS illustration (non full-viewport) */}
+      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+        <div className="relative z-10 max-w-3xl mx-auto space-y-4">
           <h1 className="text-4xl md:text-5xl font-semibold leading-tight font-heading">
             Tak Perlu Bayar Mahal Untuk Karya Yang Masuk Akal
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
+          <p className="text-lg md:text-xl text-white">
             Paket langganan Makalah AI menjaga setiap fase penulisan tetap fokus dan terukur.
           </p>
         </div>

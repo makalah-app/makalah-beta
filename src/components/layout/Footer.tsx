@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { cn } from '../../lib/utils';
 
 interface FooterProps {
@@ -37,13 +37,7 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="flex items-center justify-between">
           {/* Brand Section */}
           <div className="flex items-center">
-            <Image
-              src="/logo/makalah_logo_500x500_grey.png"
-              alt="Makalah AI"
-              width={32}
-              height={32}
-              className="opacity-60"
-            />
+            <BrandLogo variant="mono" size="sm" className="opacity-60" />
           </div>
 
           {/* Copyright */}

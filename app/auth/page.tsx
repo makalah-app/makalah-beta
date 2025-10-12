@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/components/theme/ThemeProvider';
 
 interface FormData {
   email: string;
@@ -24,7 +23,6 @@ export default function AuthPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { login, register, isLoading, error, resendVerificationEmail } = useAuth();
-  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -158,22 +156,15 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
-      <div className="flex items-center justify-center min-h-[calc(100vh-64px)] px-6 py-12 relative">
-        <div className={`absolute inset-0 opacity-30 ${resolvedTheme === "light" ? "hero-pattern-light" : "hero-pattern-dark"}`}></div>
+      <section className="relative h-[100dvh] min-h-[100dvh] overflow-hidden hero-vivid hero-grid-thin flex items-center justify-center px-6 py-8">
+        <div className="absolute inset-0 bg-black/50 pointer-events-none z-0" />
 
-        <div className="w-full max-w-md relative z-10">
+        <div className="w-full max-w-md max-h-[calc(100dvh-3rem)] overflow-auto relative z-10">
           <Card className="p-8 border-border bg-card shadow-lg">
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <Image
-                    src="/logo/makalah_logo_500x500.png"
-                    alt="Makalah AI - Academic Paper Writing Assistant"
-                    width={48}
-                    height={48}
-                    className="rounded-[3px]"
-                    priority
-                  />
+                  <BrandLogo variant="color" size="lg" priority />
                 </Link>
               </div>
               <h1 className="text-xl font-medium mb-2 text-foreground font-heading">
@@ -388,7 +379,7 @@ export default function AuthPage() {
             </div>
           </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

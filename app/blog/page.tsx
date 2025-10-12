@@ -104,29 +104,22 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Pattern Background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.15) 1px, transparent 0)',
-          backgroundSize: '16px 16px',
-        }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
+      {/* Hero Section with CSS illustration (non full-viewport) */}
+      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+        <div className="relative z-10 max-w-7xl mx-auto">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-foreground font-heading">Blog Makalah AI</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-white max-w-2xl mx-auto">
             Wawasan, tips, dan panduan terbaru untuk meningkatkan kualitas penulisan akademik Anda
           </p>
         </div>
+      </section>
 
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
         {/* Search and Filter */}
         <div className="mb-12">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
