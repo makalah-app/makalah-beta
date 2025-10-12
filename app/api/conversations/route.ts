@@ -159,8 +159,8 @@ export async function POST(request: NextRequest) {
 
     }
     
-    // Load created conversation details for response
-    const conversationDetails = await getConversationDetails(conversationId);
+    // Load created conversation details for response (use supabaseAdmin to bypass RLS)
+    const conversationDetails = await getConversationDetails(conversationId, supabaseAdmin);
     
     const response = {
       success: true,

@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ViewConversationDialog } from '@/components/conversations/ViewConversationDialog';
 
 const PAGE_SIZE = 25; // Fixed pagination size
 
@@ -53,6 +54,11 @@ export default function ConversationsPage() {
     bulk: boolean;
   }>({ single: null, bulk: false });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [viewDialog, setViewDialog] = useState<{
+    open: boolean;
+    conversationId: string | null;
+    title: string;
+  }>({ open: false, conversationId: null, title: '' });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -279,8 +285,8 @@ export default function ConversationsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <MessageSquare className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <MessageSquare className="h-6 w-6 text-primary mt-1 shrink-0" />
         <div>
           <h1 className="text-2xl font-semibold">Log Percakapan</h1>
           <p className="text-muted-foreground">
@@ -359,6 +365,7 @@ export default function ConversationsPage() {
                             checked={headerChecked}
                             onCheckedChange={handleSelectAll}
                             aria-label="Pilih semua percakapan"
+                            className="border-primary-foreground data-[state=checked]:bg-primary-foreground data-[state=checked]:text-background"
                           />
                         );
                       })()}
@@ -412,8 +419,19 @@ export default function ConversationsPage() {
                         <td className="h-12 px-3 py-0 align-middle text-center text-xs text-muted-foreground">
                           {rowNumber}
                         </td>
-                        <td className="h-12 px-3 py-0 align-middle truncate font-medium">
-                          {conv.title || 'Untitled Chat'}
+                        <td className="h-12 px-3 py-0 align-middle font-medium">
+                          <button
+                            onClick={() =>
+                              setViewDialog({
+                                open: true,
+                                conversationId: conv.id,
+                                title: conv.title || 'Untitled Chat',
+                              })
+                            }
+                            className="truncate text-left hover:underline hover:text-primary transition-colors w-full cursor-pointer"
+                          >
+                            {conv.title || 'Untitled Chat'}
+                          </button>
                         </td>
                         <td className="h-12 px-3 py-0 align-middle text-center">
                           {conv.messageCount}
@@ -474,9 +492,18 @@ export default function ConversationsPage() {
                           aria-label={`Pilih ${conv.title}`}
                         />
                         <div className="flex-1">
-                          <p className="font-medium text-sm truncate">
+                          <button
+                            onClick={() =>
+                              setViewDialog({
+                                open: true,
+                                conversationId: conv.id,
+                                title: conv.title || 'Untitled Chat',
+                              })
+                            }
+                            className="font-medium text-sm truncate text-left hover:underline hover:text-primary transition-colors w-full cursor-pointer"
+                          >
                             {conv.title || 'Untitled Chat'}
-                          </p>
+                          </button>
                           <p className="text-xs text-muted-foreground">
                             {conv.messageCount} pesan
                           </p>
@@ -558,6 +585,16 @@ export default function ConversationsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View Conversation Dialog */}
+      <ViewConversationDialog
+        conversationId={viewDialog.conversationId}
+        conversationTitle={viewDialog.title}
+        open={viewDialog.open}
+        onOpenChange={(open) =>
+          setViewDialog((prev) => ({ ...prev, open }))
+        }
+      />
     </div>
   );
 }

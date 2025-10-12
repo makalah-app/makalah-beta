@@ -115,6 +115,12 @@ async function updateConversationMetadata(
     .in('role', ['user', 'assistant']);
 
   if (countError) {
+    console.error('[chat-store] Failed to count messages:', {
+      chatId,
+      error: countError,
+      timestamp: new Date().toISOString()
+    });
+    throw new Error(`Failed to count messages for conversation ${chatId}: ${countError.message}`);
   }
 
   const messageCount = dbMessageCount ?? 0;
@@ -134,7 +140,13 @@ async function updateConversationMetadata(
     .eq('id', chatId);
 
   if (conversationError) {
-    // Don't throw - messages are saved, this is just metadata
+    console.error('[chat-store] Failed to update conversation metadata:', {
+      chatId,
+      messageCount,
+      error: conversationError,
+      timestamp: new Date().toISOString()
+    });
+    throw new Error(`Failed to update conversation metadata: ${conversationError.message}`);
   }
 }
 
@@ -237,14 +249,17 @@ export async function saveChat({
       throw new Error(detailedError);
     }
 
-    // Step 2: Transform and persist messages (parallel operations where safe)
+    // Step 2: Transform and persist messages
     const messagesForDB = await transformMessagesForDB(messages, chatId);
 
-    // Parallel execution for independent operations
+    // ✅ PHASE 1 FIX: Sequential execution for critical operations to prevent race condition
+    // MUST persist messages first, THEN count them to avoid message_count = 0 anomaly
+    await persistMessages(chatId, messagesForDB);
+    await updateConversationMetadata(chatId, messages, conversation);
+
+    // Non-critical operations can run in parallel
     await Promise.all([
-      persistMessages(chatId, messagesForDB),
-      updateConversationMetadata(chatId, messages, conversation),
-      handleSmartTitleGeneration(chatId, messages), // Non-blocking
+      handleSmartTitleGeneration(chatId, messages),
       trackAIInteraction(chatId, userId, messages)
     ]);
 
@@ -479,12 +494,87 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
       conversations: conversations?.map((c: any) => ({ id: c.id, title: c.title }))
     });
 
-    const summaries: ConversationSummary[] = (conversations || []).map((conv: any) => ({
-      id: conv.id,
-      title: conv.title || 'Untitled Chat',
-      messageCount: conv.message_count,
-      lastActivity: conv.updated_at,
-    }));
+    // ✅ PHASE 3 FIX: Auto-correction for message count mismatches
+    // Verify and fix count inconsistencies in real-time as safety net
+    const summaries: ConversationSummary[] = await Promise.all(
+      (conversations || []).map(async (conv: any) => {
+        try {
+          // Verify count consistency by querying actual message count
+          const { count: actualCount, error: countError } = await (clientToUse as any)
+            .from('chat_messages')
+            .select('message_id', { head: true, count: 'exact' })
+            .eq('conversation_id', conv.id)
+            .in('role', ['user', 'assistant']);
+
+          if (countError) {
+            // If count query fails, use stored value and log warning
+            console.warn('[getUserConversations] Failed to verify message count:', {
+              conversationId: conv.id,
+              error: countError
+            });
+            return {
+              id: conv.id,
+              title: conv.title || 'Untitled Chat',
+              messageCount: conv.message_count,
+              lastActivity: conv.updated_at,
+            };
+          }
+
+          // Auto-fix if mismatch detected
+          if (actualCount !== conv.message_count) {
+            console.warn('[getUserConversations] Message count mismatch detected - auto-fixing:', {
+              conversationId: conv.id,
+              title: conv.title,
+              storedCount: conv.message_count,
+              actualCount: actualCount,
+              timestamp: new Date().toISOString()
+            });
+
+            // Update database with correct count (non-blocking)
+            await (clientToUse as any)
+              .from('conversations')
+              .update({ message_count: actualCount })
+              .eq('id', conv.id)
+              .then(({ error: updateError }: any) => {
+                if (updateError) {
+                  console.error('[getUserConversations] Failed to update message count:', {
+                    conversationId: conv.id,
+                    error: updateError
+                  });
+                }
+              });
+
+            // Return corrected count immediately
+            return {
+              id: conv.id,
+              title: conv.title || 'Untitled Chat',
+              messageCount: actualCount ?? conv.message_count,
+              lastActivity: conv.updated_at,
+            };
+          }
+
+          // Count is correct, return as-is
+          return {
+            id: conv.id,
+            title: conv.title || 'Untitled Chat',
+            messageCount: conv.message_count,
+            lastActivity: conv.updated_at,
+          };
+        } catch (verifyError) {
+          // If verification fails entirely, return stored value
+          console.error('[getUserConversations] Count verification failed:', {
+            conversationId: conv.id,
+            error: verifyError instanceof Error ? verifyError.message : String(verifyError)
+          });
+          return {
+            id: conv.id,
+            title: conv.title || 'Untitled Chat',
+            messageCount: conv.message_count,
+            lastActivity: conv.updated_at,
+          };
+        }
+      })
+    );
 
     console.log('[getUserConversations] Returning summaries:', {
       count: summaries.length,
@@ -507,10 +597,16 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
 /**
  * Get full conversation details including messages and workflow info
  */
-export async function getConversationDetails(conversationId: string): Promise<ConversationDetails | null> {
+export async function getConversationDetails(
+  conversationId: string,
+  client?: SupabaseClient<Database>
+): Promise<ConversationDetails | null> {
   try {
+    // Use provided client or default to supabaseServer
+    const clientToUse = client ?? supabaseServer;
+
     // Load conversation metadata
-    const { data: conversation, error: convError } = await (supabaseServer as any)
+    const { data: conversation, error: convError } = await (clientToUse as any)
       .from('conversations')
       .select('*')
       .eq('id', conversationId)
@@ -527,7 +623,7 @@ export async function getConversationDetails(conversationId: string): Promise<Co
     // Load messages with error handling
     let messages: UIMessage[] = [];
     try {
-      messages = await loadChat(conversationId);
+      messages = await loadChat(conversationId, clientToUse);
     } catch (messageError) {
       // Continue with empty messages to provide partial data
     }

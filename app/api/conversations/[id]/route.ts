@@ -45,9 +45,9 @@ export async function GET(
       }, { status: 400 });
     }
 
-    // Load complete conversation details
-    const conversationDetails = await getConversationDetails(id);
-    
+    // Load complete conversation details (use supabaseAdmin to bypass RLS)
+    const conversationDetails = await getConversationDetails(id, supabaseAdmin);
+
     if (!conversationDetails) {
       return NextResponse.json({
         error: 'Conversation not found',
@@ -151,8 +151,8 @@ export async function PUT(
       }, { status: 404 });
     }
     
-    // Load updated conversation details
-    const conversationDetails = await getConversationDetails(id);
+    // Load updated conversation details (use supabaseAdmin to bypass RLS)
+    const conversationDetails = await getConversationDetails(id, supabaseAdmin);
     
     const response = {
       success: true,
