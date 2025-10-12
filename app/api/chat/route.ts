@@ -94,8 +94,8 @@ export async function POST(req: Request) {
     // Get provider manager
     const providerManager = getProviderManager();
 
-    // ✅ A/B TESTING: Pass userId to dynamic config for cohort-based prompt selection
-    const dynamicConfig = await getDynamicModelConfig(userId);
+    // Get dynamic model configuration from database
+    const dynamicConfig = await getDynamicModelConfig();
 
     // Use database system prompt without workflow augmentation
     const systemPrompt = dynamicConfig.systemPrompt?.trim() || '';
