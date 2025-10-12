@@ -143,11 +143,11 @@ export default function HomePage() {
 
           {/* Highlight statement as sub-section */}
           <div className="mt-12 text-center max-w-3xl mx-auto">
-            <h3 className="text-2xl md:text-3xl font-semibold text-foreground font-heading tracking-tight">
-              Anda adalah pawang, AI hanya tukang.
+            <h3 className="text-xl md:text-4xl font-semibold text-foreground font-heading">
+              Anda adalah pawang, AI hanya tukang
             </h3>
-            <p className="text-2xl md:text-4xl text-muted-foreground mt-2">
-              Karya tulis tetap orisinal.
+            <p className="text-xl md:text-5xl text-muted-foreground mt-0">
+              Karya tulis tetap orisinal!
             </p>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
           </div>
