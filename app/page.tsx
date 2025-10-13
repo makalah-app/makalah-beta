@@ -10,6 +10,7 @@ import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,9 +40,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
-      <section className="px-6 py-20 text-center relative section-screen-with-header hero-vivid hero-grid-thin">
+      <section className="px-6 py-0 text-center relative section-screen-with-header hero-vivid hero-grid-thin">
 
-        <div className="relative z-10">
+        <div className="relative z-10 h-full flex flex-col justify-between">
+          <div className="mt-6 md:mt-10">
           <h1 className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading">
             Bikin <span className="text-primary">Paper Akademik</span>
             <br />
@@ -61,7 +63,11 @@ export default function HomePage() {
               {isLoading ? 'Loading...' : 'Diskusi dengan Agen AI'}
             </Button>
           </div>
-          {/* Ilustrasi animasi hero dihapus sesuai arahan */}
+          </div>
+          {/* Desktop-only chat input mock at bottom of hero; ensure enough spacing from CTA */}
+          <div className="pb-0 mt-6 md:mt-8">
+            <ChatInputHeroMock />
+          </div>
         </div>
         {/* Bottom fade to background to soften edge while keeping separator on next section */}
         <div
