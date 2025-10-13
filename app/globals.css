@@ -554,10 +554,10 @@
   position: absolute;
   inset: -15%;
   background:
-    radial-gradient(900px 700px at 20% 18%, rgba(255,138,0,0.50) 0 32%, transparent 58%),
-    radial-gradient(720px 580px at 86% 14%, rgba(37,99,235,0.45) 0 28%, transparent 56%),
-    radial-gradient(780px 560px at 80% 78%, rgba(124,58,237,0.38) 0 26%, transparent 54%),
-    radial-gradient(680px 520px at 14% 82%, rgba(255,213,0,0.22) 0 22%, transparent 52%);
+    radial-gradient(900px 700px at 20% 18%, rgba(232, 102, 9, 0.5) 0 32%, transparent 58%),
+    radial-gradient(720px 580px at 86% 14%, rgba(115, 185, 4, 0.45) 0 28%, transparent 56%),
+    radial-gradient(780px 560px at 80% 78%, rgba(25, 196, 156, 0.38) 0 26%, transparent 54%),
+    radial-gradient(680px 520px at 14% 82%, rgba(154, 131, 18, 0.633) 0 22%, transparent 52%);
   filter: blur(80px) saturate(1.18) brightness(1.02);
   pointer-events: none;
   z-index: -1;
