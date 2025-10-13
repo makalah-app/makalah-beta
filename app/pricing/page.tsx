@@ -40,13 +40,18 @@ export default function PricingPage() {
             >
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold text-foreground font-heading">{tier.name}</h2>
+                  <h2 className="text-lg font-light text-foreground font-heading">{tier.name}</h2>
                   {tier.badge ? (
                     <Badge variant={tier.featured ? 'default' : 'secondary'}>{tier.badge}</Badge>
                   ) : null}
                 </div>
                 <div>
-                  <span className="text-3xl font-semibold text-foreground">{tier.priceLabel}</span>
+                  <div className="mb-2">
+                    <div className="text-3xl font-semibold text-foreground">{tier.priceLabel}</div>
+                    {tier.priceUnit && (
+                      <div className="text-sm font-light text-muted-foreground mt-0.5">{tier.priceUnit}</div>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
                 </div>
                 <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">

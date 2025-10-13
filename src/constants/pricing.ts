@@ -4,6 +4,7 @@ export type PricingTier = {
   featured?: boolean;
   tagline: string;
   priceLabel: string;
+  priceUnit?: string; // Unit/description below price (e.g., "per paper", "5-6 paper")
   description: string[];
   cta: {
     label: string;
@@ -15,7 +16,6 @@ export type PricingTier = {
 export const pricingTiers: PricingTier[] = [
   {
     name: 'Gratis',
-    badge: 'Gratis',
     tagline: 'Akses awal tanpa biaya untuk mengenal alur Makalah AI.',
     priceLabel: 'Rp.0',
     description: [
@@ -29,9 +29,10 @@ export const pricingTiers: PricingTier[] = [
     },
   },
   {
-    name: 'Bayar Per Paper',
+    name: 'Bayar Per Tugas',
     tagline: 'Bayar sesuai kebutuhan untuk menyelesaikan satu paper maksimal lima belas halaman A4.',
-    priceLabel: 'Rp.75.000/paper',
+    priceLabel: 'Rp75.000',
+    priceUnit: 'per paper',
     description: [
       'Selesaikan satu makalah lengkap.',
       'Bayar hanya saat ada proyek.',
@@ -44,9 +45,9 @@ export const pricingTiers: PricingTier[] = [
   },
   {
     name: 'Pro',
-    badge: 'Langganan Tetap',
     tagline: 'Ritme tinggi untuk sekitar enam paper akademik per bulan dengan diskusi agent tanpa batas.',
-    priceLabel: 'Rp255.000/5-6 paper',
+    priceLabel: 'Rp255.000',
+    priceUnit: '5-6 paper',
     description: [
       'Ritme lima hingga enam makalah.',
       'Diskusi agent tanpa batas.',
