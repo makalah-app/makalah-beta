@@ -276,8 +276,35 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
         </div>
       )}
       </div>
-      {/* Striped hairline separator (10px, sparser thin diagonal strokes) */}
-      <div className="hairline-stripe-10 absolute inset-x-0 bottom-0" aria-hidden="true" />
+      {/* Striped hairline separator (10px, sparser thin diagonal strokes) - SVG for pixel-perfect rendering */}
+      <svg
+        className="absolute inset-x-0 bottom-0 h-[10px] w-full opacity-30"
+        aria-hidden="true"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <pattern
+            id="diagonal-stripes-header"
+            x="0"
+            y="0"
+            width="10"
+            height="10"
+            patternUnits="userSpaceOnUse"
+          >
+            <line
+              x1="0"
+              y1="10"
+              x2="10"
+              y2="0"
+              stroke="currentColor"
+              strokeWidth="1"
+              className="text-muted-foreground"
+            />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#diagonal-stripes-header)" />
+      </svg>
     </header>
   );
 };
