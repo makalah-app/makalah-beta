@@ -16,7 +16,6 @@ import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
 import { generateUUID } from '../../src/lib/utils/uuid-generator';
 import { useAuth } from '../../src/hooks/useAuth';
-import RoleBasedRoute from '../../src/components/auth/AuthRoutes';
 import { useChatHistory } from '../../src/hooks/useChatHistory';
 import type { ConversationItem } from '../../src/hooks/useChatHistory';
 
@@ -240,7 +239,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
 function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore, refetch: refreshChatHistory } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
   const [appVersion, setAppVersion] = useState('');
@@ -252,6 +251,15 @@ function ChatPageContent() {
 
   // Stable user ID reference to prevent infinite loops
   const userIdRef = useRef<string | null>(null);
+
+  // ✅ PROGRESSIVE AUTH: Non-blocking redirect for unauthenticated users
+  // Trust middleware + useAuth hook for session management (no custom monitoring needed)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      router.replace(`/auth?returnUrl=${returnUrl}`);
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Helper function untuk truncate judul - CLEAN & SIMPLE
   const truncateTitle = (title: string, maxLength: number = 28): string => {
@@ -689,14 +697,8 @@ function ChatPageContent() {
   );
 }
 
+// ✅ PROGRESSIVE RENDERING: Remove RoleBasedRoute blocking wrapper
+// Auth protection moved inside ChatPageContent with progressive UX
 export default function ChatPage() {
-  return (
-    <RoleBasedRoute
-      requiresAuth={true}
-      allowedRoles={['superadmin', 'admin', 'user']}
-      redirectTo="/auth"
-    >
-      <ChatPageContent />
-    </RoleBasedRoute>
-  );
+  return <ChatPageContent />;
 }
