@@ -53,16 +53,9 @@ export async function POST(req: NextRequest) {
       refresh_token,
     });
 
-    // TEMPORARY DEBUG - Verify cookies are being set
-    const cookieHeaders = res.headers.getSetCookie();
-    console.log('[SET-SESSION] Cookies being set:', cookieHeaders.length, 'cookies');
-
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-
-    // TEMPORARY DEBUG - Log response headers being sent
-    console.log('[SET-SESSION] Response headers:', Object.fromEntries(res.headers.entries()));
 
     // Return response WITH cookies included in headers
     return NextResponse.json(

@@ -311,8 +311,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('users')
           .select(`
             id, email, role, email_verified_at, created_at, last_login_at,
-            user_profiles!inner(
-              display_name, first_name, last_name, institution, avatar_url
+            user_profiles(
+              display_name, first_name, last_name, institution, avatar_url, predikat
             )
           `)
           .eq('id', session.user.id)
@@ -544,27 +544,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let profileError = null;
 
       try {
-        // First try user_profiles directly (skip users table yang mungkin belum sinkron)
+        // Fetch from users table with LEFT join to user_profiles (allow missing profiles)
         const profileResult = await withTimeout(
           (supabaseClient as any)
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', data.user.id)
+            .from('users')
+            .select(`
+              id, email, role, email_verified_at, created_at, last_login_at,
+              user_profiles(
+                display_name, first_name, last_name, institution, avatar_url, predikat
+              )
+            `)
+            .eq('id', data.user.id)
             .maybeSingle(),
           1500, // ✅ PERFORMANCE: Reduced from 3000ms to 1500ms
           async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
         );
 
-        if (profileResult.data) {
-          // Construct userProfile object dari user_profiles data
-          userProfile = {
+        // Store basic auth data even before profile fetch completes
+        // This ensures localStorage is populated immediately after login
+        const tempSession = {
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+          expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now() + 3600000,
+          user: {
             id: data.user.id,
-            email: data.user.email,
-            role: data.user.user_metadata?.role || 'user',
-            email_verified_at: data.user.email_confirmed_at,
-            created_at: data.user.created_at,
-            last_login_at: new Date().toISOString(),
-            user_profiles: [profileResult.data]
+            email: data.user.email!,
+            name: data.user.email?.split('@')[0] || 'User',
+            fullName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
+            role: 'user' as UserRole, // Default role, will be updated from database
+            isVerified: data.user.email_confirmed_at != null,
+            createdAt: data.user.created_at!,
+            lastLogin: new Date().toISOString()
+          },
+          sessionId: data.session.user?.id || 'session-' + Date.now()
+        };
+
+        // Store immediately to ensure localStorage has data
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(tempSession));
+        localStorage.setItem('userId', data.user.id);
+
+        if (profileResult.data) {
+          // Construct userProfile object from users table (role from database, not user_metadata)
+          userProfile = {
+            id: profileResult.data.id,
+            email: profileResult.data.email,
+            role: profileResult.data.role, // ✅ FIX: Use role from users table, not user_metadata
+            email_verified_at: profileResult.data.email_verified_at,
+            created_at: profileResult.data.created_at,
+            last_login_at: profileResult.data.last_login_at || new Date().toISOString(),
+            user_profiles: profileResult.data.user_profiles || [] // ✅ FIX: Handle null user_profiles
           };
         }
         // 406 (PGRST116) berarti belum ada baris -> aman buat fallback
@@ -602,6 +630,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })(),
         role: userProfile.role as UserRole,
         institution: profileData?.institution || undefined,
+        predikat: profileData?.predikat || undefined,
         isVerified: !!userProfile.email_verified_at,
         createdAt: userProfile.created_at,
         lastLogin: new Date().toISOString(),
