@@ -37,6 +37,9 @@ export default function HomePage() {
     return null; // Prevent hydration mismatch
   }
 
+  // ✅ PERFORMANCE: Optimistic UI - show button immediately, disable only if actively loading
+  const showLoadingState = isLoading && !isAuthenticated;
+
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
@@ -57,10 +60,10 @@ export default function HomePage() {
               size="lg"
               className="font-medium transition-all hover:-translate-y-1 hover:scale-105"
               onClick={handleChatWithAgent}
-              disabled={isLoading}
+              disabled={showLoadingState}
             >
               <Brain className="w-5 h-5 mr-2" />
-              {isLoading ? 'Loading...' : 'Diskusi dengan Agen AI'}
+              {showLoadingState ? 'Loading...' : 'Diskusi dengan Agen AI'}
             </Button>
           </div>
           </div>

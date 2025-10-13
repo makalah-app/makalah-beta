@@ -596,12 +596,12 @@
     transform-origin: center;
     /* Slightly tighter blur/brightness for small screens */
     filter: blur(60px) saturate(1.18) brightness(1.02);
-    /* Scale aurora by percentage for proportional look */
+    /* Match desktop color palette exactly (accounting for desktop flip) */
     background:
-      radial-gradient(70% 55% at 75% 18%, rgba(255,138,0,0.50) 0 30%, transparent 55%),
-      radial-gradient(65% 45% at 20% 16%, rgba(37,99,235,0.45) 0 26%, transparent 52%),
-      radial-gradient(68% 50% at 22% 78%, rgba(124,58,237,0.38) 0 22%, transparent 50%),
-      radial-gradient(58% 42% at 86% 82%, rgba(255,213,0,0.18) 0 18%, transparent 48%);
+      radial-gradient(70% 55% at 75% 18%, rgba(232,102,9,0.50) 0 30%, transparent 55%),
+      radial-gradient(65% 45% at 20% 16%, rgba(115,185,4,0.45) 0 26%, transparent 52%),
+      radial-gradient(68% 50% at 22% 78%, rgba(25,196,156,0.38) 0 22%, transparent 50%),
+      radial-gradient(58% 42% at 86% 82%, rgba(154,131,18,0.60) 0 18%, transparent 48%);
   }
 
   .hero-grid-thin {
@@ -730,5 +730,12 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-text-shimmer { animation: none; background-image: none; color: var(--primary); }
 }
+
+/* Caret blink for typewriter */
+@keyframes hero-caret-blink {
+  0%, 49% { opacity: 0.9; }
+  50%, 100% { opacity: 0.2; }
+}
+.hero-caret-blink { animation: hero-caret-blink 1s step-end infinite; }
 
 /* (hapus) helper animasi ilustrasi chat hero */

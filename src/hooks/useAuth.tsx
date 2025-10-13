@@ -262,7 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!session) {
         const sessionResult = await withTimeout(
           supabaseClient.auth.getSession(),
-          2500,
+          1000, // ✅ PERFORMANCE: Reduced from 2500ms to 1000ms
           async () => ({ data: { session: null }, error: null } as any)
         );
         const { data: { session: fetchedSession }, error } = sessionResult as any;
@@ -282,10 +282,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session = fetchedSession;
       }
 
+      // ✅ PERFORMANCE: Early exit for unauthenticated users - skip profile fetch
       if (!session) {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
+        setAuthState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
+        });
         initializingRef.current = false;
-        return;
+        return; // No need to fetch profile for unauthenticated users
       }
 
       if (
@@ -310,7 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `)
           .eq('id', session.user.id)
           .maybeSingle(),
-        5000,
+        2000, // ✅ PERFORMANCE: Reduced from 5000ms to 2000ms
         async () => ({ data: null, error: { message: 'profile timeout' } } as any)
       );
       const { data: userProfile, error: profileError } = profileResult as any;
@@ -519,7 +526,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: credentials.email,
           password: credentials.password
         }),
-        3000,
+        1500, // ✅ PERFORMANCE: Reduced from 3000ms to 1500ms
         async () => ({ data: { user: null, session: null }, error: { message: 'Login timeout' } } as any)
       );
       const { data, error } = signInResult as any;
@@ -544,7 +551,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .select('*')
             .eq('user_id', data.user.id)
             .maybeSingle(),
-          3000,
+          1500, // ✅ PERFORMANCE: Reduced from 3000ms to 1500ms
           async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
         );
 

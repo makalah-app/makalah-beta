@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -51,6 +51,8 @@ export default function RoleBasedRoute({
 }: RoleBasedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  // ✅ RACE CONDITION FIX: Prevent duplicate redirects
+  const redirectingRef = useRef(false);
 
   // ✅ REMOVED: Debug logging to prevent console spam
   const normalizedAllowedRoles = useMemo(
@@ -82,15 +84,13 @@ export default function RoleBasedRoute({
       if (requiresAuth && !isAuthenticated) {
         if (!mounted) return;
 
-        // ✅ CRITICAL FIX: Immediate redirect to prevent stuck state
-        if (redirectTo) {
+        // ✅ RACE CONDITION FIX: Guard against duplicate redirects
+        if (redirectTo && !redirectingRef.current) {
+          redirectingRef.current = true;
           const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-          
-          try {
-            router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
-          } catch {
-            window.location.href = `${redirectTo}?returnUrl=${returnUrl}`;
-          }
+
+          // ✅ SIMPLIFIED: Use ONLY router.replace - if fails, let it fail
+          router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
           return; // Early return to prevent state update after redirect
         }
 
@@ -159,39 +159,16 @@ export default function RoleBasedRoute({
       mounted = false;
     };
   }, [
-    // ✅ CRITICAL FIX: Minimal stable dependencies to prevent infinite loops
+    // ✅ OPTIMIZED: Only essential dependencies to prevent re-renders
     isAuthenticated,
     isLoading,
     requiresAuth,
     redirectTo,
-    // ✅ Use JSON.stringify for complex objects to get stable string references
-    JSON.stringify(normalizedAllowedRoles),
-    JSON.stringify(normalizedRequiredPermissions),
-    user?.id, // ✅ Primitive value - stable
-    user?.role // ✅ Primitive value - stable
+    user?.id, // Primitive value - stable
+    user?.role // Primitive value - stable
   ]);
 
-  // ✅ SAFETY NET: If auth loading is stuck, force a safe fallback/redirect
-  useEffect(() => {
-    if (!isLoading) return;
-    const timeout = setTimeout(() => {
-      if (requiresAuth && !isAuthenticated) {
-        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-        if (redirectTo) {
-          try {
-            router.replace(`${redirectTo}?returnUrl=${returnUrl}`);
-          } catch {
-            window.location.href = `${redirectTo}?returnUrl=${returnUrl}`;
-          }
-        } else {
-          setAccessState({ granted: false, loading: false, reason: 'Authentication required' });
-        }
-      } else {
-        setAccessState({ granted: true, loading: false });
-      }
-    }, 2500);
-    return () => clearTimeout(timeout);
-  }, [isLoading, requiresAuth, isAuthenticated, redirectTo, router]);
+  // ✅ REMOVED: Safety net timeout causing race conditions
 
   if (accessState.loading) {
     if (loadingComponent) {
