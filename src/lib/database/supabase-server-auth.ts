@@ -41,7 +41,7 @@ export function createSupabaseServerClient() {
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value: '', ...options });
+            cookieStore.set({ name, value: '', maxAge: 0, ...options });
           } catch (error) {
             // Cookie removal might fail in certain server contexts
             // Cookie removal failed - silent handling for production

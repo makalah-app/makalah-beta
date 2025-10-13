@@ -27,7 +27,7 @@ export async function middleware(req: NextRequest) {
             });
           },
           remove(name: string, options: CookieOptions) {
-            res.cookies.set({ name, value: '', ...options });
+            res.cookies.set({ name, value: '', maxAge: 0, ...options });
           },
         },
       }
