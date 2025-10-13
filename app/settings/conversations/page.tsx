@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useRouter } from 'next/navigation';
-import { MessageSquare, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
+import { MessageSquare, Trash2, RefreshCw, AlertCircle, Pencil } from 'lucide-react';
+import { useInlineEdit } from '@/hooks/useInlineEdit';
+import { updateConversationTitle } from '@/lib/api/conversations';
 
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +18,95 @@ import { cn } from '@/lib/utils';
 import { ViewConversationDialog } from '@/components/conversations/ViewConversationDialog';
 
 const PAGE_SIZE = 25; // Fixed pagination size
+
+// Inline Editable Title Component untuk Desktop Table
+interface EditableTitleProps {
+  conversation: ConversationItem;
+  onUpdate: () => void;
+  onViewDialog: () => void;
+}
+
+function EditableTitle({ conversation, onUpdate, onViewDialog }: EditableTitleProps) {
+  const { toast } = useToast();
+
+  const {
+    value,
+    isEditing,
+    isSaving,
+    inputRef,
+    startEdit,
+    setValue,
+    handleKeyDown,
+    handleBlur
+  } = useInlineEdit({
+    initialValue: conversation.title || 'Untitled Chat',
+    onSave: async (newTitle) => {
+      const result = await updateConversationTitle(conversation.id, newTitle);
+
+      if (result.success) {
+        toast({
+          title: 'Judul diperbarui',
+          description: 'Judul percakapan berhasil diubah.'
+        });
+
+        // Notify sidebar untuk sync
+        if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
+          (window as any).refreshChatHistory();
+        }
+
+        // Trigger local refresh
+        onUpdate();
+
+        return true;
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal memperbarui judul',
+          description: result.error || 'Terjadi kesalahan saat menyimpan.'
+        });
+        return false;
+      }
+    }
+  });
+
+  if (isEditing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        disabled={isSaving}
+        maxLength={100}
+        className="w-full bg-background border-[0.5px] border-primary rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+        placeholder="Untitled Chat"
+      />
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 group/title">
+      <button
+        onClick={onViewDialog}
+        className="truncate text-left hover:underline hover:text-primary transition-colors flex-1 cursor-pointer font-medium"
+      >
+        {conversation.title || 'Untitled Chat'}
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          startEdit();
+        }}
+        className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded-[3px] transition-opacity"
+        aria-label="Rename conversation"
+      >
+        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+    </div>
+  );
+}
 
 interface ConversationItem {
   id: string;
@@ -419,19 +510,18 @@ export default function ConversationsPage() {
                         <td className="h-12 px-3 py-0 align-middle text-center text-xs text-muted-foreground">
                           {rowNumber}
                         </td>
-                        <td className="h-12 px-3 py-0 align-middle font-medium">
-                          <button
-                            onClick={() =>
+                        <td className="h-12 px-3 py-0 align-middle">
+                          <EditableTitle
+                            conversation={conv}
+                            onUpdate={() => fetchConversations()}
+                            onViewDialog={() =>
                               setViewDialog({
                                 open: true,
                                 conversationId: conv.id,
                                 title: conv.title || 'Untitled Chat',
                               })
                             }
-                            className="truncate text-left hover:underline hover:text-primary transition-colors w-full cursor-pointer"
-                          >
-                            {conv.title || 'Untitled Chat'}
-                          </button>
+                          />
                         </td>
                         <td className="h-12 px-3 py-0 align-middle text-center">
                           {conv.messageCount}
@@ -491,20 +581,19 @@ export default function ConversationsPage() {
                           }
                           aria-label={`Pilih ${conv.title}`}
                         />
-                        <div className="flex-1">
-                          <button
-                            onClick={() =>
+                        <div className="flex-1 min-w-0">
+                          <EditableTitle
+                            conversation={conv}
+                            onUpdate={() => fetchConversations()}
+                            onViewDialog={() =>
                               setViewDialog({
                                 open: true,
                                 conversationId: conv.id,
                                 title: conv.title || 'Untitled Chat',
                               })
                             }
-                            className="font-medium text-sm truncate text-left hover:underline hover:text-primary transition-colors w-full cursor-pointer"
-                          >
-                            {conv.title || 'Untitled Chat'}
-                          </button>
-                          <p className="text-xs text-muted-foreground">
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
                             {conv.messageCount} pesan
                           </p>
                         </div>

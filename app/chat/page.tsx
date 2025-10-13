@@ -40,6 +40,9 @@ import { UserDropdown } from '../../src/components/ui/user-dropdown';
 import { Input } from '../../src/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../src/components/ui/tooltip';
 import { DeleteConversationDialog } from '../../src/components/chat/DeleteConversationDialog';
+import { useInlineEdit } from '../../src/hooks/useInlineEdit';
+import { updateConversationTitle } from '../../src/lib/api/conversations';
+import { useToast } from '../../src/hooks/use-toast';
 
 function MobileHeader() {
   const { openMobile } = useSidebar();
@@ -103,6 +106,7 @@ interface ConversationHistoryItemProps {
   fullTitle: string;
   onSelect: (conversationId: string) => void;
   onDelete: (conversationId: string) => void;
+  onTitleUpdate?: () => void;
 }
 
 const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
@@ -112,48 +116,122 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
   fullTitle,
   onSelect,
   onDelete,
+  onTitleUpdate,
 }) => {
   const titleRef = useRef<HTMLSpanElement>(null);
+  const { toast } = useToast();
+
+  // Inline edit hook
+  const {
+    value,
+    isEditing,
+    isSaving,
+    inputRef,
+    startEdit,
+    setValue,
+    handleKeyDown,
+    handleBlur
+  } = useInlineEdit({
+    initialValue: fullTitle,
+    onSave: async (newTitle) => {
+      const result = await updateConversationTitle(conversation.id, newTitle);
+
+      if (result.success) {
+        toast({
+          title: 'Judul diperbarui',
+          description: 'Judul percakapan berhasil diubah.'
+        });
+
+        // Trigger refresh chat history
+        if (typeof window !== 'undefined' && (window as any).refreshChatHistory) {
+          (window as any).refreshChatHistory();
+        }
+
+        // Notify parent untuk local update
+        onTitleUpdate?.();
+
+        return true;
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal memperbarui judul',
+          description: result.error || 'Terjadi kesalahan saat menyimpan.'
+        });
+        return false;
+      }
+    }
+  });
+
   // Always show tooltip for consistent UX
   const shouldShowTooltip = true;
+
+  // Handle double-click untuk start edit
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    startEdit();
+  };
 
   return (
     <SidebarMenuItem>
       <div className="flex items-center gap-1">
-        <TooltipProvider>
-          <Tooltip delayDuration={500}>
-            <TooltipTrigger asChild>
-              <SidebarMenuButton
-                onClick={() => onSelect(conversation.id)}
-                className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
-                  isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
-                }`}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span ref={titleRef} className="truncate">
-                  {truncatedTitle}
-                </span>
-                {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
-              </SidebarMenuButton>
-            </TooltipTrigger>
-            {shouldShowTooltip && (
-              <TooltipContent
-                side="top"
-                align="center"
-                className="max-w-xs"
-              >
-                <p>{fullTitle}</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-        <button
-          onClick={() => onDelete(conversation.id)}
-          className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
-          aria-label="Delete conversation"
-        >
-          <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-        </button>
+        {isEditing ? (
+          // Edit Mode
+          <div className="flex-1 px-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              disabled={isSaving}
+              maxLength={100}
+              className="w-full bg-background border-[0.5px] border-primary rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+              placeholder="Untitled Chat"
+            />
+          </div>
+        ) : (
+          // Display Mode
+          <TooltipProvider>
+            <Tooltip delayDuration={500}>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton
+                  onClick={() => onSelect(conversation.id)}
+                  onDoubleClick={handleDoubleClick}
+                  className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
+                    isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span ref={titleRef} className="truncate">
+                    {truncatedTitle}
+                  </span>
+                  {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              {shouldShowTooltip && (
+                <TooltipContent
+                  side="top"
+                  align="center"
+                  className="max-w-xs"
+                >
+                  <p>{fullTitle}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {!isEditing && (
+          <button
+            onClick={() => onDelete(conversation.id)}
+            className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
+            aria-label="Delete conversation"
+          >
+            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+          </button>
+        )}
       </div>
     </SidebarMenuItem>
   );
