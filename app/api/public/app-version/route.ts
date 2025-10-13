@@ -45,6 +45,7 @@ export async function GET() {
   }
 }
 
-// No cache - allow real-time updates from admin
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Server-side cache: 5 minutes
+// App version changes are rare (manual admin updates only)
+// This reduces database load from ~240 queries/hour to ~12 queries/hour per user
+export const revalidate = 300;

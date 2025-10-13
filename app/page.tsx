@@ -61,7 +61,7 @@ export default function HomePage() {
               {isLoading ? 'Loading...' : 'Diskusi dengan Agen AI'}
             </Button>
           </div>
-
+          {/* Ilustrasi animasi hero dihapus sesuai arahan */}
         </div>
         {/* Bottom fade to background to soften edge while keeping separator on next section */}
         <div

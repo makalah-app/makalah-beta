@@ -187,7 +187,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
               onBlur={handleBlur}
               disabled={isSaving}
               maxLength={100}
-              className="w-full bg-background border-[0.5px] border-primary rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+              className="w-full bg-background border-[0.5px] border-primary/60 rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
               placeholder="Untitled Chat"
             />
           </div>
@@ -339,7 +339,7 @@ function ChatPageContent() {
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
 
-  // ✅ SIDE EFFECT: Fetch app version from database with polling
+  // ✅ SIDE EFFECT: Fetch app version once on mount (manual refresh via page reload)
   useEffect(() => {
     const fetchVersion = async () => {
       try {
@@ -354,13 +354,7 @@ function ChatPageContent() {
       }
     };
 
-    // Fetch immediately
     fetchVersion();
-
-    // Poll every 30 seconds for updates
-    const interval = setInterval(fetchVersion, 30000);
-
-    return () => clearInterval(interval);
   }, []);
 
   // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)

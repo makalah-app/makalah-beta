@@ -51,7 +51,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Fetch app version dynamically with polling
+  // Fetch app version once on mount (manual refresh via page reload)
   useEffect(() => {
     const fetchVersion = async () => {
       try {
@@ -66,13 +66,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       }
     };
 
-    // Fetch immediately
     fetchVersion();
-
-    // Poll every 30 seconds for updates
-    const interval = setInterval(fetchVersion, 30000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
