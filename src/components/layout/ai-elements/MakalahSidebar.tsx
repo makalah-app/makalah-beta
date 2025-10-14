@@ -188,7 +188,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
         <div className="flex items-center gap-2">
           <Link
             href="/"
-            className="w-6 h-6 bg-accent-500 rounded-[3px] flex items-center justify-center text-sm font-bold text-white hover:bg-accent-600 transition-colors"
+            className="w-6 h-6 bg-accent-500 rounded flex items-center justify-center text-sm font-bold text-white hover:bg-accent-600 transition-colors"
           >
             M
           </Link>
@@ -312,7 +312,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="w-full hover:bg-bg-800"
                 >
-                  <div className="w-8 h-8 avatar-green-solid rounded-[3px] flex items-center justify-center text-sm font-medium">
+                  <div className="w-8 h-8 avatar-green-solid rounded flex items-center justify-center text-sm font-medium">
                     {user.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex flex-col items-start min-w-0 flex-1">
@@ -327,7 +327,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
 
                 {/* User Menu Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-bg-800 border border-line-600 rounded-[3px] shadow-xl z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2">
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-bg-800 border border-line-600 rounded shadow-xl z-50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-2">
                     {USER_MENU_ACTIONS.map((action, index) => (
                       <button
                         key={action.id}
@@ -353,7 +353,7 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-850 border border-line-600 rounded-md p-4 max-w-sm mx-4">
+          <div className="bg-bg-850 border border-line-600 rounded p-4 max-w-sm mx-4">
             <h3 className="font-medium text-text-100 mb-2">Delete Conversation</h3>
             <p className="text-text-300 text-sm mb-4">
               Are you sure you want to delete this conversation? This action cannot be undone.

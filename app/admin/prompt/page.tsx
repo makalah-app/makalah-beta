@@ -466,7 +466,7 @@ function AdminPromptContent() {
             <CardHeader>
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                     <Cpu className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
@@ -499,13 +499,13 @@ function AdminPromptContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               {showPromptHistory && (
-                <div className="rounded-[3px] border border-dashed border-border bg-muted/20 p-4">
+                <div className="rounded border border-dashed border-border bg-muted/20 p-4">
                   <p className="text-sm font-medium text-muted-foreground">Riwayat versi prompt</p>
                   <div className="mt-3 space-y-2">
                     {(promptHistory.length ? promptHistory : defaultPromptHistory).map((item) => (
                       <div
                         key={item.version}
-                        className="flex flex-col gap-1 rounded-[3px] border border-transparent bg-background px-3 py-2 transition-colors hover:border-border"
+                        className="flex flex-col gap-1 rounded border border-transparent bg-background px-3 py-2 transition-colors hover:border-border"
                       >
                         <div className="flex items-center justify-between text-sm font-medium text-foreground">
                           <span>{item.version}</span>
@@ -591,7 +591,7 @@ function AdminPromptContent() {
             <CardHeader>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                     <Zap className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
@@ -679,7 +679,7 @@ function AdminPromptContent() {
             <CardHeader>
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                     <Database className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">

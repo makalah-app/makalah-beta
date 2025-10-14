@@ -106,7 +106,7 @@ export const CitationMarker: React.FC<CitationMarkerProps> = ({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn(baseClass, "hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-[3px] p-0.5")}
+          className={cn(baseClass, "hover:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded p-0.5")}
         >
           {content}
         </a>

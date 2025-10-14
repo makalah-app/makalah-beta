@@ -94,7 +94,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={cn("flex w-full items-center justify-between gap-3 rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2", className, triggerClassName)}>
+          <button className={cn("flex w-full items-center justify-between gap-3 rounded p-2 text-left text-sm outline-none ring-sidebar-ring transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2", className, triggerClassName)}>
             <div className="flex items-center gap-3">
               <UserAvatar
                 initials={getUserInitials(user)}
@@ -128,7 +128,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              "group mr-4 flex items-center justify-between gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group mr-4 flex items-center justify-between gap-3 rounded border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               triggerClassName
             )}
           >

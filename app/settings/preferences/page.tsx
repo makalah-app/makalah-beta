@@ -79,7 +79,7 @@ export default function PreferencesPage() {
           <CardDescription>Pilih tema yang sesuai dengan preferensi Anda</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex items-center justify-between rounded-[3px] border border-border/70 bg-card/50 px-4 py-3">
+          <div className="flex items-center justify-between rounded border border-border/70 bg-card/50 px-4 py-3">
             <div className="flex flex-col gap-1">
               <span className="text-sm font-medium text-foreground">Mode gelap</span>
               <span className="text-xs text-muted-foreground">
@@ -116,7 +116,7 @@ export default function PreferencesPage() {
           <Separator />
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-[3px] border border-dashed border-border/60 bg-muted/30 px-3 py-2">
+            <div className="flex items-center justify-between rounded border border-dashed border-border/60 bg-muted/30 px-3 py-2">
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-foreground">Tema aktif</span>
                 <span className="text-xs text-muted-foreground">

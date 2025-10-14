@@ -38,7 +38,7 @@ export function Banner({
   return (
     <div
       className={cn(
-        'rounded-[3px] border p-4 flex items-start gap-3',
+        'rounded border p-4 flex items-start gap-3',
         variantStyles[variant],
         className
       )}
@@ -51,7 +51,7 @@ export function Banner({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="p-1 hover:bg-black/5 rounded-[3px] transition-colors"
+            className="p-1 hover:bg-black/5 rounded transition-colors"
             aria-label="Retry"
           >
             <RefreshCw className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function Banner({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="p-1 hover:bg-black/5 rounded-[3px] transition-colors"
+            className="p-1 hover:bg-black/5 rounded transition-colors"
             aria-label="Dismiss"
           >
             <X className="h-4 w-4" />

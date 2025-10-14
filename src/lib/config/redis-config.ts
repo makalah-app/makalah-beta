@@ -16,7 +16,6 @@ export const REDIS_PREFIXES = {
   SESSION: 'session:',
   USER: 'user:',
   WORKFLOW: 'workflow:',
-  ARTIFACT: 'artifact:',
   QUERY_CACHE: 'query:',
   AI_INTERACTION: 'ai:',
   PERFORMANCE: 'perf:',
@@ -31,7 +30,6 @@ export const TTL_STRATEGIES = {
   SESSION: env.REDIS_SESSION_TTL, // 24 hours
   USER_DATA: env.REDIS_DEFAULT_TTL, // 1 hour
   WORKFLOW_STATE: env.REDIS_DEFAULT_TTL, // 1 hour
-  ARTIFACT_CACHE: env.REDIS_ARTIFACT_TTL, // 2 hours
   QUERY_CACHE: env.REDIS_DEFAULT_TTL, // 1 hour
   AI_RESPONSE: 7200, // 2 hours
   PERFORMANCE_METRICS: 1800, // 30 minutes

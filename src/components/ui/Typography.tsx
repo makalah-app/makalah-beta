@@ -189,7 +189,7 @@ export const Code: React.FC<Omit<TypographyProps, 'variant'> & { inline?: boolea
     {...props}
     variant="code"
     as={inline ? 'span' : 'div'}
-    className={`${inline ? 'bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded' : 'bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto'} ${className}`}
+    className={`${inline ? 'bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded' : 'bg-gray-100 dark:bg-gray-800 p-4 rounded overflow-x-auto'} ${className}`}
   />
 );
 

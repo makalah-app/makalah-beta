@@ -625,7 +625,7 @@ function AdminModelsContent() {
         <CardHeader>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                 <Brain className="h-5 w-5" />
               </div>
               <div className="space-y-1">
@@ -971,7 +971,7 @@ function AdminModelsContent() {
           <div className="pt-6 border-t border-border">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+                <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary">
                   <Link className="h-4 w-4" />
                 </div>
                 <div className="space-y-1">
@@ -986,7 +986,7 @@ function AdminModelsContent() {
 
             <div className="space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
-                <div className={`rounded-[3px] border border-border bg-muted/20 p-4 ${primaryProvider === 'openai' ? 'ring-2 ring-primary/30' : ''}`}>
+                <div className={`rounded border border-border bg-muted/20 p-4 ${primaryProvider === 'openai' ? 'ring-2 ring-primary/30' : ''}`}>
                   <p className="text-sm font-medium text-primary">OpenAI Models</p>
                   <p className="text-xs text-muted-foreground mt-1 mb-2">Native web search via OpenAI Responses API</p>
                   <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
@@ -995,7 +995,7 @@ function AdminModelsContent() {
                     <li>Tidak perlu API tambahan</li>
                   </ul>
                 </div>
-                <div className={`rounded-[3px] border border-border bg-muted/20 p-4 ${primaryProvider === 'openrouter' ? 'ring-2 ring-primary/30' : ''}`}>
+                <div className={`rounded border border-border bg-muted/20 p-4 ${primaryProvider === 'openrouter' ? 'ring-2 ring-primary/30' : ''}`}>
                   <p className="text-sm font-medium text-primary">OpenRouter Models</p>
                   <p className="text-xs text-muted-foreground mt-1 mb-2">Automatic web search via :online suffix</p>
                   <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
@@ -1005,7 +1005,7 @@ function AdminModelsContent() {
                   </ul>
                 </div>
               </div>
-              <div className="rounded-[3px] border border-primary/20 bg-primary/5 p-3">
+              <div className="rounded border border-primary/20 bg-primary/5 p-3">
                 <p className="text-xs font-medium text-primary mb-1">Current Active Web Search:</p>
                 <p className="text-sm font-semibold">
                   {primaryProvider === 'openai' ? 'OpenAI → Native WebSearch (Responses API)' : 'OpenRouter → :online suffix (built-in)'}

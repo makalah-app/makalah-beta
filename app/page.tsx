@@ -89,7 +89,7 @@ export default function HomePage() {
 
           {/* Benefits Grid - hero-style static boxes */}
           <div className="grid gap-8 sm:grid-cols-2">
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <Brain className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -99,7 +99,7 @@ export default function HomePage() {
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <MessageSquare className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -109,7 +109,7 @@ export default function HomePage() {
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <ListChecks className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -119,7 +119,7 @@ export default function HomePage() {
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <Target className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -129,7 +129,7 @@ export default function HomePage() {
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <ShieldCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -139,7 +139,7 @@ export default function HomePage() {
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded-[3px]">
+            <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
                 <UserCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
@@ -152,10 +152,10 @@ export default function HomePage() {
 
           {/* Highlight statement as sub-section */}
           <div className="mt-12 text-center max-w-3xl mx-auto">
-            <h3 className="text-xl md:text-4xl font-semibold text-foreground font-heading">
+            <h3 className="text-xl md:text-4xl text-foreground font-heading">
               Anda adalah pawang, AI hanya tukang
             </h3>
-            <p className="text-xl md:text-5xl text-muted-foreground mt-0">
+            <p className="text-xl md:text-4xl text-muted-foreground mt-0">
               Karya tulis tetap orisinal!
             </p>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
@@ -261,16 +261,16 @@ export default function HomePage() {
             <p className="mt-3 text-base md:text-lg text-muted-foreground text-center">
               Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi Anda menyusun paper akademik dan melakukan riset.
             </p>
-            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded-[3px] mt-6 md:mt-8">
+            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
-                  <div className="w-20 h-20 rounded-[3px] bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-20 h-20 rounded bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
                 </div>
-                <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded-[3px]">
+                <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded">
                   12:34
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function HomePage() {
           {/* Internal sub-separator between Tutorial and Resources */}
           <div className="w-full my-4" aria-hidden="true">
             <div
-              className="h-[2px] w-full rounded-[3px]"
+              className="h-[2px] w-full rounded"
               style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.55 }}
             />
           </div>

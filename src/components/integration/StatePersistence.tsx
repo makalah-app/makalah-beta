@@ -499,7 +499,7 @@ export const StorageStatusIndicator: React.FC<{ className?: string }> = ({
   }
 
   return (
-    <div className={`storage-status bg-gray-50 border border-gray-200 rounded-lg p-3 ${className}`}>
+    <div className={`storage-status bg-gray-50 border border-gray-200 rounded p-3 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-medium text-gray-700 text-sm">Storage Status</h4>
         <span className="text-xs text-gray-500">{formatBytes(storageUsage)}</span>

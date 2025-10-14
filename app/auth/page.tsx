@@ -174,7 +174,7 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !isRegisterMode && (
-              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-[3px]">
+              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
                 <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2 mb-2">
                   <span>✅</span>
                   <span>{successMessage}</span>
@@ -328,7 +328,7 @@ export default function AuthPage() {
                     {error}
                   </div>
                   {showResendOption && !successMessage && (
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-[3px]">
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
                       <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
                         Email belum terverifikasi. Cek inbox atau kirim ulang.
                       </p>

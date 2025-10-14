@@ -70,7 +70,7 @@ function SidebarNewChatButton({ onNewChat }: { onNewChat: () => void }) {
     <div className="pb-2 border-b border-border">
       <button
         onClick={handleClick}
-        className="flex items-center gap-2 text-base md:text-sm bg-transparent hover:bg-sidebar-accent rounded-[3px] px-4 py-1 w-full h-9 transition-colors"
+        className="flex items-center gap-2 text-base md:text-sm bg-transparent hover:bg-sidebar-accent rounded px-4 py-1 w-full h-9 transition-colors"
       >
         <MessageSquare className="w-4 h-4" />
         <span>Percakapan Baru</span>
@@ -235,7 +235,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
               onBlur={handleBlur}
               disabled={isSaving}
               maxLength={100}
-              className="w-full bg-background border-[0.5px] border-primary/60 rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
+              className="w-full bg-background border-[0.5px] border-primary/60 rounded px-2 py-1 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
               placeholder="Untitled Chat"
             />
           </div>
@@ -247,7 +247,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
                 <SidebarMenuButton
                   onClick={() => onSelect(conversation.id)}
                   onDoubleClick={handleDoubleClick}
-                  className={`flex-1 hover:bg-muted/50 rounded-[3px] ${
+                          className={`flex-1 hover:bg-muted/50 rounded ${
                     isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
                   }`}
                 >
@@ -274,7 +274,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
         {!isEditing && (
           <button
             onClick={() => onDelete(conversation.id)}
-            className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded-[3px] transition-opacity"
+            className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded transition-opacity"
             aria-label="Delete conversation"
           >
             <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
@@ -484,7 +484,7 @@ function ChatPageContent() {
   // Show loading screen while authentication is being processed
   if (isLoading && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-chat-background">
         <div className="text-center">
           <div className="w-12 h-12 animate-spin rounded-full border-2 border-border border-t-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading chat interface...</p>
@@ -578,7 +578,7 @@ function ChatPageContent() {
     >
       
       <SidebarProvider>
-        <div className="flex h-screen w-full bg-background">
+        <div className="flex h-screen w-full bg-chat-background">
           <Sidebar className="border-r border-border bg-sidebar">
             <SidebarHeader className="p-4 border-b border-border">
               <Link
@@ -657,7 +657,7 @@ function ChatPageContent() {
                       {!searchQuery && (
                         <button
                           onClick={() => refreshChatHistory()}
-                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded-[3px] hover:bg-primary/90 transition-colors"
+                          className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                           Refresh

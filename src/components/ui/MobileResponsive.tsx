@@ -511,7 +511,7 @@ export const TouchButton: React.FC<{
       disabled={disabled}
       className={`
         ${sizeClasses[size]}
-        bg-primary-600 text-white rounded-lg font-medium
+        bg-primary-600 text-white rounded font-medium
         active:bg-primary-700 transition-colors
         disabled:opacity-50 disabled:cursor-not-allowed
         ${device.touchSupport ? 'touch-manipulation' : ''}
@@ -616,7 +616,7 @@ export const KeyboardAwareInput: React.FC<{
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary-500"
+        className="w-full p-3 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500"
         rows={3}
       />
     </div>

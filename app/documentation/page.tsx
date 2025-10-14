@@ -23,7 +23,6 @@ export default function DocumentationPage() {
       title: 'Fitur Utama',
       items: [
         { id: 'chat-agent', label: 'Chat dengan AI', icon: Users },
-        { id: 'artifact-system', label: 'Sistem Penelitian', icon: FileText },
         { id: 'workflow', label: '7 Fase Penulisan', icon: Settings },
         { id: 'collaboration', label: 'Kolaborasi Tim', icon: Users },
       ],
@@ -47,7 +46,7 @@ export default function DocumentationPage() {
             <div>
               <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Mulai</div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                   <Brain className="w-5 h-5 text-primary" />
                 </div>
                 <h1 className="text-4xl font-semibold text-foreground">Selamat Datang</h1>
@@ -72,9 +71,6 @@ export default function DocumentationPage() {
                   <ul className="space-y-2 text-muted-foreground">
                     <li>
                       • <strong>Chat dengan AI Agent</strong> - Berinteraksi langsung dengan AI untuk panduan penulisan
-                    </li>
-                    <li>
-                      • <strong>Sistem Penelitian</strong> - Kelola dokumen dan file penelitian dengan mudah
                     </li>
                     <li>
                       • <strong>7 Fase Terstruktur</strong> - Proses penulisan yang sistematis dan terarah
@@ -130,7 +126,7 @@ export default function DocumentationPage() {
             <div>
               <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Mulai</div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                   <Zap className="w-5 h-5 text-primary" />
                 </div>
                 <h1 className="text-4xl font-semibold text-foreground">Panduan Cepat</h1>
@@ -186,7 +182,7 @@ export default function DocumentationPage() {
             <div>
               <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Fitur Utama</div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                   <Book className="w-5 h-5 text-primary" />
                 </div>
                 <h1 className="text-4xl font-semibold text-foreground">7 Fase Penulisan</h1>
@@ -213,7 +209,7 @@ export default function DocumentationPage() {
                 <Card key={item.phase} className="hover:bg-card/70 transition-colors">
                   <CardContent className="pt-6">
                     <div className="flex items-center mb-4">
-                      <div className="w-8 h-8 flex items-center justify-center text-white font-semibold mr-4 bg-primary rounded-[3px]">
+                      <div className="w-8 h-8 flex items-center justify-center text-white font-semibold mr-4 bg-primary rounded">
                         {item.phase}
                       </div>
                       <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
@@ -232,7 +228,7 @@ export default function DocumentationPage() {
             <div>
               <div className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">Panduan Lanjutan</div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-[3px] bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                   <Globe className="w-5 h-5 text-primary" />
                 </div>
                 <h1 className="text-4xl font-semibold text-foreground">Kebijakan Privasi</h1>
@@ -348,7 +344,7 @@ export default function DocumentationPage() {
                       <li key={item.id}>
                         <button
                           onClick={() => setActiveSection(item.id)}
-                          className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded-[3px] ${
+                          className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded ${
                             isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
                           }`}
                         >

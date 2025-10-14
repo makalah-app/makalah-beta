@@ -338,7 +338,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                           alt={part.filename || 'Uploaded image'}
                           width={400}
                           height={400}
-                          className="rounded-lg border w-full h-auto"
+                          className="rounded border w-full h-auto"
                           unoptimized
                         />
                         {part.filename && (

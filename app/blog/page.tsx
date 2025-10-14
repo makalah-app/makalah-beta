@@ -108,7 +108,7 @@ export default function BlogPage() {
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10 max-w-7xl mx-auto">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function BlogPage() {
         <Card className="border-border bg-card">
           <CardContent className="p-8 text-center">
             <div className="max-w-2xl mx-auto">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Brain className="w-6 h-6 text-primary" />
               </div>
               <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">Tetap Update dengan Artikel Terbaru</h3>

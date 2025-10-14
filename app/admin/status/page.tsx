@@ -291,7 +291,7 @@ function AdminStatusContent() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             {/* App Version - Full Width */}
-            <div className="md:col-span-2 space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+            <div className="md:col-span-2 space-y-3 rounded border border-border bg-muted/20 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-muted-foreground">App Version</p>
@@ -303,7 +303,7 @@ function AdminStatusContent() {
                   </p>
                 </div>
                 <button
-                  className="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 border border-primary hover:bg-primary/5 rounded-[3px] transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 border border-primary hover:bg-primary/5 rounded transition-colors"
                   onClick={handleEditVersion}
                 >
                   Edit
@@ -312,7 +312,7 @@ function AdminStatusContent() {
             </div>
 
             {/* Primary Model */}
-            <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+            <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">Model aktif</p>
               <p className="text-sm font-semibold text-foreground">
                 {configStatus.primaryProvider === 'openai' ? 'OpenAI' : 'OpenRouter'} · {configStatus.primaryModel}
@@ -323,7 +323,7 @@ function AdminStatusContent() {
             </div>
 
             {/* Fallback Model */}
-            <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+            <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">Model fallback</p>
               <p className="text-sm font-semibold text-foreground">
                 {configStatus.fallbackProvider === 'openai' ? 'OpenAI' : 'OpenRouter'} · {configStatus.fallbackModel}
@@ -334,7 +334,7 @@ function AdminStatusContent() {
             </div>
 
             {/* System Prompt */}
-            <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+            <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">System prompt</p>
               <p className="text-sm font-semibold text-foreground">
                 {configStatus.primaryProvider === 'openai' ? '🟢 System Prompt OpenAI' : '🟡 System Prompt OpenRouter'}
@@ -345,7 +345,7 @@ function AdminStatusContent() {
             </div>
 
             {/* Web Search */}
-            <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+            <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-muted-foreground">Web search</p>
               <p className="text-sm font-semibold text-foreground">
                 {configStatus.primaryProvider === 'openai' ? 'OpenAI Native' : 'OpenRouter :online'}
@@ -366,14 +366,14 @@ function AdminStatusContent() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="flex items-center justify-between p-3 rounded-[3px] border border-border">
+            <div className="flex items-center justify-between p-3 rounded border border-border">
               <div>
                 <p className="text-sm font-medium">Model Configuration</p>
                 <p className="text-xs text-muted-foreground">Atur provider dan parameters</p>
               </div>
               <Badge variant="secondary">Active</Badge>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-[3px] border border-border">
+            <div className="flex items-center justify-between p-3 rounded border border-border">
               <div>
                 <p className="text-sm font-medium">System Prompt</p>
                 <p className="text-xs text-muted-foreground">Edit instruksi AI</p>

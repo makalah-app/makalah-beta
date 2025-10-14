@@ -656,7 +656,7 @@ function AdminUsersDetailsContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
-            <div className="flex items-start gap-3 rounded-md border border-destructive bg-destructive/10 p-4 text-sm">
+            <div className="flex items-start gap-3 rounded border border-destructive bg-destructive/10 p-4 text-sm">
               <ShieldAlert className="mt-0.5 h-4 w-4 text-destructive" />
               <div>
                 <p className="font-medium text-destructive">Gagal memuat data</p>
@@ -667,17 +667,17 @@ function AdminUsersDetailsContent() {
 
           <div className="space-y-3 md:hidden">
             {loading ? (
-              <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 rounded border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span>Memuat pengguna…</span>
               </div>
             ) : users.length === 0 ? (
-              <div className="rounded-md border border-dashed border-border p-6 text-sm text-muted-foreground">
+              <div className="rounded border border-dashed border-border p-6 text-sm text-muted-foreground">
                 Tidak ada pengguna untuk filter saat ini.
               </div>
             ) : (
               users.map((user) => (
-                <div key={user.id} className="space-y-2 rounded-md border border-border p-4">
+                <div key={user.id} className="space-y-2 rounded border border-border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-sm">{user.email}</p>
@@ -975,7 +975,7 @@ function AdminUsersDetailsContent() {
           </AlertDialogHeader>
           {deleteTarget && (
             <div className="space-y-2">
-              <p className="rounded-md bg-muted px-3 py-2 text-sm">{deleteTarget.email}</p>
+              <p className="rounded bg-muted px-3 py-2 text-sm">{deleteTarget.email}</p>
               <Input
                 autoFocus
                 value={deleteConfirmation}

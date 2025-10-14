@@ -40,7 +40,7 @@ export const DeleteConversationDialog: React.FC<DeleteConversationDialogProps> =
 }) => {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-sm rounded-[3px] sm:rounded-[3px]">
+      <AlertDialogContent className="max-w-sm rounded sm:rounded">
         <AlertDialogHeader>
           <AlertDialogTitle>Hapus Percakapan</AlertDialogTitle>
           <AlertDialogDescription>

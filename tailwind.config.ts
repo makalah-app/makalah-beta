@@ -238,6 +238,9 @@ const config: Config = {
   				DEFAULT: 'var(--user-message-bg)',
   				border: 'var(--user-message-border)'
   			},
+  			chat: {
+  				background: 'var(--chat-background)'
+  			},
   			chart: {
   				'1': 'var(--chart-1)',
   				'2': 'var(--chart-2)',
@@ -247,9 +250,10 @@ const config: Config = {
   			}
   		},
   		borderRadius: {
+  			DEFAULT: 'var(--radius)',
   			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			md: 'var(--radius)',
+  			sm: 'var(--radius)'
   		},
   		fontFamily: {
   			sans: [

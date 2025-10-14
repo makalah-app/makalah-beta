@@ -166,8 +166,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               {...props}
               className={cn(
                 inline
-                  ? "px-1 py-0.5 rounded-[3px] text-sm font-mono text-muted-foreground"
-                  : "block p-2 rounded-[3px] text-sm overflow-x-auto font-mono text-muted-foreground border border-border",
+                  ? "px-1 py-0.5 rounded text-sm font-mono text-muted-foreground"
+                  : "block p-2 rounded text-sm overflow-x-auto font-mono text-muted-foreground border border-border",
                 props.className
               )}
             />
@@ -177,7 +177,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           pre: ({ node, ...props }) => (
             <pre
               {...props}
-              className={cn("rounded-[3px] p-3 overflow-x-auto border border-border", props.className)}
+              className={cn("rounded p-3 overflow-x-auto border border-border", props.className)}
             />
           ),
           // Headings dengan proper styling

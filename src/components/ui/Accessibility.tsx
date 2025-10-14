@@ -434,7 +434,7 @@ export const AccessibilitySettings: React.FC<{ className?: string }> = ({ classN
   const shortcuts = getShortcuts();
 
   return (
-    <div className={`accessibility-settings bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${className}`}>
+    <div className={`accessibility-settings bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-4 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
         Accessibility Settings
       </h3>

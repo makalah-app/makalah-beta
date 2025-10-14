@@ -69,7 +69,7 @@ export interface ConflictResolution {
 
 export interface RealtimeNotification {
   id: string;
-  type: 'phase_completion' | 'approval_needed' | 'artifact_generated' | 'workflow_updated' | 'system_event';
+  type: 'phase_completion' | 'approval_needed' | 'workflow_updated' | 'system_event';
   title: string;
   message: string;
   conversationId?: string;

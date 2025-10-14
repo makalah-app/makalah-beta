@@ -63,13 +63,7 @@ async function handleSelectQuery(query: string): Promise<SqlResult> {
     if (error) throw error
     return { data: data || [], rowCount: data?.length || 0 }
   }
-  
-  if (lowerQuery.includes('from artifacts')) {
-    const { data, error } = await supabase.from('artifacts').select('*').limit(100)
-    if (error) throw error
-    return { data: data || [], rowCount: data?.length || 0 }
-  }
-  
+
   // Fallback: try to execute as raw SQL
   throw new Error(`Unsupported SELECT query: ${query}`)
 }

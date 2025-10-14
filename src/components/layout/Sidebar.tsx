@@ -274,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="border-t border-gray-200 pt-4 mb-4">
           <Link
             href="/admin"
-            className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+            className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded transition-colors duration-200"
           >
             <span className="text-lg">🛠️</span>
             {!isCollapsed && <span className="font-medium">Dashboard</span>}

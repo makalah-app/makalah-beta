@@ -37,7 +37,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden absolute top-6 right-6 z-30 h-10 w-10 rounded-[3px] border border-border bg-background/95 backdrop-blur text-muted-foreground hover:text-primary hover:border-primary"
+                className="md:hidden absolute top-6 right-6 z-30 h-10 w-10 rounded border border-border bg-background/95 backdrop-blur text-muted-foreground hover:text-primary hover:border-primary"
                 aria-label="Buka menu pengaturan"
               >
                 <Menu className="h-5 w-5" />

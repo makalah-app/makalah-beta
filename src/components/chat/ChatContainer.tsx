@@ -849,7 +849,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           </div>
 
             {/* Fixed Bottom Input Area - Responsive */}
-            <div className="shrink-0 border-t border-border bg-background">
+            <div className="shrink-0 border-t border-border bg-chat-background">
               <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4">
                 <ChatInput
                   className="transition-all duration-200 ease-in-out"

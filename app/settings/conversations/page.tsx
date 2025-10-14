@@ -80,7 +80,7 @@ function EditableTitle({ conversation, onUpdate, onViewDialog }: EditableTitlePr
         onBlur={handleBlur}
         disabled={isSaving}
         maxLength={100}
-        className="w-full bg-background border-[0.5px] border-primary rounded-[3px] px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+        className="w-full bg-background border-[0.5px] border-primary rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
         placeholder="Untitled Chat"
       />
     );
@@ -99,7 +99,7 @@ function EditableTitle({ conversation, onUpdate, onViewDialog }: EditableTitlePr
           e.stopPropagation();
           startEdit();
         }}
-        className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded-[3px] transition-opacity"
+        className="opacity-0 group-hover/title:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
         aria-label="Rename conversation"
       >
         <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -437,7 +437,7 @@ export default function ConversationsPage() {
 
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
-            <div className="rounded-[3px] overflow-hidden">
+            <div className="rounded overflow-hidden">
               <table className="ui-table-balanced w-full min-w-[900px] table-fixed border-collapse text-sm">
                 <thead className="text-left">
                   <tr>
@@ -554,12 +554,12 @@ export default function ConversationsPage() {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
             {loading ? (
-              <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 rounded border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span>Memuat percakapan...</span>
               </div>
             ) : conversations.length === 0 ? (
-              <div className="rounded-md border border-dashed border-border p-6 text-sm text-muted-foreground text-center">
+              <div className="rounded border border-dashed border-border p-6 text-sm text-muted-foreground text-center">
                 Belum ada percakapan. Mulai chat baru untuk memulai!
               </div>
             ) : (

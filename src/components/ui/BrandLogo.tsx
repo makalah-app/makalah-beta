@@ -41,11 +41,10 @@ export function BrandLogo({
       alt={alt}
       width={w}
       height={h}
-      className={cn("rounded-[3px]", className)}
+      className={cn("app-logo", className)}
       priority={priority}
     />
   );
 }
 
 export default BrandLogo;
-

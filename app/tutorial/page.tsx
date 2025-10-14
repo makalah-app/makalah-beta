@@ -105,15 +105,6 @@ export default function TutorialPage() {
     },
     {
       id: 11,
-      title: 'Mengelola Artifact dan Versi Dokumen',
-      description: 'Cara mengelola artifact penelitian dan melacak perubahan versi dokumen dengan efisien.',
-      duration: '11:48',
-      views: '567',
-      category: 'Tips',
-      thumbnail: '/document-management-version-control.png',
-    },
-    {
-      id: 12,
       title: 'Troubleshooting: Mengatasi Masalah Umum',
       description: 'Solusi untuk masalah umum yang sering dihadapi pengguna MAKALAH AI.',
       duration: '13:26',
@@ -180,7 +171,7 @@ export default function TutorialPage() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                      <div className="w-16 h-16 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded-[3px]">
+                      <div className="w-16 h-16 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded">
                         <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
                       </div>
                     </div>
@@ -189,7 +180,7 @@ export default function TutorialPage() {
                         Unggulan
                       </Badge>
                     </div>
-                    <div className="absolute bottom-4 right-4 bg-black/80 px-2 py-1 text-white text-sm font-medium rounded-[3px]">
+                    <div className="absolute bottom-4 right-4 bg-black/80 px-2 py-1 text-white text-sm font-medium rounded">
                       {tutorial.duration}
                     </div>
                   </div>
@@ -253,11 +244,11 @@ export default function TutorialPage() {
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                      <div className="w-12 h-12 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded-[3px]">
+                      <div className="w-12 h-12 bg-primary flex items-center justify-center group-hover:scale-110 transition-transform rounded">
                         <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
                       </div>
                     </div>
-                    <div className="absolute bottom-3 right-3 bg-black/80 px-2 py-1 text-white text-xs font-medium rounded-[3px]">
+                    <div className="absolute bottom-3 right-3 bg-black/80 px-2 py-1 text-white text-xs font-medium rounded">
                       {tutorial.duration}
                     </div>
                   </div>

@@ -24,7 +24,7 @@ export default function AboutPage() {
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function AboutPage() {
             <div className="grid md:grid-cols-2 gap-12">
               <Card className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]">
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6">
+                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6">
                     <Target className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">Misi Kami</h3>
@@ -61,7 +61,7 @@ export default function AboutPage() {
 
               <Card className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]">
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6">
+                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6">
                     <Lightbulb className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">Visi Kami</h3>
@@ -114,7 +114,7 @@ export default function AboutPage() {
                 >
                   <CardContent className="p-8">
                     <Badge className="bg-primary text-primary-foreground mb-4">{item.phase}</Badge>
-                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6 mx-auto">
+                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6 mx-auto">
                       <item.icon className="w-7 h-7 text-primary" />
                     </div>
                     <h3 className="text-xl font-semibold mb-4 text-foreground">{item.title}</h3>
@@ -165,7 +165,7 @@ export default function AboutPage() {
                   className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]"
                 >
                   <CardContent className="p-8">
-                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6">
+                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6">
                       <value.icon className="w-7 h-7 text-primary" />
                     </div>
                     <h3 className="text-xl font-semibold mb-4 text-foreground">{value.title}</h3>
@@ -208,7 +208,7 @@ export default function AboutPage() {
                 className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]"
               >
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6">
+                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6">
                     <Mail className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">Hubungi Kami</h3>
@@ -231,7 +231,7 @@ export default function AboutPage() {
                 className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]"
               >
                 <CardContent className="p-8">
-                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6">
+                  <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6">
                     <Briefcase className="w-7 h-7 text-primary" />
                   </div>
                   <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">Bergabung dengan Tim</h3>

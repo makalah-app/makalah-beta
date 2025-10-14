@@ -123,7 +123,7 @@ export default function FAQPage() {
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10">
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded bg-primary/10 flex items-center justify-center">
               <HelpCircle className="w-8 h-8 text-primary" />
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function FAQPage() {
               >
                 <div className="p-8">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-[3px] bg-primary/10 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
                       <category.icon className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-semibold text-foreground font-heading">{category.title}</h2>
@@ -177,7 +177,7 @@ export default function FAQPage() {
                       <AccordionItem
                         key={faqIndex}
                         value={`${categoryIndex}-${faqIndex}`}
-                        className="border border-border rounded-[3px] px-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+                        className="border border-border rounded px-4 bg-muted/30 hover:bg-muted/50 transition-colors"
                       >
                         <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline py-4">
                           {faq.question}
@@ -199,7 +199,7 @@ export default function FAQPage() {
           <div className="max-w-2xl mx-auto">
             <Card className="border-border bg-card hover:bg-card/80 transition-all duration-300 hover:scale-[1.02]">
               <div className="p-8 text-center">
-                <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded-[3px] mb-6 mx-auto">
+                <div className="w-14 h-14 bg-primary/10 flex items-center justify-center rounded mb-6 mx-auto">
                   <MessageCircle className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="text-2xl font-semibold mb-4 text-foreground font-heading">

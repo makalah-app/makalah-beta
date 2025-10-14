@@ -86,7 +86,7 @@ export function AdminSidebar({ currentPath, onNavigate }: AdminSidebarProps) {
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-start justify-center rounded-md bg-primary/10 text-primary shrink-0 pt-1.5">
+          <div className="flex h-10 w-10 items-start justify-center rounded bg-primary/10 text-primary shrink-0 pt-1.5">
             <Shield className="h-5 w-5" />
           </div>
           <div>

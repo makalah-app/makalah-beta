@@ -57,13 +57,12 @@ export interface PaginatedHistoryResponse {
  */
 export interface ConversationTimelineEntry {
   id: string;
-  type: 'message' | 'artifact_created' | 'session_started' | 'session_ended';
+  type: 'message' | 'session_started' | 'session_ended';
   timestamp: string;
   title: string;
   description: string;
   metadata: {
     messageId?: string;
-    artifactId?: string;
     sessionId?: string;
     [key: string]: any;
   };
@@ -272,29 +271,7 @@ export async function getConversationTimeline(
         }
       });
     });
-    
-    // Get artifacts
-    const { data: artifacts } = await supabaseServer
-      .from('artifacts')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
-    
-    (artifacts || []).forEach(artifact => {
-      const artifactData = artifact as any;
-      timeline.push({
-        id: `artifact_${artifactData.id}`,
-        type: 'artifact_created',
-        timestamp: artifactData.created_at,
-        title: 'Artifact Created',
-        description: `Created artifact: "${artifactData.title}"`,
-        metadata: {
-          artifactId: artifactData.id,
-          artifactType: artifactData.type
-        }
-      });
-    });
-    
+
     // Get sessions
     const { data: sessions } = await supabaseServer
       .from('chat_sessions')

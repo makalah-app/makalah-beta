@@ -185,7 +185,7 @@ export const MakalahAppLayout: React.FC<MakalahAppLayoutProps> = ({
         <button
           onClick={toggleSidebarCollapse}
           className={cn(
-            "fixed left-4 top-4 z-30 p-2 rounded-md",
+            "fixed left-4 top-4 z-30 p-2 rounded",
             "bg-bg-850 border border-line-600",
             "hover:bg-bg-800 transition-colors",
             "lg:hidden" // Only show on desktop when sidebar is present

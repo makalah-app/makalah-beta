@@ -143,7 +143,7 @@ export default function ChatInputHeroMock() {
       )}
       aria-hidden
     >
-      <div className="rounded-[3px] border border-white/10 bg-[#0f0f0f] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7),0_8px_24px_-8px_rgba(0,0,0,0.6)] overflow-hidden">
+      <div className="rounded border border-white/10 bg-[#0f0f0f] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7),0_8px_24px_-8px_rgba(0,0,0,0.6)] overflow-hidden">
         {/* Browser bar */}
         <div ref={rootRef} className="h-7 md:h-8 bg-[#2b2b2b] border-b border-white/10 flex items-center px-3 gap-2 rounded-t-[3px]">
           <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f56' }} />
@@ -197,7 +197,7 @@ export default function ChatInputHeroMock() {
           <div
             ref={sendRef}
             className={
-              "absolute right-4 bottom-3 md:right-5 md:bottom-4 rounded-[3px] border border-white/10 px-1.5 py-1 transition-all " +
+              "absolute right-4 bottom-3 md:right-5 md:bottom-4 rounded border border-white/10 px-1.5 py-1 transition-all " +
               ((phase === "hover" || phase === "click") ? "bg-accent/40 text-foreground scale-[1.03]" : "text-white/65")
             }
           >

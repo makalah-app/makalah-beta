@@ -33,7 +33,6 @@ const academicMetadataSchema = z.object({
   timestamp: z.number().optional(),
   model: z.string().optional(),
   tokens: z.number().optional(),
-  artifacts: z.array(z.string()).optional(),
   conversationId: z.string().optional(),
   approvalRequired: z.boolean().optional(),
   provider: z.string().optional(),
@@ -47,10 +46,9 @@ const academicMetadataSchema = z.object({
  * Supports academic workflow specific data parts
  */
 const dataPartsSchema = z.object({
-  type: z.enum(['phase', 'notification', 'artifact', 'approval']),
+  type: z.enum(['phase', 'notification', 'approval']),
   phase: z.number().optional(),
   message: z.string().optional(),
-  artifactId: z.string().optional(),
   data: z.any().optional()
 });
 

@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
             ) : (
               <div className="space-ui-loose">
                 <div className="text-center space-ui-medium">
-                  <div className="w-16 h-16 mx-auto rounded-[3px] bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <div className="w-16 h-16 mx-auto rounded bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
                     <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="space-ui-medium">

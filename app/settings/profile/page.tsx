@@ -125,9 +125,9 @@ export default function ProfilePage() {
         <CardContent>
           {!isEditingProfile ? (
             <div className="space-y-5">
-              <div className="rounded-[3px] border border-border bg-card/40 p-4">
+              <div className="rounded border border-border bg-card/40 p-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary">
                     <User className="h-5 w-5" />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -138,14 +138,14 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[3px] border border-dashed border-border/60 bg-muted/30 p-3">
+                <div className="rounded border border-dashed border-border/60 bg-muted/30 p-3">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Predikat</span>
                   <div className="mt-2 flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-foreground">{profileForm.predikat || 'Belum diatur'}</span>
                   </div>
                 </div>
-                <div className="rounded-[3px] border border-dashed border-border/60 bg-muted/30 p-3">
+                <div className="rounded border border-dashed border-border/60 bg-muted/30 p-3">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Institusi</span>
                   <div className="mt-2 flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />

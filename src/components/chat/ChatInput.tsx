@@ -160,7 +160,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div className={className}>
       {/* Test Scenarios (Development Mode) */}
       {testMode && (
-        <div className="mb-4 rounded-[3px] border border-dashed border-orange-300 bg-orange-50 p-4 dark:border-orange-700 dark:bg-orange-950">
+        <div className="mb-4 rounded border border-dashed border-orange-300 bg-orange-50 p-4 dark:border-orange-700 dark:bg-orange-950">
           <div className="mb-2 text-sm font-medium text-orange-800 dark:text-orange-200">
             Test Scenarios
           </div>
@@ -182,14 +182,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="mb-4 rounded-[3px] border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+        <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
           {error}
         </div>
       )}
 
       {/* File Preview */}
       {selectedFiles && selectedFiles.length > 0 && (
-        <div className="mb-4 rounded-[3px] border border-border bg-card p-3">
+        <div className="mb-4 rounded border border-border bg-card p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
               {selectedFiles.length} file(s) attached

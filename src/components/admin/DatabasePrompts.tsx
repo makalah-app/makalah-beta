@@ -328,7 +328,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block rounded-[3px] border">
+      <div className="hidden md:block rounded border">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -449,7 +449,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
               </div>
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[500px] w-full rounded-[3px] border p-4">
+          <ScrollArea className="h-[500px] w-full rounded border p-4">
             <pre className="whitespace-pre-wrap font-mono text-sm">
               {previewPrompt?.content}
             </pre>

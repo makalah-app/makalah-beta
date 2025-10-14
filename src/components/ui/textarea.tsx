@@ -9,7 +9,7 @@ const textareaVariants = cva(
     variants: {
       variant: {
         default: [
-          "min-h-[60px] rounded-[3px] border border-input bg-transparent px-3 py-2 shadow-sm",
+          "min-h-[60px] rounded border border-input bg-transparent px-3 py-2 shadow-sm",
           "focus-visible:ring-1 focus-visible:ring-ring"
         ],
         ghost: [
@@ -17,7 +17,7 @@ const textareaVariants = cva(
           "focus-visible:ring-0 focus-visible:ring-offset-0"
         ],
         chat: [
-          "min-h-[48px] rounded-xl border border-input bg-background px-3 py-2 shadow-sm",
+          "min-h-[48px] rounded border border-input bg-background px-3 py-2 shadow-sm",
           "resize-none field-sizing-content max-h-[6lh]",
           "focus-visible:ring-1 focus-visible:ring-ring"
         ]

@@ -29,7 +29,7 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --source-link: oklch(0.769 0.188 70.08); /* Source/citation link and title color */
-  --radius: 0.75rem; /* Updated radius to 3 (0.75rem) */
+  --radius: 10px; /* Global border radius for all components */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.65 0.2 45); /* Orange sidebar primary */
@@ -72,6 +72,8 @@
   --text-xxs-line-height: 0.75rem; /* 12px */
 
   /* User message exclusive styles */
+  /* Chat area background (light defaults to global background) */
+  --chat-background: var(--background);
   --user-message-bg: oklch(94.309% 0.00011 271.152); /* Same as input color for light mode */
   --user-message-border: oklch(0.922 0 0 / 0.2); /* Ultra thin border with 20% opacity */
   --chat-input: oklch(0.97 0 0); /* Lebih terang untuk area input chat di light mode */
@@ -83,11 +85,11 @@
 }
 
 .dark {
-  --background: oklch(0.245 0 0);
+  --background: oklch(0.190 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.245 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.245 0 0);
   --popover-foreground: oklch(0.985 0 0);
   /* Orange primary in dark mode */
   --primary: oklch(0.65 0.2 45); /* Same orange in dark mode */
@@ -125,9 +127,11 @@
   --line-200: oklch(0.4 0 0);
 
   /* User message exclusive styles */
-  --user-message-bg: oklch(0.269 0 0); /* Same as sidebar-accent for dark mode */
+  --user-message-bg: oklch(0.315 0 0); /* Same as sidebar-accent for dark mode */
   --user-message-border: oklch(0.269 0 0 / 0.3); /* Slightly more visible in dark mode */
   --chat-input: oklch(0.315 0 0); /* Paling terang - clear contrast dengan main area */
+  /* Dedicated chat area background for dark mode */
+  --chat-background: oklch(0.210 0 0);
 
   /* List interaction colors for dark mode (brighter for contrast) */
   --list-accent: oklch(0.62 0 0);
@@ -139,6 +143,13 @@
   * {
     /* Updated to use thin border standard */
     @apply border-border;
+  }
+  /* Global logo reset: ensure all app logos are not rounded */
+  .app-logo {
+    border-radius: 0 !important;
+  }
+  img.app-logo {
+    border-radius: 0 !important;
   }
   body {
     @apply bg-background text-foreground font-sans;
@@ -163,7 +174,7 @@
   input[type="number"],
   textarea,
   select {
-    @apply rounded-[3px];
+    @apply rounded;
   }
 
   /* Hero pattern backgrounds */
@@ -463,19 +474,19 @@
 .logo-m-small {
   width: var(--logo-m-small);
   height: var(--logo-m-small);
-  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-lg;
+  @apply bg-primary text-white rounded flex items-center justify-center font-medium text-lg;
 }
 
 .logo-m-medium {
   width: var(--logo-m-medium);
   height: var(--logo-m-medium);
-  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-xl;
+  @apply bg-primary text-white rounded flex items-center justify-center font-medium text-xl;
 }
 
 .logo-m-large {
   width: var(--logo-m-large);
   height: var(--logo-m-large);
-  @apply bg-primary text-white rounded-[3px] flex items-center justify-center font-medium text-xl;
+  @apply bg-primary text-white rounded flex items-center justify-center font-medium text-xl;
 }
 
 /* Logo M color variations */
@@ -500,7 +511,7 @@
   height: var(--logo-m-small);
   background-color: var(--logo-m-orange-bg);
   color: var(--logo-m-orange-text);
-  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+  @apply rounded flex items-center justify-center font-medium text-lg;
 }
 
 .logo-m-small-muted {
@@ -508,7 +519,7 @@
   height: var(--logo-m-small);
   background-color: var(--logo-m-muted-bg);
   color: var(--logo-m-muted-text);
-  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+  @apply rounded flex items-center justify-center font-medium text-lg;
 }
 
 .logo-m-small-input {
@@ -516,7 +527,7 @@
   height: var(--logo-m-small);
   background-color: var(--logo-m-input-bg);
   color: var(--logo-m-input-text);
-  @apply rounded-[3px] flex items-center justify-center font-medium text-lg;
+  @apply rounded flex items-center justify-center font-medium text-lg;
 }
 
 /* Added extra small text utility class */
@@ -571,15 +582,8 @@
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  /* Darken only top-left area behind header brand */
-  background:
-    radial-gradient(
-      500px 320px at 8% 10%,
-      rgba(0,0,0,0.26) 0%,
-      rgba(0,0,0,0.16) 55%,
-      rgba(0,0,0,0.08) 80%,
-      rgba(0,0,0,0.00) 100%
-    );
+  /* Shadow bawah header dinonaktifkan */
+  background: none;
 }
 
 /* Optional ultra-thin research grid */
@@ -636,7 +640,7 @@
 }
 
 .tooltip-green {
-  @apply bg-green-600 text-white rounded-[3px] px-3 py-1.5 text-xs font-medium shadow-md;
+  @apply bg-green-600 text-white rounded px-3 py-1.5 text-xs font-medium shadow-md;
 }
 
 /* Dropdown and select hover effects for consistent UX */
@@ -645,7 +649,7 @@
 }
 
 .dropdown-menu-item {
-  @apply hover:bg-gray-100 hover:bg-opacity-80 dark:hover:bg-gray-800 transition-colors duration-200 rounded-[3px];
+  @apply hover:bg-gray-100 hover:bg-opacity-80 dark:hover:bg-gray-800 transition-colors duration-200 rounded;
 }
 
 .select-hover {

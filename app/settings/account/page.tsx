@@ -91,15 +91,15 @@ export default function AccountPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-[3px] border border-border/70 bg-card/50 px-3 py-2">
+          <div className="flex items-center justify-between rounded border border-border/70 bg-card/50 px-3 py-2">
             <span className="text-sm text-muted-foreground">Tipe Akses</span>
             <span className="text-sm font-medium text-foreground">{accountTier}</span>
           </div>
-          <div className="flex items-center justify-between rounded-[3px] border border-border/70 bg-card/50 px-3 py-2">
+          <div className="flex items-center justify-between rounded border border-border/70 bg-card/50 px-3 py-2">
             <span className="text-sm text-muted-foreground">Peran Sistem</span>
             <span className="text-sm font-medium text-foreground">{roleLabel}</span>
           </div>
-          <div className="flex items-center justify-between rounded-[3px] border border-border/70 bg-card/50 px-3 py-2">
+          <div className="flex items-center justify-between rounded border border-border/70 bg-card/50 px-3 py-2">
             <span className="text-sm text-muted-foreground">Email</span>
             <span className="text-sm font-medium text-foreground">{user.email}</span>
           </div>

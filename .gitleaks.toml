@@ -1,0 +1,25 @@
+title = "Makalah AI Gitleaks Config"
+
+[allowlist]
+description = "Ignore generated and placeholder-only files"
+paths = [
+  "node_modules/.*",
+  "_?next/.*",
+  "__references__/.*",
+  "supabase/.temp/.*",
+  "\\.codex/.*",
+  "\\.claude/.*",
+  "playwright-report/.*",
+  "test-results/.*",
+  "coverage/.*",
+  "\\.git/.*",
+  "environments/\\.env\\.development",
+  "\\.env\\.example",
+]
+regexes = [
+  # Placeholder DB URL
+  "postgresql://\\[DB_USER\\]:\\[DB_PASSWORD\\]@db\\.\\[PROJECT_REF\\]\\.supabase\\.co:5432/postgres",
+  # JWT placeholder example
+  "eyJ[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+\\.example",
+]
+

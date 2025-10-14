@@ -129,15 +129,11 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   return (
     <header
       className={cn(
-        'relative bg-background shadow-[0_12px_40px_-8px_rgba(0,0,0,0.55),0_3px_12px_-2px_rgba(0,0,0,0.45)]',
+        'relative bg-background',
         className
       )}
     >
-      {/* Soft scrim under header for readability (fade to transparent) */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-b from-black/12 via-black/8 to-transparent"
-        aria-hidden="true"
-      />
+      {/* Scrim dihilangkan sesuai permintaan (hindari efek shadow) */}
       <div className="flex items-center justify-between px-6 pt-4 pb-6 relative z-10">
       {/* Brand Section */}
       <div className="flex items-center gap-4">
@@ -196,7 +192,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               customCloseButton={
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="absolute left-6 top-6 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded-md text-white opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none"
+                  className="absolute left-6 top-6 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded text-white opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none"
                 >
                   <PanelLeftIcon className="!h-6 !w-6" />
                   <span className="sr-only">Close</span>
@@ -345,7 +341,7 @@ const MobileNavItem: React.FC<MobileNavItemProps> = ({ href, label, isActive, on
     href={href}
     onClick={onSelect}
     className={cn(
-      'flex items-center justify-between rounded-[3px] px-3 py-2 text-base transition-colors duration-200',
+      'flex items-center justify-between rounded px-3 py-2 text-base transition-colors duration-200',
       isActive ? 'bg-accent text-white' : 'text-white hover:bg-accent/60 hover:text-white/80'
     )}
     aria-current={isActive ? 'page' : undefined}

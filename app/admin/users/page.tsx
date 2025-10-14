@@ -141,7 +141,7 @@ function AdminUsersContent() {
       </div>
 
       {error && (
-        <div className="rounded-[3px] border border-destructive bg-destructive/10 p-4">
+        <div className="rounded border border-destructive bg-destructive/10 p-4">
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium text-destructive">Error loading user statistics</div>
           </div>
@@ -152,7 +152,7 @@ function AdminUsersContent() {
       <Card>
         <CardHeader>
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-primary/10 text-primary shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
               <Users className="h-5 w-5" />
             </div>
             <div className="space-y-1">
@@ -164,7 +164,7 @@ function AdminUsersContent() {
         <CardContent>
           {userStats ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-[3px] border border-border bg-background p-4">
+              <div className="rounded border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">Total pengguna</p>
                   <Users className="h-4 w-4 text-muted-foreground" />
@@ -182,7 +182,7 @@ function AdminUsersContent() {
                   Lihat
                 </Button>
               </div>
-              <div className="rounded-[3px] border border-border bg-background p-4">
+              <div className="rounded border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">Pengguna aktif</p>
                   <div className="h-2 w-2 rounded-full bg-green-500" />
@@ -200,7 +200,7 @@ function AdminUsersContent() {
                   Lihat
                 </Button>
               </div>
-              <div className="rounded-[3px] border border-border bg-background p-4">
+              <div className="rounded border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">Pengguna baru</p>
                   <div className="h-2 w-2 rounded-full bg-blue-500" />
@@ -218,7 +218,7 @@ function AdminUsersContent() {
                   Lihat
                 </Button>
               </div>
-              <div className="rounded-[3px] border border-border bg-background p-4">
+              <div className="rounded border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">Pengguna tidak aktif</p>
                   <div className="h-2 w-2 rounded-full bg-gray-500" />
@@ -238,7 +238,7 @@ function AdminUsersContent() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-[3px] border border-dashed border-border bg-muted/20 p-8 text-sm text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-2 rounded border border-dashed border-border bg-muted/20 p-8 text-sm text-muted-foreground">
               <RefreshCw className="h-4 w-4 animate-spin" />
               <span>Mengumpulkan statistik pengguna…</span>
             </div>
@@ -255,7 +255,7 @@ function AdminUsersContent() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+              <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
                 <p className="text-sm font-medium text-muted-foreground">Tingkat aktivitas</p>
                 <p className="text-sm font-semibold text-foreground">
                   {userStats.totalUsers > 0 ? Math.round((userStats.activeUsers / userStats.totalUsers) * 100) : 0}%
@@ -264,7 +264,7 @@ function AdminUsersContent() {
                   Dari total pengguna yang aktif dalam 30 hari terakhir
                 </p>
               </div>
-              <div className="space-y-3 rounded-[3px] border border-border bg-muted/20 p-4">
+              <div className="space-y-3 rounded border border-border bg-muted/20 p-4">
                 <p className="text-sm font-medium text-muted-foreground">Pertumbuhan pengguna</p>
                 <p className="text-sm font-semibold text-foreground">
                   {userStats.recentUsers} pengguna baru
