@@ -37,7 +37,7 @@ const UserAvatar = React.forwardRef<
     >
       <AvatarFallback
         className={cn(
-          'avatar-green-solid text-white font-semibold',
+          'avatar-green-solid text-success-foreground font-semibold',
           textSizeClasses[size]
         )}
       >

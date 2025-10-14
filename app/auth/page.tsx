@@ -174,14 +174,14 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !isRegisterMode && (
-              <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
-                <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2 mb-2">
+              <div className="mb-4 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded">
+                <p className="text-sm text-success-800 dark:text-success-200 flex items-center gap-2 mb-2">
                   <span>✅</span>
                   <span>{successMessage}</span>
                 </p>
                 {showResendOption && (
-                  <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
-                    <p className="text-xs text-green-700 dark:text-green-300 mb-2">
+                  <div className="mt-3 pt-3 border-t border-success-200 dark:border-success-800">
+                    <p className="text-xs text-success-700 dark:text-success-300 mb-2">
                       Email tidak sampai? Cek folder spam atau kirim ulang.
                     </p>
                     <Button

@@ -436,7 +436,7 @@ function AdminPromptContent() {
             <Cpu className="h-4 w-4" />
             System Prompt OpenAI
             {primaryProvider === 'openai' && (
-              <Badge variant="default" className="ml-1 bg-green-600 hover:bg-green-700 text-white">
+              <Badge variant="default" className="ml-1 bg-success-600 hover:bg-success-700 text-success-foreground">
                 Active ({currentModelName || 'GPT-4o'})
               </Badge>
             )}
@@ -450,7 +450,7 @@ function AdminPromptContent() {
             <Zap className="h-4 w-4" />
             System Prompt OpenRouter
             {primaryProvider === 'openrouter' && (
-              <Badge variant="default" className="ml-1 bg-green-600 hover:bg-green-700 text-white">
+              <Badge variant="default" className="ml-1 bg-success-600 hover:bg-success-700 text-success-foreground">
                 Active (Gemini 2.5)
               </Badge>
             )}

@@ -29,6 +29,19 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --source-link: oklch(0.769 0.188 70.08); /* Source/citation link and title color */
+  /* Success (green) color tokens */
+  --success: oklch(62.803% 0.15834 125.42);
+  --success-foreground: oklch(1 0 0);
+  --success-50: color-mix(in oklch, var(--success) 15%, white);
+  --success-100: color-mix(in oklch, var(--success) 25%, white);
+  --success-200: color-mix(in oklch, var(--success) 40%, white);
+  --success-300: color-mix(in oklch, var(--success) 55%, white);
+  --success-400: color-mix(in oklch, var(--success) 70%, white);
+  --success-500: var(--success);
+  --success-600: color-mix(in oklch, var(--success) 85%, black);
+  --success-700: color-mix(in oklch, var(--success) 75%, black);
+  --success-800: color-mix(in oklch, var(--success) 65%, black);
+  --success-900: color-mix(in oklch, var(--success) 55%, black);
   --radius: 10px; /* Global border radius for all components */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -119,6 +132,19 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.4 0 0);
   --sidebar-ring: oklch(0.65 0.2 45); /* Orange sidebar ring */
+  /* Success (green) tokens (dark mode) */
+  --success: oklch(0.711 0.181 125.2);
+  --success-foreground: oklch(1 0 0);
+  --success-50: color-mix(in oklch, var(--success) 25%, white);
+  --success-100: color-mix(in oklch, var(--success) 35%, white);
+  --success-200: color-mix(in oklch, var(--success) 45%, white);
+  --success-300: color-mix(in oklch, var(--success) 60%, white);
+  --success-400: color-mix(in oklch, var(--success) 75%, white);
+  --success-500: var(--success);
+  --success-600: color-mix(in oklch, var(--success) 88%, black);
+  --success-700: color-mix(in oklch, var(--success) 78%, black);
+  --success-800: color-mix(in oklch, var(--success) 68%, black);
+  --success-900: color-mix(in oklch, var(--success) 58%, black);
 
   /* Updated custom dark variables */
   --bg-900: oklch(0.245 0 0);
@@ -538,15 +564,15 @@
 
 /* Solid green styling classes for consistent branding */
 .btn-green-solid {
-  @apply bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-medium transition-colors duration-200;
+  @apply bg-success-600 hover:bg-success-700 active:bg-success-800 text-success-foreground font-medium transition-colors duration-200;
 }
 
 .avatar-green-solid {
-  @apply bg-green-600 text-white font-bold transition-colors duration-200;
+  @apply bg-success-600 text-success-foreground font-bold transition-colors duration-200;
 }
 
 .user-profile-green {
-  @apply bg-green-600 text-white font-bold;
+  @apply bg-success-600 text-success-foreground font-bold;
 }
 
 /* Tooltip green styling for consistent UI across app */
@@ -640,7 +666,7 @@
 }
 
 .tooltip-green {
-  @apply bg-green-600 text-white rounded px-3 py-1.5 text-xs font-medium shadow-md;
+  @apply bg-success-600 text-success-foreground rounded px-3 py-1.5 text-xs font-medium shadow-md;
 }
 
 /* Dropdown and select hover effects for consistent UX */

@@ -185,7 +185,7 @@ function AdminUsersContent() {
               <div className="rounded border border-border bg-background p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">Pengguna aktif</p>
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <div className="h-2 w-2 rounded-full bg-success-500" />
                 </div>
                 <p className="mt-2 text-2xl font-semibold text-foreground">{userStats.activeUsers}</p>
                 <p className="text-xs text-muted-foreground mt-1">

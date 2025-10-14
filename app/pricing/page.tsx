@@ -70,7 +70,7 @@ export default function PricingPage() {
                 <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
                   {tier.description.map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <BadgeCheck className="mt-0.5 h-5 w-5 text-green-600" />
+                      <BadgeCheck className="mt-0.5 h-5 w-5 text-success-600" />
                       <span>{item}</span>
                     </li>
                   ))}

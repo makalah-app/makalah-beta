@@ -85,7 +85,7 @@ const COLOR_CLASSES = {
   secondary: 'text-gray-700 dark:text-gray-300',
   muted: 'text-gray-600 dark:text-gray-400',
   accent: 'text-primary-600 dark:text-primary-400',
-  success: 'text-green-700 dark:text-green-400',
+  success: 'text-success-700 dark:text-success-400',
   warning: 'text-warning-700 dark:text-warning-400',
   error: 'text-red-700 dark:text-red-400',
 } as const;
@@ -285,7 +285,7 @@ export const Badge: React.FC<{
   const variantClasses = {
     default: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     primary: 'bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-300',
-    success: 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-300',
+    success: 'bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-800 dark:text-warning-300',
     error: 'bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-300',
   };

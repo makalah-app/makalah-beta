@@ -340,7 +340,7 @@ export const APIStatusIndicator: React.FC<{ className?: string }> = ({
   return (
     <div className={`api-status-indicator flex items-center gap-2 text-sm ${className}`}>
       <div className={`status-dot w-2 h-2 rounded-full ${
-        isOnline ? 'bg-green-400' : 'bg-red-400'
+        isOnline ? 'bg-success-400' : 'bg-red-400'
       }`}></div>
       <span className="text-gray-600">
         {isOnline ? 'Online' : 'Offline'}

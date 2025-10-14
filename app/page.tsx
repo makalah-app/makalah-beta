@@ -53,7 +53,8 @@ export default function HomePage() {
             Jadi Lebih Mudah
           </h1>
           <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
-            Obrolkan gagasan, lalu biarkan Agen Ai memandu elaborasi topik hingga paper utuh
+            Obrolkan gagasan, lalu biarkan Agen Ai<br />
+            memandu elaborasi topik hingga paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -224,7 +225,7 @@ export default function HomePage() {
                   <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
                     {tier.description.map((item) => (
                       <li key={item} className="flex items-start gap-3">
-                        <BadgeCheck className="mt-0.5 h-5 w-5 text-green-600" />
+                        <BadgeCheck className="mt-0.5 h-5 w-5 text-success-600" />
                         <span>{item}</span>
                       </li>
                     ))}

@@ -308,7 +308,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                     size="sm"
                     variant="ghost"
                     onClick={() => handleToggleActive(prompt)}
-                    className={`flex-1 ${prompt.is_active ? 'text-green-600' : 'text-muted-foreground'}`}
+                    className={`flex-1 ${prompt.is_active ? 'text-success-600' : 'text-muted-foreground'}`}
                   >
                     {prompt.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
                   </Button>
@@ -373,7 +373,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleActive(prompt)}
-                        className={prompt.is_active ? 'text-green-600' : 'text-muted-foreground'}
+                        className={prompt.is_active ? 'text-success-600' : 'text-muted-foreground'}
                       >
                         {prompt.is_active ? (
                           <Check className="h-4 w-4" />

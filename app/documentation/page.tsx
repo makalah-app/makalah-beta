@@ -151,7 +151,7 @@ export default function DocumentationPage() {
 
               <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
-                  <CardTitle className="text-green-500">Langkah 2: Klarifikasi Topik</CardTitle>
+                  <CardTitle className="text-success-500">Langkah 2: Klarifikasi Topik</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
@@ -255,7 +255,7 @@ export default function DocumentationPage() {
 
               <Card className="border-l-4 border-l-green-500">
                 <CardHeader>
-                  <CardTitle className="text-green-500">Penggunaan Data</CardTitle>
+                  <CardTitle className="text-success-500">Penggunaan Data</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">

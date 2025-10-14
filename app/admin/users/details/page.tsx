@@ -683,7 +683,7 @@ function AdminUsersDetailsContent() {
                       <p className="font-semibold text-sm">{user.email}</p>
                       <p className="text-xs text-muted-foreground">{user.name}</p>
                     </div>
-                    <Badge variant={user.status === 'active' ? 'default' : 'outline'} className={cn('capitalize', user.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'text-muted-foreground')}>
+                    <Badge variant={user.status === 'active' ? 'default' : 'outline'} className={cn('capitalize', user.status === 'active' ? 'bg-success-500/10 text-success-600' : 'text-muted-foreground')}>
                       {user.status === 'active' ? 'Aktif' : 'Suspended'}
                     </Badge>
                   </div>
@@ -824,7 +824,7 @@ function AdminUsersDetailsContent() {
                         </td>
                         <td className="truncate px-3 py-3 capitalize">{user.role}</td>
                         <td className="px-3 py-3">
-                          <Badge variant={user.status === 'active' ? 'default' : 'outline'} className={cn('capitalize', user.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'text-muted-foreground')}>
+                          <Badge variant={user.status === 'active' ? 'default' : 'outline'} className={cn('capitalize', user.status === 'active' ? 'bg-success-500/10 text-success-600' : 'text-muted-foreground')}>
                             {user.status === 'active' ? 'Aktif' : 'Suspended'}
                           </Badge>
                         </td>

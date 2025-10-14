@@ -248,14 +248,14 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
                   onClick={() => onSelect(conversation.id)}
                   onDoubleClick={handleDoubleClick}
                           className={`flex-1 hover:bg-muted/50 rounded ${
-                    isActive ? 'bg-muted/70 text-green-600 font-medium' : 'text-muted-foreground'
+                    isActive ? 'bg-muted/70 text-success-600 font-medium' : 'text-muted-foreground'
                   }`}
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span ref={titleRef} className="truncate">
                     {truncatedTitle}
                   </span>
-                  {isActive && <ChevronRight className="w-4 h-4 ml-auto text-green-600" />}
+                  {isActive && <ChevronRight className="w-4 h-4 ml-auto text-success-600" />}
                 </SidebarMenuButton>
               </TooltipTrigger>
               {shouldShowTooltip && (

@@ -63,7 +63,7 @@ const STATUS_LABEL: Record<ModelStatusVariant, string> = {
 };
 
 const STATUS_BADGE_CLASS: Record<ModelStatusVariant, string> = {
-  online: 'border-green-500/40 bg-green-500/10 text-green-600 dark:text-green-400',
+  online: 'border-success-500/40 bg-success-500/10 text-success-600 dark:text-success-400',
   offline: 'border-muted-foreground/40 bg-muted text-muted-foreground',
   testing: 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400',
   error: 'border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400',
