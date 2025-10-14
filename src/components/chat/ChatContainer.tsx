@@ -865,7 +865,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                   }}
                   disabled={status !== 'ready'}
                   status={status}
-                  placeholder="Kirim percakapan..."
+                  placeholder="Ketik obrolan..."
                   testMode={testMode}
                   onStop={handleStopStreaming}
                 />
