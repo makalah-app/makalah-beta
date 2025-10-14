@@ -19,9 +19,8 @@ export const pricingTiers: PricingTier[] = [
     tagline: 'Akses awal tanpa biaya untuk mengenal alur Makalah AI.',
     priceLabel: 'Rp.0',
     description: [
-      'Eksplorasi alur tujuh fase.',
-      'Kuota bulanan otomatis diperbarui.',
-      'Upgrade kapan saja lewat dasbor.',
+      'Eksplorasi alur penyunan hingga draft.',
+      'Upgrade kapan saja lewat halaman harga.',
     ],
     cta: {
       label: 'Coba Gratis',
@@ -30,13 +29,12 @@ export const pricingTiers: PricingTier[] = [
   },
   {
     name: 'Bayar Per Tugas',
-    tagline: 'Bayar sesuai kebutuhan untuk menyelesaikan satu paper maksimal lima belas halaman A4.',
-    priceLabel: 'Rp75.000',
+    tagline: 'Bayar sesuai kebutuhan untuk menyelesaikan satu paper setara 15 halaman A4.',
+    priceLabel: 'Rpxx.xxx',
     priceUnit: 'per paper',
     description: [
       'Selesaikan satu makalah lengkap.',
-      'Bayar hanya saat ada proyek.',
-      'Panduan tetap menyeluruh.',
+      'Bayar hanya saat ada tugas saja.',
     ],
     cta: {
       label: 'Belum Aktif',
@@ -45,11 +43,11 @@ export const pricingTiers: PricingTier[] = [
   },
   {
     name: 'Pro',
-    tagline: 'Ritme tinggi untuk sekitar enam paper akademik per bulan dengan diskusi agent tanpa batas.',
-    priceLabel: 'Rp255.000',
-    priceUnit: '5-6 paper',
+    tagline: 'Langganan untuk penyusunan banyak paper akademik per bulan dengan diskusi agent tanpa batas.',
+    priceLabel: 'Rpxxx.xxx',
+    priceUnit: 'per bulan',
     description: [
-      'Ritme lima hingga enam makalah.',
+      'Penyusunan hingga enam paper.',
       'Diskusi agent tanpa batas.',
       'Dukungan operasional prioritas.',
     ],

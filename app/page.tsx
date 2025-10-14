@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from "../src/components/ui/button";
 import { Card } from "../src/components/ui/card";
 import { Badge } from "../src/components/ui/badge";
-import { pricingTiers } from "../src/constants/pricing";
+import { pricingTiers } from "@/constants/pricing";
 import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -201,7 +201,20 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div className="mb-2">
-                      <div className="text-3xl font-semibold text-foreground">{tier.priceLabel}</div>
+                      <div
+                        className={cn(
+                          "text-3xl font-semibold",
+                          /x/i.test(tier.priceLabel)
+                            ? "line-through decoration-red-600 decoration-4 decoration-skip-ink-none text-muted-foreground opacity-80"
+                            : "text-foreground"
+                        )}
+                        title={/x/i.test(tier.priceLabel) ? "Harga belum aktif" : undefined}
+                        style={/x/i.test(tier.priceLabel)
+                          ? { textDecorationColor: 'rgb(220 38 38)', textDecorationThickness: '4px', textDecorationSkipInk: 'none' }
+                          : undefined}
+                      >
+                        {tier.priceLabel}
+                      </div>
                       {tier.priceUnit && (
                         <div className="text-sm font-light text-muted-foreground mt-0.5">{tier.priceUnit}</div>
                       )}
