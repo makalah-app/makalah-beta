@@ -83,7 +83,7 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.245 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -98,10 +98,10 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.35 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
+  --destructive: oklch(0.45 0.25 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.4 0 0);
+  --input: oklch(0.4 0 0);
   --ring: oklch(0.65 0.2 45); /* Orange ring in dark mode */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -109,25 +109,25 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --source-link: oklch(0.769 0.188 70.08); /* Source/citation link and title color */
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.115 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.65 0.2 45); /* Orange sidebar primary */
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-border: oklch(0.4 0 0);
   --sidebar-ring: oklch(0.65 0.2 45); /* Orange sidebar ring */
 
   /* Updated custom dark variables */
-  --bg-900: oklch(0.145 0 0);
+  --bg-900: oklch(0.245 0 0);
   --text-100: oklch(0.985 0 0);
   --accent-500: oklch(0.65 0.2 45); /* Same orange accent */
-  --line-200: oklch(0.269 0 0);
+  --line-200: oklch(0.4 0 0);
 
   /* User message exclusive styles */
   --user-message-bg: oklch(0.269 0 0); /* Same as sidebar-accent for dark mode */
   --user-message-border: oklch(0.269 0 0 / 0.3); /* Slightly more visible in dark mode */
-  --chat-input: oklch(0.205 0 0); /* Samakan dengan kartu rujukan saat mode gelap */
+  --chat-input: oklch(0.315 0 0); /* Paling terang - clear contrast dengan main area */
 
   /* List interaction colors for dark mode (brighter for contrast) */
   --list-accent: oklch(0.62 0 0);
@@ -737,5 +737,51 @@
   50%, 100% { opacity: 0.2; }
 }
 .hero-caret-blink { animation: hero-caret-blink 1s step-end infinite; }
+
+/* Destructive/Danger Styling - Following global_policy.xml */
+/* TEXT & ICONS = MUTED by default, WHITE on hover for high contrast */
+.text-destructive {
+  color: var(--muted-foreground) !important; /* Muted/gray default */
+  transition: color 0.2s ease;
+}
+
+.text-destructive:hover {
+  color: oklch(0.985 0 0) !important; /* White on hover for emphasis */
+}
+
+/* Logout specific styling in dropdowns */
+.logout-item {
+  color: var(--muted-foreground) !important; /* Muted text default */
+  transition: all 0.2s ease;
+}
+
+.logout-item:hover,
+.logout-item[data-highlighted] {
+  color: oklch(0.985 0 0) !important; /* White text on hover */
+  background-color: oklch(0.2 0.15 25 / 0.2) !important; /* Subtle red tint */
+}
+
+/* Delete icons (standalone) */
+.delete-icon {
+  color: var(--muted-foreground) !important; /* Muted/gray default */
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.delete-icon:hover {
+  opacity: 1;
+  color: oklch(0.985 0 0) !important; /* White on hover */
+}
+
+/* Destructive buttons with background */
+.btn-destructive, .delete-button {
+  background-color: oklch(0.45 0.25 25) !important; /* Dark red bg */
+  color: oklch(1 0 0) !important; /* White text */
+  transition: background-color 0.2s ease;
+}
+
+.btn-destructive:hover, .delete-button:hover {
+  background-color: oklch(0.55 0.28 25) !important; /* Brighter red on hover */
+}
 
 /* (hapus) helper animasi ilustrasi chat hero */

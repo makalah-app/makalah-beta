@@ -10,11 +10,15 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
+  SheetOverlay,
+  SheetPortal,
 } from "@/components/ui/sheet"
+import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -23,13 +27,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { ViewVerticalIcon } from "@radix-ui/react-icons"
+import { PanelLeftIcon } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 // Standardize sidebar width across app (admin, settings, chat)
 // 16rem equals Tailwind w-64
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "16rem"
+const SIDEBAR_WIDTH_MOBILE = "20rem" // Increased from 16rem to 20rem (w-80)
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -201,24 +206,38 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-          <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-[--sidebar-width] bg-background p-0 text-sidebar-foreground border-r border-border"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
-            side={side}
-          >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-            </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetContent>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+          <SheetPortal>
+            <SheetOverlay
+              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+              onClick={() => setOpenMobile(false)}
+            />
+            <SheetPrimitive.Content
+              data-sidebar="sidebar"
+              data-mobile="true"
+              className={cn(
+                "fixed z-50 gap-4 bg-sidebar p-0 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out",
+                "inset-y-0 left-0 h-full w-[--sidebar-width] border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+                "text-sidebar-foreground border-r border-sidebar-border",
+                className
+              )}
+              style={
+                {
+                  "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                } as React.CSSProperties
+              }
+            >
+              <SheetClose className="absolute right-4 top-4 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none">
+                <PanelLeftIcon className="!h-6 !w-6" />
+                <span className="sr-only">Close Sidebar</span>
+              </SheetClose>
+              <div className="sr-only">
+                <h2>Sidebar</h2>
+                <p>Displays the mobile sidebar.</p>
+              </div>
+              <div className="flex h-full w-full flex-col">{children}</div>
+            </SheetPrimitive.Content>
+          </SheetPortal>
         </Sheet>
       )
     }
@@ -274,7 +293,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, openMobile } = useSidebar()
 
   return (
     <Button
@@ -282,14 +301,14 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      className={cn("h-9 w-9 [&_svg]:size-6", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
       {...props}
     >
-      <ViewVerticalIcon />
+      <PanelLeftIcon className="!h-6 !w-6" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

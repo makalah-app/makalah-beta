@@ -25,7 +25,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "../ui/sheet";
-import { ViewVerticalIcon } from '@radix-ui/react-icons';
+import { PanelLeftIcon } from 'lucide-react';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -181,19 +181,29 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  'md:hidden h-12 w-12 rounded-[3px] border dark:border-white/25 border-black/15 text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-0',
+                  'md:hidden h-9 w-9 [&_svg]:size-6 text-white hover:text-white/80 focus-visible:outline-none focus-visible:ring-0',
                   !showNavigation && 'ml-2'
                 )}
                 aria-label="Buka menu utama"
               >
-                <ViewVerticalIcon className="h-9 w-9" />
+                <PanelLeftIcon className="!h-6 !w-6" />
               </Button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="flex w-56 flex-col gap-5 p-6 pt-16 [&>button[data-radix-dialog-close]]:top-10 [&>button[data-radix-dialog-close]]:right-8"
+              className="flex w-56 flex-col gap-5 p-6 pt-16"
+              hideCloseButton={false}
+              customCloseButton={
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="absolute left-6 top-6 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded-md text-white opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none"
+                >
+                  <PanelLeftIcon className="!h-6 !w-6" />
+                  <span className="sr-only">Close</span>
+                </button>
+              }
             >
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-5 mt-4">
                 {!isLoading && !isAuthenticated && (
                   <Button
                     className="btn-green-solid w-full justify-center"

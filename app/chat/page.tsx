@@ -9,6 +9,7 @@ import React, {
   useLayoutEffect,
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
@@ -50,14 +51,62 @@ function MobileHeader() {
 
   return (
     <div className="flex md:hidden items-center justify-between p-4 border-b border-border">
-      <div className="flex items-center gap-3">
-        <SidebarTrigger />
-        <div className="flex items-center gap-2">
-          <BrandLogo variant="color" size="sm" />
-          <span className="font-semibold">Makalah AI</span>
-        </div>
-      </div>
+      <SidebarTrigger />
     </div>
+  );
+}
+
+// Wrapper component for new chat button with sidebar context access
+function SidebarNewChatButton({ onNewChat }: { onNewChat: () => void }) {
+  const { setOpenMobile } = useSidebar();
+
+  const handleClick = () => {
+    onNewChat();
+    // Auto-close sidebar on mobile
+    setOpenMobile(false);
+  };
+
+  return (
+    <div className="pb-2 border-b border-border">
+      <button
+        onClick={handleClick}
+        className="flex items-center gap-2 text-base md:text-sm bg-transparent hover:bg-sidebar-accent rounded-[3px] px-4 py-1 w-full h-9 transition-colors"
+      >
+        <MessageSquare className="w-4 h-4" />
+        <span>Percakapan Baru</span>
+      </button>
+    </div>
+  );
+}
+
+// Wrapper component for conversation item with sidebar context access
+function SidebarConversationItem({
+  conversation,
+  isActive,
+  truncatedTitle,
+  fullTitle,
+  onSelect,
+  onDelete,
+  onTitleUpdate,
+}: ConversationHistoryItemProps) {
+  const { setOpenMobile } = useSidebar();
+
+  const handleSelect = (conversationId: string) => {
+    onSelect(conversationId);
+    // Auto-close sidebar on mobile after selecting chat
+    setOpenMobile(false);
+  };
+
+  return (
+    <ConversationHistoryItem
+      conversation={conversation}
+      isActive={isActive}
+      truncatedTitle={truncatedTitle}
+      fullTitle={fullTitle}
+      onSelect={handleSelect}
+      onDelete={onDelete}
+      onTitleUpdate={onTitleUpdate}
+    />
   );
 }
 
@@ -530,19 +579,20 @@ function ChatPageContent() {
       
       <SidebarProvider>
         <div className="flex h-screen w-full bg-background">
-          <Sidebar className="border-r border-border bg-card/30">
+          <Sidebar className="border-r border-border bg-sidebar">
             <SidebarHeader className="p-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <a href="/" className="flex items-center gap-2 text-decoration-none cursor-pointer">
-                  <BrandLogo variant="color" size="sm" priority />
-                  <div className="flex flex-col">
-                    <div className="text-sm font-medium text-foreground">Makalah AI</div>
-                    <div className="text-xs font-light text-white">
-                      {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
-                    </div>
+              <Link
+                href="/"
+                className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+              >
+                <BrandLogo variant="color" size="sm" priority />
+                <div className="flex flex-col">
+                  <div className="text-sm font-medium text-foreground">Makalah AI</div>
+                  <div className="text-xs font-light text-muted-foreground">
+                    {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
                   </div>
-                </a>
-              </div>
+                </div>
+              </Link>
             </SidebarHeader>
 
             <SidebarContent>
@@ -560,15 +610,7 @@ function ChatPageContent() {
               </div>
 
               {/* New Chat Button */}
-              <div className="pb-2 border-b border-border">
-                <button
-                  onClick={handleNewChat}
-                  className="flex items-center gap-2 text-base md:text-sm bg-transparent hover:bg-sidebar-accent rounded-[3px] px-4 py-1 w-full h-9 transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Percakapan Baru</span>
-                </button>
-              </div>
+              <SidebarNewChatButton onNewChat={handleNewChat} />
 
               {/* Conversation Groups */}
               {Object.entries(conversationGroups).map(([groupName, groupConversations]) => {
@@ -587,7 +629,7 @@ function ChatPageContent() {
                           const truncated = truncateTitle(fullTitle, 39);
 
                           return (
-                            <ConversationHistoryItem
+                            <SidebarConversationItem
                               key={conversation.id}
                               conversation={conversation}
                               isActive={isActive}
