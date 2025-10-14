@@ -227,7 +227,9 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                       }}
                       className="w-full"
                       triggerClassName="mr-0 w-full justify-between"
-                      contentClassName="w-full min-w-full max-w-full"
+                      contentClassName="w-44"
+                      sideOffset={0}
+                      align="start"
                     />
                   </div>
                 )}
@@ -268,6 +270,8 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               variant="header"
               onLogout={handleLogout}
               className="hidden md:block"
+              triggerClassName="min-w-52"
+              contentClassName="min-w-52"
             />
           ) : (
             <Button

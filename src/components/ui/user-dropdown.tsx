@@ -24,6 +24,8 @@ export interface UserDropdownProps {
   showRole?: boolean;
   triggerClassName?: string;
   contentClassName?: string;
+  sideOffset?: number;
+  align?: 'start' | 'center' | 'end';
 }
 
 export const UserDropdown: React.FC<UserDropdownProps> = ({
@@ -33,7 +35,9 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
   className,
   showRole = true,
   triggerClassName,
-  contentClassName
+  contentClassName,
+  sideOffset = 0,
+  align = 'end'
 }) => {
   const router = useRouter();
 
@@ -110,7 +114,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
             <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" sideOffset={0} className={cn("w-56", contentClassName)}>
+        <DropdownMenuContent side="top" align="start" sideOffset={sideOffset} className={cn("w-56", contentClassName)}>
           {renderMenuItems()}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -124,28 +128,30 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              "group mr-4 flex items-center gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "group mr-4 flex items-center justify-between gap-3 rounded-[3px] border border-border bg-card px-3 py-2 text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--user-menu-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               triggerClassName
             )}
           >
-            <UserAvatar
-              initials={getUserInitials(user)}
-              size="md"
-            />
-            <div className="text-left">
-              <span className="block text-sm font-medium text-foreground">
-                {getUserDisplayName(user)}
-              </span>
-              {showRole && (
-                <span className="block text-xs text-muted-foreground">
-                  {getUserRole(user)}
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                initials={getUserInitials(user)}
+                size="md"
+              />
+              <div className="text-left">
+                <span className="block text-sm font-medium text-foreground">
+                  {getUserDisplayName(user)}
                 </span>
-              )}
+                {showRole && (
+                  <span className="block text-xs text-muted-foreground">
+                    {getUserRole(user)}
+                  </span>
+                )}
+              </div>
             </div>
-            <ChevronDown className="w-4 h-4 ml-2 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className={cn("w-52 p-2", contentClassName)}>
+        <DropdownMenuContent align={align} sideOffset={sideOffset} className={contentClassName ? cn("p-2", contentClassName) : "w-52 p-2"}>
           {renderMenuItems()}
         </DropdownMenuContent>
       </DropdownMenu>
