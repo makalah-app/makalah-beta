@@ -73,7 +73,8 @@ const TestConfigSchema = z.object({
   model: z.string().optional(),
   parameters: z.object({
     temperature: z.number().min(0).max(2).optional(),
-    maxTokens: z.number().min(1).max(1000).optional(),
+    // AI SDK v5 uses maxOutputTokens
+    maxOutputTokens: z.number().min(1).max(1000).optional(),
     topP: z.number().min(0).max(1).optional(),
   }).optional(),
   testPrompt: z.string().default('Hello, this is a test. Please respond with "Configuration test successful."'),
@@ -332,7 +333,8 @@ export async function PUT(request: NextRequest) {
         { role: 'user' as const, content: testPrompt },
       ],
       temperature: parameters?.temperature ?? 0.1,
-      maxTokens: parameters?.maxTokens ?? 100,
+      // AI SDK v5 compliant parameter name
+      maxOutputTokens: parameters?.maxOutputTokens ?? 100,
       topP: parameters?.topP ?? 0.9,
       maxRetries: 1,
     };
