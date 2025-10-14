@@ -88,36 +88,32 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
 
   if (variant === 'sidebar') {
     return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton className={cn("w-full justify-between", className, triggerClassName)}>
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    initials={getUserInitials(user)}
-                    size="md"
-                  />
-                  <div className="text-left">
-                    <span className="block text-sm font-medium text-foreground">
-                      {getUserDisplayName(user)}
-                    </span>
-                    {showRole && (
-                      <span className="block text-xs text-muted-foreground">
-                        {getUserRole(user)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className={cn("w-56", contentClassName)}>
-              {renderMenuItems()}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarMenuItem>
-      </SidebarMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={cn("flex w-full items-center justify-between gap-3 rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2", className, triggerClassName)}>
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                initials={getUserInitials(user)}
+                size="md"
+              />
+              <div className="text-left">
+                <span className="block text-sm font-medium text-foreground">
+                  {getUserDisplayName(user)}
+                </span>
+                {showRole && (
+                  <span className="block text-xs text-muted-foreground">
+                    {getUserRole(user)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <ChevronDown className="w-4 h-4 transition-transform duration-200 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" sideOffset={0} className={cn("w-56", contentClassName)}>
+          {renderMenuItems()}
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   }
 

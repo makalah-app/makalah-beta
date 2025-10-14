@@ -698,7 +698,7 @@ function ChatPageContent() {
               )}
             </SidebarContent>
 
-            <SidebarFooter className="p-4 border-t border-border">
+            <SidebarFooter className="p-0 border-t border-border">
               <UserDropdown
                 user={user}
                 variant="sidebar"
@@ -706,6 +706,7 @@ function ChatPageContent() {
                   await logout();
                   router.push('/auth');
                 }}
+                className="p-4"
               />
             </SidebarFooter>
           </Sidebar>
