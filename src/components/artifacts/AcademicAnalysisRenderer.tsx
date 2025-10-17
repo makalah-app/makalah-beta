@@ -1,4 +1,8 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { ArtifactCard } from './ArtifactCard';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -58,6 +62,31 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
                 return null;
               }
 
+              // Rehype sanitize schema whitelist (basic inline + headings + lists + code + table + links)
+              const safeSchema: any = {
+                ...defaultSchema,
+                tagNames: [
+                  'p', 'ul', 'ol', 'li',
+                  'strong', 'em', 'blockquote', 'code', 'pre',
+                  'h1', 'h2', 'h3', 'h4',
+                  'table', 'thead', 'tbody', 'tr', 'th', 'td',
+                  'a'
+                ],
+                attributes: {
+                  ...defaultSchema.attributes,
+                  a: [
+                    ...(defaultSchema.attributes?.a || []),
+                    ['href'], ['title'], ['target'], ['rel']
+                  ],
+                  code: [...(defaultSchema.attributes?.code || []), ['className']],
+                  th: [...(defaultSchema.attributes?.th || []), ['colspan'], ['rowspan']],
+                  td: [...(defaultSchema.attributes?.td || []), ['colspan'], ['rowspan']],
+                },
+                clobberPrefix: 'md-',
+                clobber: ['name', 'id'],
+                allowComments: false,
+              };
+
               return (
                 <div
                   key={index}
@@ -70,10 +99,19 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
                     {section.heading || 'Loading...'}
                   </HeadingTag>
                   {section.content && (
-                    <div
-                      className="mt-2 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: section.content }}
-                    />
+                    <div className="mt-2 leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw, [rehypeSanitize, safeSchema]]}
+                        components={{
+                          a: ({ node, ...props }) => (
+                            <a {...props} target="_blank" rel="noopener noreferrer" />
+                          ),
+                        }}
+                      >
+                        {section.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
                   {/* Streaming indicator for last section */}
                   {artifact.status === 'streaming' && index === data.sections.length - 1 && (

@@ -18,6 +18,8 @@ import { getProviderManager } from '../../../src/lib/ai/providers';
 import { artifactWriterAgent } from '../../../src/lib/ai/agents/artifact-writer';
 import { supabaseMemoryProvider } from '../../../src/lib/ai/memory/supabase-memory-provider';
 import { setContext, clearContext } from '../../../src/lib/ai/tools/artifact-context';
+import { summarizeAndPersistWorkingMemory } from '../../../src/lib/ai/memory/autosummarizer';
+import { searchRelevantSections, buildRetrievalPreface } from '../../../src/lib/ai/retrieval/sections';
 
 const WORKING_MEMORY_TEMPLATE = `# Ringkasan Konteks
 
@@ -151,8 +153,10 @@ export async function POST(req: Request) {
       },
     });
 
-    // Track response time for health monitoring
+    // 📊 PROFILING: Track response time and memory for health monitoring
     const responseStartTime = Date.now();
+    const memoryStart = process.memoryUsage();
+    const cpuStart = process.cpuUsage();
 
     // ✅ LOAD CHAT HISTORY FROM DATABASE (Fix for conversation memory)
     // Load previous messages for context if chatId exists
@@ -175,8 +179,47 @@ export async function POST(req: Request) {
       allMessages = validatedMessages;
     }
 
+    // ✅ Optional retrieval: prepend small relevant snippets for long edits
+    let retrievalTime = 0;
+    let retrievalMemDelta = 0;
+    try {
+      const lastUser = allMessages.filter((m) => m.role === 'user').slice(-1)[0];
+      if (chatId && lastUser && typeof lastUser.content === 'string' && lastUser.content.length > 40) {
+        const retrievalStart = Date.now();
+        const retrievalMemStart = process.memoryUsage().heapUsed;
+
+        const results = await searchRelevantSections({ chatId, query: lastUser.content, limit: 2 });
+        const preface = buildRetrievalPreface(results);
+        if (preface) {
+          allMessages = [{ id: 'retrieval-preface', role: 'system', content: preface } as any, ...allMessages];
+        }
+
+        retrievalTime = Date.now() - retrievalStart;
+        retrievalMemDelta = (process.memoryUsage().heapUsed - retrievalMemStart) / 1024 / 1024;
+      }
+    } catch (e) {
+      console.warn('[retrieval] skipped', e);
+    }
+
+    // ✅ Sanitize historical tool messages to avoid OpenAI Responses tool-call mismatch
+    const sanitizedMessages: UIMessage[] = allMessages
+      .map((m: any) => {
+        if (m?.role === 'tool') {
+          return null; // drop historical tool result messages entirely
+        }
+        if (Array.isArray(m?.parts)) {
+          const filtered = m.parts.filter((p: any) => {
+            const t = (p && (p.type || p.kind || p.role)) ? String(p.type || p.kind || p.role) : '';
+            return !/tool/i.test(t);
+          });
+          return { ...m, parts: filtered };
+        }
+        return m;
+      })
+      .filter(Boolean) as UIMessage[];
+
     // ✅ Convert UIMessage[] to ModelMessage[] for Agent
-    const modelMessages = convertToModelMessages(allMessages);
+    const modelMessages = convertToModelMessages(sanitizedMessages);
 
     // ✅ Use Agent's built-in streaming
     return mokaAgent.toUIMessageStream({
@@ -199,7 +242,7 @@ export async function POST(req: Request) {
         });
         return true; // Continue streaming
       },
-      onFinish: () => {
+      onFinish: async () => {
         // Record success for provider health tracking
         const responseEndTime = Date.now();
         const responseTime = responseEndTime - responseStartTime;
@@ -207,6 +250,61 @@ export async function POST(req: Request) {
           dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
           responseTime
         );
+
+        // ✅ AUTOSUMMARIZER: update working memory after completion (best-effort)
+        let autosummaryTime = 0;
+        let autosummaryMemDelta = 0;
+        try {
+          const autoStart = Date.now();
+          const autoMemStart = process.memoryUsage().heapUsed;
+
+          await summarizeAndPersistWorkingMemory({
+            userId,
+            chatId,
+            messages: allMessages,
+            model: 'gpt-4o-mini',
+            tail: 12,
+          });
+
+          autosummaryTime = Date.now() - autoStart;
+          autosummaryMemDelta = (process.memoryUsage().heapUsed - autoMemStart) / 1024 / 1024;
+        } catch (e) {
+          console.warn('[autosummarizer] hook failed', e);
+        }
+
+        // 📊 PROFILING: Calculate and log comprehensive metrics
+        const memoryEnd = process.memoryUsage();
+        const cpuEnd = process.cpuUsage();
+
+        const memDelta = {
+          heapUsed: ((memoryEnd.heapUsed - memoryStart.heapUsed) / 1024 / 1024).toFixed(2),
+          heapTotal: ((memoryEnd.heapTotal - memoryStart.heapTotal) / 1024 / 1024).toFixed(2),
+          external: ((memoryEnd.external - memoryStart.external) / 1024 / 1024).toFixed(2),
+          rss: ((memoryEnd.rss - memoryStart.rss) / 1024 / 1024).toFixed(2),
+        };
+
+        const cpuDelta = {
+          user: ((cpuEnd.user - cpuStart.user) / 1000).toFixed(2),
+          system: ((cpuEnd.system - cpuStart.system) / 1000).toFixed(2),
+        };
+
+        // eslint-disable-next-line no-console
+        console.log('[PROFILING] Chat completion metrics:', {
+          duration: `${responseTime}ms`,
+          memory: memDelta,
+          cpu: cpuDelta,
+          breakdown: {
+            retrieval: retrievalTime > 0 ? `${retrievalTime}ms / ${retrievalMemDelta.toFixed(2)}MB` : 'skipped',
+            autosummary: autosummaryTime > 0 ? `${autosummaryTime}ms / ${autosummaryMemDelta.toFixed(2)}MB` : 'skipped',
+          },
+          context: {
+            chatId: chatId || 'none',
+            userId: userId?.slice(0, 8) || 'none',
+            messageCount: allMessages.length,
+            provider: dynamicConfig.primaryProvider,
+          },
+        });
+
         // ✅ ARTIFACT CONTEXT: Clear context after completion
         clearContext();
       },

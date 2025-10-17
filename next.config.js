@@ -1,5 +1,28 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
+const fs = require('fs');
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Upgrade Guard (non-strict): warn when patch policy mismatch
+// Checks that patches/@ai-sdk-tools+agents+<version>.patch exists for installed version
+// ────────────────────────────────────────────────────────────────────────────────
+try {
+  const pkg = require('./package.json');
+  const dep = (pkg.dependencies && pkg.dependencies['@ai-sdk-tools/agents']) ||
+              (pkg.devDependencies && pkg.devDependencies['@ai-sdk-tools/agents']) || '';
+  const cleaned = String(dep).trim().replace(/^\^|~/, '');
+  if (cleaned) {
+    const patchName = `@ai-sdk-tools+agents+${cleaned}.patch`;
+    const patchPath = path.resolve(__dirname, 'patches', patchName);
+    if (!fs.existsSync(patchPath)) {
+      // eslint-disable-next-line no-console
+      console.warn(`Upgrade Guard: missing patch file ${patchName}. Ensure dependency version matches patch-package file to avoid regressions.`);
+    }
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.warn('Upgrade Guard: unable to verify patch policy', e?.message || e);
+}
 
 const nextConfig = {
   experimental: {

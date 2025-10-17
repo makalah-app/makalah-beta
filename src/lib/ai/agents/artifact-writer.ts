@@ -1,6 +1,12 @@
 import { Agent } from '@ai-sdk-tools/agents';
 import { openai } from '@ai-sdk/openai';
 import { writeArtifactTool } from '@/lib/ai/tools/write-artifact-tool';
+import {
+  listArtifactSections,
+  getArtifactSection,
+  updateArtifactSection,
+  logArtifactChange,
+} from '@/lib/ai/tools/artifact-section-tools';
 import { shouldRouteToArtifactWriter } from '@/lib/ai/routing/artifact-routing';
 
 /**
@@ -25,8 +31,12 @@ MANDATORY WORKFLOW (3 STEPS - CANNOT BE SKIPPED):
    - Example: "Oke, gue buatin analisis lengkap tentang [topic] nih. Tunggu sebentar..."
 
 2. TOOL EXECUTION (REQUIRED):
-   - ALWAYS call the "writeArtifact" tool to menghasilkan atau memperbarui artefak versi terbaru
-   - Perlakukan tiap permintaan sebagai update penuh: tambahkan, hapus, atau ubah isi sesuai instruksi lalu kirim struktur lengkap
+   - PERSIST FIRST (READ→MODIFY→WRITE) dengan tools section-level:
+     a) BACA: gunakan "listArtifactSections" dan/atau "getArtifactSection" untuk melihat isi canonical terkini berdasarkan chatId
+     b) UBAH: untuk setiap bagian yang diminta user, panggil "updateArtifactSection" (atomik) agar perubahan TERSIMPAN di DB tanpa menyentuh section lain
+     c) CATAT: optional panggil "logArtifactChange" untuk audit (mis. jenis perubahan dan ringkasan)
+   - STREAM AFTER: setelah persistence, panggil SELALU tool "writeArtifact" untuk men-stream ringkasan perubahan/bagian yang diubah ke panel artefak
+   - DILARANG regenerasi full artefak kecuali user minta eksplisit; fokus hanya pada section yang diubah
    - Minimal 50 kata, heading jelas, synopsis bila relevan, dan referensi pendukung
    - FORMAL content hanya dikirim lewat tool (jangan kirim via chat)
 
@@ -49,6 +59,13 @@ CRITICAL RULES:
   `,
 
   tools: {
+    // Persistence-first tools (canonical DB)
+    listArtifactSections,
+    getArtifactSection,
+    updateArtifactSection,
+    logArtifactChange,
+
+    // Streaming tool for UI panel
     writeArtifact: writeArtifactTool,
   },
 
