@@ -1,0 +1,48 @@
+diff --git a/node_modules/@ai-sdk-tools/agents/dist/index.js b/node_modules/@ai-sdk-tools/agents/dist/index.js
+--- a/node_modules/@ai-sdk-tools/agents/dist/index.js	2025-10-17 20:49:49.000000000 +0700
++++ b/node_modules/@ai-sdk-tools/agents/dist/index.js	2025-10-17 20:50:03.000000000 +0700
+@@ -93,7 +93,7 @@ function isHandoffResult(result) {
+
+ // src/handoff-prompt.ts
+ var RECOMMENDED_PROMPT_PREFIX = `# System context
+-You are part of a multi-agent system called AI SDK Agents, designed to make agent coordination and execution easy. This system uses two primary abstractions: **Agents** and **Handoffs**. An agent encompasses instructions and tools and can hand off a conversation to another agent when appropriate. Handoffs are achieved by calling a handoff function, generally named \`handoff_to_agent\`. Transfers between agents are handled seamlessly in the background; do not mention or draw attention to these transfers in your conversation with the user.`;
++You are part of a multi-agent system called Makalah AI, designed to coordinate academic specialists and keep the experience consistent with the Makalah brand. This system uses two primary abstractions: **Agents** and **Handoffs**. An agent encompasses instructions and tools and can hand off a conversation to another agent when appropriate. Handoffs are achieved by calling a handoff function, generally named \`handoff_to_agent\`. Transfers between agents are handled seamlessly in the background; do not mention or draw attention to these transfers in your conversation with the user.`;
+ function promptWithHandoffInstructions(prompt) {
+   return `${RECOMMENDED_PROMPT_PREFIX}
+
+@@ -551,7 +551,7 @@ var Agent = class _Agent {
+           }
+           while (round++ < maxRounds) {
+             writeAgentStatus(writer, {
+               status: "executing",
+               agent: currentAgent.name
+             });
+-            const messagesToSend = currentAgent === this ? [conversationMessages[conversationMessages.length - 1]] : conversationMessages.slice(-8);
++            const messagesToSend = conversationMessages.slice(-8);
+             if (onEvent) {
+               await onEvent({
+                 type: "agent-start",
+diff --git a/node_modules/@ai-sdk-tools/agents/dist/index.cjs b/node_modules/@ai-sdk-tools/agents/dist/index.cjs
+--- a/node_modules/@ai-sdk-tools/agents/dist/index.cjs	2025-10-17 20:49:49.000000000 +0700
++++ b/node_modules/@ai-sdk-tools/agents/dist/index.cjs	2025-10-17 20:50:03.000000000 +0700
+@@ -123,7 +123,7 @@ function isHandoffResult(result) {
+
+ // src/handoff-prompt.ts
+ var RECOMMENDED_PROMPT_PREFIX = `# System context
+-You are part of a multi-agent system called AI SDK Agents, designed to make agent coordination and execution easy. This system uses two primary abstractions: **Agents** and **Handoffs**. An agent encompasses instructions and tools and can hand off a conversation to another agent when appropriate. Handoffs are achieved by calling a handoff function, generally named \`handoff_to_agent\`. Transfers between agents are handled seamlessly in the background; do not mention or draw attention to these transfers in your conversation with the user.`;
++You are part of a multi-agent system called Makalah AI, designed to coordinate academic specialists and keep the experience consistent with the Makalah brand. This system uses two primary abstractions: **Agents** and **Handoffs**. An agent encompasses instructions and tools and can hand off a conversation to another agent when appropriate. Handoffs are achieved by calling a handoff function, generally named \`handoff_to_agent\`. Transfers between agents are handled seamlessly in the background; do not mention or draw attention to these transfers in your conversation with the user.`;
+ function promptWithHandoffInstructions(prompt) {
+     return `${RECOMMENDED_PROMPT_PREFIX}
+
+@@ -581,7 +581,7 @@ var Agent = class _Agent {
+           }
+           while (round++ < maxRounds) {
+             writeAgentStatus(writer, {
+               status: "executing",
+               agent: currentAgent.name
+             });
+-            const messagesToSend = currentAgent === this ? [conversationMessages[conversationMessages.length - 1]] : conversationMessages.slice(-8);
++            const messagesToSend = conversationMessages.slice(-8);
+             if (onEvent) {
+               await onEvent({
+                 type: "agent-start",

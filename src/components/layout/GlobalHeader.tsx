@@ -18,6 +18,7 @@ import BrandLogo from '@/components/ui/BrandLogo';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
+import { useAppVersion } from '../../hooks/useAppVersion';
 import { cn } from '../../lib/utils';
 import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
 import {
@@ -45,29 +46,13 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   const isChatPage = pathname === '/chat';
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [appVersion, setAppVersion] = useState('');
+  const { version: appVersion } = useAppVersion();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Fetch app version once on mount (manual refresh via page reload)
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const response = await fetch('/api/public/app-version');
-        const result = await response.json();
-
-        if (result.success && result.version) {
-          setAppVersion(result.version);
-        }
-      } catch (error) {
-        // Silent fail - use default version
-      }
-    };
-
-    fetchVersion();
-  }, []);
+  // App version now provided by useAppVersion hook (SSoT)
 
   const handleLogout = async () => {
     await logout();
@@ -126,6 +111,25 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     setIsMobileMenuOpen(false);
   };
 
+  // Smart navigation to Chat: resume last if available for current user, else start new
+  const handleGoToChat = (onAfter?: () => void) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const storedId = sessionStorage.getItem('currentChatId');
+      const storedOwner = sessionStorage.getItem('currentChatOwner');
+      const uid = user?.id || '';
+      if (storedId && storedOwner === uid) {
+        router.push(`/chat?chatId=${storedId}`);
+      } else {
+        router.push('/chat?new=1');
+      }
+    } catch {
+      router.push('/chat?new=1');
+    } finally {
+      onAfter?.();
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -156,7 +160,18 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               {orderedNav.map((item) => {
                 if (item === 'CHAT') {
                   return showChatLink ? (
-                    <NavLink key="/chat" href="/chat" label="Chat" isActive={pathname === '/chat'} />
+                    <Link
+                      key="/chat"
+                      href="/chat"
+                      onClick={handleGoToChat()}
+                      className={cn(
+                        'transition-colors duration-200 text-white hover:text-white/80',
+                        pathname === '/chat' && 'text-white'
+                      )}
+                      aria-current={pathname === '/chat' ? 'page' : undefined}
+                    >
+                      Chat
+                    </Link>
                   ) : null;
                 }
                 return (
@@ -234,13 +249,18 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                   {showNavigation && orderedNav.map((item) => {
                     if (item === 'CHAT') {
                       return showChatLink ? (
-                        <MobileNavItem
+                        <Link
                           key="/chat"
                           href="/chat"
-                          label="Chat"
-                          isActive={pathname === '/chat'}
-                          onSelect={handleMobileMenuSelect}
-                        />
+                          onClick={handleGoToChat(() => handleMobileMenuSelect())}
+                          className={cn(
+                            'flex items-center justify-between rounded px-3 py-2 text-base transition-colors duration-200',
+                            pathname === '/chat' ? 'bg-accent text-white' : 'text-white hover:bg-accent/60 hover:text-white/80'
+                          )}
+                          aria-current={pathname === '/chat' ? 'page' : undefined}
+                        >
+                          <span>Chat</span>
+                        </Link>
                       ) : null;
                     }
                     return (

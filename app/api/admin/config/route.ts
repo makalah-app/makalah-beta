@@ -14,6 +14,7 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
 import { getDynamicModelConfig, clearDynamicConfigCache } from '../../../../src/lib/ai/dynamic-config';
 import { validateAdminAccess as validateAdmin } from '../../../../src/lib/admin/admin-auth';
@@ -330,30 +331,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Get app_version from admin_settings (application category)
-    if (scope === 'all' || scope === 'settings') {
-      if (!response.data.settings) {
-        response.data.settings = {};
-      }
-
-      try {
-        const versionResult = await supabaseAdmin
-          .from('admin_settings')
-          .select('setting_value')
-          .eq('setting_key', 'app_version')
-          .single();
-
-        const versionData = versionResult.data as { setting_value: string } | null;
-
-        if (versionData && versionData.setting_value) {
-          response.data.settings.app_version = versionData.setting_value;
-        } else {
-          response.data.settings.app_version = 'Beta 0.1';
-        }
-      } catch (versionError) {
-        // Silently fail, app_version is optional
-        response.data.settings.app_version = 'Beta 0.1'; // Fallback default
-      }
+  if (scope === 'all' || scope === 'settings') {
+    if (!response.data.settings) {
+      response.data.settings = {};
     }
+
+    try {
+      const versionResult = await supabaseAdmin
+        .from('admin_settings')
+        .select('setting_value')
+        .eq('setting_key', 'app_version')
+        .single();
+
+      const versionData = versionResult.data as { setting_value: string } | null;
+
+      if (versionData && versionData.setting_value) {
+        response.data.settings.app_version = versionData.setting_value;
+      } else {
+        response.data.settings.app_version = 'Beta 0.1';
+      }
+    } catch (settingsError) {
+      // Silently fail, defaults will be used
+      response.data.settings.app_version = 'Beta 0.1';
+    }
+  }
 
     // Features configuration removed - using auto-pairing instead
 
@@ -623,6 +624,11 @@ export async function POST(request: NextRequest) {
       clearDynamicConfigCache();
     } catch (cacheError) {
     }
+
+    // Invalidate cached app-version endpoint so next fetch gets fresh value
+    try {
+      revalidatePath('/api/public/app-version');
+    } catch {}
 
     return Response.json({
       success: true,

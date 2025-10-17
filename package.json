@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit -p tsconfig.app.json",
-    "type-check:watch": "tsc --noEmit --watch"
+    "type-check:watch": "tsc --noEmit --watch",
+    "postinstall": "patch-package"
   },
   "dependencies": {
+    "@ai-sdk-tools/agents": "^0.2.2",
     "@ai-sdk-tools/artifacts": "^0.7.0-beta.5",
     "@ai-sdk-tools/cache": "^0.3.0",
     "@ai-sdk-tools/devtools": "^0.6.1",
+    "@ai-sdk-tools/memory": "^0.1.2",
     "@ai-sdk-tools/store": "^0.7.0-beta.9",
     "@ai-sdk/openai": "^2.0.0",
     "@ai-sdk/provider": "^2.0.0",
@@ -96,6 +99,7 @@
     "gray-matter": "^4.0.3",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "patch-package": "^8.0.1",
     "tsx": "^4.20.6",
     "typescript": "^5.4.0"
   },

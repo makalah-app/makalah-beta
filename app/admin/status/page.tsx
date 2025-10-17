@@ -210,6 +210,13 @@ function AdminStatusContent() {
         });
       }
 
+      // Broadcast to other mounted components (no extra server requests)
+      try {
+        window.dispatchEvent(new CustomEvent('app-version:updated', {
+          detail: { version: editVersionValue.trim() }
+        }));
+      } catch {}
+
       // Close dialog
       setIsEditDialogOpen(false);
 

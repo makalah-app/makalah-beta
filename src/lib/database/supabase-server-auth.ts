@@ -15,6 +15,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
 import { Database } from '../types/database-types';
+import { SYSTEM_USER_UUID } from '../utils/uuid-generator';
 
 /**
  * Create server-side Supabase client with cookie handling
@@ -168,13 +169,15 @@ export async function validateServerAuth(): Promise<{
 }
 
 /**
- * Extract user ID with strict authentication requirement
- * NO FALLBACK - returns null if authentication fails
- * Forces proper authentication handling in calling code
+ * Extract user ID with system fallback
+ * Returns authenticated user ID when available, otherwise SYSTEM_USER_UUID
  */
-export async function getUserIdWithSystemFallback(): Promise<string | null> {
+export async function getUserIdWithSystemFallback(): Promise<string> {
   const { userId } = await getServerSessionUserId();
-  return userId; // Return null if no authenticated user - no 'system' fallback
+  if (userId) {
+    return userId;
+  }
+  return SYSTEM_USER_UUID;
 }
 
 /**

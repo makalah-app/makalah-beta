@@ -16,7 +16,7 @@
  */
 
 import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
-import { useChat } from '@ai-sdk/react';
+import { useChat } from '@ai-sdk-tools/store';
 import {
   UIMessage,
   DefaultChatTransport
@@ -27,6 +27,9 @@ import {
 import { MessageDisplay } from './MessageDisplay';
 import { ChatInput } from './ChatInput';
 import { StreamingHandler } from './StreamingHandler';
+import { ArtifactPanel } from '../artifacts/ArtifactPanel';
+import { useArtifacts } from '@ai-sdk-tools/artifacts/client';
+import { cn } from '@/lib/utils';
 // ApprovalGatesContainer removed - using native OpenAI web search
 import { LoadingIndicator } from '../ui/LoadingIndicator';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
@@ -37,7 +40,7 @@ import { supabaseChatClient } from '../../lib/database/supabase-client';
 // Approval helpers removed - using native OpenAI web search
 // import { useTheme } from '../theme/ThemeProvider';
 // Additional imports for race condition fix
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: WorkflowProvider import - rigid phase state management
@@ -113,10 +116,56 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     return SYSTEM_USER_UUID;
   }, [user?.id]);
 
+  // ✅ AUTH REFRESH: Proactive token refresh to prevent 401 errors
+  // Checks token expiry and refreshes if expires within 5 minutes
+  const refreshAuthIfNeeded = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data: { session } } = await supabaseChatClient.auth.getSession();
+
+      if (!session) {
+        // No session, need re-auth (silent failure - fallback mode)
+        return false;
+      }
+
+      // Check if token expires soon (within 5 minutes)
+      const expiresAt = session.expires_at;
+      if (!expiresAt || typeof expiresAt !== 'number') {
+        // Invalid/missing expiry timestamp - treat as invalid session
+        return false;
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const timeUntilExpiry = expiresAt - now;
+
+      if (timeUntilExpiry < 300) { // Less than 5 minutes
+        // Proactively refresh token
+        const { error } = await supabaseChatClient.auth.refreshSession();
+        return !error; // Return false if refresh failed
+      }
+
+      return true; // Token still valid
+    } catch {
+      return false; // Silent failure - fallback mode
+    }
+  }, []);
+
   // ✅ EAGER PERSISTENCE: Ensure conversation exists before sending message
   // Prevents data loss if user refreshes during streaming
   const ensureConversationExists = useCallback(async (messageText: string): Promise<void> => {
     if (!chatId) return;
+
+    // ✅ REACTIVE AUTH FAILURE: Defense Layer 2 for edge cases (session expires during typing)
+    const authValid = await refreshAuthIfNeeded();
+    if (!authValid) {
+      // Session expired/invalid - show error, don't call API
+      setErrorState({
+        message: 'Your session has expired. Please refresh the page to login again.',
+        type: 'auth_error',
+        isRetryable: false,
+        timestamp: Date.now()
+      });
+      return; // Stop execution, prevent 401 error
+    }
 
     try {
       await fetch('/api/chat/conversations/ensure', {
@@ -135,7 +184,7 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     } catch (error) {
       // Silent failure - normal persistence flow will handle it as fallback
     }
-  }, [chatId, getUserId]);
+  }, [chatId, getUserId, refreshAuthIfNeeded]);
 
   // Citations state from native-openai web search
   // citations disabled for now
@@ -340,6 +389,56 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   } = chatHookResult;
   const previousStatusRef = useRef(status);
 
+  // Artifact detection for panel visibility
+  const { current: currentArtifact, latest } = useArtifacts();
+
+  // ✅ NEW: Panel visibility state management (default closed, opens on artifact creation)
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
+
+  // ✅ UPDATED: Check BOTH artifact existence AND panel visibility
+  const hasActiveArtifact = currentArtifact !== null && isPanelVisible;
+
+  // ✅ ENHANCED: Auto-show panel with content validation
+  useEffect(() => {
+    if (currentArtifact) {
+      // ✅ STREAMING: Always show panel (content akan datang)
+      if (currentArtifact.status === 'streaming') {
+        setIsPanelVisible(true);
+        return;
+      }
+
+      // ✅ COMPLETED/OTHER: Validate has meaningful content
+      if (currentArtifact.type === 'academic-analysis') {
+        // 🔧 FIX: Use currentArtifact.payload directly instead of stale latest object
+        const payload = (currentArtifact as any).payload;
+        const hasValidContent =
+          payload &&
+          (payload.sections?.length > 0 || payload.title);
+
+        if (hasValidContent) {
+          setIsPanelVisible(true);
+        }
+        // ✅ If no valid content, panel stays closed (don't set to false to preserve user choice)
+      } else {
+        // ✅ Default show untuk artifact types lain (future-proof)
+        setIsPanelVisible(true);
+      }
+    }
+  }, [currentArtifact?.id, currentArtifact?.status, currentArtifact?.version]); // 🔧 FIX: Added version to detect payload updates
+
+  // ✅ NEW: Panel control handlers
+  const handleClosePanel = useCallback(() => {
+    setIsPanelVisible(false);
+  }, []);
+
+  const handleMinimizePanel = useCallback(() => {
+    setIsPanelVisible(false);
+  }, []);
+
+  const handleReopenPanel = useCallback(() => {
+    setIsPanelVisible(true);
+  }, []);
+
   const persistChatHistory = useCallback(async () => {
     if (!chatId) {
       return;
@@ -528,6 +627,28 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
     
     // Conversation detection completed
   }, [chatId, searchParams, debugMode]);
+
+  // ✅ PROACTIVE AUTH CHECK: Redirect expired sessions before user interaction
+  // Defense Layer 1: Catch invalid/expired sessions early at component mount
+  useEffect(() => {
+    const checkAuthBeforeInteraction = async () => {
+      // Skip in test mode
+      if (testMode) return;
+
+      // Only check when chatId is present (conversation context)
+      if (!chatId) return;
+
+      const authValid = await refreshAuthIfNeeded();
+
+      if (!authValid && typeof window !== 'undefined') {
+        // Session invalid/expired - redirect to login with return URL
+        const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/auth?returnUrl=${returnUrl}`;
+      }
+    };
+
+    checkAuthBeforeInteraction();
+  }, [chatId, testMode, refreshAuthIfNeeded]);
 
   // ✅ FIXED: Load initial messages with stable dependencies - PREVENT SETMESSAGES LOOP
   useEffect(() => {
@@ -768,10 +889,15 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
           </div>
         </div>
       ) : (
-        /* WITH MESSAGES: 2-column layout with sidebar (desktop only) */
-        <div className="flex h-full gap-4">
-          {/* Main chat area */}
-          <div className="flex-1 flex flex-col">
+        /* WITH MESSAGES: Horizontal layout with artifact panel */
+        <div className="flex h-full">
+          {/* Main Chat Area - Transitions from 100% to 60% when artifact visible */}
+          <div
+            className={cn(
+              "flex flex-col transition-all duration-300",
+              hasActiveArtifact ? "w-[60%]" : "w-full"
+            )}
+          >
             {/* Messages Area - Scrollable */}
             <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
               <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
@@ -830,6 +956,9 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                         onCancelEdit={handleCancelEdit}
                         onEditingTextChange={handleEditingTextChange}
                         editAreaRef={editAreaRef}
+                        // ✅ NEW: Artifact panel props
+                        isPanelVisible={isPanelVisible}
+                        onReopenPanel={handleReopenPanel}
                       />
                     </div>
                   );
@@ -873,6 +1002,12 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
             </div>
           </div>
 
+          {/* Artifact Panel - Slides in from right */}
+          <ArtifactPanel
+            isPanelVisible={isPanelVisible}
+            onClose={handleClosePanel}
+            onMinimize={handleMinimizePanel}
+          />
         </div>
       )}
 

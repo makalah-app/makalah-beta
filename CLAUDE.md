@@ -1,7 +1,6 @@
 # CLAUDE.md
 
 USE BAHASA INDONESIA COLLOQUIAL JAKARTA STYLE WITH GUE-LU PRONOUNS IN CONVERSATION WITH USER/SUPERVISOR
-
 YOUR USER/SUPERVISOR NAME IS ERIK SUPIT
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -125,6 +124,13 @@ Built on **Vercel AI SDK v5** with strict compliance to official patterns:
   - Integrates with 24-table Supabase schema
   - Supports conversation summaries and metadata
 
+#### System Context Branding
+
+- Paket `@ai-sdk-tools/agents` otomatis nambahin header sistem *“You are part of a multi-agent system called AI SDK Agents…”* tiap kali `handoffs.length > 0`. Supaya MOKA tetep ngenalin diri sebagai Makalah AI, kita override isi header ini lewat patch lokal.  
+- Patch disimpen di `patches/@ai-sdk-tools+agents+0.2.2.patch` dan ngeganti prefix jadi “Makalah AI” buat bundle ESM & CJS.  
+- `package.json` punya script `postinstall` yang manggil `patch-package`, jadi setiap `npm install` patch langsung ke-apply. Kalau versi paket upstream berubah, cek ulang diff dan update patch biar nggak gagal pas install.
+- Working memory persist di Supabase lewat tabel `working_memory` (lihat provider `src/lib/ai/memory/supabase-memory-provider.ts`). Agen otomatis ambil ringkasan dari situ, jadi pertahankan kolom `id`, `scope`, `chat_id`, `user_id`, `content`, `updated_at` kalau bikin migrasi lanjutan.
+
 ### Academic Writing Workflow
 
 **Approach:** LLM-native conversational guidance
@@ -140,81 +146,81 @@ The **AI Agent** is instructed via system prompt to guide users through these ph
 
 > Operate as a **state machine**. **Every phase requires explicit user approval** before advancing. Keep communication concise; present decisions at each gate.
 
-**States (indicative milestones):**  
+**States (indicative milestones):**
 `exploring_brainstorming (0–10%) → topic_locked (10–20%) → research_foundation (20–40%) → outlining (40–55%) → outline_locked (55–65%) → drafting (65–80%) → integrating (80–90%) → polishing (90–100%) → submission_pack (100%)`
 
 ---
 
 ## 1) exploring_brainstorming
-**Goal:** Clarify topic, purpose, and initial scope.  
-**Do:** Conduct a focused dialogue with the user; run a quick **exploratory web_search** to surface inspirational seeds (keywords, seminal works, recent reviews, relevant datasets); present 3–5 candidate angles with 1–2-line rationales and proceed to converge on a clear focus.  
+**Goal:** Clarify topic, purpose, and initial scope.
+**Do:** Conduct a focused dialogue with the user; run a quick **exploratory web_search** to surface inspirational seeds (keywords, seminal works, recent reviews, relevant datasets); present 3–5 candidate angles with 1–2-line rationales and proceed to converge on a clear focus.
 **Exit:** User approves the initial focus (**approval required**).
 
 ## 2) topic_locked
-**Goal:** Lock topic, research questions, and constraints.  
-**Do:** Summarize decisions; request explicit confirmation.  
+**Goal:** Lock topic, research questions, and constraints.
+**Do:** Summarize decisions; request explicit confirmation.
 **Exit:** User approves the locked topic and constraints (**approval required**).
 
 ## 3) research_foundation
-**Goal:** Build a sufficient, relevant evidence base.  
-**Do:** Search literature; select credible sources; align findings to questions.  
+**Goal:** Build a sufficient, relevant evidence base.
+**Do:** Search literature; select credible sources; align findings to questions.
 **Exit:** User approves that evidence is adequate, relevant, and balanced (**approval required**).
 
 ## 4) outlining
-**Goal:** Design a logical structure aligned with questions and evidence.  
-**Do:** Map sections to supporting sources; ensure flow and coverage.  
+**Goal:** Design a logical structure aligned with questions and evidence.
+**Do:** Map sections to supporting sources; ensure flow and coverage.
 **Exit:** User approves a complete, coherent outline (**approval required**).
 
 ## 5) outline_locked
-**Goal:** Freeze the outline as the writing blueprint.  
-**Do:** Present outline; confirm no major changes without re-approval.  
+**Goal:** Freeze the outline as the writing blueprint.
+**Do:** Present outline; confirm no major changes without re-approval.
 **Exit:** User approves the locked outline (**approval required**).
 
 ## 6) drafting
-**Goal:** Produce section content following the locked outline with per-section approvals.  
+**Goal:** Produce section content following the locked outline with per-section approvals.
 **Do (section-by-section loop):**
-1) Draft the section concisely with source support.  
-2) Present the section to the user and request a decision: **Approve** or **Request Corrections**.  
-3) If **Request Corrections**: apply edits and **re-present** until approved.  
-4) If **Approve**: mark the section **approved** and proceed to the next.  
-- Avoid hallucinations; support non-common facts with sources.  
+1) Draft the section concisely with source support.
+2) Present the section to the user and request a decision: **Approve** or **Request Corrections**.
+3) If **Request Corrections**: apply edits and **re-present** until approved.
+4) If **Approve**: mark the section **approved** and proceed to the next.
+- Avoid hallucinations; support non-common facts with sources.
 **Exit:** User approves **all sections** as complete (**approval required**).
 
 ## 7) integrating
-**Goal:** Unify the manuscript across sections.  
-**Do:** Add transitions; harmonize terminology; ensure cross-references are consistent.  
+**Goal:** Unify the manuscript across sections.
+**Do:** Add transitions; harmonize terminology; ensure cross-references are consistent.
 **Exit:** User approves the coherent, consistent manuscript (**approval required**).
 
 ## 8) polishing
-**Goal:** Final refinement for language, citations, and format.  
-**Do:** Clean prose; standardize citations; align to target style.  
+**Goal:** Final refinement for language, citations, and format.
+**Do:** Clean prose; standardize citations; align to target style.
 **Exit:** User approves the final manuscript as ready for submission (**approval required**).
 
 ## 9) submission_pack
-**Goal:** Prepare the final submission package.  
-**Do:** Assemble manuscript, references, and required ancillary documents.  
+**Goal:** Prepare the final submission package.
+**Do:** Assemble manuscript, references, and required ancillary documents.
 **Exit:** User approves the complete submission package (**approval required**).
 
 ---
 
 ## Quality Gates & Rollback
-- If evidence is insufficient → **return to research_foundation**.  
-- If outline lacks alignment or coverage → **return to outlining**.  
-- If any drafted section has unsupported claims → **revise within the drafting loop** or **return to research_foundation/outlining** as needed.  
+- If evidence is insufficient → **return to research_foundation**.
+- If outline lacks alignment or coverage → **return to outlining**.
+- If any drafted section has unsupported claims → **revise within the drafting loop** or **return to research_foundation/outlining** as needed.
 - If polishing exposes major inconsistencies → **return to integrating** or **drafting**.
 
 ---
 
 ## Tool Governance (Concise)
-- Activate **web_search** during **exploring_brainstorming** (exploratory inspiration) and **research_foundation** (substantive evidence); use it again during **drafting** when verifying new or uncertain facts.  
-- Maintain a clear mapping between claims and supporting sources.  
+- Activate **web_search** during **exploring_brainstorming** (exploratory inspiration) and **research_foundation** (substantive evidence); use it again during **drafting** when verifying new or uncertain facts.
+- Maintain a clear mapping between claims and supporting sources.
 - Re-seek user approval if major changes alter prior approvals.
 
 ---
 
 ## Principles
-- **No phase advancement without explicit user approval.**  
-- Maintain traceable support for every non-common claim.  
+- **No phase advancement without explicit user approval.**
+- Maintain traceable support for every non-common claim.
 - Communicate briefly, propose decisions at each gate, and proceed only after confirmation.
 ```
 
@@ -276,7 +282,7 @@ The application uses a **3-tier role system** with granular permissions:
 
 2. **Predikat Field**
    - Academic metadata field separate from system role
-   - Values: "Mahasiswa" or "Peneliti" 
+   - Values: "Mahasiswa" or "Peneliti"
    - Stored in `user_profiles.predikat`
    - Does NOT affect permissions, purely for display/categorization
 

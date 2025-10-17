@@ -6,18 +6,30 @@
  */
 
 import {
-  streamText,
-  convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  smoothStream,
-  type UIMessage
+  type UIMessage,
+  convertToModelMessages
 } from 'ai';
+import { Agent } from '@ai-sdk-tools/agents';
 import { openai } from '@ai-sdk/openai';
 import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
+import { artifactWriterAgent } from '../../../src/lib/ai/agents/artifact-writer';
+import { supabaseMemoryProvider } from '../../../src/lib/ai/memory/supabase-memory-provider';
+import { setContext, clearContext } from '../../../src/lib/ai/tools/artifact-context';
+
+const WORKING_MEMORY_TEMPLATE = `# Ringkasan Konteks
+
+## Topik Utama
+- (isi ringkasan poin penting tentang topik dan tujuan penulisan)
+
+## Instruksi & Preferensi Pengguna
+- (catat gaya bahasa, struktur, atau arahan spesifik yang harus diingat)
+
+## Catatan Tindak Lanjut
+- (ringkas hal yang sudah / belum dikerjakan, revisi yang diminta, dan fokus berikutnya)
+`;
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -97,290 +109,107 @@ export async function POST(req: Request) {
     // Get dynamic model configuration from database
     const dynamicConfig = await getDynamicModelConfig();
 
-    // Use database system prompt without workflow augmentation
-    const systemPrompt = dynamicConfig.systemPrompt?.trim() || '';
+    // ✅ MOKA as proper orchestrator Agent
+    const mokaAgent = new Agent({
+      name: 'MOKA',  // ✅ Orchestrator identity
 
-    // 🚀 IMPLEMENT: createUIMessageStream pattern from AI SDK v5 documentation
-    const stream = createUIMessageStream({
-      execute: async ({ writer }) => {
-        // Simple message processing - no workflow tracking
-        const finalProcessedMessages = validatedMessages;
+      model: dynamicConfig.primaryProvider === 'openai'
+        ? (openai as any).responses(dynamicConfig.primaryModelName || 'gpt-4o')
+        : dynamicConfig.primaryModel,
 
-        let writerUsed = false;
+      instructions: () => {
+        // ✅ Load system prompt from database
+        return dynamicConfig.systemPrompt?.trim() || '';
+      },
 
-        try {
-          // Use AI SDK v5 convertToModelMessages for proper tool part handling
-          let manualMessages;
-          try {
-            // AI SDK v5 compliant conversion that preserves supported tool parts
-            manualMessages = convertToModelMessages(finalProcessedMessages);
-          } catch (conversionError) {
-            // Fallback: Preserve essential message structure while extracting text
-            manualMessages = finalProcessedMessages.map(msg => ({
-              role: msg.role,
-              content: msg.parts?.map(p => p.type === 'text' && 'text' in p ? (p as any).text : '').join('') || ''
-            }));
-          }
+      handoffs: [artifactWriterAgent],  // ✅ Explicit specialist registration
 
-  // ✅ AI SDK COMPLIANT: Prepare model based on provider
-  let streamModel = dynamicConfig.primaryModel;
-  let sendSources = true; // Enable sources for all providers
+      tools: {
+        // OpenAI native web search
+        web_search: (openai as any).tools.webSearch({
+          searchContextSize: 'high',
+        }),
+      },
 
-  // For OpenAI, use responses API for native web search
-  if (dynamicConfig.primaryProvider === 'openai') {
-    streamModel = (openai as any).responses(
-      dynamicConfig.primaryModelName || process.env.OPENAI_MODEL || 'gpt-4o'
-    );
-  }
-  // For OpenRouter with :online suffix, use NATIVE web search (no custom tools needed)
-  // Model with :online suffix has built-in Exa-powered web search
+      maxTurns: 10,
 
-  // 🛑 ABORT HANDLING: Create abort controller untuk clean request cancellation
-  const abortController = new AbortController();
-
-  // Register abort handler from request signal
-  req.signal?.addEventListener('abort', () => {
-    abortController.abort();
-  });
-
-  // Track response time for health monitoring
-  const responseStartTime = Date.now();
-
-  // ✅ AI SDK COMPLIANT: Provider-specific parameters with proper typing
-  const result = dynamicConfig.primaryProvider === 'openai'
-    ? streamText({
-        // OpenAI responses API: Only supported parameters
-        model: streamModel,
-        messages: manualMessages,
-        system: systemPrompt,
-        tools: {
-          // OpenAI native web search
-          web_search: (openai as any).tools.webSearch({
-            searchContextSize: 'high',
-          }),
-        } as Record<string, any>,
-        toolChoice: testMode ? { type: 'tool' as const, toolName: 'web_search' } : undefined,
+      modelSettings: {  // ✅ FIXED: temperature & topP must be in modelSettings
         temperature: dynamicConfig.config.temperature,
         topP: dynamicConfig.config.topP,
-        maxOutputTokens: dynamicConfig.config.maxTokens,
-        maxRetries: 3,
-        experimental_context: {
-          userId: userId,
-          chatId: chatId
+      },
+      memory: {
+        provider: supabaseMemoryProvider,
+        workingMemory: {
+          enabled: true,
+          scope: 'chat',
+          template: WORKING_MEMORY_TEMPLATE,
         },
-        experimental_transform: smoothStream({
-          delayInMs: 35,
-          chunking: 'word'
-        }),
-        abortSignal: abortController.signal,
-        onAbort: () => {
-          // Cleanup jika diperlukan - stream akan automatically close
+        history: {
+          enabled: true,
+          limit: 12,
         },
-        onFinish: async ({ text, usage }) => {
-          try {
-            const simpleMetadata = {
-              timestamp: new Date().toISOString(),
-              model: dynamicConfig.primaryModelName,
-              userId: userId,
-              tokens: usage ? {
-                prompt: usage.inputTokens || 0,
-                completion: usage.outputTokens || 0,
-                total: usage.totalTokens || 0
-              } : undefined
-            };
-
-            writer.write({
-              type: 'message-metadata',
-              messageMetadata: simpleMetadata
-            });
-          } catch (error) {
-            // Silent fail - metadata write is non-critical
-          }
-        }
-      })
-    : streamText({
-        // OpenRouter with :online suffix: Native web search (NO custom tools)
-        // :online suffix provides Exa-powered built-in web search
-        model: streamModel,
-        messages: manualMessages,
-        system: systemPrompt,
-        // ⚠️ CRITICAL: NO tools for :online models - they have native web search
-        // Passing tools would override native search with DuckDuckGo fallback
-        temperature: dynamicConfig.config.temperature,
-        topP: dynamicConfig.config.topP,
-        maxOutputTokens: dynamicConfig.config.maxTokens,
-        frequencyPenalty: dynamicConfig.config.frequencyPenalty,
-        presencePenalty: dynamicConfig.config.presencePenalty,
-        maxRetries: 3,
-        experimental_context: {
-          userId: userId,
-          chatId: chatId
-        },
-        experimental_transform: smoothStream({
-          delayInMs: 35,
-          chunking: 'word'
-        }),
-        abortSignal: abortController.signal,
-        onAbort: () => {
-          // Cleanup jika diperlukan - stream akan automatically close
-        },
-        onFinish: async ({ text, usage }) => {
-          try {
-            const simpleMetadata = {
-              timestamp: new Date().toISOString(),
-              model: dynamicConfig.primaryModelName,
-              userId: userId,
-              tokens: usage ? {
-                prompt: usage.inputTokens || 0,
-                completion: usage.outputTokens || 0,
-                total: usage.totalTokens || 0
-              } : undefined
-            };
-
-            writer.write({
-              type: 'message-metadata',
-              messageMetadata: simpleMetadata
-            });
-          } catch (error) {
-            // Silent fail - metadata write is non-critical
-          }
-        }
-      });
-
-          // ✅ Sources enabled for all providers (OpenAI native + OpenRouter :online native)
-
-          // 🔥 STEP 1: smoothStream at streamText level handles word-by-word chunking
-          // 🔥 STEP 2: Official AI SDK streaming protocol with unified toUIMessageStream pattern
-          try {
-            if (!writerUsed) {
-              // 🔥 UNIFIED AI SDK PATTERN: Works for all providers with web search
-              writer.merge(result.toUIMessageStream({
-                originalMessages: finalProcessedMessages,
-                sendFinish: true,
-                sendSources: sendSources  // ✅ Sources for all providers
-              }));
-              writerUsed = true;
-            }
-
-            // Tunggu completion supaya fallback logic tetap jalan kalau ada error di tengah
-            await result.response;
-
-            // Record success for provider health tracking
-            const responseEndTime = Date.now();
-            const responseTime = responseEndTime - responseStartTime;
-            providerManager.recordSuccess(
-              dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
-              responseTime
-            );
-
-          } catch (responseError: any) {
-            // Record failure for circuit breaker tracking
-            providerManager.recordFailure(
-              dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
-              responseError as Error
-            );
-
-            // 🔍 ENHANCED ERROR TYPE DETECTION & CLASSIFICATION
-            let errorType = 'unknown';
-            let isRetryable = false;
-            let userMessage = 'Terjadi kesalahan. Silakan coba lagi.';
-
-            // Rate limit detection (existing logic)
-            if (responseError?.error?.code === 'rate_limit_exceeded' ||
-                responseError?.message?.includes('rate_limit') ||
-                responseError?.toString?.().includes('rate_limit')) {
-              errorType = 'rate_limit';
-              isRetryable = true;
-              userMessage = 'Batas penggunaan tercapai. Mencoba provider alternatif...';
-            }
-            // API call errors (status code based)
-            else if (responseError?.statusCode) {
-              if (responseError.statusCode === 429) {
-                errorType = 'rate_limit';
-                isRetryable = true;
-                userMessage = 'Batas penggunaan tercapai. Mencoba provider alternatif...';
-              } else if (responseError.statusCode >= 500) {
-                errorType = 'server_error';
-                isRetryable = true;
-                userMessage = 'Server AI sedang bermasalah. Mencoba lagi...';
-              } else if (responseError.statusCode === 401) {
-                errorType = 'auth_error';
-                isRetryable = false;
-                userMessage = 'Masalah autentikasi. Silakan refresh halaman.';
-              } else if (responseError.statusCode >= 400) {
-                errorType = 'client_error';
-                isRetryable = false;
-                userMessage = 'Format pesan tidak valid. Silakan coba dengan pesan berbeda.';
-              }
-            }
-            // Timeout errors
-            else if (responseError?.message?.includes('timeout') ||
-                     responseError?.code === 'TIMEOUT' ||
-                     responseError?.name === 'TimeoutError') {
-              errorType = 'timeout';
-              isRetryable = true;
-              userMessage = 'Koneksi timeout. Mencoba lagi...';
-            }
-            // Network errors
-            else if (responseError?.message?.includes('network') ||
-                     responseError?.message?.includes('ECONNRESET') ||
-                     responseError?.code === 'ENOTFOUND') {
-              errorType = 'network_error';
-              isRetryable = true;
-              userMessage = 'Masalah koneksi jaringan. Mencoba lagi...';
-            }
-            // Invalid prompt errors
-            else if (responseError?.message?.includes('invalid_request') ||
-                     responseError?.message?.includes('prompt')) {
-              errorType = 'invalid_prompt';
-              isRetryable = false;
-              userMessage = 'Format pesan tidak valid. Silakan coba dengan pesan berbeda.';
-            }
-
-            // Write error to stream if not yet written
-            if (!writerUsed) {
-              writer.write({
-                type: 'error',
-                errorText: userMessage
-              });
-            }
-
-            // Only throw for fallback if retryable
-            if (isRetryable) {
-              throw responseError; // Re-throw to trigger fallback provider
-            } else {
-              // Non-retryable errors, don't trigger fallback
-              throw responseError;
-            }
-          }
-        } catch (error) {
-
-          // Fallback: Send error sebagai plain message
-          if (!writerUsed) {
-            writer.write({
-              type: 'error',
-              errorText: 'Maaf, terjadi kesalahan saat memproses respons. Silakan coba lagi.'
-            });
-            writerUsed = true;
-          }
-
-          // Re-throw untuk trigger fallback provider
-          throw error;
-        }
       },
     });
 
-    // Request completed successfully
+    // Track response time for health monitoring
+    const responseStartTime = Date.now();
 
-    // Return stream response as per AI SDK v5 documentation
-    return createUIMessageStreamResponse({
-      stream,
-      headers: {
-        'X-Chat-Id': chatId || '',
-        'Cache-Control': 'no-cache',
-        // Required header for AI SDK UI Message Stream Protocol
-        'x-vercel-ai-ui-message-stream': 'v1'
+    // ✅ LOAD CHAT HISTORY FROM DATABASE (Fix for conversation memory)
+    // Load previous messages for context if chatId exists
+    let allMessages: UIMessage[] = [];
+    if (chatId) {
+      try {
+        const { loadChat } = await import('../../../src/lib/database/chat-store');
+        const historyMessages = await loadChat(chatId);
+
+        // Combine history + new user message (last message from client)
+        const newUserMessage = validatedMessages[validatedMessages.length - 1];
+        allMessages = [...historyMessages, newUserMessage];
+      } catch (loadError) {
+        console.error('[CHAT HISTORY ERROR]', loadError);
+        // Fallback: use only client messages if loading fails
+        allMessages = validatedMessages;
       }
+    } else {
+      // No chatId = new conversation, use client messages
+      allMessages = validatedMessages;
+    }
+
+    // ✅ Convert UIMessage[] to ModelMessage[] for Agent
+    const modelMessages = convertToModelMessages(allMessages);
+
+    // ✅ Use Agent's built-in streaming
+    return mokaAgent.toUIMessageStream({
+      messages: modelMessages,
+      maxRounds: 5,  // Allow up to 5 agent handoffs
+      context: {  // ✅ Pass user data to Agent context
+        userId,
+        chatId,
+      },
+      beforeStream: async ({ writer }) => {
+        // ✅ ARTIFACT CONTEXT: Set context for tool access
+        setContext({
+          writer,
+          userId,
+          sessionId: chatId,
+          metadata: {
+            requestTime: Date.now(),
+            userAgent: req.headers.get('user-agent') || undefined,
+          },
+        });
+        return true; // Continue streaming
+      },
+      onFinish: () => {
+        // Record success for provider health tracking
+        const responseEndTime = Date.now();
+        const responseTime = responseEndTime - responseStartTime;
+        providerManager.recordSuccess(
+          dynamicConfig.primaryProvider === 'openai' ? 'openai' : 'openrouter',
+          responseTime
+        );
+        // ✅ ARTIFACT CONTEXT: Clear context after completion
+        clearContext();
+      },
     });
     
   } catch (error) {

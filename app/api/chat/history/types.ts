@@ -42,6 +42,7 @@ export interface ConversationData {
   title?: string;
   message_count?: number;
   updated_at: string;
+  last_message_at?: string | null;
   user_id: string;
   archived?: boolean;
   metadata?: any;

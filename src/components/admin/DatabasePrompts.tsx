@@ -549,7 +549,7 @@ export default function DatabasePrompts({ session, authenticatedFetch }: Databas
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                {(formData.content || '').length} characters (max: 15,000)
+                {(formData.content || '').length} characters (max: 30,000)
               </p>
             </div>
           </div>

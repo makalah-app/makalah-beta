@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
+import { Provider as ChatStoreProvider } from '@ai-sdk-tools/store';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/hooks/useAuth';
 import { GlobalHeader } from '@/components/layout/GlobalHeader';
@@ -69,15 +70,17 @@ function LayoutShell({ children }: ProvidersProps) {
 export function AppProviders({ children }: ProvidersProps) {
   return (
     <AuthProvider>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="dark"
-        enableSystem={false}
-        disableTransitionOnChange={false}
-      >
-        <LayoutShell>{children}</LayoutShell>
-        <Toaster />
-      </ThemeProvider>
+      <ChatStoreProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange={false}
+        >
+          <LayoutShell>{children}</LayoutShell>
+          <Toaster />
+        </ThemeProvider>
+      </ChatStoreProvider>
     </AuthProvider>
   );
 }

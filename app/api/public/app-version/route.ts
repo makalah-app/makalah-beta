@@ -31,6 +31,14 @@ export async function GET() {
 
     const version = (data as { setting_value: string } | null)?.setting_value || 'Beta 0.1';
 
+    // Best-effort metrics (origin invocation counter) — safe no-op on error
+    try {
+      const adminAny = supabaseAdmin as any;
+      await adminAny.rpc('increment_metrics_app_version_hourly', { p_route: 'public/app-version' });
+    } catch (_) {
+      // swallow errors to keep endpoint resilient
+    }
+
     return NextResponse.json({
       success: true,
       version

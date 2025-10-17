@@ -15,6 +15,53 @@ export interface ConversationItem {
   lastActivity: string;
 }
 
+const FALLBACK_ACTIVITY_ISO = new Date(0).toISOString();
+
+const normalizeActivityTimestamp = (value: unknown, secondary?: unknown): string => {
+  const attempt = (input: unknown): string | null => {
+    if (!input && input !== 0) {
+      return null;
+    }
+
+    if (input instanceof Date) {
+      const timestamp = input.getTime();
+      return Number.isNaN(timestamp) ? null : input.toISOString();
+    }
+
+    if (typeof input === 'string') {
+      const trimmed = input.trim();
+      if (!trimmed) {
+        return null;
+      }
+      const parsed = new Date(trimmed);
+      const timestamp = parsed.getTime();
+      return Number.isNaN(timestamp) ? null : parsed.toISOString();
+    }
+
+    if (typeof input === 'number' && Number.isFinite(input)) {
+      const parsed = new Date(input);
+      const timestamp = parsed.getTime();
+      return Number.isNaN(timestamp) ? null : parsed.toISOString();
+    }
+
+    return null;
+  };
+
+  return (
+    attempt(value) ??
+    (secondary !== undefined ? attempt(secondary) : null) ??
+    FALLBACK_ACTIVITY_ISO
+  );
+};
+
+const sortByActivityDesc = <T extends { lastActivity: string }>(items: T[]): T[] => {
+  return [...items].sort((a, b) => {
+    const aTime = new Date(a.lastActivity || FALLBACK_ACTIVITY_ISO).getTime();
+    const bTime = new Date(b.lastActivity || FALLBACK_ACTIVITY_ISO).getTime();
+    return bTime - aTime;
+  });
+};
+
 interface UseChatHistoryReturn {
   conversations: ConversationItem[];
   loading: boolean;
@@ -41,7 +88,10 @@ export function useChatHistory(): UseChatHistoryReturn {
   const lastFetchParamsRef = useRef<string>('');
 
   // ✅ FIXED: Stable fetch function using useRef to break circular dependencies
-  const fetchConversationsRef = useRef<() => Promise<void>>();
+  const fetchConversationsRef = useRef<(
+    currentOffset?: number,
+    isLoadMore?: boolean
+  ) => Promise<void>>();
 
   // ✅ AUTH STABILITY DETECTION: Wait for auth to stabilize before fetching
   useEffect(() => {
@@ -85,7 +135,7 @@ export function useChatHistory(): UseChatHistoryReturn {
       abortControllerRef.current = new AbortController();
 
       const limit = 20;
-      const url = `/api/chat/history?userId=${user.id}&limit=${limit}&offset=${currentOffset}`;
+      const url = `/api/chat/history?userId=${user.id}&limit=${limit}&offset=${currentOffset}&mode=lean`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -103,18 +153,65 @@ export function useChatHistory(): UseChatHistoryReturn {
 
       // Handle both array response and object with conversations property
       const rawConversationList = Array.isArray(data) ? data : (data.conversations || []);
-      const conversationList: ConversationItem[] = rawConversationList.map((conv: any) => ({
-        ...conv,
-      }));
+      const metaHasMore: boolean | undefined = !Array.isArray(data)
+        ? Boolean(data?.metadata?.hasMore)
+        : undefined;
+      const conversationList: ConversationItem[] = rawConversationList.map((conv: any) => {
+        const normalizedLastActivity = normalizeActivityTimestamp(
+          conv.lastActivity ??
+            conv.last_message_at ??
+            conv.lastMessageAt ??
+            conv.derivedLastActivity ??
+            conv.metadata?.lastMessageAt ??
+            conv.metadata?.last_message_at,
+          conv.updated_at
+        );
+        const normalizedTitle = typeof conv.title === 'string' ? conv.title : null;
+        const normalizedMessageCount = typeof conv.messageCount === 'number'
+          ? conv.messageCount
+          : Number(conv.message_count ?? 0) || 0;
+        return {
+          ...conv,
+          title: normalizedTitle,
+          messageCount: normalizedMessageCount,
+          lastActivity: normalizedLastActivity,
+        };
+      });
+      const sortedConversationList = sortByActivityDesc(conversationList);
 
       if (isLoadMore) {
-        setConversations(prev => [...prev, ...conversationList]);
+        // Append only unique items by ID to prevent duplication on reordering
+        setConversations(prev => {
+          const existing = new Set(prev.map(c => c.id));
+          const filtered = sortedConversationList.filter(c => !existing.has(c.id));
+          if (filtered.length === 0) {
+            return prev;
+          }
+          const merged = [...prev, ...filtered];
+          return sortByActivityDesc(merged);
+        });
       } else {
-        setConversations(conversationList);
+        // Replace list; also ensure uniqueness within the page
+        const unique = (() => {
+          const seen = new Set<string>();
+          const out: ConversationItem[] = [];
+          for (const item of sortedConversationList) {
+            if (!seen.has(item.id)) {
+              seen.add(item.id);
+              out.push(item);
+            }
+          }
+          return out;
+        })();
+        setConversations(sortByActivityDesc(unique));
       }
 
       // Check if there are more conversations to load
-      setHasMore(conversationList.length === limit);
+      if (typeof metaHasMore === 'boolean') {
+        setHasMore(metaHasMore);
+      } else {
+        setHasMore(conversationList.length === limit);
+      }
       setOffset(currentOffset + limit);
     } catch (err) {
       // ✅ HANDLE ABORTED REQUESTS: Don't treat aborted requests as errors
@@ -157,7 +254,7 @@ export function useChatHistory(): UseChatHistoryReturn {
   // Load more conversations
   const loadMore = useCallback(async () => {
     if (fetchConversationsRef.current && hasMore && !loadingMore) {
-      await fetchConversationsRef.current();
+      await fetchConversationsRef.current(offset, true);
     }
   }, [offset, hasMore, loadingMore]);
 

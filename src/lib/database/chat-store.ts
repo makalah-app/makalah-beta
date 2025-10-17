@@ -68,10 +68,17 @@ async function transformMessagesForDB(messages: UIMessage[], chatId: string): Pr
       content: textContent, // Extract from parts per AI SDK documentation
       parts: message.parts || [],
       sequence_number: index,
-      metadata: {
-        ...(typeof message.metadata === 'object' && message.metadata ? message.metadata : {}),
-        timestamp: (message as any).createdAt ? new Date((message as any).createdAt).getTime() : Date.now(),
-      },
+      metadata: (() => {
+        const existingMetadata = typeof message.metadata === 'object' && message.metadata ? message.metadata : {};
+        return {
+          ...existingMetadata,
+          // ✅ FIX Problem #4: Preserve existing timestamp OR generate unique timestamp with index offset
+          timestamp: existingMetadata.timestamp
+            ?? ((message as any).createdAt
+              ? new Date((message as any).createdAt).getTime()
+              : Date.now() + index)  // Add index offset to ensure unique timestamps
+        };
+      })(),
     };
   });
 }
@@ -451,11 +458,12 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
         title,
         message_count,
         updated_at,
+        last_message_at,
         metadata
       `)
       .eq('user_id', userId)
       .eq('archived', false)
-      .order('updated_at', { ascending: false })
+      .order('last_message_at', { ascending: false })
       .limit(50);
 
     if (error) {
@@ -474,13 +482,15 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
             .eq('conversation_id', conv.id)
             .in('role', ['user', 'assistant']);
 
+          const lastActivity = conv.last_message_at || conv.updated_at;
+
           if (countError) {
             // If count query fails, use stored value
             return {
               id: conv.id,
               title: conv.title || 'Untitled Chat',
               messageCount: conv.message_count,
-              lastActivity: conv.updated_at,
+              lastActivity,
             };
           }
 
@@ -500,7 +510,7 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
               id: conv.id,
               title: conv.title || 'Untitled Chat',
               messageCount: actualCount ?? conv.message_count,
-              lastActivity: conv.updated_at,
+              lastActivity,
             };
           }
 
@@ -509,7 +519,7 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
             id: conv.id,
             title: conv.title || 'Untitled Chat',
             messageCount: conv.message_count,
-            lastActivity: conv.updated_at,
+            lastActivity,
           };
         } catch (verifyError) {
           // If verification fails entirely, return stored value
@@ -517,7 +527,7 @@ export async function getUserConversations(userId: string, client?: SupabaseClie
             id: conv.id,
             title: conv.title || 'Untitled Chat',
             messageCount: conv.message_count,
-            lastActivity: conv.updated_at,
+            lastActivity: conv.last_message_at || conv.updated_at,
           };
         }
       })

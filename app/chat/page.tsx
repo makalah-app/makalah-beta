@@ -43,6 +43,7 @@ import { DeleteConversationDialog } from '../../src/components/chat/DeleteConver
 import { useInlineEdit } from '../../src/hooks/useInlineEdit';
 import { updateConversationTitle } from '../../src/lib/api/conversations';
 import { useToast } from '../../src/hooks/use-toast';
+import { useAppVersion } from '../../src/hooks/useAppVersion';
 
 function MobileHeader() {
   const { openMobile } = useSidebar();
@@ -248,14 +249,14 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
                   onClick={() => onSelect(conversation.id)}
                   onDoubleClick={handleDoubleClick}
                           className={`flex-1 hover:bg-muted/50 rounded ${
-                    isActive ? 'bg-muted/70 text-success-600 font-medium' : 'text-muted-foreground'
+                    isActive ? 'bg-muted/70 text-success-200 font-medium' : 'text-muted-foreground'
                   }`}
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span ref={titleRef} className="truncate">
                     {truncatedTitle}
                   </span>
-                  {isActive && <ChevronRight className="w-4 h-4 ml-auto text-success-600" />}
+                  {isActive && <ChevronRight className="w-4 h-4 ml-auto text-success-200" />}
                 </SidebarMenuButton>
               </TooltipTrigger>
               {shouldShowTooltip && (
@@ -291,7 +292,7 @@ function ChatPageContent() {
   const { user, logout, isLoading, isAuthenticated } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore, refetch: refreshChatHistory } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
-  const [appVersion, setAppVersion] = useState('');
+  const { version: appVersion } = useAppVersion();
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -318,6 +319,12 @@ function ChatPageContent() {
 
   // ✅ SIMPLE COMPUTATION: Calculate chatId without over-engineering
   const currentChatId = useMemo(() => {
+    // Force new chat when explicitly requested
+    const isNew = searchParams.get('new') === '1';
+    if (isNew) {
+      return generateUUID();
+    }
+
     // Check both parameters for backward compatibility - simple approach
     const urlChatId = searchParams.get('chatId') || searchParams.get('conversationId');
     if (urlChatId) {
@@ -389,6 +396,7 @@ function ChatPageContent() {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.set('chatId', currentChatId);
         newUrl.searchParams.delete('conversationId'); // Clean up old parameter
+        newUrl.searchParams.delete('new'); // Remove explicit new flag to avoid loops
         window.history.replaceState(null, '', newUrl.toString());
       }
     } catch (error) {
@@ -396,23 +404,7 @@ function ChatPageContent() {
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
 
-  // ✅ SIDE EFFECT: Fetch app version once on mount (manual refresh via page reload)
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const response = await fetch('/api/public/app-version');
-        const result = await response.json();
-
-        if (result.success && result.version) {
-          setAppVersion(result.version);
-        }
-      } catch (error) {
-        // Silent fail - use default version
-      }
-    };
-
-    fetchVersion();
-  }, []);
+  // App version now provided by useAppVersion hook (SSoT)
 
   // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)
   const getActiveConversationId = (): string | null => {
@@ -677,22 +669,39 @@ function ChatPageContent() {
                         <SidebarMenuButton
                           onClick={loadMore}
                           disabled={loadingMore}
-                          className="w-full justify-center text-muted-foreground hover:text-foreground transition-colors"
+                          aria-busy={loadingMore ? 'true' : 'false'}
+                          title={loadingMore ? 'Sedang memuat...' : 'Muat percakapan sebelumnya'}
+                          className={`w-full justify-center transition-colors ${
+                            loadingMore
+                              ? 'text-muted-foreground cursor-not-allowed opacity-60'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
                         >
                           {loadingMore ? (
                             <>
                               <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                              <span>Loading...</span>
+                              <span>Memuat...</span>
                             </>
                           ) : (
                             <>
                               <ChevronDown className="w-4 h-4 mr-2" />
                               <span>Sebelumnya</span>
-                            </>
+                          </>
                           )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              )}
+
+              {/* No More Indicator */}
+              {!searchQuery && !hasMore && filteredConversations.length > 0 && (
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <div className="py-3 text-center text-xs text-muted-foreground" aria-live="polite">
+                      Semua percakapan sudah ditampilkan
+                    </div>
                   </SidebarGroupContent>
                 </SidebarGroup>
               )}

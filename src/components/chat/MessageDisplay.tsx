@@ -38,6 +38,10 @@ import { cn } from '../../lib/utils';
 import { MessageEditor } from './MessageEditor';
 import { MessageActions, MessageAction, AssistantActions } from './MessageActions';
 import { ToolResult } from './ToolResult';
+// ✅ STEP 10: Artifact imports
+import { useAllArtifacts } from '@/hooks/useArtifacts';
+import { AcademicAnalysisRenderer } from '../artifacts/AcademicAnalysisRenderer';
+// Import other artifact renderers as needed
 
 type SourcePart = {
   type: 'source-url';
@@ -85,6 +89,9 @@ interface MessageDisplayProps {
   editAreaRef?: React.RefObject<HTMLDivElement>;
   // ❌ REMOVED: Artifact-related display options - no longer needed for natural LLM flow
   // Natural conversation doesn't need rigid artifact separation or display modes
+  // ✅ NEW: Artifact panel control props
+  isPanelVisible?: boolean;     // Panel visibility state from parent
+  onReopenPanel?: () => void;   // Callback to reopen closed panel
 }
 
 export const MessageDisplay: React.FC<MessageDisplayProps> = ({
@@ -101,6 +108,9 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   onCancelEdit,
   onEditingTextChange,
   editAreaRef,
+  // ✅ NEW: Artifact panel control props
+  isPanelVisible,
+  onReopenPanel,
 }) => {
   // 📚 Rujukan collapsible state - default collapsed for cleaner UI
   const [referencesOpen, setReferencesOpen] = React.useState(false);
@@ -131,6 +141,27 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   // Some messages have 'content' directly, some have 'parts'
   const messageParts = message.parts || [];
 
+  // ✅ TIMESTAMP FORMATTING: Simple time format (hh:mm)
+  const formatSimpleTime = (date: Date | undefined): string => {
+    if (!date) return '';
+    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatFullDateTime = (date: Date | undefined): string => {
+    if (!date) return '';
+    return date.toLocaleString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const messageTimestamp = (message as any).createdAt;
+  const simpleTime = formatSimpleTime(messageTimestamp);
+  const fullDateTime = formatFullDateTime(messageTimestamp);
+
   // ❌ REMOVED: requiresApproval and phaseInfo - natural LLM doesn't need approval tracking
   // Natural conversation flow handles phase progression without rigid config
   // ❌ REMOVED: messageContent extraction - use parts-based rendering only for AI SDK v5 compliance
@@ -140,6 +171,20 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
   const fileParts = messageParts.filter(part => part.type === 'file');
   const sourceParts = messageParts.filter(part => part.type === 'source-url') as SourcePart[];
   const toolResultParts = messageParts.filter(part => part.type === 'tool-result');
+
+  // ✅ STEP 10: Artifact detection logic
+  const { latest } = useAllArtifacts();
+
+  const hasArtifacts = messageParts.some(
+    part => part.type.startsWith('data-artifact-')
+  ) || false;
+
+  // Extract artifact from message if exists
+  const artifactPart = messageParts.find(
+    part => part.type.startsWith('data-artifact-')
+  );
+
+  const artifactType = artifactPart?.type.replace('data-artifact-', '');
 
   // CRITICAL: All React hooks MUST be declared before ANY conditional returns
   // This fixes React Hook Rules violations detected by Vercel's stricter ESLint
@@ -363,15 +408,29 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             )}
             </MessageContent>
 
-            {/* Edit Action - Below message box, right-aligned */}
-            {!isEditing && (
-              <MessageAction
-                icon={Edit}
-                onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
-                tooltip="Edit percakapan"
-                label="Edit Percakapan"
-              />
-            )}
+            {/* Actions row: timestamp (left) + edit icon (right) */}
+            <div className="flex items-center justify-end gap-2 mt-1">
+              {/* Timestamp - left side */}
+              {simpleTime && (
+                <div
+                  className="flex items-center gap-1 text-xs text-muted-foreground"
+                  title={fullDateTime}
+                >
+                  <Clock className="h-3 w-3" />
+                  <span>{simpleTime}</span>
+                </div>
+              )}
+
+              {/* Edit Action - right side */}
+              {!isEditing && (
+                <MessageAction
+                  icon={Edit}
+                  onClick={() => onStartEdit?.(message.id, textParts[0]?.text || '')}
+                  tooltip="Edit percakapan"
+                  label="Edit Percakapan"
+                />
+              )}
+            </div>
           </div>
 
           {/* Debug Info */}
@@ -559,6 +618,50 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
+            )}
+
+            {/* ✅ STEP 10: Artifact Renderer */}
+            {/* DISABLED: Artifacts now render in side panel (ArtifactPanel.tsx) */}
+            {/*
+            {hasArtifacts && artifactType && (
+              <div className="mt-4">
+                {artifactType === 'academic-analysis' && latest['academic-analysis'] && (
+                  <AcademicAnalysisRenderer
+                    artifact={latest['academic-analysis'] as any}
+                  />
+                )}
+              </div>
+            )}
+            */}
+
+            {/* ✅ ARTIFACT INDICATOR: Always-visible button with dynamic state */}
+            {hasArtifacts && onReopenPanel && (
+              <button
+                onClick={isPanelVisible ? undefined : onReopenPanel}
+                disabled={isPanelVisible}
+                className={cn(
+                  "mt-2 inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 border",
+                  isPanelVisible
+                    ? "text-muted-foreground border-muted-foreground/20 cursor-default opacity-60"
+                    : "text-primary hover:text-primary/80 hover:bg-primary/10 border-primary/20 cursor-pointer"
+                )}
+                aria-label={isPanelVisible ? "Artifact sedang terbuka" : "Buka artifact panel"}
+              >
+                <span>📊 {isPanelVisible ? "Artifact Terbuka" : "Buka Artifact"}</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
             )}
 
             {/* Assistant Actions */}

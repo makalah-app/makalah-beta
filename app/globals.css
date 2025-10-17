@@ -84,6 +84,10 @@
   --text-xxs: 0.625rem; /* 10px */
   --text-xxs-line-height: 0.75rem; /* 12px */
 
+  /* Tooltip specific sizing */
+  --tooltip-text-size: 0.625rem; /* 10px */
+  --tooltip-line-height: 0.875rem; /* 14px */
+
   /* User message exclusive styles */
   /* Chat area background (light defaults to global background) */
   --chat-background: var(--background);
@@ -151,6 +155,10 @@
   --text-100: oklch(0.985 0 0);
   --accent-500: oklch(0.65 0.2 45); /* Same orange accent */
   --line-200: oklch(0.4 0 0);
+
+  /* Tooltip specific sizing (same for dark mode) */
+  --tooltip-text-size: 0.625rem; /* 10px */
+  --tooltip-line-height: 0.875rem; /* 14px */
 
   /* User message exclusive styles */
   --user-message-bg: oklch(0.315 0 0); /* Same as sidebar-accent for dark mode */
@@ -377,6 +385,164 @@
   --spacing-ui-loose: var(--spacing-ui-loose);
 }
 
+/* ============================================================
+   HEADER COMPONENT STYLING
+   ============================================================ */
+
+/* Header Container - Sticky 64px header with backdrop blur */
+.header-container {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  height: 4rem;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: color-mix(in oklch, var(--background) 80%, transparent);
+}
+
+/* Brand Section */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: opacity 200ms ease;
+}
+
+.header-brand:hover {
+  opacity: 0.8;
+}
+
+.header-brand-badge {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius) - 2px);
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.header-brand-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* Controls Container */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Navigation */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: color 200ms ease;
+  cursor: pointer;
+}
+
+.header-nav-link:hover {
+  color: var(--primary);
+}
+
+/* User Menu */
+.header-user-menu {
+  position: relative;
+}
+
+.header-user-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  transition: all 200ms ease;
+  cursor: pointer;
+}
+
+.header-user-card:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.header-avatar {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius) - 2px);
+  background-color: var(--success-600);
+  color: var(--success-foreground);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.header-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Dropdown Menu */
+.header-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.5rem;
+  min-width: 160px;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--border);
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  z-index: 50;
+}
+
+.header-dropdown-item {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  transition: all 200ms ease;
+  cursor: pointer;
+}
+
+.header-dropdown-item:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
 @layer utilities {
   /* Ensure equal inner gutters for first/last table columns */
   .ui-table-balanced th:first-child,
@@ -393,6 +559,40 @@
     will-change: opacity;
   }
 
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Artifact Panel Animations */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-out-right {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
   @keyframes logo-fade-primary {
     0%, 45% { opacity: 1; }
     55%, 100% { opacity: 0; }
@@ -406,6 +606,18 @@
   @keyframes logo-pulse {
     0%, 100% { transform: scale(1); opacity: 0.95; }
     50% { transform: scale(1.05); opacity: 1; }
+  }
+
+  .animate-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+
+  .animate-slide-out-right {
+    animation: slide-out-right 0.3s ease-in;
   }
 
   .animate-logo-primary {
@@ -665,8 +877,39 @@
   pointer-events: none;
 }
 
+/* ============================================================
+   TOOLTIP STYLING (Centralized)
+   ============================================================ */
+
 .tooltip-green {
-  @apply bg-success-600 text-success-foreground rounded px-3 py-1.5 text-xs font-medium shadow-md;
+  /* Layout & Spacing */
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px; /* py-1.5 px-3 */
+  border-radius: calc(var(--radius) - 6px); /* Smaller radius for tooltip */
+
+  /* Colors */
+  background-color: var(--success-800);
+  color: var(--success-foreground);
+
+  /* Typography - Custom 8px font size */
+  font-size: var(--tooltip-text-size); /* 8px */
+  line-height: var(--tooltip-line-height); /* 12px */
+  font-weight: 500; /* medium */
+  letter-spacing: 0.025em; /* Slight spacing for better readability at small size */
+
+  /* Visual Effects */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+
+  /* Animation */
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Ensure text readability */
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Dropdown and select hover effects for consistent UX */

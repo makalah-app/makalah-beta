@@ -20,8 +20,7 @@ import {
   loadChat
 } from '../../../../src/lib/database/chat-store';
 import { createSupabaseServerClient, getServerSessionUserId } from '../../../../src/lib/database/supabase-server-auth';
-import { generateText } from 'ai';
-import { getDynamicModelConfig } from '../../../../src/lib/ai/dynamic-config';
+// Note: LLM calls removed from history endpoint for performance
 import { SYSTEM_USER_UUID } from '../../../../src/lib/utils/uuid-generator';
 import type { ExtendedUIMessage, ConversationData, SearchResult } from './types';
 
@@ -36,21 +35,51 @@ export const maxDuration = 30;
  * @param maxLength - Maximum allowed length (default: 35 chars for UI consistency)
  * @returns Truncated title with "..." if exceeded
  */
-function truncateTitle(title: string, maxLength: number = 35): string {
-  const cleaned = (title || '').trim();
-  if (cleaned.length <= maxLength) return cleaned;
+// truncateTitle removed: not used in fast read path
 
-  // Smart truncation: try to break at word boundary
-  const truncated = cleaned.substring(0, maxLength - 3); // Reserve 3 chars for "..."
-  const lastSpace = truncated.lastIndexOf(' ');
+function normalizeLastActivity(rawValue: unknown, secondaryValue?: unknown): string {
+  const tryParse = (value: unknown): string | null => {
+    if (!value && value !== 0) {
+      return null;
+    }
 
-  // If last space is near the end (within 8 chars), truncate at space to avoid breaking words
-  if (lastSpace > maxLength - 11) {
-    return truncated.substring(0, lastSpace).trim() + '...';
-  }
+    if (value instanceof Date) {
+      const timestamp = value.getTime();
+      return Number.isNaN(timestamp) ? null : value.toISOString();
+    }
 
-  // Otherwise, hard truncate
-  return truncated.trim() + '...';
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+      const parsed = new Date(trimmed);
+      const timestamp = parsed.getTime();
+      return Number.isNaN(timestamp) ? null : parsed.toISOString();
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const parsed = new Date(value);
+      const timestamp = parsed.getTime();
+      return Number.isNaN(timestamp) ? null : parsed.toISOString();
+    }
+
+    return null;
+  };
+
+  return (
+    tryParse(rawValue) ??
+    (secondaryValue !== undefined ? tryParse(secondaryValue) : null) ??
+    new Date(0).toISOString()
+  );
+}
+
+function sortByLastActivityDesc<T extends { lastActivity?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const aTime = new Date(a?.lastActivity ?? 0).getTime();
+    const bTime = new Date(b?.lastActivity ?? 0).getTime();
+    return bTime - aTime;
+  });
 }
 
 /**
@@ -76,10 +105,65 @@ export async function GET(request: NextRequest) {
     const chatId = searchParams.get('chatId'); // AI SDK v5 pattern support
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const mode = (searchParams.get('mode') || '').toLowerCase();
+    const debug = (searchParams.get('debug') || '') === '1';
+    const t0 = Date.now();
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const messageType = searchParams.get('messageType') as 'user' | 'assistant' | 'system' | undefined;
     const supabase = createSupabaseServerClient();
+
+    // LEAN MODE: fast path without LLM and without joining messages
+    if (mode === 'lean') {
+      const start = offset;
+      const end = Math.max(offset + limit - 1, offset);
+
+      let leanRows: Array<any> = [];
+
+      if (userId) {
+        const { data, error } = await (supabase as any)
+          .from('conversations')
+          .select('id,title,message_count,updated_at')
+          .eq('user_id', userId)
+          .eq('archived', false)
+          .order('updated_at', { ascending: false })
+          .range(start, end);
+
+        leanRows = (data || []) as any[];
+      } else if (qpUserId) {
+        const { supabaseAdmin } = await import('../../../../src/lib/database/supabase-client');
+        const { data, error } = await (supabaseAdmin as any)
+          .from('conversations')
+          .select('id,title,message_count,updated_at,user_id')
+          .in('user_id', [qpUserId as string, SYSTEM_USER_UUID])
+          .eq('archived', false)
+          .order('updated_at', { ascending: false })
+          .range(start, end);
+
+        leanRows = (data || []) as any[];
+      } else {
+        const response = {
+          conversations: [],
+          metadata: { total: 0, limit, offset, hasMore: false, timestamp: Date.now() }
+        };
+        return NextResponse.json(response);
+      }
+
+      const conversations = leanRows.map((row: any) => ({
+        id: row.id,
+        title: row.title || 'Untitled Chat',
+        messageCount: row.message_count || 0,
+        lastActivity: row.updated_at,
+      }));
+
+      const hasMore = conversations.length === limit;
+      const metadata: any = { limit, offset, hasMore, timestamp: Date.now() };
+      if (debug) {
+        metadata.durationMs = Date.now() - t0;
+        metadata.mode = 'lean';
+      }
+      return NextResponse.json({ conversations, metadata });
+    }
 
     // AI SDK v5 PATTERN: Simple chatId-only loading for persistence (enforce ownership via session)
     if (chatId) {
@@ -199,12 +283,13 @@ export async function GET(request: NextRequest) {
           title,
           message_count,
           updated_at,
+          last_message_at,
           metadata,
           user_id
         `)
         .in('user_id', [qpUserId as string, SYSTEM_USER_UUID])
         .eq('archived', false)
-        .order('updated_at', { ascending: false })
+        .order('last_message_at', { ascending: false })
         .limit(50) as {
           data: ConversationData[] | null;
           error: any
@@ -216,7 +301,7 @@ export async function GET(request: NextRequest) {
           id: conv.id,
           title: conv.title || 'Untitled Chat',
           messageCount: conv.message_count || 0,
-          lastActivity: conv.updated_at,
+          lastActivity: conv.last_message_at || conv.updated_at,
           metadata: conv.metadata || {}  // Propagate metadata for smart_title_pending check
         }));
       }
@@ -266,7 +351,7 @@ export async function GET(request: NextRequest) {
         try {
           const recentMessages = messagesMap.get(conv.id) || [];
 
-          // Auto-fix default/test titles with smart title generation
+          /* Auto-fix default/test titles with smart title generation
           // Now includes: metadata flag check + length check for backward compatibility
           const isDefaultLike = !conv.title ||
             /^(new(\s+academic)?\s+chat)$/i.test((conv.title || '').trim()) ||
@@ -277,7 +362,7 @@ export async function GET(request: NextRequest) {
             (conv.title || '').length > 35;  // NEW: Fix overly long titles from old heuristic system
 
           let fixedTitle = conv.title || '';
-          if (isDefaultLike) {
+          if (false && isDefaultLike) {
             // Build title from up to first 3 user messages
             const userTexts: string[] = [];
             for (const m of recentMessages) {
@@ -335,7 +420,7 @@ export async function GET(request: NextRequest) {
             const toTitleCase = (str: string) => (str || '').split(' ').map(w => w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase()).join(' ');
             const sanitize = (raw: string) => (raw || '').replace(/^\"|\"$/g, '').replace(/[\s\-–—:;,.!?]+$/g, '').replace(/\s+/g, ' ').trim();
 
-            if (!fixedTitle || looksDefault(fixedTitle)) {
+            if (false && (!fixedTitle || looksDefault(fixedTitle))) {
               // Assistant-based fallback
               const assistantTexts: string[] = [];
               for (const m of recentMessages) {
@@ -419,18 +504,27 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
-          }
+          */
           const lastFewMessages = recentMessages.slice(-3);
+          const lastMessage = recentMessages.length > 0
+            ? recentMessages[recentMessages.length - 1]
+            : null;
+          const normalizedLastActivity = normalizeLastActivity(
+            lastMessage?.createdAt,
+            conv.lastActivity
+          );
 
           return {
             ...conv,
             title: fixedTitle || conv.title || 'Untitled Chat',
+            lastActivity: normalizedLastActivity,
             recentMessages: lastFewMessages,
             totalMessages: recentMessages.length
           };
         } catch (error) {
           return {
             ...conv,
+            lastActivity: normalizeLastActivity(conv.lastActivity),
             recentMessages: [],
             totalMessages: 0
           };
@@ -438,18 +532,20 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    const response = {
-      conversations: conversationsWithMessages,
-      metadata: {
-        total: conversations.length,
-        limit,
-        offset,
-        hasMore: conversations.length > offset + limit,
-        timestamp: Date.now()
-      }
-    };
+    const sortedConversations = sortByLastActivityDesc(conversationsWithMessages);
 
-    return NextResponse.json(response);
+    const metadata: any = {
+      total: conversations.length,
+      limit,
+      offset,
+      hasMore: conversations.length > offset + limit,
+      timestamp: Date.now()
+    };
+    if (debug) {
+      metadata.durationMs = Date.now() - t0;
+      metadata.mode = 'full';
+    }
+    return NextResponse.json({ conversations: sortedConversations, metadata });
 
   } catch (error) {
     return NextResponse.json({

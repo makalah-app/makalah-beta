@@ -282,6 +282,53 @@ export function getFallbackModel() {
 }
 
 /**
+ * Feature Flags for AI Streaming Enhancements
+ *
+ * Control streaming behavior and performance optimizations
+ * for artifact generation and real-time updates.
+ */
+export const FEATURE_FLAGS = {
+  /**
+   * USE_STREAM_OBJECT_IN_TOOL
+   *
+   * Toggle between real streaming (streamObject) and legacy fake streaming.
+   *
+   * - true: Real streaming with AI SDK streamObject() - progressive character-by-character generation
+   * - false: Legacy fake streaming with setTimeout delays - for rollback/debugging
+   *
+   * Affects: alur streaming artefak (tool/agent penulis artefak)
+   * Default: true (real streaming enabled)
+   */
+  USE_STREAM_OBJECT_IN_TOOL: true,
+
+  /**
+   * THROTTLE_ARTIFACT_UPDATES
+   *
+   * Enable throttling to prevent excessive re-renders during streaming.
+   *
+   * - true: Max 1 update per 150ms (~7 updates/sec)
+   * - false: No throttling - send every update immediately
+   *
+   * Affects: alur streaming artefak (throttle update writer)
+   * Default: true (throttling enabled for performance)
+   */
+  THROTTLE_ARTIFACT_UPDATES: true,
+
+  /**
+   * SHOW_STREAMING_PROGRESS
+   *
+   * Show progress indicators during artifact streaming.
+   *
+   * - true: Display "X bagian sedang diproses" indicator
+   * - false: Hide progress count (only show loading spinner)
+   *
+   * Affects: src/components/artifacts/AcademicAnalysisRenderer.tsx
+   * Default: true (progress indicators enabled)
+   */
+  SHOW_STREAMING_PROGRESS: true,
+} as const;
+
+/**
  * Development logging for AI configuration
  * 🔄 SWAPPED for tool calling testing
  */
