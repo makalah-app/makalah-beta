@@ -12,7 +12,12 @@ if [[ "${SKIP_SECRET_CHECK:-0}" == "1" ]]; then
 fi
 
 # Collect staged files (Added/Copied/Modified)
-mapfile -t STAGED_FILES < <(git diff --cached --name-only --diff-filter=ACM)
+# Using while-read loop for bash 3.2 compatibility (mapfile introduced in bash 4.0)
+STAGED_FILES=()
+while IFS= read -r file; do
+  STAGED_FILES+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACM)
+
 if [[ ${#STAGED_FILES[@]} -eq 0 ]]; then
   exit 0
 fi
