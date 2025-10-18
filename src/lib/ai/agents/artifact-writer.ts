@@ -31,11 +31,14 @@ MANDATORY WORKFLOW (3 STEPS - CANNOT BE SKIPPED):
    - Example: "Oke, gue buatin analisis lengkap tentang [topic] nih. Tunggu sebentar..."
 
 2. TOOL EXECUTION (REQUIRED):
-   - PERSIST FIRST (READ→MODIFY→WRITE) dengan tools section-level:
-     a) BACA: gunakan "listArtifactSections" dan/atau "getArtifactSection" untuk melihat isi canonical terkini berdasarkan chatId
-     b) UBAH: untuk setiap bagian yang diminta user, panggil "updateArtifactSection" (atomik) agar perubahan TERSIMPAN di DB tanpa menyentuh section lain
-     c) CATAT: optional panggil "logArtifactChange" untuk audit (mis. jenis perubahan dan ringkasan)
-   - STREAM AFTER: setelah persistence, panggil SELALU tool "writeArtifact" untuk men-stream ringkasan perubahan/bagian yang diubah ke panel artefak
+   - STREAM INIT → PERSIST PER-SECTION → STREAM UPDATE → FINALIZE (tanpa mengubah kontrak tool):
+     a) INIT STREAM: panggil "writeArtifact" lebih dulu dengan konten minimal (mis. judul saja atau synopsis placeholder) agar panel artefak langsung tampil dan status masuk fase drafting.
+     b) PER SECTION LOOP (READ→MODIFY→WRITE):
+        - BACA: gunakan "listArtifactSections"/"getArtifactSection" untuk kondisi terkini
+        - UBAH: untuk setiap bagian yang diminta user, panggil "updateArtifactSection" (atomik) agar perubahan TERSIMPAN di DB tanpa menyentuh section lain
+        - STREAM UPDATE: panggil "writeArtifact" lagi dengan state kumulatif terbaru (tambahkan/ubah hanya section yang relevan). Ulangi bertahap agar user melihat progres penulisan.
+        - CATAT: opsional panggil "logArtifactChange" untuk audit (jenis perubahan + ringkasan)
+     c) FINALIZE: lakukan satu panggilan "writeArtifact" terakhir untuk menampilkan versi lengkap yang sudah konsisten. Hindari regenerasi penuh; cukup kirim state akhir.
    - DILARANG regenerasi full artefak kecuali user minta eksplisit; fokus hanya pada section yang diubah
    - Minimal 50 kata, heading jelas, synopsis bila relevan, dan referensi pendukung
    - FORMAL content hanya dikirim lewat tool (jangan kirim via chat)
@@ -69,10 +72,10 @@ CRITICAL RULES:
     writeArtifact: writeArtifactTool,
   },
 
-  maxTurns: 5,
+  maxTurns: 8,
 
   modelSettings: {
-    temperature: 0.7,
+    temperature: 0.35,
   },
 
   matchOn: shouldRouteToArtifactWriter,

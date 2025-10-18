@@ -56,10 +56,10 @@ export class SupabaseMemoryProvider implements MemoryProvider {
     const { id } = this.buildRowKey(params.scope, params.chatId, params.userId);
 
     const { data, error } = await supabaseAdmin
-      .from<WorkingMemoryRow>(this.tableName)
+      .from(this.tableName)
       .select('*')
       .eq('id', id)
-      .maybeSingle();
+      .maybeSingle() as { data: WorkingMemoryRow | null; error: any };
 
     if (error) {
       console.error('[SupabaseMemoryProvider] Failed to load working memory', error);
@@ -93,7 +93,7 @@ export class SupabaseMemoryProvider implements MemoryProvider {
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as any)
       .from(this.tableName)
       .upsert(payload, { onConflict: 'id' });
 

@@ -158,7 +158,9 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
     });
   };
 
-  const messageTimestamp = (message as any).createdAt;
+  // Robust timestamp extraction: prefer metadata.timestamp then createdAt/created_at
+  const rawTs = (message as any)?.metadata?.timestamp || (message as any)?.createdAt || (message as any)?.created_at;
+  const messageTimestamp = rawTs ? new Date(rawTs) : undefined;
   const simpleTime = formatSimpleTime(messageTimestamp);
   const fullDateTime = formatFullDateTime(messageTimestamp);
 
@@ -665,7 +667,7 @@ export const MessageDisplay: React.FC<MessageDisplayProps> = ({
             )}
 
             {/* Assistant Actions */}
-            <AssistantActions>
+            <AssistantActions timestamp={isUser ? simpleTime : undefined} showTimestamp={isUser}>
               <MessageAction
                 icon={RefreshCw}
                 onClick={onRegenerate}

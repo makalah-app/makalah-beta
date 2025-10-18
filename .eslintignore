@@ -1,0 +1,33 @@
+# Test files
+src/__tests__/
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.test.jsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*.spec.js
+**/*.spec.jsx
+
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Generated files
+.codex/
+.claude/
+playwright-report/
+test-results/
+coverage/
+
+# Config files
+next-env.d.ts
+
+# Reference documentation (not production code)
+__references__/

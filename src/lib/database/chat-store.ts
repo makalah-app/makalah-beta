@@ -69,7 +69,7 @@ async function transformMessagesForDB(messages: UIMessage[], chatId: string): Pr
       parts: message.parts || [],
       sequence_number: index,
       metadata: (() => {
-        const existingMetadata = typeof message.metadata === 'object' && message.metadata ? message.metadata : {};
+        const existingMetadata = (typeof message.metadata === 'object' && message.metadata ? message.metadata : {}) as any;
         return {
           ...existingMetadata,
           // ✅ FIX Problem #4: Preserve existing timestamp OR generate unique timestamp with index offset

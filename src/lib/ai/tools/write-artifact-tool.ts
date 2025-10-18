@@ -27,6 +27,8 @@ const WriteArtifactZodSchema = z.object({
   sections: z.array(SectionSchema).default([]),
   references: z.array(ReferenceSchema).optional(),
   metadata: MetadataSchema,
+  finalize: z.boolean().optional().default(true),
+  progressive: z.enum(['paragraph', 'sentence', 'word']).optional(),
 });
 
 const WriteArtifactJsonSchema = {
@@ -115,6 +117,16 @@ const WriteArtifactJsonSchema = {
         },
       },
     },
+    finalize: {
+      type: 'boolean',
+      description: 'Apakah stream harus di-finalize (complete) pada call ini. Default true.',
+      default: true,
+    },
+    progressive: {
+      type: 'string',
+      enum: ['paragraph', 'sentence'],
+      description: 'Mode update bertahap di dalam satu call (opsional).',
+    },
   },
   required: [],
 } as const;
@@ -134,7 +146,7 @@ function getWordCount(value?: string): number {
 
 export const writeArtifactTool = tool({
   description:
-    'Mengirim artefak analisis akademik formal Bahasa Indonesia ke panel artefak.',
+    'Mengirim artefak analisis akademik formal Bahasa Indonesia ke panel artefak. Dukung streaming bertahap dan finalize opsional.',
   inputSchema: WriteArtifactZodSchema,
   execute: async (input, options) => {
     // ✅ Get user data from Agent context
@@ -158,6 +170,11 @@ export const writeArtifactTool = tool({
 
     const title = input.title?.trim() || DEFAULT_TITLE;
     const synopsis = input.synopsis?.trim();
+    const finalize = typeof input.finalize === 'boolean' ? input.finalize : true;
+    // Default behavior: word-by-word streaming for non-final calls unless overridden
+    let progressive = input.progressive as 'paragraph' | 'sentence' | 'word' | undefined;
+    if (!finalize && !progressive) progressive = 'word';
+    const startedAt = Date.now();
 
     const normalizedSections = [];
 
@@ -213,33 +230,145 @@ export const writeArtifactTool = tool({
       metadata,
     } as any);
 
+    // Initial progress hint
     artifact.progress = normalizedSections.length > 0 ? 0.2 : 0.1;
 
-    if (normalizedSections.length > 0 || references.length > 0 || totalWordCount > 0) {
-      await artifact.update({
+    // Helper to clamp progress in streaming phase
+    const clamp = (v: number, min = 0, max = 0.95) => Math.max(min, Math.min(max, v));
+
+    // Progressive streaming inside single call (optional)
+    if (progressive && normalizedSections.length > 0) {
+      // Build incremental payloads based on mode
+      const incrementalSections: typeof normalizedSections = [];
+      let totalUnits = 0;
+      const unitsPerSection: number[] = [];
+
+      // Pre-calc units for progress based on split mode
+      for (const s of normalizedSections) {
+        const content = s.content || '';
+        let units: string[] = [];
+        if (progressive === 'paragraph') {
+          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
+        } else if (progressive === 'sentence') {
+          units = content.split(/(?<=[.!?])\s+/g).map(p => p.trim()).filter(Boolean);
+        } else {
+          // 'word' mode — group into small word chunks (3–5 words, default 4)
+          const words = content.split(/\s+/g).map(w => w.trim()).filter(Boolean);
+          const chunks: string[] = [];
+          const chunkSize = 4; // steady default
+          for (let i = 0; i < words.length; i += chunkSize) {
+            chunks.push(words.slice(i, i + chunkSize).join(' '));
+          }
+          units = chunks.length ? chunks : words;
+        }
+        unitsPerSection.push(Math.max(1, units.length));
+        totalUnits += Math.max(1, units.length);
+      }
+
+      // Stream per unit
+      let processed = 0;
+      for (let idx = 0; idx < normalizedSections.length; idx++) {
+        const base = normalizedSections[idx];
+        const content = base.content || '';
+        let units: string[] = [];
+        if (progressive === 'paragraph') {
+          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
+        } else if (progressive === 'sentence') {
+          units = content.split(/(?<=[.!?])\s+/g).map(p => p.trim()).filter(Boolean);
+        } else {
+          const words = content.split(/\s+/g).map(w => w.trim()).filter(Boolean);
+          const chunks: string[] = [];
+          const chunkSize = 4;
+          for (let i = 0; i < words.length; i += chunkSize) {
+            chunks.push(words.slice(i, i + chunkSize).join(' '));
+          }
+          units = chunks.length ? chunks : words;
+        }
+
+        // If no split units, push once
+        if (units.length === 0) {
+          incrementalSections.push(base);
+          processed += 1;
+          await artifact.update({
+            title,
+            stage: 'drafting',
+            sections: [...incrementalSections],
+            references,
+            wordCount: getWordCount(incrementalSections.map(s => s.content).join(' ')),
+            metadata,
+          } as any);
+          artifact.progress = clamp(0.2 + (processed / Math.max(1, totalUnits)) * 0.7);
+          continue;
+        }
+
+        let built = '';
+        for (const u of units) {
+          built = built ? `${built}\n\n${u}` : u;
+          const partial = { ...base, content: built };
+
+          // replace or append this section in incremental list
+          const existingIndex = incrementalSections.findIndex(ss => ss.heading === base.heading);
+          if (existingIndex >= 0) incrementalSections[existingIndex] = partial;
+          else incrementalSections.push(partial);
+
+          processed += 1;
+          await artifact.update({
+            title,
+            stage: 'drafting',
+            sections: [...incrementalSections],
+            references,
+            wordCount: getWordCount(incrementalSections.map(s => s.content).join(' ')),
+            metadata,
+          } as any);
+          artifact.progress = clamp(0.2 + (processed / Math.max(1, totalUnits)) * 0.7);
+        }
+      }
+    } else {
+      // Single-shot update
+      if (normalizedSections.length > 0 || references.length > 0 || totalWordCount > 0) {
+        await artifact.update({
+          title,
+          stage: 'drafting',
+          sections: normalizedSections,
+          references,
+          wordCount: totalWordCount,
+          metadata,
+        } as any);
+        artifact.progress = 0.75;
+      }
+    }
+
+    // Finalize if requested, otherwise keep streaming state
+    if (finalize) {
+      await artifact.complete({
         title,
-        stage: 'drafting',
+        stage: 'complete',
         sections: normalizedSections,
         references,
         wordCount: totalWordCount,
         metadata,
       } as any);
-
-      artifact.progress = 0.75;
     }
 
-    await artifact.complete({
-      title,
-      stage: 'complete',
-      sections: normalizedSections,
-      references,
-      wordCount: totalWordCount,
-      metadata,
-    } as any);
+    // Lightweight observability for artifact writes
+    try {
+      const elapsed = Date.now() - startedAt;
+      // eslint-disable-next-line no-console
+      console.log('[artifact:write]', {
+        chatId,
+        userId,
+        finalize,
+        progressive: progressive || 'none',
+        sections: normalizedSections.length,
+        words: totalWordCount,
+        took_ms: elapsed,
+        stage: finalize ? 'complete' : 'streaming',
+      });
+    } catch {}
 
     return {
       artifactId: artifact.id,
-      stage: 'complete',
+      stage: finalize ? 'complete' : 'streaming',
       wordCount: totalWordCount,
       sections: normalizedSections.length,
       references: references.length,

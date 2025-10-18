@@ -1,3 +1,4 @@
+'use client';
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,6 +26,162 @@ interface AcademicAnalysisRendererProps {
 export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererProps) {
   const data = artifact.payload;
   const hasPartialData = data && (data.sections?.length > 0 || data.title);
+
+  // Lazy typing helpers
+  const DEFAULT_CHUNK_WORDS = 3; // jumlah kata per langkah
+  const DEFAULT_STEP_MS = 50;    // jeda antar langkah
+
+  const usePrefersReducedMotion = () => {
+    const [reduced, setReduced] = React.useState(false);
+    React.useEffect(() => {
+      if (typeof window === 'undefined') return;
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const onChange = () => setReduced(mq.matches);
+      onChange();
+      mq.addEventListener?.('change', onChange);
+      return () => mq.removeEventListener?.('change', onChange);
+    }, []);
+    return reduced;
+  };
+
+  function SectionLazyMarkdown({
+    content,
+    status,
+    safeSchema,
+    chunkWords = DEFAULT_CHUNK_WORDS,
+    stepMs = DEFAULT_STEP_MS,
+  }: {
+    content: string;
+    status: string;
+    safeSchema: any;
+    chunkWords?: number;
+    stepMs?: number;
+  }) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+    const disabled = prefersReducedMotion || status !== 'streaming';
+
+    const [visible, setVisible] = React.useState<string>(disabled ? content : '');
+    const wordsShownRef = React.useRef<number>(0);
+    const timerRef = React.useRef<any>(null);
+
+    // Build tokens preserving whitespace
+    const buildTokens = React.useCallback((text: string) => {
+      // Split by whitespace, keep separators so layout tetap rapi
+      return text.split(/(\s+)/g).filter((t) => t.length > 0);
+    }, []);
+
+    const tokens = React.useMemo(() => buildTokens(content), [content, buildTokens]);
+
+    const totalWords = React.useMemo(() => {
+      // Count non-whitespace tokens sebagai kata
+      return tokens.reduce((acc, t) => (t.trim().length > 0 && !/\s+/.test(t) ? acc + 1 : acc), 0);
+    }, [tokens]);
+
+    const sliceByWords = React.useCallback(
+      (count: number) => {
+        if (count <= 0) return '';
+        let words = 0;
+        const out: string[] = [];
+        for (const t of tokens) {
+          out.push(t);
+          if (t.trim().length > 0 && !/\s+/.test(t)) {
+            words += 1;
+            if (words >= count) break;
+          }
+        }
+        return out.join('');
+      },
+      [tokens]
+    );
+
+    // Simple shimmer skeleton while belum ada konten terlihat
+    const ShimmerSkeleton = () => (
+      <>
+        <div className="space-y-2">
+          <div className="relative overflow-hidden bg-muted rounded h-4">
+            <div className="absolute inset-0 shimmer-overlay" />
+          </div>
+          <div className="relative overflow-hidden bg-muted rounded h-4 w-11/12">
+            <div className="absolute inset-0 shimmer-overlay" />
+          </div>
+          <div className="relative overflow-hidden bg-muted rounded h-4 w-9/12">
+            <div className="absolute inset-0 shimmer-overlay" />
+          </div>
+        </div>
+        <style jsx global>{`
+          @keyframes shimmer { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
+          .shimmer-overlay { background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.35), rgba(255,255,255,0)); animation: shimmer 1.4s ease-in-out infinite; }
+        `}</style>
+      </>
+    );
+
+    // Reset atau lanjutkan ketika konten/status berubah
+    React.useEffect(() => {
+      if (disabled) {
+        setVisible(content);
+        wordsShownRef.current = totalWords;
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return;
+      }
+
+      // Lanjutkan dari posisi terakhir jika konten bertambah
+      const current = Math.min(wordsShownRef.current, totalWords);
+      setVisible(sliceByWords(current));
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
+      timerRef.current = setInterval(() => {
+        // Tambahkan beberapa kata per langkah
+        const next = Math.min(totalWords, wordsShownRef.current + chunkWords);
+        wordsShownRef.current = next;
+        setVisible(sliceByWords(next));
+        if (next >= totalWords) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      }, stepMs);
+
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = null;
+      };
+    }, [disabled, totalWords, content, sliceByWords, chunkWords, stepMs]);
+
+    // Ketika status jadi complete, tampilkan full konten
+    React.useEffect(() => {
+      if (status === 'complete') {
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = null;
+        setVisible(content);
+        wordsShownRef.current = totalWords;
+      }
+    }, [status, content, totalWords]);
+
+    // Render skeleton dulu kalau lagi streaming dan belum ada visible text
+    if (!disabled && !visible) {
+      return <ShimmerSkeleton />;
+    }
+
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, safeSchema]]}
+        components={{
+          a: ({ node, ...props }) => (
+            <a {...props} target="_blank" rel="noopener noreferrer" />
+          ),
+        }}
+      >
+        {visible}
+      </ReactMarkdown>
+    );
+  }
 
   return (
     <ArtifactCard artifact={artifact}>
@@ -100,17 +257,11 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
                   </HeadingTag>
                   {section.content && (
                     <div className="mt-2 leading-relaxed">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, [rehypeSanitize, safeSchema]]}
-                        components={{
-                          a: ({ node, ...props }) => (
-                            <a {...props} target="_blank" rel="noopener noreferrer" />
-                          ),
-                        }}
-                      >
-                        {section.content}
-                      </ReactMarkdown>
+                      <SectionLazyMarkdown
+                        content={section.content}
+                        status={artifact.status}
+                        safeSchema={safeSchema}
+                      />
                     </div>
                   )}
                   {/* Streaming indicator for last section */}

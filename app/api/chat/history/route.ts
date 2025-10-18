@@ -516,7 +516,7 @@ export async function GET(request: NextRequest) {
 
           return {
             ...conv,
-            title: fixedTitle || conv.title || 'Untitled Chat',
+            title: conv.title || 'Untitled Chat',
             lastActivity: normalizedLastActivity,
             recentMessages: lastFewMessages,
             totalMessages: recentMessages.length

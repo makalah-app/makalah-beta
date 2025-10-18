@@ -898,8 +898,8 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
               hasActiveArtifact ? "w-[60%]" : "w-full"
             )}
           >
-            {/* Messages Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto" ref={scrollableContainerRef}>
+            {/* Messages Area - Scrollable with thin sidebar-style scrollbar */}
+            <div className="flex-1 overflow-y-auto sidebar-thin-scroll" ref={scrollableContainerRef}>
               <div className="w-full max-w-[576px] md:max-w-[840px] mx-auto p-3 md:p-4" ref={chatAreaRef}>
               {/* Enhanced Error Display */}
               {(error || errorState) && (

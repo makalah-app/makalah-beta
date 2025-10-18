@@ -115,6 +115,21 @@ export const updateArtifactSection = tool({
         },
       })
 
+    // Lightweight observability
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[artifact:upsertSection]', {
+        chatId,
+        userId,
+        artifactId,
+        sectionId,
+        version,
+        heading,
+        sectionKey: input.sectionKey || null,
+        size: input.content.length,
+      })
+    } catch {}
+
     return { artifactId, sectionId, version }
   },
 })
@@ -154,4 +169,3 @@ export const logArtifactChange = tool({
     return { artifactId: artifact.id, changeType: input.changeType }
   },
 })
-

@@ -184,18 +184,25 @@ export async function POST(req: Request) {
     let retrievalMemDelta = 0;
     try {
       const lastUser = allMessages.filter((m) => m.role === 'user').slice(-1)[0];
-      if (chatId && lastUser && typeof lastUser.content === 'string' && lastUser.content.length > 40) {
-        const retrievalStart = Date.now();
-        const retrievalMemStart = process.memoryUsage().heapUsed;
+      if (chatId && lastUser) {
+        // Extract text content from AI SDK v5 parts structure
+        const userText = (lastUser as any).content ||
+                        lastUser.parts?.map((p: any) => p.type === 'text' ? p.text : '').join('') ||
+                        '';
 
-        const results = await searchRelevantSections({ chatId, query: lastUser.content, limit: 2 });
-        const preface = buildRetrievalPreface(results);
-        if (preface) {
-          allMessages = [{ id: 'retrieval-preface', role: 'system', content: preface } as any, ...allMessages];
+        if (userText && typeof userText === 'string' && userText.length > 40) {
+          const retrievalStart = Date.now();
+          const retrievalMemStart = process.memoryUsage().heapUsed;
+
+          const results = await searchRelevantSections({ chatId, query: userText, limit: 2 });
+          const preface = buildRetrievalPreface(results);
+          if (preface) {
+            allMessages = [{ id: 'retrieval-preface', role: 'system', content: preface } as any, ...allMessages];
+          }
+
+          retrievalTime = Date.now() - retrievalStart;
+          retrievalMemDelta = (process.memoryUsage().heapUsed - retrievalMemStart) / 1024 / 1024;
         }
-
-        retrievalTime = Date.now() - retrievalStart;
-        retrievalMemDelta = (process.memoryUsage().heapUsed - retrievalMemStart) / 1024 / 1024;
       }
     } catch (e) {
       console.warn('[retrieval] skipped', e);

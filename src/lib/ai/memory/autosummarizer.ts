@@ -64,7 +64,8 @@ function toPlain(messages: UIMessage[]): string {
   const lines: string[] = []
   for (const m of messages) {
     const role = m.role || 'user'
-    const text = (m.content || '') as string
+    // Extract text from AI SDK v5 parts structure
+    const text = (m as any).content || m.parts?.map(p => (p as any).text || '').join('') || ''
     if (!text) continue
     lines.push(`${role.toUpperCase()}: ${text}`)
   }
@@ -130,7 +131,7 @@ Transkrip (${recent.length} msg):\n${toPlain(recent)}
       model: openai(modelName),
       prompt,
       temperature: 0.2,
-      maxTokens: 250, // Reduced from 500 (actual usage ~20-40 tokens)
+      maxOutputTokens: 250, // Reduced from 500 (actual usage ~20-40 tokens)
     })
 
     const summary = text.trim()
