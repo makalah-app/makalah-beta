@@ -7,11 +7,31 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { ArtifactCard } from './ArtifactCard';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { ArtifactData } from '@ai-sdk-tools/artifacts/client';
 import type { AcademicAnalysisPayload } from '@/lib/ai/artifacts/artifact-registry';
 
 interface AcademicAnalysisRendererProps {
   artifact: ArtifactData<AcademicAnalysisPayload>;
+}
+
+const DEFAULT_CHUNK_WORDS = 3; // jumlah kata per langkah
+const DEFAULT_STEP_MS = 50;    // jeda antar langkah
+const SECTION_SKELETON_WIDTHS = ['100%', '92%', '86%', '78%'];
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
+function getWordEstimateFromTokens(tokens: string[]): number {
+  return tokens.reduce((acc, token) => {
+    if (token.trim().length === 0) return acc;
+    if (/\s+/.test(token)) return acc;
+    return acc + 1;
+  }, 0);
+}
+
+function debugArtifactRender(message: string, context?: Record<string, unknown>) {
+  if (!IS_DEV) return;
+  // eslint-disable-next-line no-console
+  console.debug('[artifact:render]', message, context ?? {});
 }
 
 /**
@@ -26,10 +46,6 @@ interface AcademicAnalysisRendererProps {
 export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererProps) {
   const data = artifact.payload;
   const hasPartialData = data && (data.sections?.length > 0 || data.title);
-
-  // Lazy typing helpers
-  const DEFAULT_CHUNK_WORDS = 3; // jumlah kata per langkah
-  const DEFAULT_STEP_MS = 50;    // jeda antar langkah
 
   const usePrefersReducedMotion = () => {
     const [reduced, setReduced] = React.useState(false);
@@ -58,24 +74,18 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
     stepMs?: number;
   }) {
     const prefersReducedMotion = usePrefersReducedMotion();
-    const disabled = prefersReducedMotion || status !== 'streaming';
+    const shouldAnimate = !prefersReducedMotion && status === 'streaming';
 
-    const [visible, setVisible] = React.useState<string>(disabled ? content : '');
-    const wordsShownRef = React.useRef<number>(0);
-    const timerRef = React.useRef<any>(null);
-
-    // Build tokens preserving whitespace
     const buildTokens = React.useCallback((text: string) => {
-      // Split by whitespace, keep separators so layout tetap rapi
       return text.split(/(\s+)/g).filter((t) => t.length > 0);
     }, []);
 
     const tokens = React.useMemo(() => buildTokens(content), [content, buildTokens]);
+    const totalWords = React.useMemo(() => getWordEstimateFromTokens(tokens), [tokens]);
 
-    const totalWords = React.useMemo(() => {
-      // Count non-whitespace tokens sebagai kata
-      return tokens.reduce((acc, t) => (t.trim().length > 0 && !/\s+/.test(t) ? acc + 1 : acc), 0);
-    }, [tokens]);
+    const [visible, setVisible] = React.useState<string>(shouldAnimate ? '' : content);
+    const wordsShownRef = React.useRef<number>(shouldAnimate ? 0 : totalWords);
+    const timerRef = React.useRef<any>(null);
 
     const sliceByWords = React.useCallback(
       (count: number) => {
@@ -94,40 +104,17 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
       [tokens]
     );
 
-    // Simple shimmer skeleton while belum ada konten terlihat
-    const ShimmerSkeleton = () => (
-      <>
-        <div className="space-y-2">
-          <div className="relative overflow-hidden bg-muted rounded h-4">
-            <div className="absolute inset-0 shimmer-overlay" />
-          </div>
-          <div className="relative overflow-hidden bg-muted rounded h-4 w-11/12">
-            <div className="absolute inset-0 shimmer-overlay" />
-          </div>
-          <div className="relative overflow-hidden bg-muted rounded h-4 w-9/12">
-            <div className="absolute inset-0 shimmer-overlay" />
-          </div>
-        </div>
-        <style jsx global>{`
-          @keyframes shimmer { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
-          .shimmer-overlay { background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.35), rgba(255,255,255,0)); animation: shimmer 1.4s ease-in-out infinite; }
-        `}</style>
-      </>
-    );
-
-    // Reset atau lanjutkan ketika konten/status berubah
     React.useEffect(() => {
-      if (disabled) {
-        setVisible(content);
-        wordsShownRef.current = totalWords;
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
+    if (!shouldAnimate) {
+      setVisible(content);
+      wordsShownRef.current = totalWords;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
           timerRef.current = null;
         }
         return;
       }
 
-      // Lanjutkan dari posisi terakhir jika konten bertambah
       const current = Math.min(wordsShownRef.current, totalWords);
       setVisible(sliceByWords(current));
 
@@ -137,10 +124,13 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
       }
 
       timerRef.current = setInterval(() => {
-        // Tambahkan beberapa kata per langkah
         const next = Math.min(totalWords, wordsShownRef.current + chunkWords);
         wordsShownRef.current = next;
         setVisible(sliceByWords(next));
+        debugArtifactRender('typing-progress', {
+          shownWords: next,
+          totalWords,
+        });
         if (next >= totalWords) {
           clearInterval(timerRef.current);
           timerRef.current = null;
@@ -151,21 +141,33 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = null;
       };
-    }, [disabled, totalWords, content, sliceByWords, chunkWords, stepMs]);
+    }, [shouldAnimate, totalWords, content, sliceByWords, chunkWords, stepMs]);
 
-    // Ketika status jadi complete, tampilkan full konten
     React.useEffect(() => {
-      if (status === 'complete') {
+      if (!shouldAnimate && status === 'complete') {
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = null;
         setVisible(content);
         wordsShownRef.current = totalWords;
       }
-    }, [status, content, totalWords]);
+    }, [shouldAnimate, status, content, totalWords]);
 
-    // Render skeleton dulu kalau lagi streaming dan belum ada visible text
-    if (!disabled && !visible) {
-      return <ShimmerSkeleton />;
+    if (shouldAnimate && !visible) {
+      debugArtifactRender('skeleton-visible', {
+        status,
+        totalWords,
+      });
+      return (
+        <div className="space-y-2">
+          {SECTION_SKELETON_WIDTHS.map((width, index) => (
+            <Skeleton
+              key={index}
+              className="h-4 bg-primary/10"
+              style={{ width }}
+            />
+          ))}
+        </div>
+      );
     }
 
     return (
@@ -214,11 +216,6 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
               };
               const HeadingTag = (isValidLevel(section.level) ? section.level : 'h2') as keyof JSX.IntrinsicElements;
 
-              // Skip sections with incomplete data during streaming
-              if (!section.heading && !section.content) {
-                return null;
-              }
-
               // Rehype sanitize schema whitelist (basic inline + headings + lists + code + table + links)
               const safeSchema: any = {
                 ...defaultSchema,
@@ -253,9 +250,9 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
                   )}
                 >
                   <HeadingTag className="font-semibold">
-                    {section.heading || 'Loading...'}
+                    {section.heading?.trim() || (artifact.status === 'streaming' ? 'Menulis...' : 'Bagian')}
                   </HeadingTag>
-                  {section.content && (
+                  {section.content ? (
                     <div className="mt-2 leading-relaxed">
                       <SectionLazyMarkdown
                         content={section.content}
@@ -263,7 +260,25 @@ export function AcademicAnalysisRenderer({ artifact }: AcademicAnalysisRendererP
                         safeSchema={safeSchema}
                       />
                     </div>
-                  )}
+                  ) : artifact.status === 'streaming' ? (
+                    <div className="mt-3 space-y-2">
+                      {IS_DEV &&
+                        (() => {
+                          debugArtifactRender('section-skeleton', {
+                            index,
+                            status: artifact.status,
+                          });
+                          return null;
+                        })()}
+                      {SECTION_SKELETON_WIDTHS.map((width, skeletonIndex) => (
+                        <Skeleton
+                          key={skeletonIndex}
+                          className="h-4 bg-primary/10"
+                          style={{ width }}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                   {/* Streaming indicator for last section */}
                   {artifact.status === 'streaming' && index === data.sections.length - 1 && (
                     <span className="inline-flex ml-1 animate-pulse">▊</span>

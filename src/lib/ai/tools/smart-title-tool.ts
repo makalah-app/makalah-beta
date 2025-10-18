@@ -7,13 +7,17 @@ import { hashStrings, sanitizeTitle } from '@/lib/ai/utils/title-utils';
 
 const MAX_PROMPTS = 3;
 
-const baseSmartTitleTool = tool({
+const SmartTitleInputSchema = z.object({
+  chatId: z.string().default('unknown'),
+  userPrompts: z.array(z.string().min(1)).min(1).max(MAX_PROMPTS),
+});
+type SmartTitleInput = z.infer<typeof SmartTitleInputSchema>;
+
+const baseSmartTitleTool = tool<SmartTitleInput, string>({
   description: 'Generate a short Indonesian academic chat title from early user prompts.',
-  parameters: z.object({
-    chatId: z.string().default('unknown'),
-    userPrompts: z.array(z.string().min(1)).min(1).max(MAX_PROMPTS),
-  }),
-  execute: async ({ chatId, userPrompts }) => {
+  inputSchema: SmartTitleInputSchema,
+  execute: async (input, _options) => {
+    const { chatId, userPrompts } = input;
     const key = process.env.OPENAI_API_KEY;
     if (!key) {
       return '';
@@ -48,18 +52,14 @@ const baseSmartTitleTool = tool({
     }
 
     try {
-      const result = await generateText({
+      const { text } = await generateText({
         model: titleOpenAI(modelName),
         prompt,
         temperature,
         maxOutputTokens: 48,
-        metadata: {
-          source: 'smart-title-tool',
-          chatId,
-        },
       });
 
-      const raw = typeof result === 'object' && 'text' in result ? String(result.text) : '';
+      const raw = text ?? '';
       return sanitizeTitle(raw, { maxLength: 35 });
     } catch {
       return '';
@@ -67,7 +67,7 @@ const baseSmartTitleTool = tool({
   },
 });
 
-export const smartTitleTool = cachedTool(baseSmartTitleTool, {
+const cachedSmartTitleTool = cachedTool(baseSmartTitleTool, {
   scope: 'smart-title',
   keyGenerator: ({ chatId, userPrompts }) => {
     const hash = hashStrings(userPrompts);
@@ -77,6 +77,9 @@ export const smartTitleTool = cachedTool(baseSmartTitleTool, {
   metricsId: 'tool.smart-title',
 });
 
+export const smartTitleTool = cachedSmartTitleTool as typeof baseSmartTitleTool &
+  typeof cachedSmartTitleTool;
+
 export async function generateSmartTitleFromPrompts(
   chatId: string,
   userPrompts: string[]
@@ -85,10 +88,33 @@ export async function generateSmartTitleFromPrompts(
     return null;
   }
 
-  const title = await smartTitleTool.execute({
-    chatId,
-    userPrompts,
-  });
+  if (!smartTitleTool.execute) {
+    throw new Error('smartTitleTool missing execute implementation');
+  }
 
-  return title ? title : null;
+  const result = await smartTitleTool.execute(
+    {
+      chatId,
+      userPrompts,
+    },
+    {
+      toolCallId: `manual-smart-title:${chatId}`,
+      messages: [],
+    }
+  );
+
+  if (typeof result === 'string') {
+    return result.length > 0 ? result : null;
+  }
+
+  if (result && Symbol.asyncIterator in result) {
+    const parts: string[] = [];
+    for await (const chunk of result as AsyncIterable<string>) {
+      parts.push(chunk);
+    }
+    const combined = parts.join('');
+    return combined.length > 0 ? combined : null;
+  }
+
+  return null;
 }

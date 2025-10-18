@@ -133,6 +133,11 @@ const WriteArtifactJsonSchema = {
 } as const;
 
 const DEFAULT_TITLE = 'Analisis Akademik';
+const SENTENCE_MODE_THRESHOLD = 40;
+const WORD_CHUNK_SIZE = 4;
+const STREAM_DELAY_MS = 45;
+const FINALIZE_DELAY_MS = 120;
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, ' ');
@@ -143,6 +148,16 @@ function getWordCount(value?: string): number {
   const text = stripHtml(value).trim();
   if (!text) return 0;
   return text.split(/\s+/).filter(Boolean).length;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function debugArtifactStream(message: string, context?: Record<string, unknown>) {
+  if (!IS_DEV) return;
+  // eslint-disable-next-line no-console
+  console.debug('[artifact:stream]', message, context ?? {});
 }
 
 const baseWriteArtifactTool = tool({
@@ -172,9 +187,7 @@ const baseWriteArtifactTool = tool({
     const title = input.title?.trim() || DEFAULT_TITLE;
     const synopsis = input.synopsis?.trim();
     const finalize = typeof input.finalize === 'boolean' ? input.finalize : true;
-    // Default behavior: word-by-word streaming for non-final calls unless overridden
-    let progressive = input.progressive as 'paragraph' | 'sentence' | 'word' | undefined;
-    if (!finalize && !progressive) progressive = 'word';
+    const progressiveInput = input.progressive as 'paragraph' | 'sentence' | 'word' | undefined;
     const startedAt = Date.now();
 
     const normalizedSections = [];
@@ -222,6 +235,22 @@ const baseWriteArtifactTool = tool({
       0
     );
 
+    let progressiveMode = progressiveInput;
+    if (!progressiveMode && normalizedSections.length > 0) {
+      const hasLongSection = normalizedSections.some(
+        section => getWordCount(section.content) >= SENTENCE_MODE_THRESHOLD
+      );
+      progressiveMode = hasLongSection ? 'sentence' : 'word';
+    }
+
+    if (progressiveMode === 'paragraph') {
+      debugArtifactStream('progressive-paragraph-suppressed', {
+        progressive: progressiveMode,
+        sections: normalizedSections.length,
+      });
+      progressiveMode = 'sentence';
+    }
+
     const artifact = ArtifactRegistry.academicAnalysis.stream({
       title,
       sections: [],
@@ -237,59 +266,60 @@ const baseWriteArtifactTool = tool({
     // Helper to clamp progress in streaming phase
     const clamp = (v: number, min = 0, max = 0.95) => Math.max(min, Math.min(max, v));
 
-    // Progressive streaming inside single call (optional)
-    if (progressive && normalizedSections.length > 0) {
-      // Build incremental payloads based on mode
+    const shouldStream = Boolean(progressiveMode) && normalizedSections.length > 0;
+
+    if (shouldStream) {
+      debugArtifactStream('progressive-mode-start', {
+        finalize,
+        progressive: progressiveMode,
+        sections: normalizedSections.length,
+      });
       const incrementalSections: typeof normalizedSections = [];
       let totalUnits = 0;
-      const unitsPerSection: number[] = [];
 
-      // Pre-calc units for progress based on split mode
       for (const s of normalizedSections) {
         const content = s.content || '';
         let units: string[] = [];
-        if (progressive === 'paragraph') {
-          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
-        } else if (progressive === 'sentence') {
+        if (progressiveMode === 'sentence') {
           units = content.split(/(?<=[.!?])\s+/g).map(p => p.trim()).filter(Boolean);
-        } else {
-          // 'word' mode — group into small word chunks (3–5 words, default 4)
+        } else if (progressiveMode === 'word') {
           const words = content.split(/\s+/g).map(w => w.trim()).filter(Boolean);
           const chunks: string[] = [];
-          const chunkSize = 4; // steady default
-          for (let i = 0; i < words.length; i += chunkSize) {
-            chunks.push(words.slice(i, i + chunkSize).join(' '));
+          for (let i = 0; i < words.length; i += WORD_CHUNK_SIZE) {
+            chunks.push(words.slice(i, i + WORD_CHUNK_SIZE).join(' '));
           }
           units = chunks.length ? chunks : words;
+        } else {
+          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
         }
-        unitsPerSection.push(Math.max(1, units.length));
         totalUnits += Math.max(1, units.length);
       }
 
-      // Stream per unit
       let processed = 0;
       for (let idx = 0; idx < normalizedSections.length; idx++) {
         const base = normalizedSections[idx];
         const content = base.content || '';
         let units: string[] = [];
-        if (progressive === 'paragraph') {
-          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
-        } else if (progressive === 'sentence') {
+        if (progressiveMode === 'sentence') {
           units = content.split(/(?<=[.!?])\s+/g).map(p => p.trim()).filter(Boolean);
-        } else {
+        } else if (progressiveMode === 'word') {
           const words = content.split(/\s+/g).map(w => w.trim()).filter(Boolean);
           const chunks: string[] = [];
-          const chunkSize = 4;
-          for (let i = 0; i < words.length; i += chunkSize) {
-            chunks.push(words.slice(i, i + chunkSize).join(' '));
+          for (let i = 0; i < words.length; i += WORD_CHUNK_SIZE) {
+            chunks.push(words.slice(i, i + WORD_CHUNK_SIZE).join(' '));
           }
           units = chunks.length ? chunks : words;
+        } else {
+          units = content.split(/\n\s*\n+/g).map(p => p.trim()).filter(Boolean);
         }
 
-        // If no split units, push once
         if (units.length === 0) {
           incrementalSections.push(base);
           processed += 1;
+          debugArtifactStream('progressive-empty-units', {
+            heading: base.heading,
+            index: idx,
+          });
           await artifact.update({
             title,
             stage: 'drafting',
@@ -299,20 +329,26 @@ const baseWriteArtifactTool = tool({
             metadata,
           } as any);
           artifact.progress = clamp(0.2 + (processed / Math.max(1, totalUnits)) * 0.7);
+          await delay(STREAM_DELAY_MS);
           continue;
         }
 
         let built = '';
-        for (const u of units) {
-          built = built ? `${built}\n\n${u}` : u;
+        for (const unit of units) {
+          built = built ? `${built}\n\n${unit}` : unit;
           const partial = { ...base, content: built };
 
-          // replace or append this section in incremental list
           const existingIndex = incrementalSections.findIndex(ss => ss.heading === base.heading);
           if (existingIndex >= 0) incrementalSections[existingIndex] = partial;
           else incrementalSections.push(partial);
 
           processed += 1;
+          debugArtifactStream('progressive-chunk', {
+            heading: base.heading,
+            chunkWords: getWordCount(unit),
+            processed,
+            totalUnits,
+          });
           await artifact.update({
             title,
             stage: 'drafting',
@@ -322,9 +358,15 @@ const baseWriteArtifactTool = tool({
             metadata,
           } as any);
           artifact.progress = clamp(0.2 + (processed / Math.max(1, totalUnits)) * 0.7);
+          await delay(STREAM_DELAY_MS);
         }
       }
     } else {
+      debugArtifactStream('progressive-disabled', {
+        finalize,
+        progressive: progressiveMode ?? 'none',
+        sections: normalizedSections.length,
+      });
       // Single-shot update
       if (normalizedSections.length > 0 || references.length > 0 || totalWordCount > 0) {
         await artifact.update({
@@ -341,6 +383,20 @@ const baseWriteArtifactTool = tool({
 
     // Finalize if requested, otherwise keep streaming state
     if (finalize) {
+      debugArtifactStream('finalize-start', {
+        sections: normalizedSections.length,
+        words: totalWordCount,
+      });
+      artifact.progress = clamp(0.95);
+      await artifact.update({
+        title,
+        stage: 'drafting',
+        sections: normalizedSections,
+        references,
+        wordCount: totalWordCount,
+        metadata,
+      } as any);
+      await delay(FINALIZE_DELAY_MS);
       await artifact.complete({
         title,
         stage: 'complete',
@@ -359,7 +415,7 @@ const baseWriteArtifactTool = tool({
         chatId,
         userId,
         finalize,
-        progressive: progressive || 'none',
+        progressive: progressiveMode ?? 'none',
         sections: normalizedSections.length,
         words: totalWordCount,
         took_ms: elapsed,

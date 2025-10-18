@@ -7,13 +7,16 @@ import { cachedTool } from '@/lib/ai/cache';
  * Enforces cache wiring so the real implementation can focus solely on fetching logic.
  */
 export function createSearchToolPlaceholder() {
+  const SearchPlaceholderSchema = z.object({
+    query: z.string().min(1, 'Query is required'),
+  });
+  type SearchPlaceholderInput = z.infer<typeof SearchPlaceholderSchema>;
+
   return cachedTool(
-    tool({
+    tool<SearchPlaceholderInput, string>({
       description: 'Placeholder search tool. Replace with search_literature implementation.',
-      parameters: z.object({
-        query: z.string().min(1, 'Query is required'),
-      }),
-      execute: async () => {
+      inputSchema: SearchPlaceholderSchema,
+      execute: async (_input: SearchPlaceholderInput, _options: unknown) => {
         throw new Error('search_literature tool not implemented yet');
       },
     }),
