@@ -1,20 +1,26 @@
+import { tool } from 'ai';
+import { z } from 'zod';
+import { cachedTool } from '@/lib/ai/cache';
+
 /**
- * Tools Module - PENDING REBUILD
- *
- * Old search implementation removed (Oct 2025):
- * - academic-tools.ts (generic web_search)
- * - search/ directory (multi-provider abstraction)
- *
- * Awaiting new implementation:
- * - search_literature (specialized academic search with quality control)
- * - Based on spec: __references__/workflow_tools/search_tool.md
- *
- * For now, chat API uses native provider tools:
- * - OpenAI: web_search (native)
- * - OpenRouter: :online suffix (native)
+ * Placeholder helper for the forthcoming search_literature tool.
+ * Enforces cache wiring so the real implementation can focus solely on fetching logic.
  */
-
-// No exports currently - tools directory under reconstruction
-// TODO: Implement search_literature tool based on new spec
-
-export {};
+export function createSearchToolPlaceholder() {
+  return cachedTool(
+    tool({
+      description: 'Placeholder search tool. Replace with search_literature implementation.',
+      parameters: z.object({
+        query: z.string().min(1, 'Query is required'),
+      }),
+      execute: async () => {
+        throw new Error('search_literature tool not implemented yet');
+      },
+    }),
+    {
+      scope: 'search',
+      shouldCache: () => false,
+      metricsId: 'tool.search.placeholder',
+    }
+  );
+}

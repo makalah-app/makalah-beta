@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { ArtifactRegistry } from '@/lib/ai/artifacts';
 import { getContext as getArtifactContext } from '@/lib/ai/tools/artifact-context';
+import { cachedTool } from '@/lib/ai/cache';
 
 const SectionSchema = z.object({
   heading: z.string().min(1, 'Heading wajib diisi'),
@@ -144,7 +145,7 @@ function getWordCount(value?: string): number {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
-export const writeArtifactTool = tool({
+const baseWriteArtifactTool = tool({
   description:
     'Mengirim artefak analisis akademik formal Bahasa Indonesia ke panel artefak. Dukung streaming bertahap dan finalize opsional.',
   inputSchema: WriteArtifactZodSchema,
@@ -374,6 +375,32 @@ export const writeArtifactTool = tool({
       references: references.length,
     };
   },
+});
+
+function hashArtifactPayload(value: unknown): string {
+  const input = JSON.stringify(value ?? {});
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    const char = input.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return Math.abs(hash >>> 0).toString(16);
+}
+
+export const writeArtifactTool = cachedTool(baseWriteArtifactTool, {
+  scope: 'artifact',
+  keyGenerator: (params) => {
+    const context = getArtifactContext();
+    const userKey = context?.userId ?? 'anonymous';
+    const sessionKey = context?.sessionId ?? 'session';
+    const payloadHash = hashArtifactPayload(params);
+    return `artifact:${userKey}:${sessionKey}:${payloadHash}`;
+  },
+  shouldCache: (params) => {
+    return Array.isArray(params?.sections) && params.sections.length > 0;
+  },
+  metricsId: 'tool.write-artifact',
 });
 
 export type WriteArtifactToolInput = z.infer<typeof WriteArtifactZodSchema>;

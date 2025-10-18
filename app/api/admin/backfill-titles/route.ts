@@ -1,9 +1,8 @@
 /* @ts-nocheck */
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
-import { getDynamicModelConfig } from '../../../../src/lib/ai/dynamic-config';
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { generateSmartTitleFromPrompts } from '@/lib/ai/tools/smart-title-tool';
+import { sanitizeTitle } from '@/lib/ai/utils/title-utils';
 
 export const maxDuration = 60;
 
@@ -16,37 +15,6 @@ function isDefaultLikeTitle(title?: string | null): boolean {
     /academic\s+chat/i.test(t) ||
     /^test\s+chat(\s+history)?$/i.test(t)
   );
-}
-
-/**
- * Sanitize and truncate title with smart word boundary logic
- * @param input - Raw title string to sanitize
- * @param maxLength - Maximum allowed length (default: 35 chars for UI consistency)
- * @returns Sanitized and truncated title with "..." if exceeded
- */
-function sanitizeTitle(input: string, maxLength: number = 35): string {
-  let s = (input || '').trim();
-  // remove wrapping quotes
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\''))) s = s.slice(1, -1).trim();
-  // remove trailing punctuation
-  s = s.replace(/[\s\-–—:;,.!?]+$/g, '').replace(/\s+/g, ' ').trim();
-  // title case conservative
-  s = s.split(' ').map(w => (w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase())).join(' ');
-  if (/^test\s+chat(\s+history)?$/i.test(s)) return '';
-
-  // Truncate title with ellipsis if too long (smart word boundary)
-  if (s.length <= maxLength) return s;
-
-  const truncated = s.substring(0, maxLength - 3); // Reserve 3 chars for "..."
-  const lastSpace = truncated.lastIndexOf(' ');
-
-  // If last space is near the end (within 8 chars), truncate at space to avoid breaking words
-  if (lastSpace > maxLength - 11) {
-    return truncated.substring(0, lastSpace).trim() + '...';
-  }
-
-  // Otherwise, hard truncate
-  return truncated.trim() + '...';
 }
 
 async function buildSmartTitle(conversationId: string): Promise<string | null> {
@@ -69,34 +37,13 @@ async function buildSmartTitle(conversationId: string): Promise<string | null> {
   }
   if (userTexts.length === 0) return null;
 
-  // 🔧 CRITICAL FIX: Force OpenAI provider and model for title generation
-  // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
-  // so we MUST use OpenAI-compatible model names only.
-  // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
-  // causing API errors and routing to wrong provider.
-  const envOpenAIKey = process.env.OPENAI_API_KEY;
-  if (!envOpenAIKey) return null;
+  const cachedSmartTitle = await generateSmartTitleFromPrompts(conversationId, userTexts);
+  if (cachedSmartTitle) {
+    return cachedSmartTitle;
+  }
 
-  const titleOpenAI = createOpenAI({ apiKey: envOpenAIKey });
-  const dynamic = await getDynamicModelConfig();
-  const titleModel = 'gpt-4o'; // Always use GPT-4o for title generation via OpenAI
-
-  const result = await generateText({
-    model: titleOpenAI(titleModel),
-    prompt: [
-      'Buat judul singkat dan spesifik (maksimal 35 karakter) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
-      'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
-      'Fokus pada keyword utama. Maksimal 4-5 kata.',
-      'Dasarkan pada 1-3 prompt awal user di bawah ini:',
-      ...userTexts.map((t, i) => `${i + 1}. ${t}`),
-      'Output hanya judulnya saja.'
-    ].join('\n'),
-    temperature: Math.min(0.5, Math.max(0.1, dynamic.config.temperature || 0.3)),
-    maxOutputTokens: 48,
-  });
-  const raw = (result as any)?.text || '';
-  const cleaned = sanitizeTitle(raw);
-  return cleaned || null;
+  const fallback = sanitizeTitle(userTexts[0] || '', { maxLength: 35 });
+  return fallback || null;
 }
 
 export async function POST(req: NextRequest) {
@@ -159,4 +106,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Unknown error' }, { status: 500 });
   }
 }
-

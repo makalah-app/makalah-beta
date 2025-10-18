@@ -171,7 +171,7 @@ async function handleSmartTitleGeneration(chatId: string, messages: UIMessage[])
     if (isDefaultTitle && messages.length >= 2) {
       // Direct async execution - will complete before serverless function terminates
       try {
-        const smartTitle = await generateSmartTitleFromMessages(messages);
+        const smartTitle = await generateSmartTitleFromMessages(messages, chatId);
         if (smartTitle && smartTitle !== currentTitle) {
           await (supabaseAdmin as any)
             .from('conversations')
@@ -633,7 +633,7 @@ async function ensureConversationExists(
   // Smart title generation now completes before function returns
   if (!error && newConversation) {
     try {
-      const smartTitle = await generateSmartTitleFromMessages(messages);
+      const smartTitle = await generateSmartTitleFromMessages(messages, chatId);
 
       if (smartTitle && smartTitle !== fallbackTitle) {
         await (supabaseAdmin as any)
@@ -737,110 +737,53 @@ function generateTitleFromMessages(messages: UIMessage[]): string {
  * Falls back to heuristic if model call fails. Compliant with AI SDK v5 generateText.
  * 🔧 FIX: Uses proper OpenAI configuration with explicit API key to prevent API key errors
  */
-async function generateSmartTitleFromMessages(messages: UIMessage[]): Promise<string> {
-  try {
-    // Collect up to first 3 user messages with non-empty text (AI SDK compliant)
-    const userTexts: string[] = [];
-    for (const msg of messages) {
-      if (msg.role !== 'user' || !msg.parts) continue;
+let cachedSmartTitleModule:
+  | ((chatId: string, prompts: string[]) => Promise<string | null>)
+  | null = null;
 
-      // Extract text from parts array per AI SDK documentation
-      const textPart = msg.parts.find(p => p.type === 'text') as { text: string } | undefined;
-      const text = textPart?.text || '';
-      const trimmed = text.trim();
-
-      if (trimmed.length > 0) userTexts.push(trimmed);
-      if (userTexts.length >= 3) break;
-    }
-
-    if (userTexts.length === 0) {
-      
-      return 'New Academic Chat';
-    }
-
-    // Build concise prompt for title generation
-    const prompt = [
-      'Buat judul singkat dan spesifik (5-12 kata) dalam Bahasa Indonesia untuk percakapan akademik berikut.',
-      'Syarat: Title Case, tanpa tanda kutip, tanpa titik di akhir, tanpa nomor.',
-      'Dasarkan pada 1-3 prompt awal user di bawah ini:',
-      ...userTexts.map((t, i) => `${i + 1}. ${t}`),
-      'Output hanya judulnya saja.'
-    ].join('\n');
-
-    // 🔧 FIX: Use proper OpenAI configuration with explicit API key (same as main chat)
-    let createOpenAI: any;
-    try {
-      const openaiModule = await import('@ai-sdk/openai');
-      createOpenAI = openaiModule.createOpenAI;
-    } catch (importError) {
-      return generateTitleFromMessages(messages);
-    }
-
-    // Get environment API key (guaranteed to work since main chat works)
-    const envOpenAIKey = process.env.OPENAI_API_KEY;
-    if (!envOpenAIKey) {
-      return generateTitleFromMessages(messages);
-    }
-
-    // Create OpenAI provider with explicit API key (same pattern as dynamic-config.ts)
-    const titleOpenAI = createOpenAI({
-      apiKey: envOpenAIKey,
-    });
-
-    // 🔧 CRITICAL FIX: Always use GPT-4o for title generation
-    // This function ALREADY hardcodes titleOpenAI (OpenAI instance),
-    // so we MUST use OpenAI-compatible model names only.
-    // Previous bug: Used OpenRouter model names when primaryProvider was OpenRouter,
-    // causing API errors and routing to wrong provider.
-    let titleModel = 'gpt-4o'; // Force GPT-4o for all title generation
-    let titleTemperature = 0.3; // Conservative temperature for consistent titles
-
-    try {
-      const dynamicConfig = await getDynamicModelConfig();
-      // Use dynamic temperature but cap it for title generation
-      titleTemperature = Math.min(dynamicConfig.config.temperature * 3, 0.5);
-    } catch (error) {
-      // Silently use fallback temperature
-    }
-
-    // Use dynamic model selection for title generation
-    const model = titleOpenAI(titleModel);
-
-    const result = await generateText({
-      model,
-      prompt,
-      temperature: titleTemperature, // ✅ Dynamic temperature from admin panel
-      maxOutputTokens: 32, // ✅ AI SDK v5 compliant parameter name
-    });
-
-    // Type-safe extraction of text (AI SDK v5 compliant)
-    const raw = result && typeof result === 'object' && 'text' in result
-      ? String(result.text)
-      : '';
-    const title = sanitizeTitle(raw);
-    return title.length > 0 ? title : generateTitleFromMessages(messages);
-  } catch (err) {
-    return generateTitleFromMessages(messages);
+async function getSmartTitleGenerator() {
+  if (typeof window !== 'undefined') {
+    return null;
   }
+  if (!cachedSmartTitleModule) {
+    const module = await import('@/lib/ai/tools/smart-title-tool');
+    cachedSmartTitleModule = module.generateSmartTitleFromPrompts;
+  }
+  return cachedSmartTitleModule;
 }
 
-function sanitizeTitle(input: string): string {
-  let t = (input || '').trim();
-  // Remove surrounding quotes
-  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith('\'') && t.endsWith('\''))) {
-    t = t.slice(1, -1).trim();
+async function generateSmartTitleFromMessages(messages: UIMessage[], chatId?: string): Promise<string> {
+  const userTexts: string[] = [];
+
+  for (const msg of messages) {
+    if (msg.role !== 'user' || !msg.parts) continue;
+    const textPart = msg.parts.find(p => p.type === 'text') as { text: string } | undefined;
+    const trimmed = (textPart?.text || '').trim();
+    if (trimmed) {
+      userTexts.push(trimmed);
+    }
+    if (userTexts.length >= 3) {
+      break;
+    }
   }
-  // Remove trailing punctuation
-  t = t.replace(/[\s\-–—:;,.!?]+$/g, '');
-  // Collapse whitespace
-  t = t.replace(/\s+/g, ' ').trim();
-  // Title Case basic (conservative)
-  t = t.split(' ').map(w => w.length > 2 ? (w[0].toUpperCase() + w.slice(1)) : w.toLowerCase()).join(' ');
-  // Avoid generic defaults
-  if (/^new (academic )?chat$/i.test(t)) {
-    return '';
+
+  if (userTexts.length === 0) {
+    return generateTitleFromMessages(messages);
   }
-  return t;
+
+  try {
+    const smartTitleGenerator = await getSmartTitleGenerator();
+    if (smartTitleGenerator) {
+      const cachedTitle = await smartTitleGenerator(chatId ?? 'unknown-chat', userTexts);
+      if (cachedTitle) {
+        return cachedTitle;
+      }
+    }
+  } catch {
+    // Fallback handled below
+  }
+
+  return generateTitleFromMessages(messages);
 }
 
 /**
