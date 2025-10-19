@@ -90,7 +90,7 @@ async function persistMessages(chatId: string, messagesForDB: any[]): Promise<vo
   const { error: messagesError } = await (supabaseAdmin as any)
     .from('chat_messages')
     .upsert(messagesForDB, {
-      onConflict: 'message_id',
+      onConflict: 'conversation_id,sequence_number',
       ignoreDuplicates: false
     });
 

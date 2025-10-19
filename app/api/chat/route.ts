@@ -9,13 +9,15 @@ import {
   type UIMessage,
   convertToModelMessages
 } from 'ai';
-import { Agent } from '@ai-sdk-tools/agents';
+import { Agent, handoff } from '@ai-sdk-tools/agents';
 import { openai } from '@ai-sdk/openai';
 import { getDynamicModelConfig } from '../../../src/lib/ai/dynamic-config';
 import { getUserIdWithSystemFallback } from '../../../src/lib/database/supabase-server-auth';
 import { getValidUserUUID } from '../../../src/lib/utils/uuid-generator';
 import { getProviderManager } from '../../../src/lib/ai/providers';
 import { artifactWriterAgent } from '../../../src/lib/ai/agents/artifact-writer';
+import { keepLastNMessages } from '../../../src/lib/ai/coordination/handoff-filters';
+import { onArtifactWriterComplete } from '../../../src/lib/ai/coordination/handoff-callbacks';
 import { supabaseMemoryProvider } from '../../../src/lib/ai/memory/supabase-memory-provider';
 import { setContext, clearContext } from '../../../src/lib/ai/tools/artifact-context';
 import { summarizeAndPersistWorkingMemory } from '../../../src/lib/ai/memory/autosummarizer';
@@ -124,7 +126,12 @@ export async function POST(req: Request) {
         return dynamicConfig.systemPrompt?.trim() || '';
       },
 
-      handoffs: [artifactWriterAgent],  // ✅ Explicit specialist registration
+      handoffs: [
+        handoff(artifactWriterAgent as any, {
+          inputFilter: keepLastNMessages(8),
+          onHandoff: onArtifactWriterComplete,
+        }),
+      ],  // ✅ Specialist registration with input filter + callback
 
       tools: {
         // OpenAI native web search

@@ -50,7 +50,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.8.0",
     "@upstash/redis": "^1.35.3",
-    "ai": "^5.0.47",
+    "ai": "^5.0.76",
     "ai-elements": "^1.1.2",
     "autoprefixer": "^10.4.0",
     "buffer": "^6.0.3",
@@ -60,6 +60,7 @@
     "date-fns": "^4.1.0",
     "docx": "^9.5.1",
     "dotenv": "^17.2.2",
+    "drizzle-orm": "^0.36.4",
     "lucide-react": "^0.294.0",
     "next": "^14.2.0",
     "next-themes": "^0.3.0",
@@ -81,7 +82,7 @@
     "use-stick-to-bottom": "^1.1.1",
     "util": "^0.12.5",
     "uuid": "^11.1.0",
-    "zod": "^3.23.0",
+    "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

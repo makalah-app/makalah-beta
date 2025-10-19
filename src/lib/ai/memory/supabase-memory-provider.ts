@@ -102,6 +102,49 @@ export class SupabaseMemoryProvider implements MemoryProvider {
     }
   }
 
+  async getMessages(params: { chatId: string; limit?: number }): Promise<ConversationMessage[]> {
+    try {
+      const limit = Math.max(1, Math.min(params.limit ?? 10, 50));
+      const { data, error } = await (supabaseAdmin as any)
+        .from('chat_messages')
+        .select('role, content, parts, created_at, conversation_id')
+        .eq('conversation_id', params.chatId)
+        .in('role', ['user', 'assistant', 'system'])
+        .order('sequence_number', { ascending: true });
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn('[SupabaseMemoryProvider] getMessages error', error);
+        return [];
+      }
+
+      const normalizeText = (row: any): string => {
+        const base = typeof row.content === 'string' ? row.content : '';
+        const parts = Array.isArray(row.parts) ? row.parts : [];
+        const textParts = parts
+          .filter((p: any) => (p && (p.type || p.kind)) && String(p.type || p.kind) === 'text')
+          .map((p: any) => String(p.text || ''))
+          .join(' ');
+        const merged = base && textParts ? `${base} ${textParts}` : (base || textParts || '');
+        return String(merged || '').trim();
+      };
+
+      const all: ConversationMessage[] = (data || []).map((row: any) => ({
+        chatId: row.conversation_id,
+        role: row.role,
+        content: normalizeText(row),
+        timestamp: row.created_at ? new Date(row.created_at) : new Date(),
+      }));
+
+      // Keep only the last N
+      return all.slice(-limit);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('[SupabaseMemoryProvider] getMessages fatal', e);
+      return [];
+    }
+  }
+
   async saveMessage(_message: ConversationMessage): Promise<void> {
     // Chat history is already persisted via chat-store, so we intentionally no-op here.
     return;
