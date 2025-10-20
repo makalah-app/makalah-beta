@@ -640,12 +640,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Map Supabase user to our User interface (fallback to auth metadata if profile missing)
       const fallbackName = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User';
 
+      // Build User object for session (fix: ensure variable exists before use)
+      const initialProfileData = (userProfile as any)?.user_profiles?.[0];
+      const initialUser: User = userProfile ? {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: initialProfileData?.display_name || fallbackName,
+        fullName: initialProfileData?.display_name || fallbackName,
+        role: (userProfile.role as UserRole) || 'user',
+        institution: initialProfileData?.institution || undefined,
+        predikat: initialProfileData?.predikat || undefined,
+        isVerified: !!userProfile.email_verified_at,
+        createdAt: userProfile.created_at,
+        lastLogin: userProfile.last_login_at || new Date().toISOString(),
+        avatarUrl: initialProfileData?.avatar_url || undefined,
+      } : {
+        id: data.user.id,
+        email: data.user.email!,
+        name: fallbackName,
+        fullName: fallbackName,
+        role: 'user' as UserRole,
+        institution: data.user.user_metadata?.institution,
+        predikat: data.user.user_metadata?.predikat,
+        isVerified: data.user.email_confirmed_at != null,
+        createdAt: data.user.created_at!,
+        lastLogin: new Date().toISOString(),
+        avatarUrl: (data.user.user_metadata as any)?.avatar_url,
+      };
+
       // Create our auth session
       const session: AuthSession = {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
         expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now(),
-        user: user,
+        user: initialUser,
         sessionId: data.session.user?.id || 'session-' + Date.now()
       };
 
@@ -796,7 +824,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password: data.password,
         options: {
           data: {
-            full_name: data.fullName,
+            full_name: `${(data.firstName || '').trim()}${data.lastName ? ' ' + data.lastName.trim() : ''}`.trim() || data.email.split('@')[0],
             role: 'user', // Always register as 'user' role
             institution: data.institution
           }
@@ -812,8 +840,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Skip the users table entirely - Supabase auth is the source of truth
       // Only create user_profiles entry for additional profile information
-      const nameParts = data.fullName.trim().split(' ');
-      const firstName = nameParts[0] || data.fullName;
+      const fullNameFromForm = `${(data.firstName || '').trim()}${data.lastName ? ' ' + data.lastName.trim() : ''}`.trim() || data.email.split('@')[0];
+      const nameParts = fullNameFromForm.split(' ');
+      const firstName = nameParts[0] || fullNameFromForm;
       // FIX: Ensure last_name is never empty for NOT NULL constraint
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
 
@@ -824,7 +853,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user_id: authData.user.id,
           first_name: firstName,
           last_name: lastName,
-          display_name: data.fullName,
+          display_name: fullNameFromForm,
           institution: data.institution || null,
           predikat: data.predikat || null, // Save predikat (Mahasiswa/Peneliti)
           created_at: new Date().toISOString(),
@@ -841,7 +870,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await ensureUserRecord({
           userId: authData.user.id,
           email: authData.user.email || data.email,
-          fullName: data.fullName,
+          fullName: fullNameFromForm,
           firstName: firstName,
           lastName: lastName,
           institution: data.institution || null,

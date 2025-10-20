@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../src/lib/database/supabase-client';
 import { getServerSessionUserId } from '../../../src/lib/database/supabase-server-auth';
 
+// Ensure Node.js runtime (Supabase SDK uses Node APIs)
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await getServerSessionUserId();
@@ -18,7 +21,8 @@ export async function POST(request: NextRequest) {
       .eq('id', userId)
       .maybeSingle();
 
-    if (requesterError || !requester || requester.role !== 'superadmin') {
+    const requesterRole = (requester as any)?.role as string | undefined;
+    if (requesterError || !requesterRole || (requesterRole !== 'superadmin' && requesterRole !== 'admin')) {
       return NextResponse.json({
         error: 'Superadmin access required',
         timestamp: new Date().toISOString()
