@@ -229,6 +229,9 @@ supabase/
 .supabase/
 tsconfig.app.tsbuildinfo
 
+# Development Scripts (DANGEROUS - Contains sensitive operations)
+scripts/
+
 # Other
 VERCEL_FIX_INSTRUCTIONS.md
 vercel-env-setup.txt
