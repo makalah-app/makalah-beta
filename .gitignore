@@ -229,6 +229,9 @@ src/lib/caching/*-test*.ts
 jest.config.js
 jest.setup.js
 
+# Documentation (SECURITY CRITICAL - Contains system architecture)
+docs/
+
 # Supabase Local Development
 supabase/
 .supabase/
