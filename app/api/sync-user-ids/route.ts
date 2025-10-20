@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../src/lib/database/supabase-client';
+import { getServerSessionUserId } from '../../../src/lib/database/supabase-server-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await getServerSessionUserId();
+    if (!userId) {
+      return NextResponse.json({
+        error: 'Authentication required',
+        timestamp: new Date().toISOString()
+      }, { status: 401 });
+    }
+
+    const { data: requester, error: requesterError } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (requesterError || !requester || requester.role !== 'superadmin') {
+      return NextResponse.json({
+        error: 'Superadmin access required',
+        timestamp: new Date().toISOString()
+      }, { status: 403 });
+    }
+
     const { email } = await request.json();
 
     // Get current auth user

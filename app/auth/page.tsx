@@ -4,18 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BrandLogo from '@/components/ui/BrandLogo';
-import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 
 interface FormData {
   email: string;
   password: string;
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  predikat?: string;
   confirmPassword?: string;
 }
 
@@ -36,7 +39,9 @@ export default function AuthPage() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
-    fullName: "",
+    firstName: "",
+    lastName: "",
+    predikat: "",
     confirmPassword: ""
   });
 
@@ -45,15 +50,23 @@ export default function AuthPage() {
     setMounted(true);
   }, []);
 
-  // Check URL params for tab
+  // Check URL params for tab and email verification
   useEffect(() => {
     const tab = searchParams.get('tab');
+    const verified = searchParams.get('verified');
+
     if (tab === 'register') {
       setIsRegisterMode(true);
     }
+
+    // Handle email verification - show success message but don't auto-login
+    if (verified === 'true') {
+      setSuccessMessage('Email Anda telah berhasil diverifikasi! Silakan login dengan kredensial Anda.');
+      setIsRegisterMode(false); // Switch to login mode
+    }
   }, [searchParams]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -74,7 +87,9 @@ export default function AuthPage() {
         await register({
           email: formData.email,
           password: formData.password,
-          fullName: formData.fullName || '',
+          firstName: formData.firstName || '',
+          lastName: formData.lastName || '',
+          predikat: formData.predikat || '',
           role: 'user', // Default role untuk registrasi umum
         });
         // Show success message and redirect to login
@@ -82,7 +97,7 @@ export default function AuthPage() {
         setShowResendOption(true);
         setResendEmail(formData.email);
         setIsRegisterMode(false);
-        setFormData({ email: formData.email, password: '', fullName: '', confirmPassword: '' });
+        setFormData({ email: formData.email, password: '', firstName: '', lastName: '', predikat: '', confirmPassword: '' });
         setIsSubmitting(false);
       } else {
         await login({
@@ -140,7 +155,7 @@ export default function AuthPage() {
 
   const toggleMode = () => {
     setIsRegisterMode(!isRegisterMode);
-    setFormData({ email: '', password: '', fullName: '', confirmPassword: '' });
+    setFormData({ email: '', password: '', firstName: '', lastName: '', predikat: '', confirmPassword: '' });
     setShowPassword(false);
     setShowConfirmPassword(false);
     setIsSubmitting(false);
@@ -174,48 +189,95 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !isRegisterMode && (
-              <div className="mb-4 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded">
-                <p className="text-sm text-success-800 dark:text-success-200 flex items-center gap-2 mb-2">
-                  <span>✅</span>
-                  <span>{successMessage}</span>
-                </p>
-                {showResendOption && (
-                  <div className="mt-3 pt-3 border-t border-success-200 dark:border-success-800">
-                    <p className="text-xs text-success-700 dark:text-success-300 mb-2">
-                      Email tidak sampai? Cek folder spam atau kirim ulang.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResendEmail}
-                      disabled={isLoading || !!resendMessage}
-                      className="text-xs"
-                    >
-                      {resendMessage || 'Kirim Ulang Email Verifikasi'}
-                    </Button>
+              <Alert className="mb-6 text-white">
+                <div className="mx-auto flex w-fit items-center gap-4">
+                  <CheckCircle2 className="h-16 w-16 text-white" aria-hidden="true" />
+                  <div className="text-left">
+                    <AlertTitle className="text-white text-lg font-semibold">Registrasi berhasil!</AlertTitle>
+                    <AlertDescription className="text-white mt-1">
+                      Email Anda telah berhasil diverifikasi! <br />
+                      Silakan login dengan kredensial Anda.
+                      {showResendOption && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-sm text-white/90">
+                            Email tidak sampai? Cek folder spam atau kirim ulang.
+                          </p>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResendEmail}
+                              disabled={isLoading}
+                              className="border-white/30 text-white hover:bg-white/10"
+                            >
+                              Kirim Ulang Email Verifikasi
+                            </Button>
+                            {resendMessage && (
+                              <p className="text-sm text-white/90">
+                                {resendMessage}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </AlertDescription>
                   </div>
-                )}
-              </div>
+                </div>
+              </Alert>
             )}
 
             <form onSubmit={handleSubmit} className="space-ui-loose">
               {isRegisterMode && (
-                <div className="space-ui-medium">
-                  <Label htmlFor="fullName" className="text-sm font-medium text-foreground">
-                    Nama Lengkap
-                  </Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan nama lengkap"
-                    disabled={isSubmitting || isLoading}
-                    required
-                  />
-                </div>
+                <>
+                  <div className="space-ui-medium">
+                    <Label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                      Nama Depan
+                    </Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan nama depan"
+                      disabled={isSubmitting || isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-ui-medium">
+                    <Label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                      Nama Belakang
+                    </Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      placeholder="Masukkan nama belakang"
+                      disabled={isSubmitting || isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-ui-medium">
+                    <Label htmlFor="predikat" className="text-sm font-medium text-foreground">
+                      Predikat
+                    </Label>
+                    <select
+                      id="predikat"
+                      name="predikat"
+                      value={formData.predikat || ''}
+                      onChange={handleInputChange}
+                      disabled={isSubmitting || isLoading}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">Pilih predikat</option>
+                      <option value="Mahasiswa">Mahasiswa</option>
+                      <option value="Peneliti">Peneliti</option>
+                    </select>
+                  </div>
+                </>
               )}
 
               <div className="space-ui-medium">

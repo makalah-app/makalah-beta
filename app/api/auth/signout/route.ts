@@ -13,4 +13,3 @@ export async function POST(_req: NextRequest) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Unknown error' }, { status: 500 });
   }
 }
-

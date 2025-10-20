@@ -75,7 +75,8 @@ export interface LoginCredentials {
 export interface RegistrationData {
   email: string;
   password: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   role: UserRole;
   institution?: string;
   predikat?: string; // Mahasiswa or Peneliti
@@ -138,6 +139,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const permissionManager = PermissionManager.getInstance();
+  const ensureUserRecord = useCallback(
+    async (params: {
+      userId: string;
+      email: string;
+      fullName?: string;
+      firstName?: string;
+      lastName?: string;
+      institution?: string | null;
+      predikat?: string | null;
+      emailVerifiedAt?: string | null;
+      role?: string | null;
+    }): Promise<boolean> => {
+      try {
+        const response = await fetch('/api/auth/provision', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(params),
+        });
+
+        return response.ok;
+      } catch {
+        return false;
+      }
+    },
+    []
+  );
 
   // Prevent multiple initialization attempts
   const initializingRef = React.useRef(false);
@@ -606,48 +635,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
 
+      const profileMissing = !userProfile;
+
       // Map Supabase user to our User interface (fallback to auth metadata if profile missing)
-      const emailName = userProfile?.email?.split('@')[0] || data.user.email?.split('@')[0] || 'User';
       const fallbackName = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User';
-
-      const profileData = userProfile?.user_profiles?.[0];
-
-      const user: User = userProfile ? {
-        // Extract profile data from joined result
-        id: userProfile.id,
-        email: userProfile.email,
-        name: (() => {
-          const profile = profileData;
-          return profile?.display_name ||
-                 (profile?.first_name && profile?.last_name ?
-                  `${profile.first_name} ${profile.last_name}` : emailName);
-        })(),
-        fullName: (() => {
-          const profile = profileData;
-          return profile?.display_name ||
-                 (profile?.first_name && profile?.last_name ?
-                  `${profile.first_name} ${profile.last_name}` : undefined);
-        })(),
-        role: userProfile.role as UserRole,
-        institution: profileData?.institution || undefined,
-        predikat: profileData?.predikat || undefined,
-        isVerified: !!userProfile.email_verified_at,
-        createdAt: userProfile.created_at,
-        lastLogin: new Date().toISOString(),
-        avatarUrl: profileData?.avatar_url || undefined
-      } : {
-        // Fallback to auth user_metadata if profile doesn't exist
-        id: data.user.id,
-        email: data.user.email!,
-        name: fallbackName,
-        fullName: data.user.user_metadata?.full_name || undefined,
-        role: (data.user.user_metadata?.role || 'user') as UserRole,
-        institution: data.user.user_metadata?.institution || undefined,
-        isVerified: data.user.email_confirmed_at != null,
-        createdAt: data.user.created_at!,
-        lastLogin: new Date().toISOString(),
-        avatarUrl: data.user.user_metadata?.avatar_url || undefined
-      };
 
       // Create our auth session
       const session: AuthSession = {
@@ -691,6 +682,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // SSR cookie sync failed, but login still successful
       }
 
+      if (profileMissing) {
+        const provisioned = await ensureUserRecord({
+          userId: data.user.id,
+          email: data.user.email || '',
+          fullName: fallbackName,
+          firstName: data.user.user_metadata?.first_name,
+          lastName: data.user.user_metadata?.last_name,
+          institution: data.user.user_metadata?.institution,
+          predikat: data.user.user_metadata?.predikat,
+          emailVerifiedAt: data.user.email_confirmed_at,
+          role: data.user.user_metadata?.role,
+        });
+
+        if (provisioned) {
+          const refreshedProfile = await (supabaseClient as any)
+            .from('users')
+            .select(`
+              id, email, role, email_verified_at, created_at, last_login_at,
+              user_profiles(
+                display_name, first_name, last_name, institution, avatar_url, predikat
+              )
+            `)
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+          if (refreshedProfile?.data) {
+            userProfile = {
+              id: refreshedProfile.data.id,
+              email: refreshedProfile.data.email,
+              role: refreshedProfile.data.role,
+              email_verified_at: refreshedProfile.data.email_verified_at,
+              created_at: refreshedProfile.data.created_at,
+              last_login_at: refreshedProfile.data.last_login_at || new Date().toISOString(),
+              user_profiles: refreshedProfile.data.user_profiles || [],
+            };
+          }
+        }
+      }
+
+      const resolvedProfile = userProfile;
+      const profileData = resolvedProfile?.user_profiles?.[0];
+      const emailName = resolvedProfile?.email?.split('@')[0] || data.user.email?.split('@')[0] || 'User';
+
+      const user: User = resolvedProfile ? {
+        id: resolvedProfile.id,
+        email: resolvedProfile.email,
+        name: (() => {
+          const profile = profileData;
+          return profile?.display_name ||
+                 (profile?.first_name && profile?.last_name
+                   ? `${profile.first_name} ${profile.last_name}`
+                   : emailName);
+        })(),
+        fullName: (() => {
+          const profile = profileData;
+          return profile?.display_name ||
+                 (profile?.first_name && profile?.last_name
+                   ? `${profile.first_name} ${profile.last_name}`
+                   : undefined);
+        })(),
+        role: resolvedProfile.role as UserRole,
+        institution: profileData?.institution || undefined,
+        predikat: profileData?.predikat || undefined,
+        isVerified: !!resolvedProfile.email_verified_at,
+        createdAt: resolvedProfile.created_at,
+        lastLogin: new Date().toISOString(),
+        avatarUrl: profileData?.avatar_url || undefined
+      } : {
+        id: data.user.id,
+        email: data.user.email!,
+        name: fallbackName,
+        fullName: data.user.user_metadata?.full_name || undefined,
+        role: (data.user.user_metadata?.role || 'user') as UserRole,
+        institution: data.user.user_metadata?.institution || undefined,
+        predikat: data.user.user_metadata?.predikat || undefined,
+        isVerified: data.user.email_confirmed_at != null,
+        createdAt: data.user.created_at!,
+        lastLogin: new Date().toISOString(),
+        avatarUrl: data.user.user_metadata?.avatar_url || undefined
+      };
+
       await touchLastLogin({
         userId: data.user.id,
         email: data.user.email,
@@ -709,7 +781,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }));
       return false;
     }
-  }, [touchLastLogin]);
+  }, [touchLastLogin, ensureUserRecord]);
 
   /**
    * Register new user
@@ -730,7 +802,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       });
-
       if (authError) {
         throw new Error(authError.message);
       }
@@ -743,7 +814,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Only create user_profiles entry for additional profile information
       const nameParts = data.fullName.trim().split(' ');
       const firstName = nameParts[0] || data.fullName;
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      // FIX: Ensure last_name is never empty for NOT NULL constraint
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
 
       // Create user profile in user_profiles table with predikat
       const { error: profileError } = await (supabaseClient as any)
@@ -764,7 +836,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User can still use the app with just auth.users entry
       }
 
-      // Registration successful - user needs to verify email
+      // Provision user record for consistency (best effort)
+      if (authData.user) {
+        await ensureUserRecord({
+          userId: authData.user.id,
+          email: authData.user.email || data.email,
+          fullName: data.fullName,
+          firstName: firstName,
+          lastName: lastName,
+          institution: data.institution || null,
+          predikat: data.predikat || null,
+          emailVerifiedAt: authData.user.email_confirmed_at,
+          role: authData.user.user_metadata?.role,
+        });
+      }
+
+      // Registration successful (either normal flow or dev fallback)
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
@@ -782,7 +869,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }));
       return false;
     }
-  }, []);
+  }, [ensureUserRecord]);
 
   /**
    * Logout user
@@ -1117,7 +1204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`
+          emailRedirectTo: `${window.location.origin}/auth?verified=true`
         }
       });
 

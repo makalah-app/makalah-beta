@@ -45,6 +45,26 @@ export async function middleware(req: NextRequest) {
       if (timeUntilExpiry < 300) {
         await supabase.auth.refreshSession();
       }
+
+      const pathname = req.nextUrl.pathname;
+      const requiresProvisionedUser =
+        pathname.startsWith('/chat') ||
+        pathname.startsWith('/admin');
+
+      if (requiresProvisionedUser) {
+        const { data: provisionedUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (!provisionedUser) {
+          const redirectUrl = req.nextUrl.clone();
+          redirectUrl.pathname = '/auth';
+          redirectUrl.searchParams.set('reason', 'incomplete-profile');
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
     }
   } catch {
     // ignore
@@ -59,4 +79,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };
-

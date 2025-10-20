@@ -18,29 +18,29 @@ When performing ANY of the following operations:
 - Dependency analysis
 - Test execution and coverage analysis
 
-**YOU MUST EXCLUDE**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/__references__`
+**YOU MUST EXCLUDE**: `/Users/eriksupit/Desktop/makalah-deploy/makalahApp/.references`
 
 **Rationale**:
-- `__references__/` contains documentation copies and reference materials ONLY
+- `.references/` contains documentation copies and reference materials ONLY
 - NOT part of production codebase
 - Includes: AI SDK docs (`aisdk/`), third-party tool sources (`ai-sdk-tools/`), workflow documentation
 - Scanning this directory causes false positives, wastes tokens, and pollutes analysis results
 
 **Exception**:
-- ONLY access `__references__/` when supervisor (Erik Supit) EXPLICITLY commands it
-- Example valid commands: "Read file in __references__/", "Check documentation in __references__/"
+- ONLY access `.references/` when supervisor (Erik Supit) EXPLICITLY commands it
+- Example valid commands: "Read file in .references/", "Check documentation in .references/"
 - Without explicit mention, ALWAYS exclude this directory
 
 **Tool Usage Examples**:
 ```bash
-# ✅ CORRECT: Exclude __references__ in searches
-find . -name "*.ts" -not -path "./__references__/*"
-grep -r "pattern" --exclude-dir="__references__"
-npx jest --testPathIgnorePatterns="__references__"
+# ✅ CORRECT: Exclude .references in searches
+find . -name "*.ts" -not -path "./.references/*"
+grep -r "pattern" --exclude-dir=".references"
+npx jest --testPathIgnorePatterns=".references"
 
-# ❌ WRONG: Including __references__ in analysis
-find . -name "*.ts"  # Will scan __references__
-grep -r "error" .    # Will scan __references__
+# ❌ WRONG: Including .references in analysis
+find . -name "*.ts"  # Will scan .references
+grep -r "error" .    # Will scan .references
 ```
 
 ## Project Overview
@@ -340,7 +340,7 @@ Location: `src/lib/ai/tools/`
 - Native web search (OpenAI Responses API + OpenRouter :online models)
 
 **Tool Compliance Policy**:
-- **ONLY** use tools verified in `__references__/ai-sdk-tools/` and `__references__/aisdk/`
+- **ONLY** use tools verified in `.references/ai-sdk-tools/` and `.references/aisdk/`
 - **ONLY** use official tools provided by OpenAI or OpenRouter APIs
 - **STRICTLY FORBIDDEN** to create custom tools outside these sources
 
@@ -403,7 +403,7 @@ Return systemPrompt to streamText()
 
 ### System Prompt Update Workflow
 
-**Source File**: `__references__/system_instruction/openai_prompt.md`
+**Source File**: `.references/system_instruction/openai_prompt.md`
 
 **Workflow**:
 1. **Edit reference file** (NOT database directly)
@@ -442,9 +442,9 @@ This project uses enhanced AI SDK tools from [midday.ai/ai-sdk-tools](https://gi
 
 ### Reference Documentation
 
-**AI SDK v5**: `__references__/aisdk/content/` - Always consult before making architectural decisions
+**AI SDK v5**: `.references/aisdk/content/` - Always consult before making architectural decisions
 
-**Third-party tools**: `__references__/ai-sdk-tools/packages/*/README.md` - Package-specific usage patterns
+**Third-party tools**: `.references/ai-sdk-tools/packages/*/README.md` - Package-specific usage patterns
 
 ### Migration Notes
 
