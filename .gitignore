@@ -225,6 +225,10 @@ src/lib/caching/*-test*.ts
 *-test-report.json
 *-testing.js
 
+# Testing Configuration (Jest)
+jest.config.js
+jest.setup.js
+
 # Supabase Local Development
 supabase/
 .supabase/
