@@ -25,6 +25,7 @@ next-env.d.ts
 # Environment variables (CRITICAL - DO NOT COMMIT)
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
