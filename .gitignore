@@ -254,6 +254,11 @@ playwright.config.ts
 onboarding.md
 SUPABASE_EMAIL_SETUP.md
 
+# Local-only overrides
+.dockerignore
+.vercelignore
+.references/
+
 # Debug & Testing Tools (Development Only - Solo Dev)
 # Note: Selective exclusion - some debug endpoints are system-critical
 /app/test-login/

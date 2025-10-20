@@ -15,10 +15,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getConversationDetails
-} from '../../../../src/lib/database/chat-store';
+import { getConversationDetails } from '../../../../src/lib/database/chat-store';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
+import { redisManager } from '../../../../src/lib/caching';
 
 // Allow for database operations
 export const maxDuration = 30;
@@ -151,6 +150,18 @@ export async function PUT(
       }, { status: 404 });
     }
     
+    const cacheEnabled = process.env.CACHE_CHAT_HISTORY_ENABLED === 'true';
+    if (cacheEnabled && redisManager.isRedisHealthy()) {
+      try {
+        const convPattern = redisManager.formatKey('QUERY_CACHE', `chat-history:conv:${id}:`);
+        await redisManager.deleteCachePattern(`${convPattern}*`);
+        const listPattern = redisManager.formatKey('QUERY_CACHE', `chat-history:list:${updatedConversation.user_id || 'unknown'}:`);
+        await redisManager.deleteCachePattern(`${listPattern}*`);
+      } catch {
+        // Silent cache invalidation failure - non critical
+      }
+    }
+
     // Load updated conversation details (use supabaseAdmin to bypass RLS)
     const conversationDetails = await getConversationDetails(id, supabaseAdmin);
     

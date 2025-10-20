@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import BrandLogo from '@/components/ui/BrandLogo';
-import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react';
+import { MessageSquare, Trash2, Search, MessageCircle, ChevronRight, ChevronDown, RefreshCw, Pencil } from 'lucide-react';
 import { ChatContainer } from '../../src/components/chat/ChatContainer';
 import { ThemeProvider } from '../../src/components/theme/ThemeProvider';
 import { generateUUID } from '../../src/lib/utils/uuid-generator';
@@ -222,7 +222,7 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
 
   return (
     <SidebarMenuItem>
-      <div className="flex items-center gap-1">
+      <div className="group/menu-item flex items-center gap-1">
         {isEditing ? (
           // Edit Mode
           <div className="flex-1 px-2">
@@ -272,13 +272,28 @@ const ConversationHistoryItem: React.FC<ConversationHistoryItemProps> = ({
         )}
 
         {!isEditing && (
-          <button
-            onClick={() => onDelete(conversation.id)}
-            className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded transition-opacity"
-            aria-label="Delete conversation"
-          >
-            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-          </button>
+          <div className="flex items-center gap-1 pr-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                startEdit();
+              }}
+              className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-muted/20 rounded transition-opacity"
+              aria-label="Rename conversation"
+            >
+              <Pencil className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(conversation.id);
+              }}
+              className="opacity-0 group-hover/menu-item:opacity-100 p-1 hover:bg-destructive/10 rounded transition-opacity"
+              aria-label="Delete conversation"
+            >
+              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+            </button>
+          </div>
         )}
       </div>
     </SidebarMenuItem>
