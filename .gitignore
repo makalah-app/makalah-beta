@@ -258,9 +258,12 @@ SUPABASE_EMAIL_SETUP.md
 .dockerignore
 .vercelignore
 .references/
+AGENTS.md
+CLAUDE.md
 
 # Debug & Testing Tools (Development Only - Solo Dev)
 # Note: Selective exclusion - some debug endpoints are system-critical
 /app/test-login/
 /app/api/debug/login/
 /app/clear-auth/
+
