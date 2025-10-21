@@ -123,6 +123,8 @@ const STORAGE_KEYS = {
   USER_PREFERENCES: 'makalah_user_preferences'
 } as const;
 
+const MAX_PROFILE_ATTEMPTS = 3;
+
 /**
  * Helper function to validate user status in database
  * Returns true if user exists and is_active = true
@@ -195,6 +197,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const profileFetchAttemptsRef = useRef<Map<string, number>>(new Map());
   // Track if main initialization has been triggered
   const hasInitializedRef = useRef(false);
+
+  const loadPersistedAuthSession = (): AuthSession | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.SESSION);
+      if (!stored) {
+        return null;
+      }
+      const parsed = JSON.parse(stored) as AuthSession;
+      if (!parsed?.user?.id) {
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
 
   // Helper function to create fallback user from session
   const createFallbackUserFromSession = (session: any): User | null => {
@@ -300,16 +319,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initializingRef.current = true;
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
-      // Check if we've tried too many times for this session
-      if (providedSession?.user?.id) {
-        const attempts = profileFetchAttemptsRef.current.get(providedSession.user.id) || 0;
-        if (attempts >= 3) {
-          initializingRef.current = false;
-          clearTimeout(resetTimeout);
-          return;
-        }
-      }
-
       // First, try to get current session from localStorage first
       let session = providedSession ?? null;
 
@@ -367,6 +376,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return; // No need to fetch profile for unauthenticated users
       }
 
+      const sessionUserId = (session as any)?.user?.id ?? null;
+      if (sessionUserId) {
+        const attempts = profileFetchAttemptsRef.current.get(sessionUserId) || 0;
+        if (attempts >= MAX_PROFILE_ATTEMPTS) {
+          const persistedSession = loadPersistedAuthSession();
+          const hasSupabaseSessionShape = typeof (session as any)?.access_token === 'string' && !!(session as any)?.refresh_token;
+          const fallbackUser = hasSupabaseSessionShape ? createFallbackUserFromSession(session) : null;
+
+          let resolvedSession: AuthSession | null = null;
+
+          if (fallbackUser) {
+            resolvedSession = {
+              accessToken: (session as any)?.access_token || (session as any)?.accessToken || '',
+              refreshToken: (session as any)?.refresh_token || (session as any)?.refreshToken || '',
+              expiresAt: (session as any)?.expires_at ? (session as any).expires_at * 1000 : Date.now(),
+              user: fallbackUser,
+              sessionId: (session as any)?.user?.id || 'session-' + Date.now()
+            };
+            if (!resolvedSession.accessToken || !resolvedSession.refreshToken) {
+              resolvedSession = null;
+            }
+          } else if (persistedSession) {
+            resolvedSession = persistedSession;
+          }
+
+          if (resolvedSession) {
+            try {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(resolvedSession));
+                localStorage.setItem('userId', resolvedSession.user.id);
+              }
+            } catch {}
+
+            profileFetchAttemptsRef.current.set(sessionUserId, 0);
+            setAuthState({
+              user: resolvedSession.user,
+              session: resolvedSession,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+            lastAccessTokenRef.current = resolvedSession.accessToken;
+            lastSessionUserIdRef.current = sessionUserId;
+          } else {
+            setAuthState({
+              user: null,
+              session: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: 'Unable to restore session'
+            });
+          }
+
+          initializingRef.current = false;
+          return;
+        }
+      }
+
       if (
         lastAccessTokenRef.current &&
         lastAccessTokenRef.current === session.access_token &&
@@ -411,12 +478,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isValidUser) {
             // Create auth session with fallback data
             const authSession: AuthSession = {
-              accessToken: session.access_token,
-              refreshToken: session.refresh_token,
-              expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
+              accessToken: (session as any)?.access_token || (session as any)?.accessToken || '',
+              refreshToken: (session as any)?.refresh_token || (session as any)?.refreshToken || '',
+              expiresAt: (session as any)?.expires_at ? (session as any).expires_at * 1000 : Date.now(),
               user: fallbackUser,
-              sessionId: session.user?.id || 'session-' + Date.now()
+              sessionId: (session as any)?.user?.id || 'session-' + Date.now()
             };
+
+            if (!authSession.accessToken || !authSession.refreshToken) {
+              setAuthState({
+                user: null,
+                session: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: 'Unable to finalize session'
+              });
+              initializingRef.current = false;
+              return;
+            }
+
+            try {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession));
+                localStorage.setItem('userId', authSession.user.id);
+              }
+            } catch {}
 
             setAuthState({
               user: fallbackUser,
@@ -427,8 +513,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
 
             // Update tracking refs
-            lastAccessTokenRef.current = session.access_token;
-            lastSessionUserIdRef.current = session.user?.id;
+            lastAccessTokenRef.current = authSession.accessToken;
+            lastSessionUserIdRef.current = (session as any)?.user?.id ?? null;
+            if ((session as any)?.user?.id) {
+              profileFetchAttemptsRef.current.set((session as any).user.id, 0);
+            }
 
             if (session?.user?.id) {
               await touchLastLogin({

@@ -220,15 +220,11 @@ export default function AuthPage() {
           // Validate slide 1 and move to slide 2
           if (validateSlide1()) {
             setCurrentSlide(2);
-            setIsSubmitting(false);
-          } else {
-            setIsSubmitting(false);
           }
           return;
         } else {
           // Slide 2 - complete registration
           if (!validateSlide2()) {
-            setIsSubmitting(false);
             return;
           }
 
@@ -252,7 +248,6 @@ export default function AuthPage() {
           setSlide1Data({ email: "", password: "", confirmPassword: "" });
           setSlide2Data({ firstName: "", lastName: "", predikat: "" });
           setCurrentSlide(1);
-          setIsSubmitting(false);
         }
       } else {
         const success = await login({
@@ -283,7 +278,6 @@ export default function AuthPage() {
           // Don't set isSubmitting(false) for login success - let redirect handle it
         } else {
           // Stay on page; error message displayed by useAuth state
-          setIsSubmitting(false);
           return;
         }
       }
@@ -293,7 +287,7 @@ export default function AuthPage() {
         setShowResendOption(true);
         setResendEmail(formData.email);
       }
-
+    } finally {
       setIsSubmitting(false);
     }
   };
