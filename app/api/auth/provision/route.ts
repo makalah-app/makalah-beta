@@ -7,7 +7,7 @@ import { getServerSessionUserId } from '../../../../src/lib/database/supabase-se
 export const runtime = 'nodejs';
 
 interface ProvisionPayload {
-  userId: string;
+  userId: string | null;
   email: string;
   fullName?: string;
   firstName?: string;
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Ignore any spoofed IDs from client; only trust the session
     const payload: ProvisionPayload = {
-      userId: sessionUserId,
+      userId: sessionUserId || null, // Ensure null safety
       email: sanitizeString(json.email) || '',
       fullName: sanitizeString(json.fullName) || undefined,
       firstName: sanitizeString(json.firstName) || undefined,
