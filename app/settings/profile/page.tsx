@@ -140,14 +140,14 @@ export default function ProfilePage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded border border-dashed border-border/60 bg-muted/30 p-3">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Predikat</span>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex items-start gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-foreground">{profileForm.predikat || 'Belum diatur'}</span>
                   </div>
                 </div>
                 <div className="rounded border border-dashed border-border/60 bg-muted/30 p-3">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Institusi</span>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex items-start gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-foreground">{profileForm.institution || 'Belum diatur'}</span>
                   </div>

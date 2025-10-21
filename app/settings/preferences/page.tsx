@@ -65,7 +65,7 @@ export default function PreferencesPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Palette className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold">Preferensi</h1>

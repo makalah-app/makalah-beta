@@ -71,7 +71,7 @@ export default function AccountPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Shield className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-2xl font-semibold">Info Akun</h1>
