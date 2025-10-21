@@ -94,7 +94,7 @@ export interface AuthContextType extends AuthState {
   // Authentication Methods
   login: (credentials: LoginCredentials) => Promise<boolean>;
   register: (data: RegistrationData) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => Promise<{ success: boolean; error?: string }>;
   refreshToken: () => Promise<boolean>;
   isTokenExpired: (bufferMinutes?: number) => boolean;
 
@@ -902,21 +902,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [ensureUserRecord]);
 
   /**
-   * Logout user
+   * Logout user with proper error handling
    */
-  const logout = useCallback(async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     const currentUserId = authState.user?.id;
+    let serverLogoutSuccess = false;
 
     try {
       // Use Supabase auth logout
       await supabaseClient.auth.signOut();
-      // Clear SSR cookies
-      try { await fetch('/api/auth/signout', { method: 'POST' }); } catch {}
+
+      // Clear SSR cookies with proper error handling
+      try {
+        const signoutResponse = await fetch('/api/auth/signout', { method: 'POST' });
+        serverLogoutSuccess = signoutResponse.ok;
+
+        if (!serverLogoutSuccess) {
+          // Server logout failed, but continue with local cleanup
+        }
+      } catch (serverError) {
+        // Server logout API call failed, but continue with local cleanup
+        serverLogoutSuccess = false;
+      }
+
     } catch (error) {
       // Supabase logout failed, but continue with local cleanup
+      serverLogoutSuccess = false;
     }
 
-    // Clear local storage
+    // Always perform local cleanup regardless of server success
     localStorage.removeItem(STORAGE_KEYS.SESSION);
     localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
     localStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES);
@@ -935,6 +949,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       error: null
     });
+
+    return { success: serverLogoutSuccess };
   }, [authState.user?.id, permissionManager]);
 
   /**

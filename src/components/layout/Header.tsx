@@ -41,12 +41,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   // User dropdown state
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-
 
   // User menu handlers
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
+    setLogoutError(null); // Clear error when menu toggles
   };
 
   const handleSettingsClick = () => {
@@ -56,8 +58,23 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleLogoutClick = async () => {
     setIsUserMenuOpen(false);
-    await logout();
-    router.push('/auth');
+    setIsLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      const result = await logout();
+
+      // Only redirect if logout was successful
+      if (result.success) {
+        router.push('/auth');
+      } else {
+        setLogoutError('Logout gagal. Silakan coba lagi.');
+      }
+    } catch (error) {
+      setLogoutError('Terjadi kesalahan saat logout. Silakan coba lagi.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   // Outside click detection
@@ -155,9 +172,20 @@ export const Header: React.FC<HeaderProps> = ({
                   <button onClick={handleSettingsClick} className="header-dropdown-item">
                     Settings
                   </button>
-                  <button onClick={handleLogoutClick} className="header-dropdown-item">
-                    Logout
+                  <button
+                    onClick={handleLogoutClick}
+                    disabled={isLoggingOut}
+                    className="header-dropdown-item disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
                   </button>
+
+                  {/* Error Display */}
+                  {logoutError && (
+                    <div className="px-3 py-2 mx-2 mb-2 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-red-800 text-sm">{logoutError}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

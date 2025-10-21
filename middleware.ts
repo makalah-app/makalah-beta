@@ -54,14 +54,15 @@ export async function middleware(req: NextRequest) {
       if (requiresProvisionedUser) {
         const { data: provisionedUser } = await supabase
           .from('users')
-          .select('id')
+          .select('id, is_active')
           .eq('id', session.user.id)
+          .eq('is_active', true)
           .maybeSingle();
 
         if (!provisionedUser) {
           const redirectUrl = req.nextUrl.clone();
           redirectUrl.pathname = '/auth';
-          redirectUrl.searchParams.set('reason', 'incomplete-profile');
+          redirectUrl.searchParams.set('reason', 'account-disabled');
           return NextResponse.redirect(redirectUrl);
         }
       }
