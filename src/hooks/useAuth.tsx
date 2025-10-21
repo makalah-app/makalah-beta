@@ -596,19 +596,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // ✅ EMERGENCY SHUTDOWN: Disable all authentication until Supabase Auth is fixed
-      // The system is allowing ANY email/password combination to login
+      // Use Supabase auth for real authentication
+      const signInResult = await withTimeout(
+        supabaseClient.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password
+        }),
+        1500, // ✅ PERFORMANCE: Reduced from 3000ms to 1500ms
+        async () => ({ data: { user: null, session: null }, error: { message: 'Login timeout' } } as any)
+      );
+      const { data, error } = signInResult as any;
 
-      return new Promise((resolve) => {
-        setAuthState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'SISTEM SEDANG MAINTENANCE DARURAT. Autentikasi dinonaktifkan karena alasan keamanan.'
-        });
-        resolve(false);
-      });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data.user || !data.session) {
+        throw new Error('Login failed - no user or session returned');
+      }
 
       // Try to get user profile - but if users table doesn't exist, use auth.users data
       let userProfile = null;

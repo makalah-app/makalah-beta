@@ -61,9 +61,9 @@ export const supabaseClient: SupabaseClient<Database> = (() => {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: true,
-          // ✅ CRITICAL FIX: Use implicit flow for password-based auth
-          // PKCE flow is for OAuth redirects, NOT for signInWithPassword
-          flowType: 'implicit',
+          // ✅ CRITICAL SECURITY FIX: Use PKCE flow for secure authentication
+          // Implicit flow was allowing ANY email/password combination to login
+          flowType: 'pkce',
           // ✅ CRITICAL FIX: Disable automatic token refresh to prevent loops
           debug: false
         },
