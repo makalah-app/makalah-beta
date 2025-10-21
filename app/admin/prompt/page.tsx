@@ -538,10 +538,10 @@ function AdminPromptContent() {
               </div>
 
               {/* Alert: Kapan OpenAI Prompt Aktif */}
-              <Alert>
-                <Cpu className="h-4 w-4" />
-                <AlertTitle>Kapan System Prompt OpenAI Aktif?</AlertTitle>
-                <AlertDescription>
+              <Alert className="border-white/20 bg-white/10 backdrop-blur-sm text-white">
+                <Cpu className="h-4 w-4 text-white/90" />
+                <AlertTitle className="text-white">Kapan System Prompt OpenAI Aktif?</AlertTitle>
+                <AlertDescription className="text-white/90">
                   System prompt ini otomatis digunakan saat:
                   <ul className="list-disc list-inside mt-2 space-y-1">
                     <li>Primary provider di Konfigurasi Model = <strong>OpenAI</strong></li>

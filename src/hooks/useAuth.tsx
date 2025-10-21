@@ -823,7 +823,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth?verified=true`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'https://beta.makalah.ai'}/auth?verified=true`,
           data: {
             full_name: `${(data.firstName || '').trim()}${data.lastName ? ' ' + data.lastName.trim() : ''}`.trim() || data.email.split('@')[0],
             role: 'user', // Always register as 'user' role

@@ -12,6 +12,19 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
+import type { UserRole } from '@/lib/auth/role-permissions';
+
+interface Slide1Data {
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface Slide2Data {
+  firstName: string;
+  lastName: string;
+  predikat: string;
+}
 
 interface FormData {
   email: string;
@@ -36,6 +49,17 @@ export default function AuthPage() {
   const [showResendOption, setShowResendOption] = useState(false);
   const [resendEmail, setResendEmail] = useState<string>('');
   const [resendMessage, setResendMessage] = useState<string>('');
+  const [currentSlide, setCurrentSlide] = useState(1);
+  const [slide1Data, setSlide1Data] = useState<Slide1Data>({
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
+  const [slide2Data, setSlide2Data] = useState<Slide2Data>({
+    firstName: "",
+    lastName: "",
+    predikat: ""
+  });
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -67,10 +91,99 @@ export default function AuthPage() {
   }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (isRegisterMode) {
+      if (currentSlide === 1) {
+        setSlide1Data({
+          ...slide1Data,
+          [e.target.name]: e.target.value,
+        });
+      } else {
+        setSlide2Data({
+          ...slide2Data,
+          [e.target.name]: e.target.value,
+        });
+      }
+    }
+
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const validateSlide1 = () => {
+    const { email, password, confirmPassword } = slide1Data;
+
+    if (!email || !password || !confirmPassword) {
+      alert('Semua field di slide 1 harus diisi');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      alert('Password tidak cocok');
+      return false;
+    }
+
+    if (password.length < 6) {
+      alert('Password minimal 6 karakter');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Format email tidak valid');
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateSlide2 = () => {
+    const { firstName, lastName, predikat } = slide2Data;
+
+    if (!firstName || !lastName || !predikat) {
+      alert('Semua field di slide 2 harus diisi');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNextSlide = () => {
+    if (validateSlide1()) {
+      setCurrentSlide(2);
+    }
+  };
+
+  const isSlide1Valid = () => {
+    const { email, password, confirmPassword } = slide1Data;
+
+    // Check if all fields are filled
+    if (!email || !password || !confirmPassword) {
+      return false;
+    }
+
+    // Check email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+
+    // Check password minimum length
+    if (password.length < 6) {
+      return false;
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const handlePreviousSlide = () => {
+    setCurrentSlide(1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,26 +192,45 @@ export default function AuthPage() {
 
     try {
       if (isRegisterMode) {
-        if (formData.password !== formData.confirmPassword) {
-          alert('Password tidak cocok');
-          setIsSubmitting(false);
+        // For registration, handle based on current slide
+        if (currentSlide === 1) {
+          // Validate slide 1 and move to slide 2
+          if (validateSlide1()) {
+            setCurrentSlide(2);
+            setIsSubmitting(false);
+          } else {
+            setIsSubmitting(false);
+          }
           return;
+        } else {
+          // Slide 2 - complete registration
+          if (!validateSlide2()) {
+            setIsSubmitting(false);
+            return;
+          }
+
+          const combinedData = {
+            email: slide1Data.email,
+            password: slide1Data.password,
+            firstName: slide2Data.firstName,
+            lastName: slide2Data.lastName,
+            predikat: slide2Data.predikat,
+            role: 'user' as UserRole, // Default role untuk registrasi umum
+          };
+
+          await register(combinedData);
+          // Show success message and redirect to login
+          setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');
+          setShowResendOption(true);
+          setResendEmail(slide1Data.email);
+          setIsRegisterMode(false);
+          setFormData({ email: slide1Data.email, password: '', firstName: '', lastName: '', predikat: '', confirmPassword: '' });
+          // Reset slide data
+          setSlide1Data({ email: "", password: "", confirmPassword: "" });
+          setSlide2Data({ firstName: "", lastName: "", predikat: "" });
+          setCurrentSlide(1);
+          setIsSubmitting(false);
         }
-        await register({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName || '',
-          lastName: formData.lastName || '',
-          predikat: formData.predikat || '',
-          role: 'user', // Default role untuk registrasi umum
-        });
-        // Show success message and redirect to login
-        setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');
-        setShowResendOption(true);
-        setResendEmail(formData.email);
-        setIsRegisterMode(false);
-        setFormData({ email: formData.email, password: '', firstName: '', lastName: '', predikat: '', confirmPassword: '' });
-        setIsSubmitting(false);
       } else {
         await login({
           email: formData.email,
@@ -155,6 +287,9 @@ export default function AuthPage() {
 
   const toggleMode = () => {
     setIsRegisterMode(!isRegisterMode);
+    setCurrentSlide(1); // Reset to slide 1
+    setSlide1Data({ email: "", password: "", confirmPassword: "" });
+    setSlide2Data({ firstName: "", lastName: "", predikat: "" });
     setFormData({ email: '', password: '', firstName: '', lastName: '', predikat: '', confirmPassword: '' });
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -189,17 +324,17 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !isRegisterMode && (
-              <Alert className="mb-6 text-white">
+              <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
                 <div className="mx-auto flex w-fit items-center gap-4">
-                  <CheckCircle2 className="h-16 w-16 text-white" aria-hidden="true" />
+                  <CheckCircle2 className="h-12 w-12 text-white/90" aria-hidden="true" />
                   <div className="text-left">
-                    <AlertTitle className="text-white text-lg font-semibold">Registrasi berhasil!</AlertTitle>
-                    <AlertDescription className="text-white mt-1">
+                    <AlertTitle className="text-white text-lg font-medium">Registrasi berhasil!</AlertTitle>
+                    <AlertDescription className="text-white/90 text-sm mt-1">
                       Email Anda telah berhasil diverifikasi! <br />
                       Silakan login dengan kredensial Anda.
                       {showResendOption && (
                         <div className="mt-3 space-y-2">
-                          <p className="text-sm text-white/90">
+                          <p className="text-sm text-white/80">
                             Email tidak sampai? Cek folder spam atau kirim ulang.
                           </p>
                           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -209,12 +344,12 @@ export default function AuthPage() {
                               size="sm"
                               onClick={handleResendEmail}
                               disabled={isLoading}
-                              className="border-white/30 text-white hover:bg-white/10"
+                              className="border-white/30 text-white/90 hover:bg-white/10 hover:text-white"
                             >
                               Kirim Ulang Email Verifikasi
                             </Button>
                             {resendMessage && (
-                              <p className="text-sm text-white/90">
+                              <p className="text-sm text-white/80">
                                 {resendMessage}
                               </p>
                             )}
@@ -228,160 +363,272 @@ export default function AuthPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-ui-loose">
-              {isRegisterMode && (
+              {/* Login Form - Unchanged */}
+              {!isRegisterMode && (
                 <>
                   <div className="space-ui-medium">
-                    <Label htmlFor="firstName" className="text-sm font-medium text-foreground">
-                      Nama Depan
+                    <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                      Email
                     </Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="Masukkan nama depan"
-                      disabled={isSubmitting || isLoading}
-                      required
-                    />
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="nama@email.com"
+                        className="pl-10"
+                        disabled={isSubmitting || isLoading}
+                        required
+                      />
+                    </div>
                   </div>
+
                   <div className="space-ui-medium">
-                    <Label htmlFor="lastName" className="text-sm font-medium text-foreground">
-                      Nama Belakang
+                    <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                      Password
                     </Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      placeholder="Masukkan nama belakang"
-                      disabled={isSubmitting || isLoading}
-                      required
-                    />
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        placeholder="Masukkan password"
+                        className="pl-10 pr-10"
+                        disabled={isSubmitting || isLoading}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                        disabled={isSubmitting || isLoading}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-ui-medium">
-                    <Label htmlFor="predikat" className="text-sm font-medium text-foreground">
-                      Predikat
-                    </Label>
-                    <select
-                      id="predikat"
-                      name="predikat"
-                      value={formData.predikat || ''}
-                      onChange={handleInputChange}
-                      disabled={isSubmitting || isLoading}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        disabled={isSubmitting || isLoading}
+                      />
+                      <Label htmlFor="remember" className="text-muted-foreground cursor-pointer">
+                        Ingat saya
+                      </Label>
+                    </div>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-primary hover:text-primary/80 transition-colors hover:underline"
                     >
-                      <option value="">Pilih predikat</option>
-                      <option value="Mahasiswa">Mahasiswa</option>
-                      <option value="Peneliti">Peneliti</option>
-                    </select>
+                      Lupa password?
+                    </Link>
                   </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                    disabled={isSubmitting || isLoading}
+                  >
+                    {(isSubmitting || isLoading) ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Memverifikasi...</span>
+                      </div>
+                    ) : (
+                      <span>Masuk</span>
+                    )}
+                  </Button>
                 </>
               )}
 
-              <div className="space-ui-medium">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="nama@email.com"
-                    className="pl-10"
-                    disabled={isSubmitting || isLoading}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-ui-medium">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    placeholder="Masukkan password"
-                    className="pl-10 pr-10"
-                    disabled={isSubmitting || isLoading}
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
-                    disabled={isSubmitting || isLoading}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-
+              {/* Registration Form - 2 Slides */}
               {isRegisterMode && (
-                <div className="space-ui-medium">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-                    Konfirmasi Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder="Konfirmasi password"
-                      className="pl-10 pr-10"
-                      disabled={isSubmitting || isLoading}
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
-                      disabled={isSubmitting || isLoading}
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                <>
+                  {/* Slide 1: Account Credentials */}
+                  {currentSlide === 1 && (
+                    <div className="space-ui-loose">
+                      <div className="space-ui-medium">
+                        <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                          Email
+                        </Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={slide1Data.email}
+                            onChange={handleInputChange}
+                            placeholder="nama@email.com"
+                            className="pl-10"
+                            disabled={isSubmitting || isLoading}
+                            required
+                          />
+                        </div>
+                      </div>
 
-              {!isRegisterMode && (
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                      disabled={isSubmitting || isLoading}
-                    />
-                    <Label htmlFor="remember" className="text-muted-foreground cursor-pointer">
-                      Ingat saya
-                    </Label>
-                  </div>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-primary hover:text-primary/80 transition-colors hover:underline"
-                  >
-                    Lupa password?
-                  </Link>
-                </div>
+                      <div className="space-ui-medium">
+                        <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                          Password
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            value={slide1Data.password}
+                            onChange={handleInputChange}
+                            placeholder="Minimal 6 karakter"
+                            className="pl-10 pr-10"
+                            disabled={isSubmitting || isLoading}
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                            disabled={isSubmitting || isLoading}
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-ui-medium">
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                          Konfirmasi Password
+                        </Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            value={slide1Data.confirmPassword}
+                            onChange={handleInputChange}
+                            placeholder="Konfirmasi password"
+                            className="pl-10 pr-10"
+                            disabled={isSubmitting || isLoading}
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                            disabled={isSubmitting || isLoading}
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        size="lg"
+                        disabled={isSubmitting || isLoading || !isSlide1Valid()}
+                      >
+                        {(isSubmitting || isLoading) ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Memvalidasi...</span>
+                          </div>
+                        ) : (
+                          <span>Selanjutnya →</span>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Slide 2: Personal Information */}
+                  {currentSlide === 2 && (
+                    <div className="space-ui-loose">
+                      <div className="space-ui-medium">
+                        <Label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                          Nama Depan
+                        </Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          value={slide2Data.firstName}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan nama depan"
+                          disabled={isSubmitting || isLoading}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-ui-medium">
+                        <Label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                          Nama Belakang
+                        </Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          value={slide2Data.lastName}
+                          onChange={handleInputChange}
+                          placeholder="Masukkan nama belakang"
+                          disabled={isSubmitting || isLoading}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-ui-medium">
+                        <Label htmlFor="predikat" className="text-sm font-medium text-foreground">
+                          Predikat
+                        </Label>
+                        <select
+                          id="predikat"
+                          name="predikat"
+                          value={slide2Data.predikat || ''}
+                          onChange={handleInputChange}
+                          disabled={isSubmitting || isLoading}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="">Pilih predikat</option>
+                          <option value="Mahasiswa">Mahasiswa</option>
+                          <option value="Peneliti">Peneliti</option>
+                        </select>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        size="lg"
+                        disabled={isSubmitting || isLoading}
+                      >
+                        {(isSubmitting || isLoading) ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Mendaftar...</span>
+                          </div>
+                        ) : (
+                          <span>Daftar Akun</span>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
 
               {error && (
@@ -408,36 +655,47 @@ export default function AuthPage() {
                   )}
                 </div>
               )}
-
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={isSubmitting || isLoading}
-              >
-                {(isSubmitting || isLoading) ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{isRegisterMode ? 'Mendaftar...' : 'Memverifikasi...'}</span>
-                  </div>
-                ) : (
-                  <span>{isRegisterMode ? 'Daftar' : 'Masuk'}</span>
-                )}
-              </Button>
             </form>
 
             <div className="mt-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                {isRegisterMode ? 'Sudah punya akun?' : 'Belum punya akun?'}{" "}
-                <Button
-                  variant="link"
-                  onClick={toggleMode}
-                  className="h-auto p-0 font-medium"
-                  disabled={isSubmitting || isLoading}
-                >
-                  {isRegisterMode ? 'Masuk sekarang' : 'Daftar sekarang'}
-                </Button>
-              </p>
+              {isRegisterMode && currentSlide === 2 && (
+                <div className="flex items-center justify-center gap-4 text-sm">
+                  <Button
+                    variant="link"
+                    onClick={handlePreviousSlide}
+                    className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+                    disabled={isSubmitting || isLoading}
+                  >
+                    ← Kembali
+                  </Button>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-muted-foreground">
+                    Sudah punya akun?{" "}
+                    <Button
+                      variant="link"
+                      onClick={toggleMode}
+                      className="h-auto p-0 font-medium"
+                      disabled={isSubmitting || isLoading}
+                    >
+                      Masuk sekarang
+                    </Button>
+                  </span>
+                </div>
+              )}
+
+              {(!isRegisterMode || currentSlide === 1) && (
+                <p className="text-sm text-muted-foreground">
+                  {isRegisterMode ? 'Sudah punya akun?' : 'Belum punya akun?'}{" "}
+                  <Button
+                    variant="link"
+                    onClick={toggleMode}
+                    className="h-auto p-0 font-medium"
+                    disabled={isSubmitting || isLoading}
+                  >
+                    {isRegisterMode ? 'Masuk sekarang' : 'Daftar sekarang'}
+                  </Button>
+                </p>
+              )}
             </div>
           </Card>
         </div>
