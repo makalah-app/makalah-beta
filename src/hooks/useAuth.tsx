@@ -123,6 +123,25 @@ const STORAGE_KEYS = {
   USER_PREFERENCES: 'makalah_user_preferences'
 } as const;
 
+/**
+ * Helper function to validate user status in database
+ * Returns true if user exists and is_active = true
+ */
+const validateUserStatus = async (userId: string): Promise<boolean> => {
+  try {
+    const { data: user, error } = await supabaseClient
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    return !error && !!user;
+  } catch {
+    return false;
+  }
+};
+
 // Context Creation
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -361,33 +380,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fallbackUser = createFallbackUserFromSession(session);
 
         if (fallbackUser) {
-          // Create auth session with fallback data
-          const authSession: AuthSession = {
-            accessToken: session.access_token,
-            refreshToken: session.refresh_token,
-            expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
-            user: fallbackUser,
-            sessionId: session.user?.id || 'session-' + Date.now()
-          };
+          // CRITICAL SECURITY CHECK: Validate user exists in database and is active
+          const isValidUser = await validateUserStatus(session.user?.id || '');
 
-          setAuthState({
-            user: fallbackUser,
-            session: authSession,      // ← PRESERVE session!
-            isAuthenticated: true,      // ← KEEP authenticated!
-            isLoading: false,
-            error: null                // ← No error state
-          });
+          if (isValidUser) {
+            // Create auth session with fallback data
+            const authSession: AuthSession = {
+              accessToken: session.access_token,
+              refreshToken: session.refresh_token,
+              expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
+              user: fallbackUser,
+              sessionId: session.user?.id || 'session-' + Date.now()
+            };
 
-          // Update tracking refs
-          lastAccessTokenRef.current = session.access_token;
-          lastSessionUserIdRef.current = session.user?.id;
+            setAuthState({
+              user: fallbackUser,
+              session: authSession,      // ← PRESERVE session!
+              isAuthenticated: true,      // ← KEEP authenticated!
+              isLoading: false,
+              error: null                // ← No error state
+            });
 
-          if (session?.user?.id) {
-            await touchLastLogin({
-              userId: session.user.id,
-              email: session.user.email,
-              role: fallbackUser.role,
-              force: true,
+            // Update tracking refs
+            lastAccessTokenRef.current = session.access_token;
+            lastSessionUserIdRef.current = session.user?.id;
+
+            if (session?.user?.id) {
+              await touchLastLogin({
+                userId: session.user.id,
+                email: session.user.email,
+                role: fallbackUser.role,
+                force: true,
+              });
+            }
+          } else {
+            // User not found or inactive in database - deny access
+            setAuthState({
+              user: null,
+              session: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: 'Account not found or disabled'
             });
           }
         } else {
@@ -432,27 +465,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastLoginAt: userProfile.last_login_at,
       });
 
-      // Create our auth session
-      const authSession: AuthSession = {
-        accessToken: session.access_token,
-        refreshToken: session.refresh_token,
-        expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
-        user: user,
-        sessionId: session.user?.id || 'session-' + Date.now()
-      };
+      // CRITICAL SECURITY CHECK: Validate user exists in database and is active
+      const isValidUser = await validateUserStatus(user.id);
 
-      // Store session
-      localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession));
-      // Store userId separately for easy access
-      localStorage.setItem('userId', authSession.user.id);
+      if (isValidUser) {
+        // Create our auth session
+        const authSession: AuthSession = {
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at ? session.expires_at * 1000 : Date.now(),
+          user: user,
+          sessionId: session.user?.id || 'session-' + Date.now()
+        };
 
-      setAuthState({
-        user: authSession.user,
-        session: authSession,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      });
+        // Store session
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession));
+        // Store userId separately for easy access
+        localStorage.setItem('userId', authSession.user.id);
+
+        setAuthState({
+          user: authSession.user,
+          session: authSession,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        // User not found or inactive in database - deny access
+        setAuthState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Account not found or disabled'
+        });
+      }
 
       lastAccessTokenRef.current = session.access_token;
       lastSessionUserIdRef.current = session.user?.id ?? null;
@@ -685,13 +732,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
       }
 
-      setAuthState({
-        user: session.user,
-        session: session,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      });
+      // CRITICAL SECURITY CHECK: Validate user exists in database and is active
+      const isValidUser = await validateUserStatus(session.user?.id || '');
+
+      if (isValidUser) {
+        setAuthState({
+          user: session.user,
+          session: session,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        // User not found or inactive in database - deny access
+        setAuthState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Account not found or disabled'
+        });
+      }
 
       lastAccessTokenRef.current = data.session.access_token;
       lastSessionUserIdRef.current = data.session.user?.id ?? null;
