@@ -34,4 +34,10 @@ export async function POST(request: NextRequest) {
       success: false,
       error: 'Automatic user provisioning has been disabled for security reasons.',
     }, { status: 403 });
+  } catch (error) {
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Endpoint disabled',
+    }, { status: 500 });
+  }
 }
