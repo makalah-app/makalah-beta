@@ -274,9 +274,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             </SheetContent>
           </Sheet>
 
-          {isLoading ? (
-            <span className="text-sm text-muted-foreground mr-2 md:mr-4">Loading...</span>
-          ) : isAuthenticated && user && showUserProfile ? (
+          {isAuthenticated && user && showUserProfile ? (
             <UserDropdown
               user={user}
               variant="header"

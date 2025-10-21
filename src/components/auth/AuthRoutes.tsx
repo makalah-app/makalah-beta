@@ -15,6 +15,7 @@ import { Loader2, ShieldAlert, LogIn, Home } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import Loader from '@/components/ui/loader';
 import { Button } from '../ui/button';
 import { UserRole, Permission } from '../../lib/auth/role-permissions';
 
@@ -176,22 +177,13 @@ export default function RoleBasedRoute({
     }
     
     return (
-      <div
-        className={cn(
-          'route-loading flex min-h-screen w-full items-center justify-center bg-background px-6',
-          className
-        )}
-      >
+      <div className={cn('route-loading flex min-h-screen w-full items-center justify-center bg-background px-6', className)}>
         <Card className="w-full max-w-xs border-border/60 shadow-sm">
-          <CardHeader className="flex items-center space-y-3 text-center p-4">
-            <div className="rounded-full bg-muted/80 p-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
+          <CardHeader className="items-center space-y-3 text-center p-4">
+            <Loader text="Memverifikasi akses..." />
             <div className="space-y-1">
               <CardTitle className="text-lg">Memverifikasi akses</CardTitle>
-              <CardDescription>
-                Kami sedang memastikan izin Anda sebelum membuka chat.
-              </CardDescription>
+              <CardDescription>Kami sedang memastikan izin Anda sebelum membuka chat.</CardDescription>
             </div>
           </CardHeader>
         </Card>

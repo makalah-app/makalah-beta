@@ -46,13 +46,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      const display = user.fullName || user.name || '';
-      const parts = display.split(' ').filter(Boolean);
-      const first = parts[0] || display;
-      const last = parts.length > 1 ? parts.slice(1).join(' ') : '';
+      // ✅ CRITICAL FIX: Use name parsing yang KONSISTEN
+      // user.name = first name, user.fullName = first + last
+      // Jangan parse dari fullName lagi karena menyebabkan inkonsistensi
       setProfileForm({
-        firstName: first,
-        lastName: last,
+        firstName: user.name || '',                    // ✅ user.name = first name
+        lastName: user.fullName?.replace(user.name || '', '').trim() || '', // ✅ Extract last name
         email: user.email || '',
         institution: user.institution || '',
         predikat: user.predikat || undefined
@@ -255,13 +254,11 @@ export default function ProfilePage() {
                     setIsEditingProfile(false);
                     setStatusMessage(null);
                     if (user) {
-                      const display = user.fullName || user.name || '';
-                      const parts = display.split(' ').filter(Boolean);
-                      const first = parts[0] || display;
-                      const last = parts.length > 1 ? parts.slice(1).join(' ') : '';
+                      // ✅ CRITICAL FIX: Gunakan name parsing yang KONSISTEN
+                      // Sama seperti di useEffect, gunakan mapping yang benar
                       setProfileForm({
-                        firstName: first,
-                        lastName: last,
+                        firstName: user.name || '',                    // ✅ user.name = first name
+                        lastName: user.fullName?.replace(user.name || '', '').trim() || '', // ✅ Extract last name
                         email: user.email || '',
                         institution: user.institution || '',
                         predikat: user.predikat || undefined

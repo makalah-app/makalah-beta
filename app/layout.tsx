@@ -8,12 +8,10 @@ import LogoLoadingSpinner from '@/components/ui/LogoLoadingSpinner';
 const AppProviders = dynamic(() => import('./providers-client'), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <LogoLoadingSpinner />
-          <p className="text-sm text-muted-foreground">Bersiap masuk aplikasi...</p>
-        </div>
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="w-8 h-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="text-sm text-muted-foreground">Memuat aplikasi...</p>
       </div>
     </div>
   ),

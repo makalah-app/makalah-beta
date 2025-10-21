@@ -13,6 +13,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getUserDisplayName } from '@/lib/utils/user-helpers';
+import Loader from '@/components/ui/loader';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { useChatHistory, ConversationItem } from '../../hooks/useChatHistory';
 
@@ -222,8 +224,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {expandedSections.has('history') && (
             <div>
-              {/* BASIC CHAT HISTORY - NO STYLING */}
-              {loading && <div>Loading conversations...</div>}
+              {/* BASIC CHAT HISTORY */}
+              {loading && <Loader text="Memuat percakapan..." className="py-2" />}
               {error && <div>Error: {error}</div>}
               {!loading && !error && (
                 <div>
@@ -300,15 +302,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div>
                 {user.avatar ? (
-                  <Image src={user.avatar} alt={user.name || user.email || 'User'} width={40} height={40} className="rounded-full" unoptimized />
+                  <Image src={user.avatar} alt={getUserDisplayName(user as any) || user.email || 'User'} width={40} height={40} className="rounded-full" unoptimized />
                 ) : (
-                  ((user.name || user.fullName || user.email?.split('@')[0] || 'U') + '').split(' ').map(n => n && n[0] ? n[0] : 'U').join('').toUpperCase()
+                  ((getUserDisplayName(user as any) || user.email?.split('@')[0] || 'U') + '')
+                    .split(' ')
+                    .map(n => n && n[0] ? n[0] : 'U')
+                    .join('')
+                    .toUpperCase()
                 )}
               </div>
               
               <div>
                 <div>
-                  {user.name || user.fullName || user.email?.split('@')[0] || 'User'}
+                  {getUserDisplayName(user as any) || 'User'}
                 </div>
                 <div>
                   {user.role || 'Researcher'}

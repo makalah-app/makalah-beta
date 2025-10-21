@@ -819,13 +819,13 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
                 })}
               </div>
 
-              {/* Loading State */}
+              {/* ✅ FIXED: Simplified loading state - no separate loading indicator */}
+              {/* Use AI SDK's built-in loading states instead of custom indicator */}
+              {/* This prevents double loading indicators during message submission */}
               {status === 'submitted' && (
-                <div className="mt-4">
-                  <LoadingIndicator
-                    message="Loading..."
-                    size="xs"
-                  />
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span>Sedang memproses...</span>
                 </div>
               )}
             </div>

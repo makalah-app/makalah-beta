@@ -365,11 +365,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `)
           .eq('id', session.user.id)
           .maybeSingle(),
-        2000, // ✅ PERFORMANCE: Reduced from 5000ms to 2000ms
+        5000, // 🔴 FIX: Increased timeout to profile query completion
         async () => ({ data: null, error: { message: 'profile timeout' } } as any)
       );
       const { data: userProfile, error: profileError } = profileResult as any;
 
+      
       if (profileError && profileError.code !== 'PGRST116') {
         // Check retry attempts
         const sessionId = session.user?.id;
@@ -437,18 +438,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const profileData = userProfile?.user_profiles?.[0];
+      const profileData = Array.isArray(userProfile?.user_profiles)
+        ? userProfile.user_profiles[0]
+        : userProfile?.user_profiles;
       const profile = profileData || undefined;
       const emailName = userProfile.email?.split('@')[0] || 'User';
       const displayName = profile?.display_name ||
                          (profile?.first_name && profile?.last_name ?
                           `${profile.first_name} ${profile.last_name}` : emailName);
 
-      // Create user object with correct data mapping
+      
+      // Create user object with correct data mapping (name = firstName, fullName = displayName)
       const user: User = {
         id: userProfile.id,
         email: userProfile.email,
-        name: displayName,
+        name: profile?.first_name || (displayName.split(' ')[0] || displayName),
         fullName: displayName,
         role: userProfile.role as UserRole,
         institution: profile?.institution || undefined,
@@ -536,13 +540,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasInitializedRef.current = true;
 
       try {
-        // Guard against hanging SDK calls (e.g., network hiccups) to prevent infinite loading
-        const getSessionSafe = withTimeout(
-          supabaseClient.auth.getSession(),
-          4000,
-          async () => ({ data: { session: null } as any })
-        );
-        const { data: { session } } = await getSessionSafe as any;
+        const { data: { session } } = await supabaseClient.auth.getSession();
         await initializeAuth(session);
       } catch (error) {
         if (mounted) {
@@ -1012,7 +1010,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user: User = {
         id: userProfile.id,
         email: userProfile.email,
-        name: displayName,
+        name: profile?.first_name || (displayName.split(' ')[0] || displayName),
         fullName: displayName,
         role: userProfile.role as UserRole,
         institution: profile?.institution || undefined,
@@ -1114,6 +1112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!authState.user || !authState.session) return false;
 
     try {
+      
       // Prepare updates for user_profiles table (correct table with proper field mapping)
       const dbUpdates: any = {};
       // Normalize name inputs: prefer explicit firstName/lastName from caller; fallback to fullName
@@ -1121,6 +1120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const explicitLast = (updates as any).lastName?.trim();
       const explicitFull = updates.fullName?.trim();
 
+      
       let resolvedFirst: string | undefined = explicitFirst;
       let resolvedLast: string | undefined = explicitLast;
       let resolvedDisplay: string | undefined = explicitFull;
@@ -1154,30 +1154,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if ((updates as any).predikat !== undefined) dbUpdates.predikat = (updates as any).predikat;
       dbUpdates.updated_at = new Date().toISOString();
 
-      // Update user profile in user_profiles table (correct table)
+      
+      // Upsert user profile to guarantee persistence even if row belum ada
+      const upsertPayload: any = {
+        user_id: authState.user.id,
+        ...dbUpdates,
+        // Safety for NOT NULL columns
+        first_name: dbUpdates.first_name || (authState.user.name?.split(' ')[0] || 'User'),
+        last_name: dbUpdates.last_name || dbUpdates.first_name || (authState.user.name || 'User'),
+        display_name: dbUpdates.display_name || `${dbUpdates.first_name || authState.user.name || 'User'} ${dbUpdates.last_name || ''}`.trim(),
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      
       const { error } = await (supabaseClient as any)
         .from('user_profiles')
-        .update(dbUpdates as any)
-        .eq('user_id', authState.user.id);
+        .upsert(upsertPayload, { onConflict: 'user_id' });
 
       if (error) {
         throw new Error(`Profile update failed: ${error.message}`);
       }
 
-      // Update local state
+      // Update local state + persist session (mapping KONSISTEN)
       setAuthState(prev => {
         const nextName = resolvedFirst || prev.user?.name;
         const nextFull = resolvedDisplay || updates.fullName || prev.user?.fullName;
+        const updatedUser: User = {
+          ...prev.user!,
+          ...updates,
+          name: nextName || prev.user!.name,        // name = first name
+          fullName: nextFull || prev.user!.fullName // fullName = first + last
+        } as User;
+        const updatedSession: AuthSession | null = prev.session ? { ...prev.session, user: updatedUser } : prev.session;
+        try { localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(updatedSession)); } catch {}
         return ({
           ...prev,
-          user: { ...prev.user!, ...updates, name: nextName || prev.user!.name, fullName: nextFull || prev.user!.fullName },
-          session: prev.session ? {
-            ...prev.session,
-            user: { ...prev.session.user, ...updates, name: nextName || prev.session.user.name, fullName: nextFull || prev.session.user.fullName }
-          } : prev.session
+          user: updatedUser,
+          session: updatedSession
         });
       });
-
       return true;
 
     } catch (error) {

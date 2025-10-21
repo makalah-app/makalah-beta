@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import Loader from '@/components/ui/loader';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
@@ -218,8 +219,8 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
           {loading && (
             <SidebarGroup>
               <SidebarGroupContent>
-                <div className="px-3 py-2 text-text-300 text-sm">
-                  Loading conversations...
+                <div className="px-3 py-2">
+                  <Loader text="Memuat percakapan..." compact />
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>

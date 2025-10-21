@@ -40,8 +40,8 @@ export default function HomePage() {
     return null; // Prevent hydration mismatch
   }
 
-  // ✅ PERFORMANCE: Optimistic UI - show button immediately, disable only if actively loading
-  const showLoadingState = isLoading && !isAuthenticated;
+  // ✅ PERFORMANCE: Remove double loading indicators - rely on app-level loading only
+  // No button-level loading to prevent double loaders
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
@@ -66,10 +66,9 @@ export default function HomePage() {
               size="lg"
               className="font-medium transition-all hover:-translate-y-1 hover:scale-105"
               onClick={handleChatWithAgent}
-              disabled={showLoadingState}
             >
               <Brain className="w-5 h-5 mr-2" />
-              {showLoadingState ? 'Loading...' : 'Diskusi dengan Agen AI'}
+              Diskusi dengan Agen AI
             </Button>
           </div>
           </div>

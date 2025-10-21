@@ -150,9 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Authentication State */}
-          {isLoading ? (
-            <span className="header-nav-link">Loading...</span>
-          ) : isAuthenticated && user ? (
+          {isAuthenticated && user ? (
             <div ref={userMenuRef} className="header-user-menu">
               <button onClick={toggleUserMenu} className="header-user-card">
                 <div className="header-avatar">
