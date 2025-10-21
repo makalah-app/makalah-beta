@@ -169,12 +169,7 @@ export default function RegistrationForm({
 
       <form onSubmit={handleSubmit} className="registration-form-container">
         {/* Global Error Message */}
-        {error && (
-          <div className="error-message global-error">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Global Error Message dibuang untuk konsistensi banner halaman Auth */}
 
         {/* Full Name Field */}
         <div className="form-field">

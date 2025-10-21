@@ -549,9 +549,7 @@ function ChatPageContent() {
     try {
       const response = await fetch(`/api/chat/conversations/${conversationToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'X-User-Id': user?.id || '',
-        },
+        headers: {},
       });
 
       if (response.ok) {

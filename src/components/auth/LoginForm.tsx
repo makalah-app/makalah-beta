@@ -127,13 +127,7 @@ export default function LoginForm({
       </div>
 
       <form onSubmit={handleSubmit} className="login-form-container">
-        {/* Global Error Message */}
-        {error && (
-          <div className="error-message global-error">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-          </div>
-        )}
+        {/* Global Error Message dibuang: ditangani oleh banner di halaman Auth */}
 
         {/* Email Field */}
         <div className="form-field">

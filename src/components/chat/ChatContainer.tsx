@@ -39,7 +39,6 @@ import { supabaseChatClient } from '../../lib/database/supabase-client';
 // Additional imports for race condition fix
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
-import { SYSTEM_USER_UUID } from '../../lib/utils/uuid-generator';
 // ❌ REMOVED: WorkflowProvider import - rigid phase state management
 // Natural LLM conversation doesn't need complex workflow state synchronization
 // Pure chat - workflow types removed
@@ -94,23 +93,9 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const isPersistingRef = useRef<boolean>(false);
   const refreshCountRef = useRef<number>(0); // Track history refresh count (limit to 3 per conversation)
 
-  // ✅ CRITICAL FIX: Enhanced user ID extraction with multiple fallbacks
+  // Strict user ID accessor – must be authenticated
   const getUserId = useCallback((): string => {
-    // 1. Try authenticated user ID
-    if (user?.id) {
-      return user.id;
-    }
-
-    // 2. Try localStorage fallback (for client-side persistence)
-    if (typeof window !== 'undefined') {
-      const storedUserId = localStorage.getItem('userId');
-      if (storedUserId && storedUserId !== 'undefined' && storedUserId !== 'null') {
-        return storedUserId;
-      }
-    }
-
-    // 3. Fallback to SYSTEM_USER_UUID as last resort
-    return SYSTEM_USER_UUID;
+    return user?.id || '';
   }, [user?.id]);
 
   // ✅ EAGER PERSISTENCE: Ensure conversation exists before sending message
@@ -123,7 +108,6 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': getUserId(),
         },
         body: JSON.stringify({
           conversationId: chatId,
@@ -146,18 +130,17 @@ const ChatContainerComponent: React.FC<ChatContainerProps> = ({
   const [editingText, setEditingText] = useState<string>('');
 
   // AI SDK useChat integration with native OpenAI web search
-  const chatHookResult = useChat<UIMessage>({
-    id: chatId || `academic-chat-${reactId}`,
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Chat-Mode': 'academic-workflow',
-        'X-Debug-Mode': debugMode ? 'true' : 'false',
-        'X-Chat-Id': chatId || '', // Pass chatId for persistence coordination
-        'X-User-Id': getUserId(), // Enhanced user ID extraction with fallbacks
-      },
-    }),
+    const chatHookResult = useChat<UIMessage>({
+      id: chatId || `academic-chat-${reactId}`,
+      transport: new DefaultChatTransport({
+        api: '/api/chat',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Chat-Mode': 'academic-workflow',
+          'X-Debug-Mode': debugMode ? 'true' : 'false',
+          'X-Chat-Id': chatId || '', // Pass chatId for persistence coordination
+        },
+      }),
     messages: loadedMessages,
     // ❌ REMOVED: Automatic submission disabled to prevent web search response duplication
     // sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,

@@ -636,28 +636,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
         );
 
-        // Store basic auth data even before profile fetch completes
-        // This ensures localStorage is populated immediately after login
-        const tempSession = {
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-          expiresAt: data.session.expires_at ? data.session.expires_at * 1000 : Date.now() + 3600000,
-          user: {
-            id: data.user.id,
-            email: data.user.email!,
-            name: data.user.email?.split('@')[0] || 'User',
-            fullName: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
-            role: 'user' as UserRole, // Default role, will be updated from database
-            isVerified: data.user.email_confirmed_at != null,
-            createdAt: data.user.created_at!,
-            lastLogin: new Date().toISOString()
-          },
-          sessionId: data.session.user?.id || 'session-' + Date.now()
-        };
-
-        // Store immediately to ensure localStorage has data
-        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(tempSession));
-        localStorage.setItem('userId', data.user.id);
+        // Do not write any session to localStorage until user is validated
 
         if (profileResult.data) {
           // Construct userProfile object from users table (role from database, not user_metadata)
@@ -724,18 +703,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionId: data.session.user?.id || 'session-' + Date.now()
       };
 
-      // Store session
-      localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
-      // Store userId separately for easy access
-      localStorage.setItem('userId', session.user.id);
-      if (credentials.rememberMe) {
-        localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
-      }
-
       // CRITICAL SECURITY CHECK: Validate user exists in database and is active
       const isValidUser = await validateUserStatus(session.user?.id || '');
 
       if (isValidUser) {
+        // Persist session only after validation success
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+        localStorage.setItem('userId', session.user.id);
+        if (credentials.rememberMe) {
+          localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
+        }
         setAuthState({
           user: session.user,
           session: session,

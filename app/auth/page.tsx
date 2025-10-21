@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BrandLogo from '@/components/ui/BrandLogo';
-import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,7 @@ interface FormData {
 export default function AuthPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { login, register, isLoading, error, resendVerificationEmail } = useAuth();
+  const { login, register, isLoading, error, resendVerificationEmail, clearError } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -49,6 +49,7 @@ export default function AuthPage() {
   const [showResendOption, setShowResendOption] = useState(false);
   const [resendEmail, setResendEmail] = useState<string>('');
   const [resendMessage, setResendMessage] = useState<string>('');
+  const [notRegisteredNotice, setNotRegisteredNotice] = useState<boolean>(false);
   const [currentSlide, setCurrentSlide] = useState(1);
   const [slide1Data, setSlide1Data] = useState<Slide1Data>({
     email: "",
@@ -90,6 +91,24 @@ export default function AuthPage() {
     }
   }, [searchParams]);
 
+  // Jika ada error/notRegistered, sembunyikan banner sukses agar tidak redundan
+  useEffect(() => {
+    if (!isRegisterMode && (error || notRegisteredNotice)) {
+      setSuccessMessage('');
+    }
+  }, [error, notRegisteredNotice, isRegisterMode]);
+
+  // Tampilkan notifikasi jika error dari useAuth menunjukkan akun tidak ditemukan/nonaktif
+  useEffect(() => {
+    const msg = (error || '').toLowerCase();
+    const trigger = !isRegisterMode && (
+      msg.includes('account not found') ||
+      msg.includes('not found or disabled') ||
+      msg.includes('disabled')
+    );
+    setNotRegisteredNotice(trigger);
+  }, [error, isRegisterMode]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (isRegisterMode) {
       if (currentSlide === 1) {
@@ -109,6 +128,10 @@ export default function AuthPage() {
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    // Clear previous auth error/notice while user typing
+    try { clearError?.(); } catch {}
+    setNotRegisteredNotice(false);
   };
 
   const validateSlide1 = () => {
@@ -232,31 +255,37 @@ export default function AuthPage() {
           setIsSubmitting(false);
         }
       } else {
-        await login({
+        const success = await login({
           email: formData.email,
           password: formData.password,
           rememberMe,
         });
 
-        // Clear success message on successful login
-        setSuccessMessage('');
+        if (success) {
+          // Clear success message on successful login
+          setSuccessMessage('');
 
-        // Get redirect URL from search params
-        const redirectTo = searchParams.get('redirectTo');
+          // Get redirect URL from search params
+          const redirectTo = searchParams.get('redirectTo');
 
-        // Validate redirect URL for security (must be internal URL)
-        const isValidRedirect = redirectTo &&
-          (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) &&
-          !redirectTo.includes('../') &&
-          !redirectTo.startsWith('/auth'); // Prevent redirect loop
+          // Validate redirect URL for security (must be internal URL)
+          const isValidRedirect = redirectTo &&
+            (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) &&
+            !redirectTo.includes('../') &&
+            !redirectTo.startsWith('/auth'); // Prevent redirect loop
 
-        if (isValidRedirect) {
-          router.push(redirectTo);
+          if (isValidRedirect) {
+            router.push(redirectTo);
+          } else {
+            // Default behavior: redirect to chat
+            router.push('/chat');
+          }
+          // Don't set isSubmitting(false) for login success - let redirect handle it
         } else {
-          // Default behavior: redirect to chat
-          router.push('/chat');
+          // Stay on page; error message displayed by useAuth state
+          setIsSubmitting(false);
+          return;
         }
-        // Don't set isSubmitting(false) for login success - let redirect handle it
       }
     } catch (error: any) {
       // Check if error is due to unverified email
@@ -323,7 +352,7 @@ export default function AuthPage() {
             </div>
 
             {/* Success Message */}
-            {successMessage && !isRegisterMode && (
+            {successMessage && !isRegisterMode && !error && !notRegisteredNotice && (
               <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
                 <div className="mx-auto flex w-fit items-center gap-4">
                   <CheckCircle2 className="h-12 w-12 text-white/90" aria-hidden="true" />
@@ -356,6 +385,48 @@ export default function AuthPage() {
                           </div>
                         </div>
                       )}
+                    </AlertDescription>
+                  </div>
+                </div>
+              </Alert>
+            )}
+
+            {/* Notifikasi akun tidak terdaftar/nonaktif */}
+            {notRegisteredNotice && !isRegisterMode && (
+              <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
+                <div className="mx-auto flex w-fit items-center gap-4">
+                  <XCircle className="h-12 w-12 text-white/90" aria-hidden="true" />
+                  <div className="text-left">
+                    <AlertTitle className="text-white text-lg font-medium">Akun tidak terdaftar / nonaktif</AlertTitle>
+                    <AlertDescription className="text-white/90 text-sm mt-1">
+                      Email yang Anda masukkan belum terdaftar atau akun nonaktif. Silakan daftar akun baru atau hubungi admin bila ini kesalahan.
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push('/auth?tab=register')}
+                          disabled={isLoading}
+                          className="border-white/30 text-white/90 hover:bg-white/10 hover:text-white"
+                        >
+                          Daftar Sekarang
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </div>
+                </div>
+              </Alert>
+            )}
+
+            {/* Notifikasi error umum (contoh: Invalid login credentials) */}
+            {!isRegisterMode && !notRegisteredNotice && !!error && (
+              <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
+                <div className="mx-auto flex w-fit items-center gap-4">
+                  <XCircle className="h-12 w-12 text-white/90" aria-hidden="true" />
+                  <div className="text-left">
+                    <AlertTitle className="text-white text-lg font-medium">Gagal Masuk</AlertTitle>
+                    <AlertDescription className="text-white/90 text-sm mt-1">
+                      {error}
                     </AlertDescription>
                   </div>
                 </div>
@@ -631,28 +702,21 @@ export default function AuthPage() {
                 </>
               )}
 
-              {error && (
-                <div className="space-y-2">
-                  <div className="text-sm text-destructive text-center">
-                    {error}
-                  </div>
-                  {showResendOption && !successMessage && (
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                      <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
-                        Email belum terverifikasi. Cek inbox atau kirim ulang.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleResendEmail}
-                        disabled={isLoading || !!resendMessage}
-                        className="text-xs w-full"
-                      >
-                        {resendMessage || 'Kirim Ulang Email Verifikasi'}
-                      </Button>
-                    </div>
-                  )}
+              {(showResendOption && !successMessage) && (
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
+                    Email belum terverifikasi. Cek inbox atau kirim ulang.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendEmail}
+                    disabled={isLoading || !!resendMessage}
+                    className="text-xs w-full"
+                  >
+                    {resendMessage || 'Kirim Ulang Email Verifikasi'}
+                  </Button>
                 </div>
               )}
             </form>

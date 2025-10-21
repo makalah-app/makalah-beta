@@ -201,12 +201,35 @@ export async function DELETE(
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const permanent = searchParams.get('permanent') === 'true';
+    // Require authenticated user and ownership validation
+    const { userId } = await getServerSessionUserId();
+    if (!userId) {
+      return NextResponse.json({
+        error: 'Unauthorized',
+        code: 'UNAUTHORIZED'
+      }, { status: 401 });
+    }
     
     if (!id) {
       return NextResponse.json({
         error: 'Conversation ID is required',
         code: 'MISSING_CONVERSATION_ID'
       }, { status: 400 });
+    }
+
+    // Verify ownership before any destructive operation
+    const { data: ownerCheck, error: ownerErr } = await supabaseAdmin
+      .from('conversations')
+      .select('id, user_id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (ownerErr || !ownerCheck) {
+      return NextResponse.json({
+        error: 'Forbidden',
+        code: 'FORBIDDEN'
+      }, { status: 403 });
     }
 
     if (permanent) {

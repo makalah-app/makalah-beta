@@ -27,9 +27,9 @@ export async function POST(req: Request) {
     // Extract chatId from headers for persistence
     const chatId = req.headers.get('X-Chat-Id') || undefined;
 
-    // Extract user ID from authenticated session - NO FALLBACK to 'system'
-    let userId = await getUserIdWithSystemFallback();
-    
+    // Extract user ID strictly from authenticated session (no client overrides)
+    const userId = await getUserIdWithSystemFallback();
+
     // Parse request body
     const rawPayload: any = await req.json();
     const {
@@ -44,18 +44,8 @@ export async function POST(req: Request) {
       username?: string;
     } = rawPayload || {};
 
-    // ENHANCED FALLBACK: if SSR session missing, use client-provided userId with validation
-    const headerUserId = req.headers.get('X-User-Id') || undefined;
-    if (!userId) {
-      const candidate = clientUserId || headerUserId;
-      const valid = getValidUserUUID(candidate || undefined);
-      if (valid !== '00000000-0000-4000-8000-000000000000') {
-        userId = valid;
-      }
-    }
-
-    // 🔒 AUTHENTICATION GUARD: Require valid user ID for all operations
-    // No fallback - must have either authenticated session or valid client-provided UUID
+    // 🔒 AUTHENTICATION GUARD: Require valid authenticated user session
+    // No client-provided overrides allowed (headers/body are ignored)
     if (!userId) {
       return new Response(JSON.stringify({
         error: 'AUTHENTICATION_REQUIRED',
