@@ -771,43 +771,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // SSR cookie sync failed, but login still successful
       }
 
+      // ✅ CRITICAL SECURITY PATCH: DISABLE automatic user provisioning
+      // Users MUST exist in database before login - no auto-creation allowed
+      // This prevents anyone with Supabase Auth access from creating accounts
       if (profileMissing) {
-        const provisioned = await ensureUserRecord({
-          userId: data.user.id,
-          email: data.user.email || '',
-          fullName: fallbackName,
-          firstName: data.user.user_metadata?.first_name,
-          lastName: data.user.user_metadata?.last_name,
-          institution: data.user.user_metadata?.institution,
-          predikat: data.user.user_metadata?.predikat,
-          emailVerifiedAt: data.user.email_confirmed_at,
-          role: data.user.user_metadata?.role,
+        // User not found in database - deny access immediately
+        setAuthState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: 'Account not found. Please contact administrator for access.'
         });
-
-        if (provisioned) {
-          const refreshedProfile = await (supabaseClient as any)
-            .from('users')
-            .select(`
-              id, email, role, email_verified_at, created_at, last_login_at,
-              user_profiles(
-                display_name, first_name, last_name, institution, avatar_url, predikat
-              )
-            `)
-            .eq('id', data.user.id)
-            .maybeSingle();
-
-          if (refreshedProfile?.data) {
-            userProfile = {
-              id: refreshedProfile.data.id,
-              email: refreshedProfile.data.email,
-              role: refreshedProfile.data.role,
-              email_verified_at: refreshedProfile.data.email_verified_at,
-              created_at: refreshedProfile.data.created_at,
-              last_login_at: refreshedProfile.data.last_login_at || new Date().toISOString(),
-              user_profiles: refreshedProfile.data.user_profiles || [],
-            };
-          }
-        }
+        return false;
       }
 
       const resolvedProfile = userProfile;
@@ -927,20 +903,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User can still use the app with just auth.users entry
       }
 
-      // Provision user record for consistency (best effort)
-      if (authData.user) {
-        await ensureUserRecord({
-          userId: authData.user.id,
-          email: authData.user.email || data.email,
-          fullName: fullNameFromForm,
-          firstName: firstName,
-          lastName: lastName,
-          institution: data.institution || null,
-          predikat: data.predikat || null,
-          emailVerifiedAt: authData.user.email_confirmed_at,
-          role: authData.user.user_metadata?.role,
-        });
-      }
+      // ✅ SECURITY PATCH: User registration already creates database records above
+      // No need for additional provisioning - this prevents duplicate logic
+      // Registration should only happen through the proper flow with validation
 
       // Registration successful (either normal flow or dev fallback)
       setAuthState(prev => ({

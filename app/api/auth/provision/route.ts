@@ -26,6 +26,17 @@ const sanitizeString = (value?: string | null): string | null => {
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CRITICAL SECURITY PATCH: Disable automatic user provisioning
+    // This endpoint was allowing any authenticated user to create database records
+    // This feature has been disabled to prevent security breach
+
+    return NextResponse.json({
+      success: false,
+      error: 'Automatic user provisioning has been disabled for security reasons.',
+    }, { status: 403 });
+
+    // Original code below is now unreachable - keeping for reference
+    /*
     const { userId } = await getServerSessionUserId();
     if (!userId) {
       return NextResponse.json({
