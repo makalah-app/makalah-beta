@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/lib/auth/role-permissions';
+import { debugLog } from '@/lib/utils/debug-log';
 
 interface Slide1Data {
   email: string;
@@ -212,6 +213,7 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    debugLog('ui:auth', 'submit-start', { isRegisterMode });
 
     try {
       if (isRegisterMode) {
@@ -257,6 +259,7 @@ export default function AuthPage() {
         });
 
         if (success) {
+          debugLog('ui:auth', 'login-success');
           // Clear success message on successful login
           setSuccessMessage('');
 
@@ -277,11 +280,13 @@ export default function AuthPage() {
           }
           // Don't set isSubmitting(false) for login success - let redirect handle it
         } else {
+          debugLog('ui:auth', 'login-failed');
           // Stay on page; error message displayed by useAuth state
           return;
         }
       }
     } catch (error: any) {
+      debugLog('ui:auth', 'submit-exception', { message: error?.message });
       // Check if error is due to unverified email
       if (!isRegisterMode && error?.message?.toLowerCase().includes('email not confirmed')) {
         setShowResendOption(true);
@@ -289,6 +294,7 @@ export default function AuthPage() {
       }
     } finally {
       setIsSubmitting(false);
+      debugLog('ui:auth', 'submit-finally');
     }
   };
 

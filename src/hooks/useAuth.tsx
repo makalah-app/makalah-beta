@@ -19,6 +19,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { Session } from '@supabase/supabase-js';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
+import { debugLog } from '@/lib/utils/debug-log';
 
 // Small helper to avoid indefinite waits on 3rd-party SDK calls
 async function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T | Promise<T>): Promise<T> {
@@ -306,7 +307,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Initialize authentication from stored session
    */
   const initializeAuth = useCallback(async (providedSession?: Session | null) => {
+    debugLog('auth:init', 'start', { provided: !!providedSession });
     if (initializingRef.current) {
+      debugLog('auth:init', 'skip-initializing');
       return;
     }
 
@@ -331,6 +334,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (parsedSession.expiresAt > Date.now()) {
               // Use localStorage session as temporary fallback while waiting for Supabase
               session = parsedSession;
+              debugLog('auth:init', 'restored-local-session');
             }
           }
         } catch (error) {
@@ -347,6 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           async () => ({ data: { session: null }, error: null } as any)
         );
         const { data: { session: fetchedSession }, error } = sessionResult as any;
+        debugLog('auth:init', 'getSession-finished', { hasSession: !!fetchedSession, error: error?.message });
 
         if (error) {
           setAuthState({
@@ -373,6 +378,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error: null
         });
         initializingRef.current = false;
+        debugLog('auth:init', 'no-session');
         return; // No need to fetch profile for unauthenticated users
       }
 
@@ -460,7 +466,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async () => ({ data: null, error: { message: 'profile timeout' } } as any)
       );
       const { data: userProfile, error: profileError } = profileResult as any;
-
+      debugLog('auth:init', 'profile-fetch', { ok: !!userProfile, code: profileError?.code, message: profileError?.message });
       
       if (profileError && profileError.code !== 'PGRST116') {
         // Check retry attempts
@@ -504,6 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             } catch {}
 
+            try { localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession)); localStorage.setItem('userId', authSession.user.id);} catch {}
             setAuthState({
               user: fallbackUser,
               session: authSession,      // ← PRESERVE session!
@@ -511,6 +518,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               isLoading: false,
               error: null                // ← No error state
             });
+            debugLog('auth:init', 'fallback-authenticated', { userId: session.user?.id });
 
             // Update tracking refs
             lastAccessTokenRef.current = authSession.accessToken;
@@ -536,6 +544,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               isLoading: false,
               error: 'Account not found or disabled'
             });
+            debugLog('auth:init', 'user-disabled', { userId: session.user?.id });
           }
         } else {
           setAuthState({
@@ -545,6 +554,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isLoading: false,
             error: 'Failed to create user profile'
           });
+          debugLog('auth:init', 'profile-create-failed');
         }
 
         initializingRef.current = false;
@@ -607,6 +617,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: null
         });
+        debugLog('auth:init', 'authenticated', { userId: authSession.user.id });
       } else {
         // User not found or inactive in database - deny access
         setAuthState({
@@ -616,6 +627,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: 'Account not found or disabled'
         });
+        debugLog('auth:init', 'disabled-after-valid-check');
       }
 
       lastAccessTokenRef.current = session.access_token;
@@ -634,6 +646,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: null
       });
+      debugLog('auth:init', 'exception');
     } finally {
       clearTimeout(resetTimeout);
       initializingRef.current = false;
@@ -712,6 +725,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
     try {
+      debugLog('auth:login', 'start', { email: credentials.email });
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Use Supabase auth for real authentication
@@ -726,10 +740,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = signInResult as any;
 
       if (error) {
+        debugLog('auth:login', 'signIn-error', { message: error.message });
         throw new Error(error.message);
       }
 
       if (!data.user || !data.session) {
+        debugLog('auth:login', 'no-user-or-session');
         throw new Error('Login failed - no user or session returned');
       }
 
@@ -862,8 +878,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             refresh_token: data.session.refresh_token,
           }),
         });
+        debugLog('auth:login', 'set-session-ok');
       } catch (e) {
         // SSR cookie sync failed, but login still successful
+        debugLog('auth:login', 'set-session-failed');
       }
 
       // ✅ CRITICAL SECURITY PATCH: DISABLE automatic user provisioning
@@ -930,6 +948,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         force: true,
       });
 
+      debugLog('auth:login', 'success', { userId: data.user.id });
       return true;
 
     } catch (error) {
@@ -939,6 +958,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: errorMessage
       }));
+      debugLog('auth:login', 'exception', { message: errorMessage });
       return false;
     }
   }, [touchLastLogin, ensureUserRecord]);

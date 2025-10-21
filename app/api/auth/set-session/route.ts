@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   try {
     const { access_token, refresh_token } = await req.json();
     if (!access_token || !refresh_token) {
+      console.error('[auth:set-session] missing tokens');
       return NextResponse.json({ error: 'Missing tokens' }, { status: 400 });
     }
 
@@ -54,8 +55,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
+      console.error('[auth:set-session] error', { message: error.message });
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    // Debug success
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[auth:set-session] success', { userId: data.user?.id });
+    } catch {}
 
     // Return response WITH cookies included in headers
     return NextResponse.json(
@@ -66,6 +74,7 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (e) {
+    console.error('[auth:set-session] exception', e);
     return NextResponse.json({
       error: e instanceof Error ? e.message : 'Unknown error'
     }, { status: 500 });
