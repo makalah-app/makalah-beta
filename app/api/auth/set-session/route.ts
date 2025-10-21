@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create response object first (required for cookie setting)
+    // Penting: kita harus mengembalikan objek 'res' yang sama agar Set-Cookie tidak hilang
     const res = NextResponse.json({ success: true });
 
     // Create Supabase client with proper cookie handling
@@ -65,14 +66,9 @@ export async function POST(req: NextRequest) {
       console.log('[auth:set-session] success', { userId: data.user?.id });
     } catch {}
 
-    // Return response WITH cookies included in headers
-    return NextResponse.json(
-      { success: true, userId: data.user?.id || null },
-      {
-        headers: res.headers,
-        status: 200
-      }
-    );
+    // Return the SAME response object so that cookies are preserved
+    // Body sederhana sudah di-set saat inisialisasi 'res' di atas
+    return res;
   } catch (e) {
     console.error('[auth:set-session] exception', e);
     return NextResponse.json({
