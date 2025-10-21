@@ -8,6 +8,7 @@
     "next-env.d.ts",
     "app/admin/**/*",
     "app/auth/**/*",
+    "app/api/auth/**/*",
     "app/layout.tsx",
     "src/lib/ai/config.ts",
     
