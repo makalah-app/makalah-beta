@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConversationDetails } from '../../../../src/lib/database/chat-store';
 import { supabaseAdmin } from '../../../../src/lib/database/supabase-client';
+import { getServerSessionUserId } from '../../../../src/lib/database/supabase-server-auth';
 import { redisManager } from '../../../../src/lib/caching';
 
 // Allow for database operations
