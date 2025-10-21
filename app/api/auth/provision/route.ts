@@ -27,7 +27,11 @@ const sanitizeString = (value?: string | null): string | null => {
 export async function POST(request: NextRequest) {
   try {
     // Secure, server-side provisioning for the CURRENT session user only
-    const sessionUserId = await getServerSessionUserId();
+    const { userId: sessionUserId, error: sessionError } = await getServerSessionUserId();
+
+    if (sessionError) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
 
     if (!sessionUserId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Ignore any spoofed IDs from client; only trust the session
     const payload: ProvisionPayload = {
-      userId: sessionUserId || null, // Ensure null safety
+      userId: sessionUserId,
       email: sanitizeString(json.email) || '',
       fullName: sanitizeString(json.fullName) || undefined,
       firstName: sanitizeString(json.firstName) || undefined,
