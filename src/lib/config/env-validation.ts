@@ -48,8 +48,8 @@ const productionEnvSchema = z.object({
   OPENAI_API_KEY: openaiKeySchema,
   OPENROUTER_API_KEY: openrouterKeySchema,
 
-  // Database (Required)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
+  // Database (Required) - CRITICAL: No defaults for production security
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url('Supabase URL is required in production'),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseKeySchema,
   SUPABASE_SERVICE_ROLE_KEY: supabaseKeySchema,
   SUPABASE_JWT_SECRET: z.string().min(64, 'Production JWT secret must be at least 64 characters'),
@@ -58,13 +58,13 @@ const productionEnvSchema = z.object({
   ENABLE_DEBUG_MODE: z.literal('false'),
   LOG_LEVEL: z.enum(['info', 'warn', 'error']).default('warn'),
 
-  // Next.js (Production)
-  NEXTAUTH_URL: z.string().url(),
+  // Next.js (Production) - CRITICAL: No defaults for production security
+  NEXTAUTH_URL: z.string().url('NextAuth URL is required in production'),
   NEXTAUTH_SECRET: z.string().min(64, 'Production NextAuth secret must be at least 64 characters'),
 
   // Required services in production
-  UPSTASH_REDIS_REST_URL: z.string().url(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(20),
+  UPSTASH_REDIS_REST_URL: z.string().url('Redis URL is required in production'),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(20, 'Redis token is required in production'),
 
   // Optional GitHub integration
   GITHUB_PERSONAL_ACCESS_TOKEN: githubTokenSchema.optional(),
@@ -78,7 +78,7 @@ const testEnvSchema = z.object({
   OPENROUTER_API_KEY: z.string().default('sk-or-v1-test-key'),
 
   // Database (Test)
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().default('http://localhost:54321'),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().default('test-anon-key'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().default('test-service-role-key'),
   SUPABASE_JWT_SECRET: z.string().default('test-jwt-secret-32-characters-min'),

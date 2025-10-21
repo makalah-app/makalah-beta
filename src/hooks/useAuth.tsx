@@ -310,11 +310,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // First, try to get current session from localStorage as fallback
+      // First, try to get current session from localStorage first
       let session = providedSession ?? null;
 
       if (!session) {
-        // Try to restore from localStorage first (fallback for production latency issues)
+        // Try to restore from localStorage first (fallback for production issues)
         try {
           const storedSession = localStorage.getItem(STORAGE_KEYS.SESSION);
           if (storedSession) {
