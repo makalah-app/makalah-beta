@@ -16,7 +16,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 type StatusMessage = { type: 'success' | 'error'; text: string };
 
 type ProfileFormState = {
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   institution: string;
   predikat?: string;
@@ -30,7 +31,8 @@ export default function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     institution: '',
     predikat: undefined
@@ -44,8 +46,13 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
+      const display = user.fullName || user.name || '';
+      const parts = display.split(' ').filter(Boolean);
+      const first = parts[0] || display;
+      const last = parts.length > 1 ? parts.slice(1).join(' ') : '';
       setProfileForm({
-        fullName: user.fullName || user.name || '',
+        firstName: first,
+        lastName: last,
         email: user.email || '',
         institution: user.institution || '',
         predikat: user.predikat || undefined
@@ -61,11 +68,15 @@ export default function ProfilePage() {
     setStatusMessage(null);
 
     try {
+      const fullName = `${(profileForm.firstName || '').trim()}${profileForm.lastName ? ' ' + profileForm.lastName.trim() : ''}`.trim();
       const success = await updateProfile({
-        fullName: profileForm.fullName,
+        fullName,
         institution: profileForm.institution,
-        predikat: profileForm.predikat
-      });
+        predikat: profileForm.predikat,
+        // Provide explicit split for DB compliance
+        firstName: profileForm.firstName.trim(),
+        lastName: (profileForm.lastName || profileForm.firstName).trim(),
+      } as any);
 
       if (success) {
         setStatusMessage({ type: 'success', text: 'Profil berhasil diperbarui.' });
@@ -102,10 +113,10 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center gap-3">
-        <User className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-3">
+        <User className="h-6 w-6 text-primary mt-1" />
         <div>
-          <h1 className="text-2xl font-semibold">Profil Pengguna</h1>
+          <h1 className="text-2xl font-semibold leading-none">Profil Pengguna</h1>
           <p className="text-muted-foreground">Kelola identitas dan afiliasi institusi Anda</p>
         </div>
       </div>
@@ -131,7 +142,7 @@ export default function ProfilePage() {
                     <User className="h-5 w-5" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-base font-medium text-foreground">{profileForm.fullName || 'Tanpa nama'}</span>
+                    <span className="text-base font-medium text-foreground">{`${profileForm.firstName || ''}${profileForm.lastName ? ' ' + profileForm.lastName : ''}`.trim() || 'Tanpa nama'}</span>
                     <span className="text-sm text-muted-foreground">{profileForm.email}</span>
                   </div>
                 </div>
@@ -163,17 +174,33 @@ export default function ProfilePage() {
             </div>
           ) : (
             <form onSubmit={handleProfileSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Nama Lengkap</Label>
-                <div className="relative">
-                  <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    placeholder="Masukkan nama lengkap"
-                    value={profileForm.fullName}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, fullName: event.target.value }))}
-                    className="pl-9"
-                  />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nama Depan</Label>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      placeholder="Nama depan"
+                      value={profileForm.firstName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, firstName: event.target.value }))}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Nama Belakang</Label>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="lastName"
+                      placeholder="Nama belakang"
+                      value={profileForm.lastName}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, lastName: event.target.value }))}
+                      className="pl-9"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -228,8 +255,13 @@ export default function ProfilePage() {
                     setIsEditingProfile(false);
                     setStatusMessage(null);
                     if (user) {
+                      const display = user.fullName || user.name || '';
+                      const parts = display.split(' ').filter(Boolean);
+                      const first = parts[0] || display;
+                      const last = parts.length > 1 ? parts.slice(1).join(' ') : '';
                       setProfileForm({
-                        fullName: user.fullName || user.name || '',
+                        firstName: first,
+                        lastName: last,
                         email: user.email || '',
                         institution: user.institution || '',
                         predikat: user.predikat || undefined

@@ -69,11 +69,11 @@ export function SettingsSidebar({ currentPath, onNavigate }: SettingsSidebarProp
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary mt-0.5 shrink-0">
+          <div className="flex h-10 w-10 items-start justify-center pt-1 rounded bg-primary/10 text-primary -mt-[2px] shrink-0">
             <Settings className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-semibold text-lg">Pengaturan</h1>
+            <h1 className="text-lg font-semibold leading-none">Pengaturan</h1>
             <p className="text-xs text-muted-foreground">Kelola akun & preferensi</p>
           </div>
         </div>

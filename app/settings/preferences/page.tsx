@@ -66,9 +66,9 @@ export default function PreferencesPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-start gap-3">
-        <Palette className="h-6 w-6 text-primary" />
+        <Palette className="h-6 w-6 text-primary mt-1" />
         <div>
-          <h1 className="text-2xl font-semibold">Preferensi</h1>
+          <h1 className="text-2xl font-semibold leading-none">Preferensi</h1>
           <p className="text-muted-foreground">Sesuaikan tampilan dan pengalaman aplikasi</p>
         </div>
       </div>

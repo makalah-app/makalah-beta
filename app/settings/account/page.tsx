@@ -72,9 +72,9 @@ export default function AccountPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-start gap-3">
-        <Shield className="h-6 w-6 text-primary" />
+        <Shield className="h-6 w-6 text-primary mt-1" />
         <div>
-          <h1 className="text-2xl font-semibold">Info Akun</h1>
+          <h1 className="text-2xl font-semibold leading-none">Info Akun</h1>
           <p className="text-muted-foreground">Informasi akun dan pengaturan lanjutan</p>
         </div>
       </div>

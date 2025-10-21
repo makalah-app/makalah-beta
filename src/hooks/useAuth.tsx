@@ -1104,24 +1104,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthState(prev => ({ ...prev, error: null }));
   }, []);
 
-  const updateProfile = useCallback(async (updates: Partial<User> & { predikat?: string }): Promise<boolean> => {
+  const updateProfile = useCallback(async (updates: Partial<User> & { predikat?: string } & { firstName?: string; lastName?: string }): Promise<boolean> => {
     if (!authState.user || !authState.session) return false;
 
     try {
       // Prepare updates for user_profiles table (correct table with proper field mapping)
       const dbUpdates: any = {};
-      if (updates.fullName) {
-        dbUpdates.display_name = updates.fullName;
-        // Split fullName into first_name and last_name if possible
-        const nameParts = updates.fullName.trim().split(' ');
-        if (nameParts.length >= 2) {
-          dbUpdates.first_name = nameParts[0];
-          dbUpdates.last_name = nameParts.slice(1).join(' ');
-        } else {
-          dbUpdates.first_name = updates.fullName;
-          dbUpdates.last_name = '';
+      // Normalize name inputs: prefer explicit firstName/lastName from caller; fallback to fullName
+      const explicitFirst = (updates as any).firstName?.trim();
+      const explicitLast = (updates as any).lastName?.trim();
+      const explicitFull = updates.fullName?.trim();
+
+      let resolvedFirst: string | undefined = explicitFirst;
+      let resolvedLast: string | undefined = explicitLast;
+      let resolvedDisplay: string | undefined = explicitFull;
+
+      if (!resolvedFirst || !resolvedLast) {
+        if (explicitFull) {
+          const parts = explicitFull.split(' ').filter(Boolean);
+          if (parts.length >= 2) {
+            resolvedFirst = resolvedFirst || parts[0];
+            resolvedLast = resolvedLast || parts.slice(1).join(' ');
+          } else if (parts.length === 1) {
+            resolvedFirst = resolvedFirst || parts[0];
+            resolvedLast = resolvedLast || parts[0]; // ensure NOT NULL compliance
+          }
         }
       }
+
+      // Ensure display_name present
+      if (!resolvedDisplay && (resolvedFirst || resolvedLast)) {
+        const fn = resolvedFirst || '';
+        const ln = resolvedLast || '';
+        resolvedDisplay = `${fn} ${ln}`.trim();
+      }
+
+      if (resolvedDisplay) dbUpdates.display_name = resolvedDisplay;
+      if (resolvedFirst) dbUpdates.first_name = resolvedFirst;
+      if (resolvedLast) dbUpdates.last_name = resolvedLast || resolvedFirst; // safety fallback
+
       if (updates.institution !== undefined) dbUpdates.institution = updates.institution;
       if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
       if ((updates as any).predikat !== undefined) dbUpdates.predikat = (updates as any).predikat;
@@ -1138,14 +1159,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Update local state
-      setAuthState(prev => ({
-        ...prev,
-        user: { ...prev.user!, ...updates },
-        session: prev.session ? {
-          ...prev.session,
-          user: { ...prev.session.user, ...updates }
-        } : prev.session
-      }));
+      setAuthState(prev => {
+        const nextName = resolvedFirst || prev.user?.name;
+        const nextFull = resolvedDisplay || updates.fullName || prev.user?.fullName;
+        return ({
+          ...prev,
+          user: { ...prev.user!, ...updates, name: nextName || prev.user!.name, fullName: nextFull || prev.user!.fullName },
+          session: prev.session ? {
+            ...prev.session,
+            user: { ...prev.session.user, ...updates, name: nextName || prev.session.user.name, fullName: nextFull || prev.session.user.fullName }
+          } : prev.session
+        });
+      });
 
       return true;
 
