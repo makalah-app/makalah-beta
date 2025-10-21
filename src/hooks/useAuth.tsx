@@ -536,7 +536,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasInitializedRef.current = true;
 
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        // Guard against hanging SDK calls (e.g., network hiccups) to prevent infinite loading
+        const getSessionSafe = withTimeout(
+          supabaseClient.auth.getSession(),
+          4000,
+          async () => ({ data: { session: null } as any })
+        );
+        const { data: { session } } = await getSessionSafe as any;
         await initializeAuth(session);
       } catch (error) {
         if (mounted) {

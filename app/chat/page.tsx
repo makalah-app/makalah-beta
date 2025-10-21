@@ -496,17 +496,7 @@ function ChatPageContent() {
   }, [user?.id]);
 
 
-  // Show loading screen while authentication is being processed
-  if (isLoading && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-chat-background">
-        <div className="text-center">
-          <div className="w-12 h-12 animate-spin rounded-full border-2 border-border border-t-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading chat interface...</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove full-screen loading overlay to avoid double loaders; rely on inline loader in ChatContainer
 
 
 
