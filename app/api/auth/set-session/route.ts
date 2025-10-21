@@ -60,6 +60,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Explicitly set cookies as safety net (in case adapter write is ignored)
+    try {
+      const cookieOpts: CookieOptions = {
+        maxAge: 60 * 60 * 24 * 30,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      } as const;
+      res.cookies.set({ name: 'sb-access-token', value: access_token, ...cookieOpts });
+      res.cookies.set({ name: 'sb-refresh-token', value: refresh_token, ...cookieOpts });
+      // Prevent any caching that might drop Set-Cookie
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      res.headers.set('Pragma', 'no-cache');
+    } catch {}
+
     // Debug success
     try {
       // eslint-disable-next-line no-console
