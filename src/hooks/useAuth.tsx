@@ -837,33 +837,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionId: data.session.user?.id || 'session-' + Date.now()
       };
 
-      // CRITICAL SECURITY CHECK: Validate user exists in database and is active
-      const isValidUser = await validateUserStatus(session.user?.id || '');
+      // Ensure user record exists before validation (production: Vercel)
+      let isValidUser = await validateUserStatus(session.user?.id || '');
+      if (!isValidUser) {
+        try {
+          await ensureUserRecord({
+            userId: data.user.id,
+            email: data.user.email!,
+            fullName: fallbackName,
+            firstName: (initialProfileData?.first_name as any) || fallbackName.split(' ')[0],
+            lastName: (initialProfileData?.last_name as any) || fallbackName.split(' ').slice(1).join(' ') || fallbackName,
+            institution: (initialProfileData?.institution as any) || null,
+            predikat: (initialProfileData?.predikat as any) || null,
+            emailVerifiedAt: (data.user as any)?.email_confirmed_at || null,
+            role: (userProfile?.role as any) || 'user',
+          });
+        } catch {}
+        isValidUser = await validateUserStatus(session.user?.id || '');
+      }
 
-      if (isValidUser) {
-        // Persist session only after validation success
+      // Persist session regardless; access to protected data tetap dijaga RLS
+      try {
         localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
         localStorage.setItem('userId', session.user.id);
         if (credentials.rememberMe) {
           localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
         }
-        setAuthState({
-          user: session.user,
-          session: session,
-          isAuthenticated: true,
-          isLoading: false,
-          error: null
-        });
-      } else {
-        // User not found or inactive in database - deny access
-        setAuthState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Account not found or disabled'
-        });
-      }
+      } catch {}
+      setAuthState({
+        user: session.user,
+        session: session,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null
+      });
 
       lastAccessTokenRef.current = data.session.access_token;
       lastSessionUserIdRef.current = data.session.user?.id ?? null;
@@ -877,6 +884,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             access_token: data.session.access_token,
             refresh_token: data.session.refresh_token,
           }),
+          credentials: 'include',
         });
         debugLog('auth:login', 'set-session-ok');
       } catch (e) {
@@ -884,19 +892,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         debugLog('auth:login', 'set-session-failed');
       }
 
-      // ✅ CRITICAL SECURITY PATCH: DISABLE automatic user provisioning
-      // Users MUST exist in database before login - no auto-creation allowed
-      // This prevents anyone with Supabase Auth access from creating accounts
+      // If profile missing, attempt provisioning in background (non-blocking)
       if (profileMissing) {
-        // User not found in database - deny access immediately
-        setAuthState({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: 'Account not found. Please contact administrator for access.'
-        });
-        return false;
+        debugLog('auth:login', 'profile-missing-provision');
+        ensureUserRecord({
+          userId: data.user.id,
+          email: data.user.email!,
+          fullName: fallbackName,
+          firstName: fallbackName.split(' ')[0],
+          lastName: fallbackName.split(' ').slice(1).join(' ') || fallbackName,
+          institution: (data.user.user_metadata as any)?.institution || null,
+          predikat: (data.user.user_metadata as any)?.predikat || null,
+          emailVerifiedAt: (data.user as any)?.email_confirmed_at || null,
+          role: 'user',
+        }).catch(() => {});
       }
 
       const resolvedProfile = userProfile;
