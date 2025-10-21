@@ -181,14 +181,26 @@
     @apply bg-background text-foreground font-sans;
   }
   /* Added heading font class */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-hero), var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+h5,
+h6 {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
+@layer utilities {
+  /* Force Victor Mono on h1–h4 across the app, overriding utility classes */
   h1,
   h2,
   h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  h4 {
+    font-family: var(--font-hero), var(--font-heading), var(--font-sans), system-ui, sans-serif !important;
   }
+}
 
   /* Global input styling with 3px border radius */
   input[type="text"],

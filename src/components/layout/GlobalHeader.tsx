@@ -14,6 +14,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
@@ -137,11 +138,26 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       <div className="flex items-center justify-between px-6 pt-4 pb-6 relative z-10">
       {/* Brand Section */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <Link href="/" className="flex items-start gap-3 hover:opacity-80 transition-opacity">
           <BrandLogo variant="color" size="md" priority />
           <div className="flex flex-col">
-            <div className="text-xl font-medium text-foreground">Makalah AI</div>
-            <div className="text-xs font-light text-white mt-0.5">
+            {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
+            <div
+              role="img"
+              aria-label="Makalah AI"
+              className="h-6 md:h-7 w-[140px] bg-foreground"
+              style={{
+                WebkitMaskImage: 'url(/makalah_brand_text.svg)',
+                maskImage: 'url(/makalah_brand_text.svg)',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskPosition: 'left center',
+                maskPosition: 'left center',
+              }}
+            />
+            <div className="text-xs font-light text-muted-foreground mt-0.5">
               {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
             </div>
           </div>
@@ -177,7 +193,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  'md:hidden h-9 w-9 [&_svg]:size-6 text-white hover:text-white/80 focus-visible:outline-none focus-visible:ring-0',
+                  'md:hidden h-9 w-9 [&_svg]:size-6 text-foreground hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-0',
                   !showNavigation && 'ml-2'
                 )}
                 aria-label="Buka menu utama"
@@ -192,7 +208,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               customCloseButton={
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="absolute left-6 top-6 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded text-white opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none"
+                  className="absolute left-6 top-6 h-9 w-9 [&_svg]:!size-6 flex items-center justify-center rounded text-foreground opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none disabled:pointer-events-none"
                 >
                   <PanelLeftIcon className="!h-6 !w-6" />
                   <span className="sr-only">Close</span>
@@ -323,8 +339,8 @@ const NavLink: React.FC<NavLinkProps> = ({ href, label, isActive }) => (
   <Link
     href={href}
     className={cn(
-      'transition-colors duration-200 text-white hover:text-white/80',
-      isActive && 'text-white'
+      'transition-colors duration-200 text-foreground hover:text-foreground/80',
+      isActive && 'text-foreground'
     )}
     aria-current={isActive ? 'page' : undefined}
   >
@@ -342,7 +358,7 @@ const MobileNavItem: React.FC<MobileNavItemProps> = ({ href, label, isActive, on
     onClick={onSelect}
     className={cn(
       'flex items-center justify-between rounded px-3 py-2 text-base transition-colors duration-200',
-      isActive ? 'bg-accent text-white' : 'text-white hover:bg-accent/60 hover:text-white/80'
+      isActive ? 'bg-accent text-foreground' : 'text-foreground hover:bg-accent/60 hover:text-foreground/80'
     )}
     aria-current={isActive ? 'page' : undefined}
   >

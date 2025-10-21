@@ -596,11 +596,26 @@ function ChatPageContent() {
             <SidebarHeader className="p-4 border-b border-border">
               <Link
                 href="/"
-                className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+                className="flex items-start gap-3 hover:opacity-90 transition-opacity"
               >
                 <BrandLogo variant="color" size="sm" priority />
                 <div className="flex flex-col">
-                  <div className="text-sm font-medium text-foreground">Makalah AI</div>
+                  {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
+                  <div
+                    role="img"
+                    aria-label="Makalah AI"
+                    className="h-5 w-[120px] bg-foreground"
+                    style={{
+                      WebkitMaskImage: 'url(/makalah_brand_text.svg)',
+                      maskImage: 'url(/makalah_brand_text.svg)',
+                      WebkitMaskRepeat: 'no-repeat',
+                      maskRepeat: 'no-repeat',
+                      WebkitMaskSize: 'contain',
+                      maskSize: 'contain',
+                      WebkitMaskPosition: 'left center',
+                      maskPosition: 'left center',
+                    }}
+                  />
                   <div className="text-xs font-light text-muted-foreground">
                     {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
                   </div>

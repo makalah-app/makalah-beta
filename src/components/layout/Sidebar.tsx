@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import BrandLogo from '@/components/ui/BrandLogo';
 import { useChatHistory, ConversationItem } from '../../hooks/useChatHistory';
 
 
@@ -178,10 +179,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={className}>
-      {/* Logo M - Link to Home */}
-      <div>
-        <Link href="/" title="Makalah AI - Home">
-          M
+      {/* Brand - Link to Home */}
+      <div style={{ padding: '8px 8px 12px 8px' }}>
+        <Link href="/" title="Makalah AI - Home" className="flex items-center gap-2">
+          <BrandLogo variant="color" size="sm" priority />
+          <Image
+            src="/makalah_brand_text.svg"
+            alt="Makalah AI"
+            width={180}
+            height={20}
+            className="h-5 w-auto"
+            priority
+          />
         </Link>
       </div>
 

@@ -9,8 +9,11 @@ import { pricingTiers } from "@/constants/pricing";
 import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+// Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
 import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
+
+// Fonts are configured globally in app/layout.tsx
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -47,8 +50,10 @@ export default function HomePage() {
 
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-6 md:mt-10">
-          <h1 className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading">
-            Bikin <span className="text-primary">Paper Akademik</span>
+          <h1
+            className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading"
+          >
+            Bikin Paper Akademik
             <br />
             Jadi Lebih Mudah
           </h1>
@@ -84,9 +89,11 @@ export default function HomePage() {
       {/* Why Makalah Section */}
       <section id="why-makalah" className="px-6 py-16 bg-background relative section-screen separator-accent-only">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading">
+          <h3
+            className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading"
+          >
             Kenapa Makalah AI?
-          </h2>
+          </h3>
 
           {/* Benefits Grid - hero-style static boxes */}
           <div className="grid gap-8 sm:grid-cols-2">
@@ -94,7 +101,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <Brain className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Fokus Berpikir</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Fokus Berpikir</h3>
                   <p className="text-base text-muted-foreground">Mengembalikan aktivitas riset dan penulisan naskah akademik sebagai kegiatan berpikir: bukan malah berkutat dengan prompt.</p>
                 </div>
               </div>
@@ -104,7 +111,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <MessageSquare className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Obrolan Natural</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Obrolan Natural</h3>
                   <p className="text-base text-muted-foreground">Tidak perlu ruwet menyusun prompt. Silakan bercakap dengan bahasa sehari-hari, Agen Makalah akan  menjadikannya bahan penyusun paper</p>
                 </div>
               </div>
@@ -114,7 +121,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <ListChecks className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Dipandu Bertahap</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Dipandu Bertahap</h3>
                   <p className="text-base text-muted-foreground">Agen Makalah telah dibekali workflow yang memandu Anda menyusun paper tahap demi tahap, tanpa potensi melenceng</p>
                 </div>
               </div>
@@ -124,7 +131,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <Target className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Konteks Terjaga</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Konteks Terjaga</h3>
                   <p className="text-base text-muted-foreground">Tanpa keluar konteks riset, meski obrolan panjang lebar. Agen Makalah akan selalu mengembalikan obrolan ke bahasan Utama.</p>
                 </div>
               </div>
@@ -134,7 +141,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <ShieldCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Sitasi Akurat</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
                   <p className="text-base text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber yang akurat, anti‑plagiasi.</p>
                 </div>
               </div>
@@ -144,7 +151,7 @@ export default function HomePage() {
               <div className="flex items-start gap-4">
                 <UserCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Anda Pengendali</h3>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Anda Pengendali</h3>
                   <p className="text-base text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, bukan dibuatkan AI. Anda hanya dibantu mengetik, menyusun, oleh Agen Makalah</p>
                 </div>
               </div>
@@ -153,12 +160,16 @@ export default function HomePage() {
 
           {/* Highlight statement as sub-section */}
           <div className="mt-12 text-center max-w-3xl mx-auto">
-            <h3 className="text-xl md:text-4xl text-foreground font-heading">
+            <h3
+              className="text-xl md:text-4xl text-white font-heading"
+            >
               Anda adalah pawang, AI hanya tukang
             </h3>
-            <p className="text-xl md:text-4xl text-muted-foreground mt-0">
+            <h3
+              className="text-xl md:text-4xl text-white font-heading mt-0"
+            >
               Karya tulis tetap orisinal!
-            </p>
+            </h3>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
           </div>
         </div>
@@ -168,8 +179,12 @@ export default function HomePage() {
       <section className="px-6 py-20 bg-background section-screen">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <h3 className="text-3xl md:text-4xl font-semibold font-heading">
-              Tak Perlu Bayar Mahal Untuk Karya Yang Masuk Akal
+            <h3
+              className="text-3xl md:text-4xl font-semibold font-heading"
+            >
+              Tak Perlu Bayar Mahal
+              <br />
+              Untuk Karya Yang Masuk Akal
             </h3>
             <p className="text-base md:text-lg text-muted-foreground">
               Pilih paket yang sesuai kebutuhan penulisan Anda. Mulai gratis, lanjutkan saat siap menyelesaikan makalah
@@ -177,7 +192,7 @@ export default function HomePage() {
             </p>
             <Link
               href="/pricing"
-              className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+              className="inline-block mt-4 md:mt-6 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Lihat detail paket lengkap
             </Link>
@@ -201,21 +216,21 @@ export default function HomePage() {
                     ) : null}
                   </div>
                   <div>
-                    <div className="mb-2">
-                      <div
-                        className={cn(
-                          "text-3xl font-semibold",
-                          /x/i.test(tier.priceLabel)
-                            ? "line-through decoration-red-600 decoration-4 decoration-skip-ink-none text-muted-foreground opacity-80"
-                            : "text-foreground"
-                        )}
-                        title={/x/i.test(tier.priceLabel) ? "Harga belum aktif" : undefined}
-                        style={/x/i.test(tier.priceLabel)
-                          ? { textDecorationColor: 'rgb(220 38 38)', textDecorationThickness: '4px', textDecorationSkipInk: 'none' }
-                          : undefined}
-                      >
-                        {tier.priceLabel}
-                      </div>
+                  <div className="mb-2">
+                    <h3
+                      className={cn(
+                        "text-3xl font-semibold",
+                        /x/i.test(tier.priceLabel)
+                          ? "line-through decoration-red-600 decoration-4 decoration-skip-ink-none text-muted-foreground opacity-80"
+                          : "text-foreground"
+                      )}
+                      title={/x/i.test(tier.priceLabel) ? "Harga belum aktif" : undefined}
+                      style={/x/i.test(tier.priceLabel)
+                        ? { textDecorationColor: 'rgb(220 38 38)', textDecorationThickness: '4px', textDecorationSkipInk: 'none' }
+                        : undefined}
+                    >
+                      {tier.priceLabel}
+                    </h3>
                       {tier.priceUnit && (
                         <div className="text-sm font-light text-muted-foreground mt-0.5">{tier.priceUnit}</div>
                       )}
@@ -256,9 +271,13 @@ export default function HomePage() {
         <div className="w-full flex flex-col items-center gap-10 my-auto">
           {/* Tutorial highlight */}
           <div className="w-full max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-semibold text-foreground font-heading text-center">
-              Pelajari cara bekerja dengan Agen Makalah
-            </h2>
+            <h3
+              className="text-3xl md:text-4xl font-semibold text-foreground font-heading text-center"
+            >
+              Pelajari cara bekerja
+              <br />
+              dengan Agen Makalah
+            </h3>
             <p className="mt-3 text-base md:text-lg text-muted-foreground text-center">
               Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi Anda menyusun paper akademik dan melakukan riset.
             </p>

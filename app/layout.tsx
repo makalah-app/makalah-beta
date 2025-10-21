@@ -1,5 +1,5 @@
 import './globals.css';
-import { Inter, Roboto, JetBrains_Mono } from 'next/font/google';
+import { Inter, Nunito_Sans, JetBrains_Mono, Victor_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
@@ -25,8 +25,7 @@ const inter = Inter({
   variable: '--font-sans',
 });
 
-const roboto = Roboto({
-  weight: ['300', '400', '500', '700'],
+const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-heading',
@@ -36,6 +35,13 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-mono',
+});
+
+// Global hero/primary heading font (h1-h2)
+const victorMono = Victor_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-hero',
 });
 
 export const metadata: Metadata = {
@@ -61,7 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="id" className="dark" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${roboto.variable} ${jetbrainsMono.variable} font-sans`}
+        className={`${inter.variable} ${nunitoSans.variable} ${jetbrainsMono.variable} ${victorMono.variable} font-sans`}
         suppressHydrationWarning
       >
         <AppProviders>{children}</AppProviders>
