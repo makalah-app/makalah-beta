@@ -33,17 +33,31 @@ export async function middleware(req: NextRequest) {
       }
     );
 
-    // Proactive token refresh before expiry
+    // Proactive token refresh before expiry with bot protection
     const { data: { session }, error } = await supabase.auth.getSession();
+    const userAgent = req.headers.get('user-agent') || '';
+    const isBot = userAgent.includes('bot') || userAgent.includes('crawler') || userAgent.includes('headless');
 
-    if (session && !error) {
+    if (session && !error && !isBot) {
       const expiresAt = session.expires_at || 0;
       const now = Math.floor(Date.now() / 1000);
       const timeUntilExpiry = expiresAt - now;
 
-      // Refresh if token expires within 5 minutes (300 seconds)
-      if (timeUntilExpiry < 300) {
+      // Check if recently refreshed by client to avoid competing refreshes
+      const lastRefresh = req.cookies.get('sb-last-refresh')?.value;
+      const timeSinceLastRefresh = lastRefresh ? now - parseInt(lastRefresh) : Infinity;
+
+      // Only refresh if not recently refreshed by client (avoid competing refreshes)
+      // and only if token expires within 6 minutes (360 seconds)
+      if (timeUntilExpiry < 360 && timeSinceLastRefresh > 6 * 60) {
         await supabase.auth.refreshSession();
+        // Set tracking cookie to prevent competing refreshes
+        res.cookies.set('sb-last-refresh', now.toString(), {
+          maxAge: 360,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
       }
 
       const pathname = req.nextUrl.pathname;

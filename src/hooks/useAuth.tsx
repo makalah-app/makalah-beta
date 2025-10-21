@@ -291,6 +291,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Add safety timeout to reset initializingRef in case of network issues
+    const resetTimeout = setTimeout(() => {
+      initializingRef.current = false;
+    }, 10000); // Reset after 10 seconds
+
     try {
       initializingRef.current = true;
       setAuthState(prev => ({ ...prev, isLoading: true }));
@@ -300,17 +305,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const attempts = profileFetchAttemptsRef.current.get(providedSession.user.id) || 0;
         if (attempts >= 3) {
           initializingRef.current = false;
+          clearTimeout(resetTimeout);
           return;
         }
       }
 
-      // First, try to get current session from Supabase
+      // First, try to get current session from localStorage as fallback
       let session = providedSession ?? null;
 
       if (!session) {
+        // Try to restore from localStorage first (fallback for production latency issues)
+        try {
+          const storedSession = localStorage.getItem(STORAGE_KEYS.SESSION);
+          if (storedSession) {
+            const parsedSession = JSON.parse(storedSession);
+            if (parsedSession.expiresAt > Date.now()) {
+              // Use localStorage session as temporary fallback while waiting for Supabase
+              session = parsedSession;
+            }
+          }
+        } catch (error) {
+          localStorage.removeItem(STORAGE_KEYS.SESSION); // Clean corrupted data
+        }
+      }
+
+      if (!session) {
+        // Increased timeout for production environment to handle Vercel latency
+        const timeoutDuration = process.env.NODE_ENV === 'production' ? 5000 : 2000;
         const sessionResult = await withTimeout(
           supabaseClient.auth.getSession(),
-          1000, // ✅ PERFORMANCE: Reduced from 2500ms to 1000ms
+          timeoutDuration, // ✅ PRODUCTION FIX: 5s for Vercel, 2s for local
           async () => ({ data: { session: null }, error: null } as any)
         );
         const { data: { session: fetchedSession }, error } = sessionResult as any;
@@ -522,6 +546,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error: null
       });
     } finally {
+      clearTimeout(resetTimeout);
       initializingRef.current = false;
     }
   }, [touchLastLogin]);
