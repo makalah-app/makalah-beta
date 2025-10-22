@@ -4,6 +4,18 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const shouldLog = process.env.NEXT_PUBLIC_DEBUG_AUTH === '1' || process.env.NODE_ENV !== 'production';
+  const log = (msg: string, data?: any) => {
+    if (!shouldLog) return;
+    try {
+      // Avoid logging secrets
+      const safe = data ? JSON.parse(JSON.stringify(data)) : undefined;
+      // eslint-disable-next-line no-console
+      console.log('[MW][auth]', msg, safe || '');
+    } catch {
+      // noop
+    }
+  };
 
   try {
     const supabase = createServerClient(
@@ -35,6 +47,17 @@ export async function middleware(req: NextRequest) {
 
     // Proactive token refresh before expiry with bot protection
     const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) log('getSession:error', { message: error.message });
+    if (session) {
+      log('getSession:ok', {
+        userId: session.user?.id,
+        expiresAt: session.expires_at,
+        now: Math.floor(Date.now() / 1000),
+        path: req.nextUrl.pathname,
+      });
+    } else {
+      log('getSession:null', { path: req.nextUrl.pathname });
+    }
     const userAgent = req.headers.get('user-agent') || '';
     const isBot = userAgent.includes('bot') || userAgent.includes('crawler') || userAgent.includes('headless');
 
@@ -50,7 +73,9 @@ export async function middleware(req: NextRequest) {
       // Only refresh if not recently refreshed by client (avoid competing refreshes)
       // and only if token expires within 6 minutes (360 seconds)
       if (timeUntilExpiry < 360 && timeSinceLastRefresh > 6 * 60) {
+        log('refresh:attempt', { timeUntilExpiry, timeSinceLastRefresh });
         await supabase.auth.refreshSession();
+        log('refresh:done');
         // Set tracking cookie to prevent competing refreshes
         res.cookies.set('sb-last-refresh', now.toString(), {
           maxAge: 360,
@@ -66,6 +91,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/admin');
 
       if (requiresProvisionedUser) {
+        log('provision:check', { route: req.nextUrl.pathname });
         const { data: provisionedUser } = await supabase
           .from('users')
           .select('id, is_active')
@@ -74,11 +100,13 @@ export async function middleware(req: NextRequest) {
           .maybeSingle();
 
         if (!provisionedUser) {
+          log('provision:missing', { userId: session.user.id });
           const redirectUrl = req.nextUrl.clone();
           redirectUrl.pathname = '/auth';
           redirectUrl.searchParams.set('reason', 'account-disabled');
           return NextResponse.redirect(redirectUrl);
         }
+        log('provision:ok', { userId: session.user.id });
       }
     }
   } catch {

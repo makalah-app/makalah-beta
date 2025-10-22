@@ -321,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       initializingRef.current = true;
       setAuthState(prev => ({ ...prev, isLoading: true }));
+      try { debugLog('auth:init', 'loading-true'); } catch {}
 
       // First, try to get current session from localStorage first
       let session = providedSession ?? null;
@@ -680,6 +681,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      try { debugLog('auth:event', event, { hasSession: !!session, userId: session?.user?.id }); } catch {}
       if (!mounted) return;
 
       // ✅ CRITICAL FIX: Handle INITIAL_SESSION separately to prevent double initialization
@@ -697,15 +699,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: null
         });
+        try { debugLog('auth:state', 'signed-out'); } catch {}
       } else if (event === 'SIGNED_IN') {
         // ✅ CRITICAL FIX: Only handle first sign-in if not initializing
         if (!initializingRef.current) {
+          try { debugLog('auth:state', 'signed-in'); } catch {}
           await initializeAuth(session);
         }
       }
       // ✅ CRITICAL FIX: Ignore ALL refresh events to prevent infinite loops
       else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         // Ignored to prevent infinite loops
+        try { debugLog('auth:event-ignored', event); } catch {}
       }
     });
 

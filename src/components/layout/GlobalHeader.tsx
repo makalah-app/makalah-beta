@@ -21,6 +21,7 @@ import { UserDropdown } from "../ui/user-dropdown";
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
+import { debugLog } from '@/lib/utils/debug-log';
 import {
   Sheet,
   SheetContent,
@@ -51,6 +52,18 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    try {
+      debugLog('ui:header', 'state', {
+        path: pathname,
+        isAuthenticated,
+        isLoading,
+        hasUser: !!user,
+        userId: user?.id || null,
+      });
+    } catch {}
+  }, [pathname, isAuthenticated, isLoading, user?.id]);
 
   // Fetch app version once on mount (manual refresh via page reload)
   useEffect(() => {

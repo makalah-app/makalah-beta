@@ -71,6 +71,29 @@ export default function AuthPage() {
     confirmPassword: ""
   });
 
+  // Log render/interactive states to trace "Memverifikasi" freeze
+  useEffect(() => {
+    try {
+      debugLog('ui:auth', 'state', {
+        isLoading,
+        isSubmitting,
+        isRegisterMode,
+        hasError: !!error,
+      });
+    } catch {}
+  }, [isLoading, isSubmitting, isRegisterMode, error]);
+
+  // Dev-only watchdog: if UI stuck disabled too long, release local submitting flag for debugging
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    if (!(isLoading || isSubmitting)) return;
+    const id = setTimeout(() => {
+      try { debugLog('ui:auth', 'watchdog', { action: 'release-submitting' }); } catch {}
+      setIsSubmitting(false);
+    }, 10000);
+    return () => clearTimeout(id);
+  }, [isLoading, isSubmitting]);
+
   // Component mount check
   useEffect(() => {
     setMounted(true);
