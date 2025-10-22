@@ -181,7 +181,7 @@ function AdminAccessDenied({
             <div className="text-center">
               <div className="flex justify-center mb-4">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <BrandLogo variant="color" size="sm" priority />
+                  <BrandLogo variant="white" size="sm" priority />
                 </Link>
               </div>
 

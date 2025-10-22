@@ -152,7 +152,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       {/* Brand Section */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-start gap-3 hover:opacity-80 transition-opacity">
-          <BrandLogo variant="color" size="md" priority />
+          <BrandLogo variant="white" size="md" priority />
           <div className="flex flex-col">
             {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
             <div

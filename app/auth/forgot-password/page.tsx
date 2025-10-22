@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
             <div className="text-center mb-6">
               <div className="flex justify-center mb-3">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <BrandLogo variant="color" size="sm" priority />
+                  <BrandLogo variant="white" size="sm" priority />
                 </Link>
               </div>
               <h1 className="text-3xl font-medium mb-2 text-foreground font-heading">

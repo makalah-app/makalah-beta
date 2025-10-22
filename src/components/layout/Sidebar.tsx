@@ -184,7 +184,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand - Link to Home */}
       <div style={{ padding: '8px 8px 12px 8px' }}>
         <Link href="/" title="Makalah AI - Home" className="flex items-center gap-2">
-          <BrandLogo variant="color" size="sm" priority />
+          <BrandLogo variant="white" size="sm" priority />
           <Image
             src="/makalah_brand_text.svg"
             alt="Makalah AI"

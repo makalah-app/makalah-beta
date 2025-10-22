@@ -366,7 +366,7 @@ export default function AuthPage() {
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
                 <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
-                  <BrandLogo variant="color" size="lg" priority />
+                  <BrandLogo variant="white" size="lg" priority />
                 </Link>
               </div>
               <h1 className="text-xl font-medium mb-2 text-foreground font-heading">

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-type BrandLogoVariant = "color" | "mono";
+type BrandLogoVariant = "color" | "mono" | "white";
 type BrandLogoSize = "sm" | "md" | "lg";
 
 interface BrandLogoProps {
@@ -17,6 +17,7 @@ interface BrandLogoProps {
 const SRC: Record<BrandLogoVariant, string> = {
   color: "/logo/makalah_logo_500x500.png",
   mono: "/logo/makalah_logo_500x500_grey.png",
+  white: "/logo/official_logo_white.svg",
 };
 
 const DIMENSIONS: Record<BrandLogoSize, { w: number; h: number }> = {
