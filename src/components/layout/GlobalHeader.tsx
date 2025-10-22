@@ -297,7 +297,12 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               contentClassName="min-w-52"
             />
           ) : (
-            isLoading ? null : (
+            isLoading ? (
+              // Skeleton placeholder: keep width stable, thin horizontal line
+              <div className="hidden md:flex min-w-52 h-9 items-center">
+                <div className="w-full h-[2px] bg-muted animate-pulse rounded" aria-hidden="true" />
+              </div>
+            ) : (
               <Button
                 onClick={handleLogin}
                 className="btn-green-solid hidden md:inline-flex"
