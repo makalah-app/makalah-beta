@@ -588,7 +588,7 @@ function ChatPageContent() {
                 href="/"
                 className="flex items-start gap-3 hover:opacity-90 transition-opacity"
               >
-                <BrandLogo variant="color" size="sm" priority />
+                <BrandLogo variant="white" size="sm" priority />
                 <div className="flex flex-col">
                   {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
                   <div
