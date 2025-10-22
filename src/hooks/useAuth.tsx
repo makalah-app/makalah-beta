@@ -534,14 +534,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               return;
             }
 
-            try {
-              if (typeof window !== 'undefined') {
-                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession));
-                localStorage.setItem('userId', authSession.user.id);
-              }
-            } catch {}
-
-            try { localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(authSession)); localStorage.setItem('userId', authSession.user.id);} catch {}
+            // Do NOT overwrite persisted session on profile fetch failure.
+            // Keep fallback only in memory to avoid reverting display name on refresh.
             setAuthState({
               user: fallbackUser,
               session: authSession,      // ← PRESERVE session!
