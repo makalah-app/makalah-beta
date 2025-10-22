@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import { useChatHistory, ConversationItem } from '../../../hooks/useChatHistory';
+import BrandLogo from '@/components/ui/BrandLogo';
 
 // Import ShadCN Sidebar components dari project ui components
 import {
@@ -187,11 +188,8 @@ const MakalahSidebarContent: React.FC<MakalahSidebarProps> = ({
     <div className={cn("flex h-full flex-col bg-bg-850 text-text-100", className)}>
       <SidebarHeader className="border-b border-line-600 p-4">
         <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="w-6 h-6 bg-accent-500 rounded flex items-center justify-center text-sm font-bold text-white hover:bg-accent-600 transition-colors"
-          >
-            M
+          <Link href="/" className="block">
+            <BrandLogo variant="white" size="sm" className="w-6 h-6" priority />
           </Link>
         </div>
       </SidebarHeader>
