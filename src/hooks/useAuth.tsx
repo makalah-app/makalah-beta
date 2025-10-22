@@ -408,8 +408,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               isLoading: true,
               error: null
             });
-            lastAccessTokenRef.current = optimisticSession.accessToken;
-            lastSessionUserIdRef.current = optimisticSession.user.id;
             debugLog('auth:init', 'optimistic-auth');
           }
         }
@@ -650,6 +648,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isLoading: false,
           error: null
         });
+        debugLog('auth:init', 'finalize-profile', { userId: authSession.user.id });
         debugLog('auth:init', 'authenticated', { userId: authSession.user.id });
       } else {
         // User not found or inactive in database - deny access
