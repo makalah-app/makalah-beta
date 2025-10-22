@@ -297,12 +297,14 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               contentClassName="min-w-52"
             />
           ) : (
-            <Button
-              onClick={handleLogin}
-              className="btn-green-solid hidden md:inline-flex"
-            >
-              Masuk
-            </Button>
+            isLoading ? null : (
+              <Button
+                onClick={handleLogin}
+                className="btn-green-solid hidden md:inline-flex"
+              >
+                Masuk
+              </Button>
+            )
           )}
         </div>
       )}

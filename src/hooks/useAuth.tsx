@@ -383,6 +383,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return; // No need to fetch profile for unauthenticated users
       }
 
+      // ✅ OPTIMISTIC AUTH: Set authenticated state segera ketika ada session (hindari flicker)
+      try {
+        const fallbackUser = createFallbackUserFromSession(session);
+        if (fallbackUser) {
+          const optimisticSession: AuthSession = {
+            accessToken: (session as any)?.access_token || '',
+            refreshToken: (session as any)?.refresh_token || '',
+            expiresAt: (session as any)?.expires_at ? (session as any).expires_at * 1000 : Date.now(),
+            user: fallbackUser,
+            sessionId: (session as any)?.user?.id || 'session-' + Date.now()
+          };
+          if (optimisticSession.accessToken && optimisticSession.refreshToken) {
+            try {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(optimisticSession));
+                localStorage.setItem('userId', optimisticSession.user.id);
+              }
+            } catch {}
+            setAuthState({
+              user: optimisticSession.user,
+              session: optimisticSession,
+              isAuthenticated: true,
+              isLoading: true,
+              error: null
+            });
+            lastAccessTokenRef.current = optimisticSession.accessToken;
+            lastSessionUserIdRef.current = optimisticSession.user.id;
+            debugLog('auth:init', 'optimistic-auth');
+          }
+        }
+      } catch {}
+
       const sessionUserId = (session as any)?.user?.id ?? null;
       if (sessionUserId) {
         const attempts = profileFetchAttemptsRef.current.get(sessionUserId) || 0;
@@ -684,9 +716,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try { debugLog('auth:event', event, { hasSession: !!session, userId: session?.user?.id }); } catch {}
       if (!mounted) return;
 
-      // ✅ CRITICAL FIX: Handle INITIAL_SESSION separately to prevent double initialization
+      // ✅ FIX: Tangani INITIAL_SESSION supaya client langsung sinkron dengan SSR
       if (event === 'INITIAL_SESSION') {
-        // INITIAL_SESSION is handled by main initialize() function, don't duplicate
+        if (session && !initializingRef.current) {
+          try { debugLog('auth:state', 'initial-session-with-session'); } catch {}
+          await initializeAuth(session);
+        }
         return;
       }
 
