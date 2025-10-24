@@ -139,13 +139,9 @@ export default function TutorialPage() {
       {/* Hero Section with CSS illustration (non full-viewport) */}
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-semibold mb-6 leading-tight text-foreground font-heading">
-            Tutorial <span className="text-primary">MAKALAH AI</span>
+          <h1 className="text-3xl md:text-4xl font-semibold mb-6 leading-tight text-foreground font-heading">
+            Berinteraksi dengan Agen Makalah Ai secara optimal
           </h1>
-          <p className="text-xl mb-8 leading-relaxed text-white">
-            Pelajari cara menggunakan platform MAKALAH AI untuk menghasilkan karya akademik berkualitas tinggi melalui
-            tutorial video komprehensif.
-          </p>
         </div>
       </section>
 

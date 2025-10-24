@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 // Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
 import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
+import { E } from 'node_modules/@upstash/redis/zmscore-DWj9Vh1g.mjs';
 
 // Fonts are configured globally in app/layout.tsx
 
@@ -47,19 +48,20 @@ export default function HomePage() {
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
       <section className="px-6 py-0 text-center relative section-screen-with-header hero-vivid hero-grid-thin">
-
+        
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-6 md:mt-10">
           <h1
-            className="text-5xl md:text-6xl font-medium mb-6 leading-tight text-foreground font-heading"
+            className="text-4xl md:text-6xl font-medium mb-6 leading-tight text-foreground font-heading"
           >
             Ngobrol<span className="text-primary">+</span>Riset <br />
             <span className="text-primary">+</span>Brainstorming
             <br />
             <span className="text-primary">=</span>Paper Akademik
           </h1>
+
           <p className="text-xl md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
-            Nggak perlu <span className="font-bold">prompt</span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
+            Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -72,6 +74,7 @@ export default function HomePage() {
             </Button>
           </div>
           </div>
+
           {/* Desktop-only chat input mock at bottom of hero; ensure enough spacing from CTA */}
           <div className="pb-0 mt-6 md:mt-8">
             <ChatInputHeroMock />
@@ -101,7 +104,7 @@ export default function HomePage() {
                 <Brain className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Fokus Berpikir</h3>
-                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir: bukan malah berkutat dengan prompt.</p>
+                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir, bukan malah berkutat dengan <em>prompt</em>.</p>
                 </div>
               </div>
             </Card>
@@ -121,7 +124,7 @@ export default function HomePage() {
                 <ListChecks className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Dipandu Bertahap</h3>
-                  <p className="text-sm text-muted-foreground">Agen Makalah telah dibekali workflow yang memandu Anda menyusun paper tahap demi tahap, tanpa potensi melenceng</p>
+                  <p className="text-sm text-muted-foreground">Agen Makalah dibekali <em>workflow</em> konsisten yang memandu penyusunan paper tahap demi tahap, tanpa melenceng.</p>
                 </div>
               </div>
             </Card>
@@ -131,7 +134,7 @@ export default function HomePage() {
                 <Target className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Konteks Terjaga</h3>
-                  <p className="text-sm text-muted-foreground">Tanpa keluar konteks, meski obrolan panjang lebar, akan selalu dikembalikan ke bahasan utama.</p>
+                  <p className="text-sm text-muted-foreground">Obrolan se-ngelantur apapun, akan selalu dikembalikan ke bahasan utama.</p>
                 </div>
               </div>
             </Card>
@@ -141,7 +144,7 @@ export default function HomePage() {
                 <ShieldCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
-                  <p className="text-sm text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber yang akurat.</p>
+                  <p className="text-sm text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber akurat.</p>
                 </div>
               </div>
             </Card>
@@ -151,21 +154,10 @@ export default function HomePage() {
                 <UserCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Anda Pengendali</h3>
-                  <p className="text-sm text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, sedangkan AI hanyalah asisten penyusunan yang bekerja untuk Anda</p>
+                  <p className="text-sm text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, <span className="font-bold text-foreground">sebab Anda Pawang, Ai hanya tukang</span>.</p>
                 </div>
               </div>
             </Card>
-          </div>
-
-          {/* Highlight statement as sub-section */}
-          <div className="mt-12 text-center max-w-3xl mx-auto">
-            <h3
-              className="text-3xl md:text-3xl text-white font-heading"
-            >
-              Anda pawang, AI tukang <br />
-              Paper tetap orisinal!
-            </h3>
-            <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
           </div>
         </div>
       </section>

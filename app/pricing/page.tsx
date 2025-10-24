@@ -18,11 +18,11 @@ export default function PricingPage() {
       {/* Hero Section with CSS illustration (non full-viewport) */}
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10 max-w-3xl mx-auto space-y-4">
-          <h1 className="text-4xl md:text-5xl font-semibold leading-tight font-heading">
+          <h1 className="text-3xl md:text-4xl font-semibold leading-tight font-heading">
             Tak Perlu Bayar Mahal Untuk Karya Yang Masuk Akal
           </h1>
           <p className="text-lg md:text-xl text-white">
-            Paket langganan Makalah AI menjaga setiap fase penulisan tetap fokus dan terukur.
+            Pilih paket penggunaan sesuai kebutuhan. Mau ujicoba dulu yang gratisan? Boleh! Atau langsung bayar per paper? Aman! Jika perlu, langganan bulanan sekalian! Bebas!
           </p>
         </div>
       </section>

@@ -112,10 +112,7 @@ export default function BlogPage() {
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-semibold mb-4 text-foreground font-heading">Blog Makalah AI</h1>
-          <p className="text-xl text-white max-w-2xl mx-auto">
-            Wawasan, tips, dan panduan terbaru untuk meningkatkan kualitas penulisan akademik Anda
-          </p>
+          <h1 className="text-3xl md:text-4xl font-semibold mb-4 text-foreground font-heading">Ada apa dengan AI hari ini?</h1>
         </div>
       </section>
 

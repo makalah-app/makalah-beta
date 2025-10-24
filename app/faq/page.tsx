@@ -128,7 +128,7 @@ export default function FAQPage() {
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-semibold mb-6 leading-tight text-foreground font-heading">
-            Frequently Asked <span className="text-primary">Questions</span>
+            Frequently Asked Questions
           </h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-white">
             Temukan jawaban untuk pertanyaan yang sering diajukan tentang platform Makalah AI

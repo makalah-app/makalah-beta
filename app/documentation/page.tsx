@@ -49,7 +49,7 @@ export default function DocumentationPage() {
                 <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                   <Brain className="w-5 h-5 text-primary" />
                 </div>
-                <h1 className="text-4xl font-semibold text-foreground">Selamat Datang</h1>
+                <h1 className="text-3xl font-semibold text-foreground">Selamat Datang</h1>
               </div>
               <p className="text-lg mb-8 text-muted-foreground">
                 Pelajari tentang Makalah AI dan cara memulai menulis makalah akademik yang lebih baik
