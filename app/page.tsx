@@ -51,15 +51,14 @@ export default function HomePage() {
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-6 md:mt-10">
           <h1
-            className="text-3xl md:text-5xl font-medium mb-6 leading-tight text-foreground font-heading"
+            className="text-4xl md:text-5xl font-medium mb-6 leading-tight text-foreground font-heading"
           >
-            Ngobrol <span className="text-primary">+</span> Riset <span className="text-primary">+</span> Brainstorming
+            Ngobrol<span className="text-primary">+</span>Riset<span className="text-primary">+</span>Brainstorming
             <br />
-            <span className="text-primary">=</span> Paper Akademik
+            <span className="text-primary">=</span>Paper Akademik
           </h1>
-          <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
-            Semua gagasan bisa diolah bareng Agen Ai <br />
-            menjadi paper utuh
+          <p className="text-xl md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
+            Nggak perlu prompt ruwet, ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -68,7 +67,7 @@ export default function HomePage() {
               onClick={handleChatWithAgent}
             >
               <Brain className="w-5 h-5 mr-2" />
-              Diskusi dengan Agen AI
+              Ayo mulai!
             </Button>
           </div>
           </div>
@@ -89,7 +88,7 @@ export default function HomePage() {
       <section id="why-makalah" className="px-6 py-16 bg-background relative section-screen separator-accent-only">
         <div className="max-w-4xl mx-auto">
           <h3
-            className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading"
+            className="text-3xl md:text-3xl font-semibold text-center mb-10 text-foreground font-heading"
           >
             Kenapa Makalah AI?
           </h3>
@@ -160,14 +159,10 @@ export default function HomePage() {
           {/* Highlight statement as sub-section */}
           <div className="mt-12 text-center max-w-3xl mx-auto">
             <h3
-              className="text-xl md:text-4xl text-white font-heading"
+              className="text-3xl md:text-3xl text-white font-heading"
             >
-              Anda adalah pawang, AI hanya tukang
-            </h3>
-            <h3
-              className="text-xl md:text-4xl text-white font-heading mt-0"
-            >
-              Karya tulis tetap orisinal!
+              Anda pawang, AI tukang <br />
+              Paper tetap orisinal!
             </h3>
             <div className="h-[1px] w-16 bg-primary/60 mx-auto mt-4" />
           </div>
@@ -179,15 +174,13 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h3
-              className="text-3xl md:text-4xl font-semibold font-heading"
+              className="text-3xl md:text-3xl font-semibold font-heading"
             >
-              Tak Perlu Bayar Mahal
+              Pilih paket penggunaan
               <br />
-              Untuk Karya Yang Masuk Akal
+              sesuai kebutuhan
             </h3>
-            <p className="text-base md:text-lg text-muted-foreground">
-              Pilih paket yang sesuai kebutuhan. 
-            </p>
+
             <Link
               href="/pricing"
               className="inline-block mt-4 md:mt-6 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
@@ -270,14 +263,12 @@ export default function HomePage() {
           {/* Tutorial highlight */}
           <div className="w-full max-w-3xl">
             <h3
-              className="text-3xl md:text-4xl font-semibold text-foreground font-heading text-center"
+              className="text-3xl md:text-3xl font-semibold text-foreground font-heading text-center"
             >
-              Pelajari cara bekerja
-              <br />
-              dengan Agen Makalah
+              Bagaimana cara kerjanya?
             </h3>
-            <p className="mt-3 text-base md:text-lg text-muted-foreground text-center">
-              Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi riset dan penyusunnan paper akademik.
+            <p className="mt-3 text-base md:text-lg text-foreground text-center">
+              Cermati tahap demi tahap penggunaan Agen Makalah <br /> dalam mengasistensi riset dan penyusunan paper akademik.
             </p>
             <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
