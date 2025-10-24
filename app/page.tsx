@@ -51,14 +51,15 @@ export default function HomePage() {
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-6 md:mt-10">
           <h1
-            className="text-4xl md:text-5xl font-medium mb-6 leading-tight text-foreground font-heading"
+            className="text-5xl md:text-6xl font-medium mb-6 leading-tight text-foreground font-heading"
           >
-            Ngobrol<span className="text-primary">+</span>Riset<span className="text-primary">+</span>Brainstorming
+            Ngobrol<span className="text-primary">+</span>Riset <br />
+            <span className="text-primary">+</span>Brainstorming
             <br />
             <span className="text-primary">=</span>Paper Akademik
           </h1>
           <p className="text-xl md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
-            Nggak perlu prompt ruwet, ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
+            Nggak perlu <span className="font-bold">prompt</span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -110,7 +111,7 @@ export default function HomePage() {
                 <MessageSquare className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Obrolan Natural</h3>
-                  <p className="text-sm text-muted-foreground">Tidak perlu ruwet menyusun prompt. Ngobrol saja dengan bahasa sehari-hari, Agen Makalah akan memahami.</p>
+                  <p className="text-sm text-muted-foreground">Ngobrol saja dengan bahasa sehari-hari, Agen Makalah pasti memahami.</p>
                 </div>
               </div>
             </Card>
