@@ -34,7 +34,7 @@ const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 // Standardize sidebar width across app (admin, settings, chat)
 // 16rem equals Tailwind w-64
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "20rem" // Increased from 16rem to 20rem (w-80)
+const SIDEBAR_WIDTH_MOBILE = "60vw" // 60% of viewport width for mobile
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
