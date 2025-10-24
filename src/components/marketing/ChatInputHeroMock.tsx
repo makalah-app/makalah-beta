@@ -18,7 +18,7 @@ export default function ChatInputHeroMock() {
   const [cursor, setCursor] = useState<{ x: number; y: number; scale: number; transition: string }>({ x: 0, y: 0, scale: 1, transition: "none" });
 
   const MESSAGE =
-    "Saya ingin menyusun paper, tapi belum ada topik spesifik, hanya gagasan kasar. Bagaimana kalau kita brainstorming dulu?";
+    "Bantuin gue bikin paper. Tapi belum ada topik spesifik. Cuma gagasan kasar nggak apa-apa, kan? Gimana kalau kita brainstorming dulu?";
 
   // visibility + reduced-motion guards
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function ChatInputHeroMock() {
     };
 
     if (phase === "placeholder") {
-      schedule(() => setPhase("typing"), 3000); // placeholder lebih lama untuk memberi waktu
+      schedule(() => setPhase("typing"), 4000); // placeholder lebih lama untuk memberi waktu
     } else if (phase === "hold") {
       schedule(() => setPhase("cursorMove"), 900);
     } else if (phase === "cursorMove") {
