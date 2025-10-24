@@ -22,12 +22,10 @@ const config: Config = {
   			'slide-out-to-bottom': 'slide-out-to-bottom 0.2s ease-in',
   			'slide-out-to-left': 'slide-out-to-left 0.2s ease-in',
   			'slide-out-to-right': 'slide-out-to-right 0.2s ease-in',
-  			'spin': 'spin 1s linear infinite',
-  			'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
-  			'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-  			'bounce': 'bounce 1s infinite',
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			spin: 'spin 1s linear infinite',
+  			ping: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+  			pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+  			bounce: 'bounce 1s infinite'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -126,23 +124,23 @@ const config: Config = {
   					transform: 'translateX(100%)'
   				}
   			},
-  			'spin': {
+  			spin: {
   				to: {
   					transform: 'rotate(360deg)'
   				}
   			},
-  			'ping': {
+  			ping: {
   				'75%, 100%': {
   					transform: 'scale(2)',
   					opacity: '0'
   				}
   			},
-  			'pulse': {
+  			pulse: {
   				'50%': {
   					opacity: '0.5'
   				}
   			},
-  			'bounce': {
+  			bounce: {
   				'0%, 100%': {
   					transform: 'translateY(-25%)',
   					animationTimingFunction: 'cubic-bezier(0.8,0,1,1)'
@@ -150,22 +148,6 @@ const config: Config = {
   				'50%': {
   					transform: 'none',
   					animationTimingFunction: 'cubic-bezier(0,0,0.2,1)'
-  				}
-  			},
-  			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
-  			},
-  			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
   				}
   			}
   		},
@@ -225,22 +207,20 @@ const config: Config = {
   			input: 'var(--input)',
   			ring: 'var(--ring)',
   			sidebar: {
-  				DEFAULT: 'var(--sidebar)',
-  				foreground: 'var(--sidebar-foreground',
-  				primary: 'var(--sidebar-primary',
-  				'primary-foreground': 'var(--sidebar-primary-foreground',
-  				accent: 'var(--sidebar-accent',
-  				'accent-foreground': 'var(--sidebar-accent-foreground',
-  				border: 'var(--sidebar-border',
-  				ring: 'var(--sidebar-ring'
+  				DEFAULT: 'hsl(var(--sidebar-background))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
   			},
   			'user-message': {
   				DEFAULT: 'var(--user-message-bg)',
   				border: 'var(--user-message-border)'
   			},
   			success: {
-  				DEFAULT: 'var(--success)',
-  				foreground: 'var(--success-foreground)',
   				'50': 'var(--success-50)',
   				'100': 'var(--success-100)',
   				'200': 'var(--success-200)',
@@ -250,7 +230,9 @@ const config: Config = {
   				'600': 'var(--success-600)',
   				'700': 'var(--success-700)',
   				'800': 'var(--success-800)',
-  				'900': 'var(--success-900)'
+  				'900': 'var(--success-900)',
+  				DEFAULT: 'var(--success)',
+  				foreground: 'var(--success-foreground)'
   			},
   			chat: {
   				background: 'var(--chat-background)'

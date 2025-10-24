@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Book, FileText, Zap, Settings, Users, HelpCircle, Search, Brain, Shield, Globe } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Book, FileText, Zap, Settings, Users, HelpCircle, Search, Brain, Shield, Globe, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 // Helper functions - dipindahkan keluar untuk reusability
 const navigationSections = [
@@ -134,10 +135,19 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
 
 export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState('welcome');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Calculate Previous/Next logic for bottom navigation
+  const allItems = navigationSections.flatMap(section => section.items);
+  const currentIndex = allItems.findIndex(item => item.id === activeSection);
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < allItems.length - 1;
+  const previousItem = hasPrevious ? allItems[currentIndex - 1] : null;
+  const nextItem = hasNext ? allItems[currentIndex + 1] : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Pattern Background */}
+      {/* Hero Pattern Background - preserve existing */}
       <div
         className="absolute inset-0 opacity-30 pointer-events-none"
         style={{
@@ -147,55 +157,138 @@ export default function DocumentationPage() {
       />
 
       <div className="relative z-10 flex">
-          {/* Left: Sidebar untuk Desktop */}
-          <div className="w-64 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30 hidden md:flex flex-col">
-            {/* Desktop Search */}
-            <div className="mb-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari dokumentasi..."
-                  className="pl-10 border-border"
-                />
-              </div>
+        {/* Left: Sidebar untuk Desktop */}
+        <div className="w-64 min-h-screen border-r border-border p-6 overflow-y-auto bg-card/30 hidden md:flex flex-col">
+          {/* Desktop Search */}
+          <div className="mb-8">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari dokumentasi..."
+                className="pl-10 border-border"
+              />
             </div>
+          </div>
 
-            {/* Desktop Navigation */}
-            <nav className="space-y-8">
-              {navigationSections.map((section) => (
-                <div key={section.title}>
-                  <h3 className="text-sm font-medium mb-4 tracking-wider uppercase text-muted-foreground">
-                    {section.title}
-                  </h3>
-                  <ul className="space-y-2">
-                    {section.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = activeSection === item.id;
-                      return (
-                        <li key={item.id}>
-                          <button
-                            onClick={() => setActiveSection(item.id)}
-                            className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded ${
-                              isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
-                            }`}
-                          >
-                            <Icon className="w-4 h-4 mr-3" />
-                            {item.label}
-                            {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-                          </button>
-                        </li>
+          {/* Desktop Navigation */}
+          <nav className="space-y-8">
+            {navigationSections.map((section) => (
+              <div key={section.title}>
+                <h3 className="text-sm font-medium mb-4 tracking-wider uppercase text-muted-foreground">
+                  {section.title}
+                </h3>
+                <ul className="space-y-2">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeSection === item.id;
+                    return (
+                      <li key={item.id}>
+                        <button
+                          onClick={() => setActiveSection(item.id)}
+                          className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded ${
+                            isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 mr-3" />
+                          {item.label}
+                          {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                        </button>
+                      </li>
                     );
                   })}
                 </ul>
               </div>
             ))}
           </nav>
+        </div>
+
+        {/* Right: Main Content */}
+        <div className="flex-1 flex justify-center p-4 md:p-8">
+          <div className="w-full max-w-4xl overflow-y-auto">
+          {/* Mobile Header */}
+          <div className="flex md:hidden items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur mb-4">
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle Sidebar</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0" hideCloseButton>
+                <div className="p-6 border-b border-border">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cari dokumentasi..."
+                      className="pl-10 border-border"
+                    />
+                  </div>
+                </div>
+
+                {/* Mobile Navigation */}
+                <nav className="p-6 space-y-8">
+                  {navigationSections.map((section) => (
+                    <div key={section.title}>
+                      <h3 className="text-sm font-medium mb-4 tracking-wider uppercase text-muted-foreground">
+                        {section.title}
+                      </h3>
+                      <ul className="space-y-2">
+                        {section.items.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = activeSection === item.id;
+                          return (
+                            <li key={item.id}>
+                              <button
+                                onClick={() => {
+                                  setActiveSection(item.id);
+                                  setSidebarOpen(false); // Auto-close sidebar
+                                }}
+                                className={`w-full flex items-center px-3 py-2 text-sm transition-colors hover:bg-muted/50 rounded ${
+                                  isActive ? 'font-medium bg-muted/70 text-primary' : 'text-muted-foreground'
+                                }`}
+                              >
+                                <Icon className="w-4 h-4 mr-3" />
+                                {item.label}
+                                {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <h2 className="font-semibold text-foreground">Dokumentasi</h2>
           </div>
 
-          {/* Right: Main Content */}
-          <div className="flex-1 p-4 md:p-8 max-w-4xl overflow-y-auto">
-            {renderContent(activeSection, setActiveSection)}
+          {/* Main Content */}
+          {renderContent(activeSection, setActiveSection)}
+
+          {/* Bottom Navigation - mobile only */}
+          <div className="md:hidden flex justify-between items-center mt-8 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasPrevious}
+              onClick={() => previousItem && setActiveSection(previousItem.id)}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!hasNext}
+              onClick={() => nextItem && setActiveSection(nextItem.id)}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
+          </div>
+        </div>
       </div>
     </div>
   );
