@@ -576,7 +576,7 @@ function ChatPageContent() {
                   <div
                     role="img"
                     aria-label="Makalah AI"
-                    className="h-6 w-[120px] bg-foreground"
+                    className="h-5 w-[120px] bg-foreground"
                     style={{
                       WebkitMaskImage: 'url(/makalah_brand_text.svg)',
                       maskImage: 'url(/makalah_brand_text.svg)',
