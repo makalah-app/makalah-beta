@@ -4,7 +4,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type BrandLogoVariant = "color" | "mono" | "white";
-type BrandLogoSize = "sm" | "md" | "lg";
+type BrandLogoSize = "xs" |"sm" | "md" | "lg";
 
 interface BrandLogoProps {
   variant?: BrandLogoVariant;
@@ -21,6 +21,7 @@ const SRC: Record<BrandLogoVariant, string> = {
 };
 
 const DIMENSIONS: Record<BrandLogoSize, { w: number; h: number }> = {
+  xs: { w: 24, h: 24 },
   sm: { w: 32, h: 32 },
   md: { w: 40, h: 40 },
   lg: { w: 48, h: 48 },

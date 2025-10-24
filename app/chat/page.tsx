@@ -306,7 +306,6 @@ function ChatPageContent() {
   const { user, logout, isLoading, isAuthenticated } = useAuth();
   const { conversations, loading: historyLoading, loadingMore, hasMore, loadMore, refetch: refreshChatHistory } = useChatHistory();
   const [searchQuery, setSearchQuery] = useState('');
-  const [appVersion, setAppVersion] = useState('');
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -411,24 +410,7 @@ function ChatPageContent() {
     }
   }, [currentChatId, searchParams]); // Depend on both chatId and searchParams
 
-  // ✅ SIDE EFFECT: Fetch app version once on mount (manual refresh via page reload)
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const response = await fetch('/api/public/app-version');
-        const result = await response.json();
-
-        if (result.success && result.version) {
-          setAppVersion(result.version);
-        }
-      } catch (error) {
-        // Silent fail - use default version
-      }
-    };
-
-    fetchVersion();
-  }, []);
-
+  
   // Get active conversation ID from URL - UNIFIED (AFTER currentChatId is defined)
   const getActiveConversationId = (): string | null => {
     return currentChatId || null;
@@ -588,13 +570,13 @@ function ChatPageContent() {
                 href="/"
                 className="flex items-start gap-3 hover:opacity-90 transition-opacity"
               >
-                <BrandLogo variant="white" size="sm" priority />
+                <BrandLogo variant="white" size="xs" priority />
                 <div className="flex flex-col">
                   {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
                   <div
                     role="img"
                     aria-label="Makalah AI"
-                    className="h-5 w-[120px] bg-foreground"
+                    className="h-6 w-[120px] bg-foreground"
                     style={{
                       WebkitMaskImage: 'url(/makalah_brand_text.svg)',
                       maskImage: 'url(/makalah_brand_text.svg)',
@@ -606,9 +588,6 @@ function ChatPageContent() {
                       maskPosition: 'left center',
                     }}
                   />
-                  <div className="text-xs font-light text-muted-foreground">
-                    {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
-                  </div>
                 </div>
               </Link>
             </SidebarHeader>
