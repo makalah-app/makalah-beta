@@ -61,7 +61,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-xl md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
-            Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Ai</span> <br />menjadi paper utuh
+            Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Makalah Ai</span> <br />menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button

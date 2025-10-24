@@ -151,14 +151,14 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       <div className="flex items-center justify-between px-6 pt-4 pb-6 relative z-10">
       {/* Brand Section */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-start gap-3 hover:opacity-80 transition-opacity">
-          <BrandLogo variant="white" size="md" priority />
-          <div className="flex flex-col">
+        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <BrandLogo variant="white" size="sm" priority />
+          <div className="flex items-center gap-2">
             {/* Theme-adaptive brand text via CSS mask (uses bg-foreground) */}
             <div
               role="img"
               aria-label="Makalah AI"
-              className="h-5 md:h-5 w-[110px] bg-foreground"
+              className="h-8 md:h-8 w-[140px] bg-foreground"
               style={{
                 WebkitMaskImage: 'url(/makalah_brand_text.svg)',
                 maskImage: 'url(/makalah_brand_text.svg)',
@@ -170,8 +170,8 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 maskPosition: 'left center',
               }}
             />
-            <div className="text-xs font-light text-foreground mt-0.5">
-              {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
+            <div className="text-xs font-light text-foreground self-end">
+              {appVersion ? `V. ${appVersion}` : 'Memuat...'}
             </div>
           </div>
         </Link>
@@ -259,7 +259,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3 text-sm font-medium">
+                <nav className="flex flex-col gap-3 text-sm font-medium">
                   {showNavigation && orderedNav.map((item) => {
                     if (item === 'CHAT') {
                       return showChatLink ? (
@@ -282,7 +282,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                       />
                     );
                   })}
-                </div>
+                </nav>
               </div>
             </SheetContent>
           </Sheet>
@@ -379,12 +379,20 @@ const MobileNavItem: React.FC<MobileNavItemProps> = ({ href, label, isActive, on
     href={href}
     onClick={onSelect}
     className={cn(
-      'flex items-center justify-between rounded px-3 py-2 text-base transition-colors duration-200',
-      isActive ? 'bg-accent text-foreground' : 'text-foreground hover:bg-accent/60 hover:text-foreground/80'
+      'flex items-center justify-start rounded px-3 py-2 text-sm font-medium transition-all duration-200 text-foreground hover:text-muted-foreground group',
+      isActive && 'text-foreground'
     )}
     aria-current={isActive ? 'page' : undefined}
   >
-    <span>{label}</span>
+    <span className={cn(
+      'relative z-10 inline-block',
+      'after:content-[\'\'] after:absolute after:bottom-0 after:left-0 after:w-full after:h-px',
+      'after:border-b after:border-dotted after:border-white after:transition-all after:duration-200',
+      'after:scale-x-0 group-hover:after:scale-x-100 after:origin-left',
+      'after:translate-y-[4px]' // Beri jarak proporsional antara text dan underline
+    )}>
+      {label}
+    </span>
   </Link>
 );
 
