@@ -51,15 +51,15 @@ export default function HomePage() {
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-6 md:mt-10">
           <h1
-            className="text-5xl md:text-7xl font-medium mb-6 leading-tight text-foreground font-heading"
+            className="text-3xl md:text-5xl font-medium mb-6 leading-tight text-foreground font-heading"
           >
-            Bikin Paper Akademik
+            Ngobrol <span className="text-primary">+</span> Riset <span className="text-primary">+</span> Brainstorming
             <br />
-            Jadi Lebih Mudah
+            <span className="text-primary">=</span> Paper Akademik
           </h1>
-          <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-muted-foreground">
-            Obrolkan gagasan, lalu biarkan Agen Ai<br />
-            memandu elaborasi topik hingga paper utuh
+          <p className="text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
+            Semua gagasan bisa diolah bareng Agen Ai <br />
+            menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -87,7 +87,7 @@ export default function HomePage() {
 
       {/* Why Makalah Section */}
       <section id="why-makalah" className="px-6 py-16 bg-background relative section-screen separator-accent-only">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <h3
             className="text-3xl md:text-4xl font-semibold text-center mb-10 text-foreground font-heading"
           >
@@ -98,60 +98,60 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-2">
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <Brain className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <Brain className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Fokus Berpikir</h3>
-                  <p className="text-base text-muted-foreground">Mengembalikan aktivitas riset dan penulisan naskah akademik sebagai kegiatan berpikir: bukan malah berkutat dengan prompt.</p>
+                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir: bukan malah berkutat dengan prompt.</p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <MessageSquare className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <MessageSquare className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Obrolan Natural</h3>
-                  <p className="text-base text-muted-foreground">Tidak perlu ruwet menyusun prompt. Silakan bercakap dengan bahasa sehari-hari, Agen Makalah akan  menjadikannya bahan penyusun paper</p>
+                  <p className="text-sm text-muted-foreground">Tidak perlu ruwet menyusun prompt. Ngobrol saja dengan bahasa sehari-hari, Agen Makalah akan memahami.</p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <ListChecks className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <ListChecks className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Dipandu Bertahap</h3>
-                  <p className="text-base text-muted-foreground">Agen Makalah telah dibekali workflow yang memandu Anda menyusun paper tahap demi tahap, tanpa potensi melenceng</p>
+                  <p className="text-sm text-muted-foreground">Agen Makalah telah dibekali workflow yang memandu Anda menyusun paper tahap demi tahap, tanpa potensi melenceng</p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <Target className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <Target className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Konteks Terjaga</h3>
-                  <p className="text-base text-muted-foreground">Tanpa keluar konteks riset, meski obrolan panjang lebar. Agen Makalah akan selalu mengembalikan obrolan ke bahasan Utama.</p>
+                  <p className="text-sm text-muted-foreground">Tanpa keluar konteks, meski obrolan panjang lebar, akan selalu dikembalikan ke bahasan utama.</p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <ShieldCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <ShieldCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
-                  <p className="text-base text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber yang akurat, anti‑plagiasi.</p>
+                  <p className="text-sm text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber yang akurat.</p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
-                <UserCheck className="h-12 w-12 md:h-14 md:w-14 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <UserCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Anda Pengendali</h3>
-                  <p className="text-base text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, bukan dibuatkan AI. Anda hanya dibantu mengetik, menyusun, oleh Agen Makalah</p>
+                  <p className="text-sm text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, sedangkan AI hanyalah asisten penyusunan yang bekerja untuk Anda</p>
                 </div>
               </div>
             </Card>
@@ -186,8 +186,7 @@ export default function HomePage() {
               Untuk Karya Yang Masuk Akal
             </h3>
             <p className="text-base md:text-lg text-muted-foreground">
-              Pilih paket yang sesuai kebutuhan penulisan Anda. Mulai gratis, lanjutkan saat siap menyelesaikan makalah
-              penuh, atau aktifkan langganan tetap ketika produksi karya berjalan rutin.
+              Pilih paket yang sesuai kebutuhan. 
             </p>
             <Link
               href="/pricing"
@@ -278,7 +277,7 @@ export default function HomePage() {
               dengan Agen Makalah
             </h3>
             <p className="mt-3 text-base md:text-lg text-muted-foreground text-center">
-              Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi Anda menyusun paper akademik dan melakukan riset.
+              Cermati tahap demi tahap penggunaan Agen Makalah dalam mengasistensi riset dan penyusunnan paper akademik.
             </p>
             <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">

@@ -158,7 +158,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
             <div
               role="img"
               aria-label="Makalah AI"
-              className="h-6 md:h-7 w-[140px] bg-foreground"
+              className="h-5 md:h-5 w-[110px] bg-foreground"
               style={{
                 WebkitMaskImage: 'url(/makalah_brand_text.svg)',
                 maskImage: 'url(/makalah_brand_text.svg)',
@@ -170,7 +170,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
                 maskPosition: 'left center',
               }}
             />
-            <div className="text-xs font-light text-muted-foreground mt-0.5">
+            <div className="text-xs font-light text-foreground mt-0.5">
               {appVersion ? `Versi ${appVersion}` : 'Memuat...'}
             </div>
           </div>
@@ -181,7 +181,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
       {!isChatPage && (
         <div className="flex items-center gap-2 md:gap-4">
           {showNavigation && (
-            <nav className="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide mr-6">
+            <nav className="hidden md:flex items-center gap-8 text-sm font-medium mr-6">
               {orderedNav.map((item) => {
                 if (item === 'CHAT') {
                   return showChatLink ? (
@@ -357,12 +357,16 @@ const NavLink: React.FC<NavLinkProps> = ({ href, label, isActive }) => (
   <Link
     href={href}
     className={cn(
-      'transition-colors duration-200 text-foreground hover:text-foreground/80',
+      'transition-all duration-200 text-foreground hover:text-muted-foreground relative group',
+      'after:content-[\'\'] after:absolute after:bottom-0 after:left-0 after:w-full after:h-px',
+      'after:border-b after:border-dotted after:border-white after:transition-all after:duration-200',
+      'after:scale-x-0 hover:after:scale-x-100 after:origin-left',
+      'after:translate-y-[4px]', // Beri jarak proporsional antara text dan underline
       isActive && 'text-foreground'
     )}
     aria-current={isActive ? 'page' : undefined}
   >
-    {label}
+    <span className="relative z-10">{label}</span>
   </Link>
 );
 
