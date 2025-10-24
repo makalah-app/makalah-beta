@@ -60,8 +60,8 @@ export default function HomePage() {
             <span className="text-primary">=</span>Paper Akademik
           </h1>
 
-          <p className="text-xl md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
-            Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, <br />ide apapun bakal diolah <span className="font-bold">Agen Makalah Ai</span> <br />menjadi paper utuh
+          <p className="text-md md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">
+            Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, ide apapun bakal diolah <span className="font-bold">Agen Makalah Ai</span> menjadi paper utuh
           </p>
           <div className="flex justify-center">
             <Button
@@ -260,8 +260,8 @@ export default function HomePage() {
             >
               Bagaimana cara kerjanya?
             </h3>
-            <p className="mt-3 text-base md:text-lg text-foreground text-center">
-              Cermati tahap demi tahap penggunaan Agen Makalah <br /> dalam mengasistensi riset dan penyusunan paper akademik.
+            <p className="mt-3 text-md text-base md:text-lg text-foreground text-center">
+              Pelajari kepandaian Agen Makalah Ai dalam mengasistensi riset dan penyusunan paper akademik.
             </p>
             <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
