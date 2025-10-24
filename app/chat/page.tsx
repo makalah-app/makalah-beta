@@ -50,7 +50,7 @@ function MobileHeader() {
   if (openMobile) return null;
 
   return (
-    <div className="flex md:hidden items-center justify-between p-4 border-b border-border">
+    <div className="flex md:hidden items-center justify-between p-4 border-b border-border h-[73px]">
       <SidebarTrigger />
     </div>
   );
@@ -565,7 +565,7 @@ function ChatPageContent() {
       <SidebarProvider>
         <div className="flex h-screen w-full bg-chat-background">
           <Sidebar className="border-r border-border bg-sidebar">
-            <SidebarHeader className="p-4 border-b border-border">
+            <SidebarHeader className="p-6 border-b border-border h-[70px]">
               <Link
                 href="/"
                 className="flex items-start gap-3 hover:opacity-90 transition-opacity"
