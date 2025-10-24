@@ -184,10 +184,11 @@
 h1,
 h2,
 h3,
-h4 {
+h4,
+h5,
+nav {
   font-family: var(--font-hero), var(--font-heading), var(--font-sans), system-ui, sans-serif;
 }
-h5,
 h6 {
   font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
 }
@@ -197,7 +198,9 @@ h6 {
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  h5,
+  nav {
     font-family: var(--font-hero), var(--font-heading), var(--font-sans), system-ui, sans-serif !important;
   }
 }

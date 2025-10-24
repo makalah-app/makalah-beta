@@ -20,6 +20,7 @@ import { Session } from '@supabase/supabase-js';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
 import { debugLog } from '@/lib/utils/debug-log';
+import { parseName } from '@/lib/utils/name-parsing';
 
 // Small helper to avoid indefinite waits on 3rd-party SDK calls
 async function withTimeout<T>(promise: Promise<T>, ms: number, onTimeout: () => T | Promise<T>): Promise<T> {
@@ -596,12 +597,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                           `${profile.first_name} ${profile.last_name}` : emailName);
 
       
-      // Create user object with correct data mapping (name = firstName, fullName = displayName)
+      // ✅ ULTIMATE FIX: Use centralized name parsing for consistency
+      // This ensures all name parsing follows the same robust logic
+      const parsedName = parseName({
+        name: profile?.first_name,
+        fullName: displayName
+      });
+
       const user: User = {
         id: userProfile.id,
         email: userProfile.email,
-        name: profile?.first_name || (displayName.split(' ')[0] || displayName),
-        fullName: displayName,
+        name: parsedName.firstName,
+        fullName: parsedName.fullName,
         role: userProfile.role as UserRole,
         institution: profile?.institution || undefined,
         isVerified: !!userProfile.email_verified_at,
@@ -1183,11 +1190,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                          (profile?.first_name && profile?.last_name ?
                           `${profile.first_name} ${profile.last_name}` : emailName);
 
+      // ✅ ULTIMATE FIX: Use centralized name parsing for consistency
+      const parsedRefreshName = parseName({
+        name: profile?.first_name,
+        fullName: displayName
+      });
+
       const user: User = {
         id: userProfile.id,
         email: userProfile.email,
-        name: profile?.first_name || (displayName.split(' ')[0] || displayName),
-        fullName: displayName,
+        name: parsedRefreshName.firstName,
+        fullName: parsedRefreshName.fullName,
         role: userProfile.role as UserRole,
         institution: profile?.institution || undefined,
         isVerified: !!userProfile.email_verified_at,
@@ -1331,14 +1344,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dbUpdates.updated_at = new Date().toISOString();
 
       
+      // ✅ ULTIMATE FIX: Use centralized name parsing for safety fallbacks
+      // Parse current user name for safety fallbacks
+      const currentUserParsed = parseName({
+        name: authState.user.name,
+        fullName: authState.user.fullName
+      });
+
       // Upsert user profile to guarantee persistence even if row belum ada
       const upsertPayload: any = {
         user_id: authState.user.id,
         ...dbUpdates,
-        // Safety for NOT NULL columns
-        first_name: dbUpdates.first_name || (authState.user.name?.split(' ')[0] || 'User'),
-        last_name: dbUpdates.last_name || dbUpdates.first_name || (authState.user.name || 'User'),
-        display_name: dbUpdates.display_name || `${dbUpdates.first_name || authState.user.name || 'User'} ${dbUpdates.last_name || ''}`.trim(),
+        // Safety for NOT NULL columns using centralized parsing
+        first_name: dbUpdates.first_name || currentUserParsed.firstName || 'User',
+        last_name: dbUpdates.last_name || dbUpdates.first_name || currentUserParsed.lastName || currentUserParsed.firstName || 'User',
+        display_name: dbUpdates.display_name || currentUserParsed.fullName || currentUserParsed.displayName,
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       };
@@ -1349,7 +1369,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .upsert(upsertPayload, { onConflict: 'user_id' });
 
       if (error) {
-        throw new Error(`Profile update failed: ${error.message}`);
+        // Enhanced error messages based on database error codes
+        let errorMessage = 'Profile update failed';
+
+        switch (error.code) {
+          case '23505': // unique violation
+            errorMessage = 'Data ini sudah ada dan tidak dapat duplikat';
+            break;
+          case '23514': // check violation
+            errorMessage = 'Data yang dimasukkan tidak valid';
+            break;
+          case '22001': // string data right truncation
+            errorMessage = 'Nama atau institusi terlalu panjang';
+            break;
+          case '23503': // foreign key violation
+            errorMessage = 'Referensi data tidak valid';
+            break;
+          case '42501': // insufficient privilege
+            errorMessage = 'Anda tidak memiliki izin untuk mengubah data ini';
+            break;
+          case 'PGRST301': // relation does not exist
+            errorMessage = 'Struktur database tidak valid';
+            break;
+          case 'PGRST116': // not found
+            errorMessage = 'Data pengguna tidak ditemukan';
+            break;
+          default:
+            errorMessage = error.message || 'Profile update failed';
+        }
+
+        throw new Error(errorMessage);
       }
 
       // Update local state + persist session (mapping KONSISTEN)

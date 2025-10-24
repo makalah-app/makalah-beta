@@ -43,11 +43,21 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          first_name?: string;
-          last_name?: string;
+          first_name: string;
+          last_name: string;
+          display_name?: string;
           avatar_url?: string;
           bio?: string;
+          academic_title?: string;
+          institution?: string;
+          department?: string;
           research_interests: string[];
+          expertise_domains: string[];
+          preferred_citation_style: 'APA' | 'MLA' | 'Chicago' | 'Harvard' | 'IEEE' | 'Vancouver';
+          preferred_language: 'id' | 'en';
+          timezone: string;
+          academic_level: 'undergraduate' | 'graduate' | 'doctoral' | 'postdoc' | 'faculty' | 'researcher';
+          predikat?: string; // Academic predicate: "Mahasiswa" or "Peneliti"
           preferences: any;
           created_at: string;
           updated_at: string;
