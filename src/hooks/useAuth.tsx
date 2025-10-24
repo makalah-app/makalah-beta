@@ -16,6 +16,22 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+
+// Tambahkan fungsi ini di atas file atau dalam helper function
+const translateAuthError = (errorMessage: string): string => {
+  const errorMap: Record<string, string> = {
+    'Invalid login credentials': 'Email atau password salah',
+    'Email not confirmed': 'Email belum diverifikasi',
+    'User not found': 'Pengguna tidak ditemukan',
+    'Too many requests': 'Terlalu banyak upaya masuk, coba lagi nanti',
+    'Invalid password': 'Password salah',
+    'Password should be at least 6 characters': 'Password minimal 6 karakter',
+    'User already registered': 'Email sudah terdaftar',
+    'Signup requires a valid password': 'Password tidak valid untuk pendaftaran'
+  };
+
+  return errorMap[errorMessage] || errorMessage;
+};
 import { Session } from '@supabase/supabase-js';
 import { UserRole, PermissionManager, UserPermissionContext, createPermissionHook } from '../lib/auth/role-permissions';
 import { supabaseClient } from '../lib/database/supabase-client';
@@ -781,7 +797,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         debugLog('auth:login', 'signIn-error', { message: error.message });
-        throw new Error(error.message);
+        throw new Error(translateAuthError(error.message));
       }
 
       if (!data.user || !data.session) {
@@ -1033,7 +1049,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       if (authError) {
-        throw new Error(authError.message);
+        throw new Error(translateAuthError(authError.message));
       }
 
       if (!authData.user) {
@@ -1461,7 +1477,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: error.message
+          error: translateAuthError(error.message)
         }));
         return false;
       }
@@ -1495,7 +1511,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: error.message
+          error: translateAuthError(error.message)
         }));
         return false;
       }
@@ -1533,7 +1549,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthState(prev => ({
           ...prev,
           isLoading: false,
-          error: error.message
+          error: translateAuthError(error.message)
         }));
         return false;
       }

@@ -378,9 +378,8 @@ export default function AuthPage() {
             {successMessage && !isRegisterMode && !error && !notRegisteredNotice && (
               <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
                 <div className="mx-auto flex w-fit items-center gap-4">
-                  <CheckCircle2 className="h-12 w-12 text-white/90" aria-hidden="true" />
+                  <CheckCircle2 className="h-6 w-6 text-white/90" aria-hidden="true" />
                   <div className="text-left">
-                    <AlertTitle className="text-white text-lg font-medium">Registrasi berhasil!</AlertTitle>
                     <AlertDescription className="text-white/90 text-sm mt-1">
                       Email Anda telah berhasil diverifikasi! <br />
                       Silakan login dengan kredensial Anda.
@@ -418,11 +417,10 @@ export default function AuthPage() {
             {notRegisteredNotice && !isRegisterMode && (
               <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
                 <div className="mx-auto flex w-fit items-center gap-4">
-                  <XCircle className="h-12 w-12 text-white/90" aria-hidden="true" />
+                  <XCircle className="h-6 w-6 text-white/90" aria-hidden="true" />
                   <div className="text-left">
-                    <AlertTitle className="text-white text-lg font-medium">Akun tidak terdaftar / nonaktif</AlertTitle>
                     <AlertDescription className="text-white/90 text-sm mt-1">
-                      Email yang Anda masukkan belum terdaftar atau akun nonaktif. Silakan daftar akun baru atau hubungi admin bila ini kesalahan.
+                      Email yang Anda masukkan belum terdaftar atau akun nonaktif. Silakan daftar baru.
                       <div className="mt-3">
                         <Button
                           type="button"
@@ -443,11 +441,10 @@ export default function AuthPage() {
 
             {/* Notifikasi error umum (contoh: Invalid login credentials) */}
             {!isRegisterMode && !notRegisteredNotice && !!error && (
-              <Alert className="mb-6 border-white/20 bg-white/10 backdrop-blur-sm text-white">
+              <Alert className="mb-6 border-white bg-destructive backdrop-blur-sm text-white">
                 <div className="mx-auto flex w-fit items-center gap-4">
-                  <XCircle className="h-12 w-12 text-white/90" aria-hidden="true" />
+                  <XCircle className="h-6 w-6 text-white/90" aria-hidden="true" />
                   <div className="text-left">
-                    <AlertTitle className="text-white text-lg font-medium">Gagal Masuk</AlertTitle>
                     <AlertDescription className="text-white/90 text-sm mt-1">
                       {error}
                     </AlertDescription>

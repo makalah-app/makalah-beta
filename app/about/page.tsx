@@ -28,13 +28,11 @@ export default function AboutPage() {
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-semibold mb-6 leading-tight text-foreground font-heading">
-            Tentang <span className="text-primary">Makalah AI</span>
+          <h1 className="text-3xl md:text-4xl font-semibold mb-6 leading-tight text-foreground font-heading">
+            Tentang Makalah AI
           </h1>
           <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-white">
-            Platform kolaborasi penulisan makalah akademik berbahasa Indonesia yang menggunakan kecerdasan buatan untuk
-            membantu peneliti dan mahasiswa menghasilkan karya akademik berkualitas tinggi melalui metodologi
-            terstruktur.
+            Platform penulisan paper akademik berbahasa Indonesia <br /> yang menggunakan <em>AI Agent</em> berbasis <em>large language model</em> (LLM) <br /> untuk membantu peneliti dan mahasiswa menghasilkan naskah berkualitas <br /> melalui metodologi yang terstruktur.
           </p>
         </div>
       </section>
@@ -142,9 +140,9 @@ export default function AboutPage() {
                   icon: Award,
                 },
                 {
-                  title: 'Kolaborasi Manusia-AI',
+                  title: 'Manusia Pawang, Ai Tukang',
                   description:
-                    'Kami percaya pada kekuatan kolaborasi antara kecerdasan manusia dan buatan. Platform kami memungkinkan kontrol penuh di tangan pengguna dengan dukungan AI yang cerdas.',
+                    'Kami percaya pada kekuatan kolaborasi antara kecerdasan manusia dan buatan. Platform kami memungkinkan kontrol penuh di tangan pengguna.',
                   icon: Users,
                 },
                 {
@@ -173,27 +171,6 @@ export default function AboutPage() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="px-6 py-20 text-center border-t border-border">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-semibold mb-6 leading-tight text-foreground font-heading">
-              Bergabunglah dengan <span className="text-primary">Revolusi</span> Penulisan Akademik
-            </h2>
-            <p className="text-xl mb-8 leading-relaxed text-muted-foreground">
-              Mulai perjalanan penulisan akademik Anda dengan dukungan AI yang cerdas dan metodologi yang terbukti
-              efektif.
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button asChild size="lg">
-                <Link href="/chat">Mulai Menulis</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/documentation">Pelajari Lebih Lanjut</Link>
-              </Button>
             </div>
           </div>
         </section>
