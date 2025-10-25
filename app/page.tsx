@@ -42,10 +42,6 @@ export default function HomePage() {
     }
   };
 
-  if (!mounted) {
-    return null; // Prevent hydration mismatch
-  }
-
   // Show toast after waitlist success via query param, then clean the URL
   useEffect(() => {
     if (!mounted) return;
@@ -59,6 +55,10 @@ export default function HomePage() {
       router.replace('/', { scroll: false });
     }
   }, [mounted, searchParams, toast, router]);
+
+  if (!mounted) {
+    return null; // Prevent hydration mismatch
+  }
 
   // ✅ PERFORMANCE: Remove double loading indicators - rely on app-level loading only
   // No button-level loading to prevent double loaders
