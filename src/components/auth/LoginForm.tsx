@@ -246,13 +246,10 @@ export default function LoginForm({
         </button>
 
         {/* Register Link */}
-        {showRegisterLink && (
+        {false && showRegisterLink && (
           <div className="register-link-container">
             <p>
-              Belum punya akun?{' '}
-              <a href="/auth?tab=register" className="register-link">
-                Daftar sekarang
-              </a>
+              {/* Belum punya akun? <a href="/auth?tab=register" className="register-link">Daftar sekarang</a> */}
             </p>
           </div>
         )}

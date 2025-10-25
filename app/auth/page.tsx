@@ -778,16 +778,21 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {(!isRegisterMode || currentSlide === 1) && (
+              {/*
+                Disembunyikan sesuai instruksi:
+                "Belum punya akun? Daftar sekarang"
+                (link pendaftaran di-card login)
+              */}
+              {isRegisterMode && (
                 <p className="text-sm text-muted-foreground">
-                  {isRegisterMode ? 'Sudah punya akun?' : 'Belum punya akun?'}{" "}
+                  {'Sudah punya akun?'}{" "}
                   <Button
                     variant="link"
                     onClick={toggleMode}
                     className="h-auto p-0 font-medium"
                     disabled={isSubmitting || isLoading}
                   >
-                    {isRegisterMode ? 'Masuk sekarang' : 'Daftar sekarang'}
+                    {'Masuk sekarang'}
                   </Button>
                 </p>
               )}
