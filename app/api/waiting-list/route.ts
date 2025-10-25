@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/database/supabase-client';
+import { sendWaitlistThanksEmail } from '@/lib/notifications/email';
 
 function isValidEmail(email: string) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,9 +48,19 @@ export async function POST(request: NextRequest) {
       return Response.json({ success: false, error: { message: 'Lagi gangguan, coba lagi ya.' } }, { status: 500 });
     }
 
+    // Send transactional email (non-blocking failure)
+    try {
+      const sent = await sendWaitlistThanksEmail(email);
+      if (sent?.success) {
+        await (supabaseAdmin as any)
+          .from('waiting_list')
+          .update({ email_sent_at: new Date().toISOString() })
+          .eq('email', email);
+      }
+    } catch {}
+
     return Response.json({ success: true }, { status: 201 });
   } catch (e) {
     return Response.json({ success: false, error: { message: 'Lagi gangguan, coba lagi ya.' } }, { status: 500 });
   }
 }
-
