@@ -13,7 +13,7 @@ export function renderWaitlistThanksEmailText(email: string) {
   return [
     'Terima kasih sudah daftar tunggu',
     `Halo, ${email}`,
-    'Email kamu sudah kami catat untuk uji coba Makalah AI.',
+    'Email kamu sudah kami catat sebagai pengguna yang diundak untuk uji coba Makalah AI.',
     'Kami akan kabari jadwal akses dan info lanjut secepatnya.',
     '',
     'Email ini dikirim otomatis. Jangan balas ke alamat ini.'

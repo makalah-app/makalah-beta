@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { validateAdminAccess } from '@/lib/admin/admin-auth';
 import { deleteUserById } from '@/lib/admin/user-service';
+import { supabaseAdmin } from '@/lib/database/supabase-client';
 
 export async function DELETE(request: NextRequest, context: { params: { id: string } }) {
   try {
@@ -25,6 +26,41 @@ export async function DELETE(request: NextRequest, context: { params: { id: stri
           type: 'validation_error',
         },
       }, { status: 400 });
+    }
+
+    // Optional safety hardening: restrict destructive actions by role
+    try {
+      const { data: targetUser } = await (supabaseAdmin as any)
+        .from('users')
+        .select('id, role, email')
+        .eq('id', userId)
+        .maybeSingle();
+
+      // Block deletion of superadmin entirely
+      if (targetUser?.role === 'superadmin') {
+        return Response.json({
+          success: false,
+          error: {
+            message: 'Cannot delete superadmin account',
+            type: 'authorization_error',
+            code: 'DELETE_SUPERADMIN_FORBIDDEN',
+          },
+        }, { status: 403 });
+      }
+
+      // Only superadmin can delete admin users
+      if (targetUser?.role === 'admin' && adminCheck.userRole !== 'superadmin') {
+        return Response.json({
+          success: false,
+          error: {
+            message: 'Only superadmin can delete admin accounts',
+            type: 'authorization_error',
+            code: 'DELETE_ADMIN_REQUIRES_SUPERADMIN',
+          },
+        }, { status: 403 });
+      }
+    } catch (_e) {
+      // If target lookup fails, proceed with best-effort deletion (handled in service)
     }
 
     await deleteUserById(userId);

@@ -121,12 +121,41 @@ export async function toggleUserStatus(id: string, action: ToggleUserAction): Pr
 }
 
 export async function deleteUserById(id: string): Promise<void> {
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
-  if (error) {
-    if (error instanceof AuthApiError && error.status === 404) {
-      throw new Error('User not found');
+  // Step 1: Try deleting from Supabase Auth (source of truth for credentials)
+  // If the auth user doesn't exist (404), we still continue to clean up public tables
+  try {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) {
+      // Allow graceful handling when auth user is already missing
+      if (!(error instanceof AuthApiError && error.status === 404)) {
+        throw error;
+      }
     }
+  } catch (err) {
+    // If we hit a non-AuthApiError or unknown failure, rethrow
+    if (!(err instanceof AuthApiError && err.status === 404)) {
+      throw err;
+    }
+  }
 
-    throw error;
+  // Step 2: Clean up public-facing tables to keep admin list in sync
+  // We explicitly delete user profile first to avoid FK issues in environments without cascade
+  try {
+    await (supabaseAdmin as any)
+      .from('user_profiles')
+      .delete()
+      .eq('user_id', id);
+  } catch (_e) {
+    // best-effort cleanup; ignore to not block the main deletion
+  }
+
+  // Finally, delete the row from public.users
+  try {
+    await (supabaseAdmin as any)
+      .from('users')
+      .delete()
+      .eq('id', id);
+  } catch (_e) {
+    // best-effort cleanup; ignore to not block API response
   }
 }
