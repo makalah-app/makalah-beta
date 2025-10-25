@@ -23,17 +23,18 @@ export default function AboutPage() {
       {/* Hero Section (CSS-only background) */}
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10">
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-2">
             <div className="w-16 h-16 rounded bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold mb-6 leading-tight text-foreground font-heading">
-            Tentang Makalah AI
+          <h1 className="text-3xl md:text-4xl font-semibold mb-4 leading-tight text-foreground font-heading">
+            Manusia adalah Pawang, <br />sedangkan Ai sebatas tukang
           </h1>
-          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed text-white">
-            Platform penulisan paper akademik berbahasa Indonesia <br /> yang menggunakan <em>AI Agent</em> berbasis <em>large language model</em> (LLM) <br /> untuk membantu peneliti dan mahasiswa menghasilkan naskah berkualitas <br /> melalui metodologi yang terstruktur.
-          </p>
+          <h4 className="text-left text-heading mb-2 max-w-4xl text-sm mx-auto leading-relaxed text-white">
+            <span className='font-bold'>Kredo tersebut jadi pedoman kami dalam membangun Makalah</span>. Platform ini disiapkan untuk menjadi jawaban atas disrupsi teknologi dalam aktivitas akademik dan riset. Laju penggunaan Ai/<em>Large Language Model</em> tidak bisa dihindari. Pelarangan hanya akan menghasilkan ketidakjujuran, "Ngomong nggak pakai, padahal diam-diam menggunakan!". <br /><br />Bagaimana dengan penggunaan detektor Ai, apakah absah dipakai? Problematik! Detektor Ai selalu memberikan hasil <em>false positive</em>, dan hanya memunculkan persentase probabilitas yang tidak jelas argumennya. Lagi pula, sepanjang tulisan tersusun dalam struktur subyek+predikat+obyek+keterangan, maka kalimat apapun bakal dideteksi buatan Ai. <br /><br />Yang diperlukan saat ini adalah mengatur penggunaan Ai di lingkungan akademik agar transparan, bisa dipertanggungjawabkan, dan memiliki riwayat pemakaian akuntabel. Siapapun bisa dilacak, "Apakah paper miliknya dibuatkan Ai, atau dibuat bersama Ai?". Bukankah keduanya berbeda?  
+          </h4>
+
         </div>
       </section>
 
