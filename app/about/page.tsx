@@ -21,15 +21,15 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section (CSS-only background) */}
-      <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
+      <section className="px-6 py-20 relative hero-vivid hero-grid-thin">
         <div className="relative z-10">
           <div className="flex justify-center mb-2">
             <div className="w-16 h-16 rounded bg-primary/10 flex items-center justify-center">
               <Brain className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold mb-4 leading-tight text-foreground font-heading">
-            Manusia adalah Pawang, <br />sedangkan Ai sebatas tukang
+          <h1 className="text-2xl text-center md:text-4xl font-bold mb-4 leading-tight text-foreground font-heading">
+            Manusia adalah pawang, <br />Ai sebatas tukang
           </h1>
           <h4 className="text-left text-heading mb-2 max-w-4xl text-sm mx-auto leading-relaxed text-white">
             <span className='font-bold'>Kredo tersebut jadi pedoman kami dalam membangun Makalah</span>. Platform ini disiapkan untuk menjadi jawaban atas disrupsi teknologi dalam aktivitas akademik dan riset. Laju penggunaan Ai/<em>Large Language Model</em> tidak bisa dihindari. Pelarangan hanya akan menghasilkan ketidakjujuran, &ldquo;Ngomong nggak pakai, padahal diam-diam menggunakan!&rdquo;. <br /><br />Bagaimana dengan penggunaan detektor Ai, apakah absah dipakai? Problematik! Detektor Ai selalu memberikan hasil <em>false positive</em>, dan hanya memunculkan persentase probabilitas yang tidak jelas argumennya. Lagi pula, sepanjang tulisan tersusun dalam struktur subyek+predikat+obyek+keterangan, maka kalimat apapun bakal dideteksi buatan Ai. <br /><br />Yang diperlukan saat ini adalah mengatur penggunaan Ai di lingkungan akademik agar transparan, bisa dipertanggungjawabkan, dan memiliki riwayat pemakaian akuntabel. Siapapun bisa dilacak, &ldquo;Apakah paper miliknya dibuatkan Ai, atau dibuat bersama Ai?&rdquo;. Bukankah keduanya berbeda?
