@@ -304,7 +304,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               </div>
             ) : (
               <Button
-                onClick={() => handleLogin(currentPath)}
+                onClick={() => handleLogin(pathname)}
                 className="btn-green-solid hidden md:inline-flex"
               >
                 Masuk

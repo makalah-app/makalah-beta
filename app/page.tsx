@@ -32,8 +32,8 @@ export default function HomePage() {
     if (isAuthenticated) {
       router.push('/chat');
     } else {
-      // Use the updated login function with redirectTo parameter
-      login({ redirectTo: '/chat' });
+      // Redirect to auth page with redirectTo parameter
+      router.push('/auth?redirectTo=/chat');
     }
   };
 

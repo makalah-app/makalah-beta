@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import type { UserRole } from '@/lib/auth/role-permissions';
 import { debugLog } from '@/lib/utils/debug-log';
@@ -196,12 +196,7 @@ export default function AuthPage() {
     return true;
   };
 
-  const handleNextSlide = () => {
-    if (validateSlide1()) {
-      setCurrentSlide(2);
-    }
-  };
-
+  
   const isSlide1Valid = () => {
     const { email, password, confirmPassword } = slide1Data;
 
@@ -238,6 +233,8 @@ export default function AuthPage() {
     setIsSubmitting(true);
     debugLog('ui:auth', 'submit-start', { isRegisterMode });
 
+    let success = false;
+
     try {
       if (isRegisterMode) {
         // For registration, handle based on current slide
@@ -245,11 +242,14 @@ export default function AuthPage() {
           // Validate slide 1 and move to slide 2
           if (validateSlide1()) {
             setCurrentSlide(2);
+          } else {
+            success = false; // Validation failed
           }
           return;
         } else {
           // Slide 2 - complete registration
           if (!validateSlide2()) {
+            success = false; // Validation failed
             return;
           }
 
@@ -263,6 +263,7 @@ export default function AuthPage() {
           };
 
           await register(combinedData);
+          success = true; // Mark registration as successful
           // Show success message and redirect to login
           setSuccessMessage('Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun, lalu login.');
           setShowResendOption(true);
@@ -275,7 +276,7 @@ export default function AuthPage() {
           setCurrentSlide(1);
         }
       } else {
-        const success = await login({
+        success = await login({
           email: formData.email,
           password: formData.password,
           rememberMe,
@@ -284,7 +285,6 @@ export default function AuthPage() {
 
         if (success) {
           debugLog('ui:auth', 'login-success');
-          // Clear success message on successful login
           setSuccessMessage('');
 
           // Get redirect URL from search params
@@ -296,20 +296,26 @@ export default function AuthPage() {
             !redirectTo.includes('../') &&
             !redirectTo.startsWith('/auth'); // Prevent redirect loop
 
-          if (isValidRedirect) {
-            router.push(redirectTo);
-          } else {
-            // Default behavior: redirect to chat
-            router.push('/chat');
-          }
-          // Don't set isSubmitting(false) for login success - let redirect handle it
+          // Add delay for smooth UX transition before redirect
+          setTimeout(() => {
+            if (isValidRedirect) {
+              router.push(redirectTo);
+            } else {
+              // Default behavior: redirect to chat
+              router.push('/chat');
+            }
+          }, 300); // 300ms delay for smooth UX
+
+          return; // Prevent finally block from resetting isSubmitting for successful login
         } else {
           debugLog('ui:auth', 'login-failed');
+          success = false; // Login failed
           // Stay on page; error message displayed by useAuth state
           return;
         }
       }
     } catch (error: any) {
+      success = false; // Exception occurred
       debugLog('ui:auth', 'submit-exception', { message: error?.message });
       // Check if error is due to unverified email
       if (!isRegisterMode && error?.message?.toLowerCase().includes('email not confirmed')) {
@@ -317,7 +323,11 @@ export default function AuthPage() {
         setResendEmail(formData.email);
       }
     } finally {
-      setIsSubmitting(false);
+      // Only reset isSubmitting for failed login or registration
+      // For successful login, let redirect handle state cleanup
+      if (isRegisterMode || !success) {
+        setIsSubmitting(false);
+      }
       debugLog('ui:auth', 'submit-finally');
     }
   };
@@ -427,7 +437,7 @@ export default function AuthPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => login({ redirectTo: '/auth?tab=register' })}
+                          onClick={() => router.push('/auth?tab=register')}
                           disabled={isLoading}
                           className="border-white/30 text-white/90 hover:bg-white/10 hover:text-white"
                         >
