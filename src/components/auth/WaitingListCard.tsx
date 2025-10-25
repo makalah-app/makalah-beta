@@ -55,7 +55,7 @@ export default function WaitingListCard() {
         setError(msg);
       }
     } catch {
-      setError('Lagi gangguan, coba lagi ya.');
+      setError('Sedang gangguan, coba lagi nantu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +123,7 @@ export default function WaitingListCard() {
                 <input type="text" name="website" className="hidden" tabIndex={-1} autoComplete="off" />
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              <Button type="submit" className="w-full " size="lg" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Mendaftar...</span>
                 ) : (

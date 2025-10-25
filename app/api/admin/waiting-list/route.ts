@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(parseIntSafe(searchParams.get('page'), 1), 1);
     const pageSize = Math.min(parseIntSafe(searchParams.get('pageSize'), 50), 100);
     const search = (searchParams.get('search') || '').trim();
+    const statusParam = (searchParams.get('status') || '').trim().toLowerCase();
+    const allowedStatus = ['pending','invited','converted'];
 
     let query = (supabaseAdmin as any)
       .from('waiting_list')
@@ -26,6 +28,9 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query = query.ilike('email', `%${search}%`);
+    }
+    if (statusParam && allowedStatus.includes(statusParam)) {
+      query = query.eq('status', statusParam);
     }
 
     const from = (page - 1) * pageSize;
@@ -48,4 +53,3 @@ export async function GET(request: NextRequest) {
     return Response.json({ success: false, error: { message: 'Gagal memuat data' } }, { status: 500 });
   }
 }
-

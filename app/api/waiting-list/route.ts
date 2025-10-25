@@ -7,6 +7,21 @@ function isValidEmail(email: string) {
   return re.test(String(email).toLowerCase());
 }
 
+export const runtime = 'nodejs';
+
+async function safeLog(request: NextRequest, payload: Record<string, any>) {
+  try {
+    const proto = request.headers.get('x-forwarded-proto') ?? 'http';
+    const host = request.headers.get('host');
+    if (!host) return;
+    await fetch(`${proto}://${host}/api/debug/log`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch {}
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
@@ -50,14 +65,19 @@ export async function POST(request: NextRequest) {
 
     // Send transactional email (non-blocking failure)
     try {
+      await safeLog(request, { tag: 'waitlist-email', phase: 'pre-send', to: email, hasKey: !!process.env.RESEND_API_KEY });
       const sent = await sendWaitlistThanksEmail(email);
+      await safeLog(request, { tag: 'waitlist-email', phase: 'send-result', to: email, success: sent?.success ?? false, status: (sent as any)?.status ?? null, msgId: (sent as any)?.id ?? null, error: (sent as any)?.error ?? null });
       if (sent?.success) {
         await (supabaseAdmin as any)
           .from('waiting_list')
           .update({ email_sent_at: new Date().toISOString() })
           .eq('email', email);
+        await safeLog(request, { tag: 'waitlist-email', phase: 'marked-sent', to: email });
       }
-    } catch {}
+    } catch (e) {
+      await safeLog(request, { tag: 'waitlist-email', phase: 'send-exception' });
+    }
 
     return Response.json({ success: true }, { status: 201 });
   } catch (e) {

@@ -613,7 +613,7 @@ function AdminUsersDetailsContent() {
             </div>
 
             <div className="space-y-2">
-              <Label>Joined Since</Label>
+              <Label>Bergabung</Label>
               <div className="flex flex-wrap gap-2">
                 {JOINED_SINCE_OPTIONS.map((option) => (
                   <Button

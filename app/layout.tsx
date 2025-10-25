@@ -27,6 +27,9 @@ const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-heading',
+  // Prevent Next from trying to compute font override metrics (not available for Nunito Sans)
+  adjustFontFallback: false,
+  fallback: ['system-ui', 'Segoe UI', 'Arial'],
 });
 
 const jetbrainsMono = JetBrains_Mono({

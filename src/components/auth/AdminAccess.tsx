@@ -212,12 +212,16 @@ export function AdminPanel({
   title,
   children,
   requiredPermissions,
-  className = ''
+  className = '',
+  showBreadcrumbs = true,
+  showHeader = true,
 }: {
   title: string;
   children: ReactNode;
   requiredPermissions?: Permission[];
   className?: string;
+  showBreadcrumbs?: boolean;
+  showHeader?: boolean;
 }) {
   return (
     <AdminAccess
@@ -225,16 +229,20 @@ export function AdminPanel({
       className={className}
     >
       <div className="min-h-screen bg-background">
-        <div className="bg-card border-b border-border px-8 py-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/admin" className="text-primary hover:underline">
-              Admin
-            </Link>
-            <span className="font-medium">›</span>
-            <span>{title}</span>
+        {showHeader && (
+          <div className="bg-card border-b border-border px-8 py-6">
+            <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
+            {showBreadcrumbs && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Link href="/admin" className="text-primary hover:underline">
+                  Admin
+                </Link>
+                <span className="font-medium">›</span>
+                <span>{title}</span>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         <div className="p-8">
           {children}

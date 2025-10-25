@@ -5,28 +5,29 @@
 
 import { renderWaitlistThanksEmailHTML, renderWaitlistThanksEmailText } from './email-templates';
 
-type ResendClient = any;
-
-async function getResendClient(): Promise<ResendClient | null> {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  // Dynamic import to avoid build-time type dependency
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { Resend } = require('resend');
-  return new Resend(apiKey);
-}
-
 export async function sendWaitlistThanksEmail(to: string) {
-  const resend = await getResendClient();
-  if (!resend) return { success: false, skipped: true } as const;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { success: false, skipped: true } as const;
 
   const from = 'noreply@makalah.ai'; // per requirement
   const subject = 'Terima kasih – Kamu masuk Daftar Tunggu Makalah AI';
   const html = renderWaitlistThanksEmailHTML(to);
   const text = renderWaitlistThanksEmailText(to);
 
-  const result = await resend.emails.send({ from, to, subject, html, text });
-  // result may contain id, error; we assume provider SDK throws on failure
-  return { success: true, id: result?.id } as const;
-}
+  const resp = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from, to, subject, html, text })
+  });
 
+  const data = await resp.json().catch(() => ({} as any));
+  if (!resp.ok) {
+    // Do not throw; return verbose info for logging upstream
+    return { success: false, skipped: true, status: resp.status, error: (data as any)?.error || (data as any)?.message } as const;
+  }
+
+  return { success: true, id: (data as any)?.id, status: resp.status } as const;
+}
