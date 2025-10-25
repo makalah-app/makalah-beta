@@ -64,8 +64,19 @@ export const Footer: React.FC<FooterProps> = ({
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between">
           {/* Brand Section */}
-          <div className="flex items-center">
-            <BrandLogo variant="mono" size="sm" className="opacity-60" />
+          <div className="flex items-center group relative">
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="transition-opacity duration-200"
+              aria-label="Scroll to top"
+            >
+              <BrandLogo variant="mono" size="xs" className="opacity-60 group-hover:hidden" />
+              <BrandLogo variant="white" size="xs" className="hidden group-hover:block opacity-100" />
+              {/* Tooltip */}
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                Naik
+              </span>
+            </button>
           </div>
 
           {/* Copyright */}
