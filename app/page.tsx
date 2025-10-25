@@ -8,7 +8,7 @@ import { Badge } from "../src/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogTrigger, DialogClose } from "../src/components/ui/dialog";
 import { pricingTiers } from "@/constants/pricing";
 import { cn } from "../src/lib/utils";
-import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
+import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 // Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
@@ -113,13 +113,27 @@ export default function HomePage() {
             Nggak perlu <span className="font-bold"><em>prompt</em></span> ruwet, ide apapun bakal diolah <span className="font-bold">Agen Makalah Ai</span> menjadi paper utuh
           </p>
           <div className="flex justify-center">
+            {/* Disembunyikan sesuai instruksi: CTA lama "Ayo mulai!" */}
+            {false && (
+              <Button
+                size="lg"
+                className="font-medium transition-all hover:-translate-y-1 hover:scale-105"
+                onClick={handleChatWithAgent}
+              >
+                <Brain className="w-5 h-5 mr-2" />
+                Ayo mulai!
+              </Button>
+            )}
+
             <Button
+              asChild
               size="lg"
               className="font-medium transition-all hover:-translate-y-1 hover:scale-105"
-              onClick={handleChatWithAgent}
             >
-              <Brain className="w-5 h-5 mr-2" />
-              Ayo mulai!
+              <Link href="/auth/waiting-list">
+                <UserPlus className="w-5 h-5 mr-2" />
+                Daftarkan email untuk uji coba
+              </Link>
             </Button>
           </div>
           </div>
