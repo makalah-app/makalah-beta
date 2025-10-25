@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from "../src/components/ui/button";
 import { Card } from "../src/components/ui/card";
 import { Badge } from "../src/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogTrigger, DialogClose } from "../src/components/ui/dialog";
 import { pricingTiers } from "@/constants/pricing";
 import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck } from "lucide-react";
@@ -21,6 +22,7 @@ export default function HomePage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
+  const [isPawangDialogOpen, setIsPawangDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -50,12 +52,59 @@ export default function HomePage() {
       <section className="px-6 py-0 text-center relative section-screen-with-header hero-vivid hero-grid-thin">
         
         <div className="relative z-10 h-full flex flex-col justify-between">
-          <div className="mt-6 md:mt-10">
+          <div className="mt-2 md:mt-2">
+            {/* New Badge */}
+            <div className="flex justify-center mb-4">
+              <Dialog open={isPawangDialogOpen} onOpenChange={setIsPawangDialogOpen}>
+                <DialogTrigger asChild>
+                  <Badge
+                    variant="default"
+                    className="bg-success-600 hover:bg-success-700 text-white text-xs px-4 py-2 rounded-full font-semibold transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-lg shadow-md relative overflow-hidden group"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-300"></span>
+                      </span>
+                      Anda Pawang, Ai Tukang
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  </Badge>
+                </DialogTrigger>
+
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-card-foreground border border-border shadow-lg">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold text-foreground">
+                      Manusia adalah pawang, Ai sebatas tukang
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div
+                    className="text-sm text-foreground leading-relaxed space-y-3"
+                    dangerouslySetInnerHTML={{
+                      __html: `Kredo tersebut jadi pedoman kami dalam membangun Makalah.Platform ini disiapkan untuk menjadi jawaban atas disrupsi teknologi dalam aktivitas akademik dan riset. Laju penggunaan Ai/<em>Large Language Model</em> tidak bisa dihindari. Pelarangan hanya akan menghasilkan ketidakjujuran, &ldquo;Ngomong nggak pakai, padahal diam-diam menggunakan!&rdquo;. <br /><br />Bagaimana dengan penggunaan detektor Ai, apakah absah dipakai? Problematik! Detektor Ai selalu memberikan hasil <em>false positive</em>, dan hanya memunculkan persentase probabilitas yang tidak jelas argumennya. Lagi pula, sepanjang tulisan tersusun dalam struktur subyek+predikat+obyek+keterangan, maka kalimat apapun bakal dideteksi buatan Ai. <br /><br />Yang diperlukan saat ini adalah mengatur penggunaan Ai di lingkungan akademik agar transparan, bisa dipertanggungjawabkan, dan memiliki riwayat pemakaian akuntabel. Siapapun bisa dilacak, &ldquo;Apakah paper miliknya dibuatkan Ai, atau dibuat bersama Ai?&rdquo;. Bukankah keduanya berbeda?`
+                    }}
+                  />
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button
+                        variant="default"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors duration-200"
+                      >
+                        Tutup
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
           <h1
-            className="text-4xl md:text-6xl font-medium mb-6 leading-tight text-foreground font-heading"
+            className="text-4xl md:text-6xl mb-6 leading-tight text-foreground font-heading"
           >
-            Ngobrol<span className="text-primary">+</span>Riset <br />
-            <span className="text-primary">+</span>Brainstorming
+            Ngobrol<span className="text-primary font-bold">+</span>Riset <br />
+            <span className="text-primary font-bold">+</span>Brainstorming
             <br />
             <span className="text-primary">=</span>Paper Akademik
           </h1>

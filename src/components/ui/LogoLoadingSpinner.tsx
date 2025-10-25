@@ -19,16 +19,16 @@ export function LogoLoadingSpinner({ className }: LogoLoadingSpinnerProps) {
       <Image
         src="/logo/makalah_logo_500x500.png"
         alt="Makalah logo animasi frame utama"
-        width={48}
-        height={48}
+        width={32}
+        height={32}
         className="logo-spinner-frame animate-logo-primary"
         priority
       />
       <Image
         src="/logo/makalah_logo_500x500_grey.png"
         alt="Makalah logo animasi frame sekunder"
-        width={48}
-        height={48}
+        width={32}
+        height={32}
         className="logo-spinner-frame animate-logo-secondary"
         priority
       />

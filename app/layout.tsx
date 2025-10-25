@@ -43,15 +43,12 @@ const victorMono = Victor_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Makalah AI - Academic Paper Writing Assistant',
+  title: 'Makalah - Agen AI Penyusun Paper Akademik',
   description:
-    'AI-powered academic paper writing platform with intelligent chat assistance',
+    'Platform Agent Ai penyusunan paper akademik berbahasa Indonesia',
   keywords: ['AI', 'academic writing', 'research', 'Makalah', 'Indonesia', 'academic assistant'],
   icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
+    icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
   },
 };
