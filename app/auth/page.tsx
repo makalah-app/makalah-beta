@@ -279,6 +279,7 @@ export default function AuthPage() {
           email: formData.email,
           password: formData.password,
           rememberMe,
+          redirectTo: '/chat' // Default redirect for auth page login
         });
 
         if (success) {
@@ -426,7 +427,7 @@ export default function AuthPage() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push('/auth?tab=register')}
+                          onClick={() => login({ redirectTo: '/auth?tab=register' })}
                           disabled={isLoading}
                           className="border-white/30 text-white/90 hover:bg-white/10 hover:text-white"
                         >

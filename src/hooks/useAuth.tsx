@@ -88,6 +88,7 @@ export interface LoginCredentials {
   email: string;
   password: string;
   rememberMe?: boolean;
+  redirectTo?: string;
 }
 
 export interface RegistrationData {
@@ -207,14 +208,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  // Prevent multiple initialization attempts
+  // Atomic initialization state machine to prevent race conditions
+  enum AuthInitState {
+    IDLE = 'idle',
+    INITIALIZING = 'initializing',
+    COMPLETED = 'completed',
+    ERROR = 'error'
+  }
+
+  interface AuthInitStateData {
+    status: AuthInitState;
+    lastAccessToken: string | null;
+    lastSessionUserId: string | null;
+    profileFetchAttempts: Map<string, number>;
+  }
+
+  // Centralized initialization state management
+  const initStateRef = useRef<AuthInitStateData>({
+    status: AuthInitState.IDLE,
+    lastAccessToken: null,
+    lastSessionUserId: null,
+    profileFetchAttempts: new Map()
+  });
+
+  // Convenience refs for backward compatibility
   const initializingRef = React.useRef(false);
+  const hasInitializedRef = useRef(false);
   const lastAccessTokenRef = useRef<string | null>(null);
   const lastSessionUserIdRef = useRef<string | null>(null);
-  // Track failed profile fetch attempts per session
   const profileFetchAttemptsRef = useRef<Map<string, number>>(new Map());
-  // Track if main initialization has been triggered
-  const hasInitializedRef = useRef(false);
+
+  // Atomic state transition helper
+  const setInitState = useCallback((newStatus: AuthInitState, userId?: string, accessToken?: string) => {
+    const state = initStateRef.current;
+    state.status = newStatus;
+    if (userId !== undefined) {
+      state.lastSessionUserId = userId;
+      lastSessionUserIdRef.current = userId;
+    }
+    if (accessToken !== undefined) {
+      state.lastAccessToken = accessToken;
+      lastAccessTokenRef.current = accessToken;
+    }
+
+    // Update convenience refs for compatibility
+    initializingRef.current = newStatus === AuthInitState.INITIALIZING;
+    hasInitializedRef.current = newStatus === AuthInitState.COMPLETED;
+    profileFetchAttemptsRef.current = state.profileFetchAttempts;
+  }, []);
+
+  // Get current atomic state
+  const getInitState = useCallback((): AuthInitState => {
+    return initStateRef.current.status;
+  }, []);
+
+  // ✅ RACE CONDITION FIX: Shared profile fetching to prevent concurrent DB calls
+  const profileFetchQueue = useRef<Map<string, Promise<any>>>(new Map());
+
+  const fetchUserProfile = useCallback(async (userId: string): Promise<{ data: any; error: any }> => {
+    // Check if already fetching this profile
+    const existing = profileFetchQueue.current.get(userId);
+    if (existing) {
+      debugLog('auth:profile', 'using-existing-fetch', { userId });
+      return existing;
+    }
+
+    debugLog('auth:profile', 'starting-fetch', { userId });
+
+    const fetchPromise = withTimeout(
+      (supabaseClient as any)
+        .from('users')
+        .select(`
+          id, email, role, email_verified_at, created_at, last_login_at,
+          user_profiles(
+            display_name, first_name, last_name, institution, avatar_url, predikat
+          )
+        `)
+        .eq('id', userId)
+        .maybeSingle(),
+      3000, // Increased timeout for reliability
+      async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
+    );
+
+    // Store the promise in queue
+    profileFetchQueue.current.set(userId, fetchPromise);
+
+    try {
+      const result = await fetchPromise;
+      debugLog('auth:profile', 'fetch-complete', { userId, hasData: !!result.data, error: !!result.error });
+
+      // Remove from queue after completion
+      profileFetchQueue.current.delete(userId);
+
+      return result;
+    } catch (error) {
+      // Remove from queue on error
+      profileFetchQueue.current.delete(userId);
+      throw error;
+    }
+  }, []);
 
   const loadPersistedAuthSession = (): AuthSession | null => {
     if (typeof window === 'undefined') return null;
@@ -324,19 +416,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Initialize authentication from stored session
    */
   const initializeAuth = useCallback(async (providedSession?: Session | null) => {
-    debugLog('auth:init', 'start', { provided: !!providedSession });
-    if (initializingRef.current) {
-      debugLog('auth:init', 'skip-initializing');
+    debugLog('auth:init', 'start', { provided: !!providedSession, state: getInitState() });
+
+    // ✅ RACE CONDITION FIX: Use atomic state check instead of simple ref
+    if (getInitState() === AuthInitState.INITIALIZING) {
+      debugLog('auth:init', 'skip-already-initializing');
       return;
     }
 
-    // Add safety timeout to reset initializingRef in case of network issues
+    if (getInitState() === AuthInitState.COMPLETED) {
+      debugLog('auth:init', 'skip-already-completed');
+      return;
+    }
+
+    // Set atomic state to INITIALIZING
+    setInitState(AuthInitState.INITIALIZING);
+    debugLog('auth:init', 'state-set-to-initializing');
+
+    // Add safety timeout to reset state in case of network issues
     const resetTimeout = setTimeout(() => {
-      initializingRef.current = false;
+      if (getInitState() === AuthInitState.INITIALIZING) {
+        setInitState(AuthInitState.ERROR);
+        debugLog('auth:init', 'timeout-reset-to-error');
+      }
     }, 10000); // Reset after 10 seconds
 
     try {
-      initializingRef.current = true;
       setAuthState(prev => ({ ...prev, isLoading: true }));
       try { debugLog('auth:init', 'loading-true'); } catch {}
 
@@ -498,22 +603,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Get user profile from database (join users with user_profiles)
-      const profileResult = await withTimeout(
-        (supabaseClient as any)
-          .from('users')
-          .select(`
-            id, email, role, email_verified_at, created_at, last_login_at,
-            user_profiles(
-              display_name, first_name, last_name, institution, avatar_url, predikat
-            )
-          `)
-          .eq('id', session.user.id)
-          .maybeSingle(),
-        5000, // 🔴 FIX: Increased timeout to profile query completion
-        async () => ({ data: null, error: { message: 'profile timeout' } } as any)
-      );
-      const { data: userProfile, error: profileError } = profileResult as any;
+      // ✅ RACE CONDITION FIX: Use shared profile fetching to prevent concurrent DB calls
+      const profileResult = await fetchUserProfile(session.user.id);
+      const { data: userProfile, error: profileError } = profileResult;
       debugLog('auth:init', 'profile-fetch', { ok: !!userProfile, code: profileError?.code, message: profileError?.message });
       
       if (profileError && profileError.code !== 'PGRST116') {
@@ -658,6 +750,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Store userId separately for easy access
         localStorage.setItem('userId', authSession.user.id);
 
+        // ✅ RACE CONDITION FIX: Set atomic state to COMPLETED on success
+        setInitState(AuthInitState.COMPLETED, authSession.user.id, authSession.accessToken);
+
         setAuthState({
           user: authSession.user,
           session: authSession,
@@ -669,6 +764,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         debugLog('auth:init', 'authenticated', { userId: authSession.user.id });
       } else {
         // User not found or inactive in database - deny access
+        // ✅ RACE CONDITION FIX: Set atomic state to ERROR on validation failure
+        setInitState(AuthInitState.ERROR);
         setAuthState({
           user: null,
           session: null,
@@ -688,6 +785,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
     } catch (error) {
+      // ✅ RACE CONDITION FIX: Set atomic state to ERROR on exception
+      setInitState(AuthInitState.ERROR);
       setAuthState({
         user: null,
         session: null,
@@ -698,16 +797,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       debugLog('auth:init', 'exception');
     } finally {
       clearTimeout(resetTimeout);
-      initializingRef.current = false;
+      // ✅ RACE CONDITION FIX: Don't reset to false, keep atomic state
+      // State will be set to COMPLETED in success paths
     }
   }, [touchLastLogin]);
 
-  // Initialize authentication and set up auth state change listener
+  // Centralized authentication initialization with debouncing
   useEffect(() => {
     let mounted = true;
 
+    // Debounced initialization to prevent race conditions
+    let initTimeout: NodeJS.Timeout | null = null;
+
     async function initialize() {
       if (!mounted) return;
+
+      // Clear any pending initialization timeout
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+        initTimeout = null;
+      }
 
       // Use ref for atomic check-and-set to prevent race conditions
       if (hasInitializedRef.current) {
@@ -725,24 +834,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Listen for auth state changes from Supabase
+    // Listen for auth state changes from Supabase (WITHOUT triggering initializeAuth)
     const {
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       try { debugLog('auth:event', event, { hasSession: !!session, userId: session?.user?.id }); } catch {}
       if (!mounted) return;
 
-      // ✅ FIX: Tangani INITIAL_SESSION supaya client langsung sinkron dengan SSR
-      if (event === 'INITIAL_SESSION') {
-        if (session && !initializingRef.current) {
-          try { debugLog('auth:state', 'initial-session-with-session'); } catch {}
-          await initializeAuth(session);
-        }
-        return;
-      }
-
+      // ✅ RACE CONDITION FIX: Only handle logout events, let single initialization source handle login
       if (event === 'SIGNED_OUT' || !session) {
-        initializingRef.current = false; // Reset flag
+        // Reset atomic state for next login
+        setInitState(AuthInitState.IDLE);
         setAuthState({
           user: null,
           session: null,
@@ -751,27 +853,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error: null
         });
         try { debugLog('auth:state', 'signed-out'); } catch {}
-      } else if (event === 'SIGNED_IN') {
-        // ✅ CRITICAL FIX: Only handle first sign-in if not initializing
-        if (!initializingRef.current) {
-          try { debugLog('auth:state', 'signed-in'); } catch {}
-          await initializeAuth(session);
-        }
       }
-      // ✅ CRITICAL FIX: Ignore ALL refresh events to prevent infinite loops
-      else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-        // Ignored to prevent infinite loops
-        try { debugLog('auth:event-ignored', event); } catch {}
+      // ✅ RACE CONDITION FIX: Ignore ALL other events (INITIAL_SESSION, SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED)
+      // Single initialization source (manual initialize) handles all authentication setup
+      else {
+        try { debugLog('auth:event-ignored', event, { reason: 'single-source-initialization' }); } catch {}
       }
     });
 
-    // Initialize once
-    initialize();
+    // Initialize once - SINGLE SOURCE OF TRUTH
+    initTimeout = setTimeout(() => {
+      initialize();
+    }, 100); // Small delay to prevent immediate race with auth events
 
     return () => {
       mounted = false;
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
       subscription.unsubscribe();
       profileFetchAttemptsRef.current.clear(); // Clear attempts map
+      profileFetchQueue.current.clear(); // ✅ RACE CONDITION FIX: Clear profile fetch queue
       hasInitializedRef.current = false; // Reset initialization flag
     };
   }, []); // NO DEPENDENCIES - run only once on mount
@@ -779,9 +881,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * Login user with credentials
    */
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
+  const login = useCallback(async (credentials: LoginCredentials, redirectTo?: string): Promise<boolean> => {
     try {
-      debugLog('auth:login', 'start', { email: credentials.email });
+      debugLog('auth:login', 'start', { email: credentials.email, redirectTo });
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
       // Use Supabase auth for real authentication
@@ -805,28 +907,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Login failed - no user or session returned');
       }
 
+      // Handle post-login redirect
+      if (redirectTo) {
+        debugLog('auth:login', 'redirect', { redirectTo, userId: data.user?.id });
+        // Important: Return success without redirect - let UI components handle the redirect
+        return true;
+      }
+
       // Try to get user profile - but if users table doesn't exist, use auth.users data
       let userProfile = null;
       let profileError = null;
 
       try {
-        // Fetch from users table with LEFT join to user_profiles (allow missing profiles)
-        const profileResult = await withTimeout(
-          (supabaseClient as any)
-            .from('users')
-            .select(`
-              id, email, role, email_verified_at, created_at, last_login_at,
-              user_profiles(
-                display_name, first_name, last_name, institution, avatar_url, predikat
-              )
-            `)
-            .eq('id', data.user.id)
-            .maybeSingle(),
-          1500, // ✅ PERFORMANCE: Reduced from 3000ms to 1500ms
-          async () => ({ data: null, error: { message: 'Profile fetch timeout' } } as any)
-        );
-
-        // Do not write any session to localStorage until user is validated
+        // ✅ RACE CONDITION FIX: Use shared profile fetching to prevent concurrent DB calls
+        const profileResult = await fetchUserProfile(data.user.id);
 
         if (profileResult.data) {
           // Construct userProfile object from users table (role from database, not user_metadata)

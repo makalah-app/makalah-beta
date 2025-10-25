@@ -18,7 +18,7 @@ import Image from 'next/image';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { Button } from "../ui/button";
 import { UserDropdown } from "../ui/user-dropdown";
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, type LoginCredentials } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';
 import { MAIN_MENU_ITEMS, type MainMenuItem } from '../../constants/main-menu';
 import { debugLog } from '@/lib/utils/debug-log';
@@ -88,7 +88,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
     router.push('/auth');
   };
 
-  const handleLogin = () => {
+  const handleLogin = (redirectTo?: string) => {
     // Define public pages that should redirect back after login
     const PUBLIC_PAGES = ['/', '/docs', '/tutorial', '/blog'];
     const currentPath = pathname;
@@ -304,7 +304,7 @@ export const GlobalHeader: React.FC<GlobalHeaderProps> = ({
               </div>
             ) : (
               <Button
-                onClick={handleLogin}
+                onClick={() => handleLogin(currentPath)}
                 className="btn-green-solid hidden md:inline-flex"
               >
                 Masuk

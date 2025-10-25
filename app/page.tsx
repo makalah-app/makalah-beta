@@ -32,8 +32,8 @@ export default function HomePage() {
     if (isAuthenticated) {
       router.push('/chat');
     } else {
-      // Pastikan CTA tetap membawa user ke ruang chat setelah login
-      router.push('/auth?redirectTo=/chat');
+      // Use the updated login function with redirectTo parameter
+      login({ redirectTo: '/chat' });
     }
   };
 
