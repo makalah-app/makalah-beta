@@ -76,6 +76,7 @@ function WaitingListTable() {
   }, [canFetch, page, pageSize, search, session]);
 
   return (
+    <>
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Input
@@ -206,5 +207,6 @@ function WaitingListTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
   );
 }
