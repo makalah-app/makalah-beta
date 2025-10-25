@@ -5,6 +5,9 @@ import { AdminPanel } from '@/components/auth/AdminAccess';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface WaitlistItem {
   id: string;
@@ -26,6 +29,7 @@ export default function AdminWaitingListPage() {
 
 function WaitingListTable() {
   const { session } = useAuth();
+  const { toast } = useToast();
   const [items, setItems] = useState<WaitlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +37,10 @@ function WaitingListTable() {
   const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<WaitlistItem | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [actionId, setActionId] = useState<string | null>(null);
+  const isDeleteConfirmed = deleteTarget && deleteConfirmation.trim() === deleteTarget.email;
 
   const canFetch = useMemo(() => !!session?.accessToken, [session?.accessToken]);
 
@@ -92,12 +100,13 @@ function WaitingListTable() {
                 <th className="p-2">Status</th>
                 <th className="p-2">Created</th>
                 <th className="p-2">Invited</th>
+                <th className="p-2 w-[80px] text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td className="p-3 text-muted-foreground" colSpan={4}>Tidak ada data</td>
+                  <td className="p-3 text-muted-foreground" colSpan={5}>Tidak ada data</td>
                 </tr>
               ) : (
                 items.map((it) => (
@@ -106,6 +115,20 @@ function WaitingListTable() {
                     <td className="p-2 capitalize">{it.status}</td>
                     <td className="p-2">{new Date(it.created_at).toLocaleString()}</td>
                     <td className="p-2">{it.invited_at ? new Date(it.invited_at).toLocaleString() : '-'}</td>
+                    <td className="p-2">
+                      <div className="flex items-center justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setDeleteTarget(it); setDeleteConfirmation(''); }}
+                          disabled={actionId === it.id}
+                          aria-label={`Hapus ${it.email}`}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -126,6 +149,62 @@ function WaitingListTable() {
         </div>
       </div>
     </div>
+
+      {/* Delete confirmation dialog (tiru gaya Detail Users) */}
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => {
+        if (!open) { setDeleteTarget(null); setDeleteConfirmation(''); }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus email dari waiting list?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini permanen dan akan menghapus entri dari database. Ketik ulang email untuk konfirmasi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteTarget && (
+            <div className="space-y-3 py-2">
+              <p className="rounded bg-muted px-3 py-2 text-sm">{deleteTarget.email}</p>
+              <Input
+                placeholder="Ketik ulang email untuk konfirmasi"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteTarget || !session?.accessToken) return;
+                const target = deleteTarget;
+                setActionId(target.id);
+                try {
+                  const res = await fetch(`/api/admin/waiting-list/${target.id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${session.accessToken}` },
+                  });
+                  const data = await res.json();
+                  if (!res.ok || !data?.success) {
+                    throw new Error(data?.error?.message || 'Gagal menghapus item');
+                  }
+                  toast({ title: 'Item dihapus', description: `${target.email} dihapus dari waiting list.` });
+                  // Refresh list
+                  setItems((prev) => prev.filter((x) => x.id !== target.id));
+                } catch (err) {
+                  toast({ variant: 'destructive', title: 'Gagal menghapus', description: err instanceof Error ? err.message : 'Terjadi kesalahan.' });
+                } finally {
+                  setActionId(null);
+                  setDeleteTarget(null);
+                  setDeleteConfirmation('');
+                }
+              }}
+              disabled={!isDeleteConfirmed || (deleteTarget && actionId === deleteTarget.id)}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
   );
 }
-
