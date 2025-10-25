@@ -214,13 +214,15 @@ export default function DocumentationPage() {
                   <span className="sr-only">Toggle Sidebar</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0" hideCloseButton>
+              <SheetContent side="left" className="w-64 p-0 overflow-y-auto" hideCloseButton>
                 <div className="p-6 border-b border-border">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       placeholder="Cari dokumentasi..."
                       className="pl-10 border-border"
+                      autoFocus={false}
+                      tabIndex={-1}
                     />
                   </div>
                 </div>
@@ -275,7 +277,7 @@ export default function DocumentationPage() {
               onClick={() => previousItem && setActiveSection(previousItem.id)}
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
+              Kembali
             </Button>
             <Button
               variant="outline"
@@ -283,7 +285,7 @@ export default function DocumentationPage() {
               disabled={!hasNext}
               onClick={() => nextItem && setActiveSection(nextItem.id)}
             >
-              Next
+              Lanjut
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
