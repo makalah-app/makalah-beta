@@ -47,7 +47,7 @@ export default function WaitingListCard() {
         setEmail('');
         // Redirect ke home setelah menampilkan notifikasi singkat
         setTimeout(() => {
-          router.push('/');
+          router.push('/?waitlist=success');
         }, 1600);
       } else {
         const data = await res.json().catch(() => ({} as any));

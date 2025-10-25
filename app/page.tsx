@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '../src/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from "../src/components/ui/button";
 import { Card } from "../src/components/ui/card";
 import { Badge } from "../src/components/ui/badge";
@@ -10,6 +10,7 @@ import { pricingTiers } from "@/constants/pricing";
 import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useToast } from '@/hooks/use-toast';
 // Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
 import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
@@ -20,6 +21,8 @@ import { E } from 'node_modules/@upstash/redis/zmscore-DWj9Vh1g.mjs';
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
   const [isPawangDialogOpen, setIsPawangDialogOpen] = useState(false);
@@ -42,6 +45,20 @@ export default function HomePage() {
   if (!mounted) {
     return null; // Prevent hydration mismatch
   }
+
+  // Show toast after waitlist success via query param, then clean the URL
+  useEffect(() => {
+    if (!mounted) return;
+    const flag = searchParams.get('waitlist');
+    if (flag === 'success') {
+      toast({
+        title: 'Terima kasih!',
+        description: 'Email kamu masuk daftar tunggu. Makasih!',
+      });
+      // Clean up the URL to avoid re-trigger on back/forward
+      router.replace('/', { scroll: false });
+    }
+  }, [mounted, searchParams, toast, router]);
 
   // ✅ PERFORMANCE: Remove double loading indicators - rely on app-level loading only
   // No button-level loading to prevent double loaders
@@ -82,7 +99,7 @@ export default function HomePage() {
                   <div
                     className="text-sm text-foreground leading-relaxed space-y-3"
                     dangerouslySetInnerHTML={{
-                      __html: `Kredo tersebut jadi pedoman kami dalam membangun Makalah.Platform ini disiapkan untuk menjadi jawaban atas disrupsi teknologi dalam aktivitas akademik dan riset. Laju penggunaan Ai/<em>Large Language Model</em> tidak bisa dihindari. Pelarangan hanya akan menghasilkan ketidakjujuran, &ldquo;Ngomong nggak pakai, padahal diam-diam menggunakan!&rdquo;. <br /><br />Bagaimana dengan penggunaan detektor Ai, apakah absah dipakai? Problematik! Detektor Ai selalu memberikan hasil <em>false positive</em>, dan hanya memunculkan persentase probabilitas yang tidak jelas argumennya. Lagi pula, sepanjang tulisan tersusun dalam struktur subyek+predikat+obyek+keterangan, maka kalimat apapun bakal dideteksi buatan Ai. <br /><br />Yang diperlukan saat ini adalah mengatur penggunaan Ai di lingkungan akademik agar transparan, bisa dipertanggungjawabkan, dan memiliki riwayat pemakaian akuntabel. Siapapun bisa dilacak, &ldquo;Apakah paper miliknya dibuatkan Ai, atau dibuat bersama Ai?&rdquo;. Bukankah keduanya berbeda?`
+                      __html: `Kredo tersebut jadi pedoman kami dalam membangun Makalah. Platform ini disiapkan untuk merespons disrupsi teknologi dalam aktivitas akademik dan riset. Laju penggunaan Ai khususnya<em>Large Language Model</em> (LLM) tidak bisa dihindari. Pelarangan hanya akan menghasilkan ketidakjujuran, &ldquo;Ngomong nggak pakai, padahal diam-diam menggunakan!&rdquo;.<br /><br />Bagaimana dengan penggunaan detektor Ai? Problematik! Detektor apapun akan selalu memberikan hasil <em>false positive</em>, dan hanya memunculkan persentase probabilitas yang tidak jelas argumennya. Bagaimana tidak? Model-model LLM yang diterbitkan platform-platform global, makin hari kian pintar, jauh lebih terdepan dibanding teknologi deteksi teks Ai. Lagi pula, selama tulisan tersusun dalam struktur subyek+predikat+obyek+keterangan, maka kalimat apapun bakal dideteksi buatan Ai.<br /><br />Yang diperlukan saat ini adalah mengatur penggunaan Ai di lingkungan akademik agar transparan, bisa dipertanggungjawabkan, dan memiliki riwayat pemakaian akuntabel. Siapapun bisa dilacak, &ldquo;Apakah paper miliknya dibuatkan Ai, atau dibuat bersama Ai?&rdquo;. Bukankah keduanya berbeda?`
                     }}
                   />
 
