@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,7 @@ function isValidEmail(email: string) {
 }
 
 export default function WaitingListCard() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -43,6 +45,10 @@ export default function WaitingListCard() {
       if (res.status === 201) {
         setMessage('Email kamu masuk daftar tunggu. Makasih!');
         setEmail('');
+        // Redirect ke home setelah menampilkan notifikasi singkat
+        setTimeout(() => {
+          router.push('/');
+        }, 1600);
       } else {
         const data = await res.json().catch(() => ({} as any));
         const msg = data?.error?.message || (res.status === 409 ? 'Email sudah terdaftar di daftar tunggu.' : 'Lagi gangguan, coba lagi ya.');
