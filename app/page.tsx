@@ -150,10 +150,30 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-2">
             <Card className="p-8 border-border bg-card rounded">
               <div className="flex items-start gap-4">
+                <UserCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sparring Partner</h3>
+                  <p className="text-sm text-muted-foreground">Agen Makalah Ai berperan sebagai pendamping riset, lawan diskusi, hingga menuliskan sesuai perintah dan arahan. Tak ada &ldquo;simsalabim&rdquo;. Anda berproses, agen Makalah Ai mengasistensi. Paper yang dihasilkan tetap buah pikiran Anda</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-8 border-border bg-card rounded">
+              <div className="flex items-start gap-4">
                 <Brain className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Fokus Berpikir</h3>
-                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir, bukan malah berkutat dengan <em>prompt</em>.</p>
+                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir, bukan malah berkutat dengan <em>prompt</em>, seolah berusaha menemukan keajaiban Ai. Eh?</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-8 border-border bg-card rounded">
+              <div className="flex items-start gap-4">
+                <ShieldCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
+                  <p className="text-sm text-muted-foreground">Seluruh sitasi didapatkan  Agen Makalah, dari sumber-sumber akurat, kemudian ditautkan ke dalam naskah dalam URL vali, dengan format rujukan pustaka sesuai arahan Anda.</p>
                 </div>
               </div>
             </Card>
@@ -163,7 +183,7 @@ export default function HomePage() {
                 <MessageSquare className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Obrolan Natural</h3>
-                  <p className="text-sm text-muted-foreground">Ngobrol saja dengan bahasa sehari-hari, Agen Makalah pasti memahami.</p>
+                  <p className="text-sm text-muted-foreground">Ngobrol saja dengan bahasa sehari-hari, Agen Makalah pasti memahami, bahkan mengonformasi interpretasi saat menemukan ambiguitas.</p>
                 </div>
               </div>
             </Card>
@@ -183,30 +203,12 @@ export default function HomePage() {
                 <Target className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Konteks Terjaga</h3>
-                  <p className="text-sm text-muted-foreground">Obrolan se-ngelantur apapun, akan selalu dikembalikan ke bahasan utama.</p>
+                  <p className="text-sm text-muted-foreground">Obrolan se-<em>ngelantur</em> apapun, akan selalu dikembalikan ke bahasan utama.</p>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <ShieldCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
-                  <p className="text-sm text-muted-foreground">Seluruh sitasi dan rujukan, dikumpulkan cermat oleh Agen Makalah, dengan tautan sumber akurat.</p>
-                </div>
-              </div>
-            </Card>
 
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <UserCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Anda Pengendali</h3>
-                  <p className="text-sm text-muted-foreground">Paper yang dihasilkan tetap buah pikiran Anda, <span className="font-bold text-foreground">sebab Anda Pawang, Ai hanya tukang</span>.</p>
-                </div>
-              </div>
-            </Card>
           </div>
         </div>
       </section>
@@ -310,7 +312,7 @@ export default function HomePage() {
               Bagaimana cara kerjanya?
             </h3>
             <p className="mt-3 text-md text-base md:text-lg text-foreground text-center">
-              Pelajari kepandaian Agen Makalah Ai dalam mengasistensi riset dan penyusunan paper akademik.
+              Pelajari kepiawaian Agen Makalah Ai dalam mengasistensi riset dan penyusunan paper akademik.
             </p>
             <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
