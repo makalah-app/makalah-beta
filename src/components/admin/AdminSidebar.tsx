@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Shield, Brain, Cpu, Users, UserPlus, LucideIcon } from 'lucide-react';
+import { Shield, Brain, Cpu, Users, UserPlus, LucideIcon, List } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AdminSidebarProps {
@@ -62,6 +62,14 @@ const navigationItems: NavigationItem[] = [
     href: '/admin/create-admin',
     icon: UserPlus,
     description: 'Tambah administrator',
+    superadminOnly: true
+  },
+  {
+    id: 'waiting-list',
+    label: 'Waiting List',
+    href: '/admin/waiting-list',
+    icon: List,
+    description: 'Daftar email uji coba',
     superadminOnly: true
   }
 ];
