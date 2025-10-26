@@ -11,10 +11,11 @@ import { cn } from "../src/lib/utils";
 import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from '@/hooks/use-toast';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 // Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
 import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
-import { E } from 'node_modules/@upstash/redis/zmscore-DWj9Vh1g.mjs';
+// Carousel removed; revert to original grid layout for pricing
 
 // Fonts are configured globally in app/layout.tsx
 
@@ -89,7 +90,7 @@ export default function HomePage() {
                   </Badge>
                 </DialogTrigger>
 
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-card-foreground border border-border shadow-lg">
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-card-foreground rounded border border-border shadow-lg">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-semibold text-foreground">
                       Manusia adalah pawang, Ai sebatas tukang
@@ -171,75 +172,125 @@ export default function HomePage() {
       {/* Why Makalah Section */}
       <section id="why-makalah" className="px-6 py-16 bg-background relative section-screen separator-accent-only">
         <div className="max-w-4xl mx-auto">
-          <h3
-            className="text-3xl md:text-3xl font-semibold text-center mb-10 text-foreground font-heading"
-          >
+          <h3 className="text-3xl md:text-3xl font-semibold text-center mb-10 text-foreground font-heading">
             Kenapa Makalah AI?
           </h3>
 
-          {/* Benefits Grid - hero-style static boxes */}
-          <div className="grid gap-8 sm:grid-cols-2">
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <UserCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+          {/* Mobile: Accordion */}
+          <div className="md:hidden">
+            <Accordion type="single" collapsible>
+              <AccordionItem value="benefit-1">
+                <AccordionTrigger className="text-base">Sparring Partner</AccordionTrigger>
+                <AccordionContent>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-2">Benefit #1</div>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Mendampingi riset sekaligus lawan diskusi</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Berperan sebagai juru tulis Anda.</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Paper tetap orisinal, buah pikiran Anda.</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="benefit-2">
+                <AccordionTrigger className="text-base">Percakapan Natural</AccordionTrigger>
+                <AccordionContent>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-2">Benefit #2</div>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Ngobrol saja, tak perlu prompt rumit</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Memahami bahasa Indonesia sehari-hari</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Sengelantur apapun, bakal balik ke bahasan utama</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="benefit-3">
+                <AccordionTrigger className="text-base">Sitasi Akurat</AccordionTrigger>
+                <AccordionContent>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-2">Benefit #3</div>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Sumber kredibel + URL valid</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Format sesuai preferensi Anda</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Anti link mati</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="benefit-4">
+                <AccordionTrigger className="text-base">Dipandu Bertahap</AccordionTrigger>
+                <AccordionContent>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-2">Benefit #4</div>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Workflow ketat anti melenceng</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Memproses sejak ide hingga paper utuh.</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Apapun obrolannya, ujung-ujungnya jadi paper!</li>
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
+          {/* Desktop: Polished Cards */}
+          <div className="hidden md:grid md:grid-cols-2 gap-8">
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <UserCheck className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sparring Partner</h3>
-                  <p className="text-sm text-muted-foreground">Agen Makalah Ai berperan sebagai pendamping riset, lawan diskusi, hingga menuliskan sesuai perintah dan arahan. Tak ada &ldquo;simsalabim&rdquo;. Anda berproses, agen Makalah Ai mengasistensi. Paper yang dihasilkan tetap buah pikiran Anda</p>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-1">Benefit #1</div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Sparring Partner</h3>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Mendampingi riset sekaligus lawan diskusi</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Berperan sebagai juru tulis Anda.</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Paper tetap orisinal, buah pikiran Anda.</li>
+                  </ul>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <Brain className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <MessageSquare className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Fokus Berpikir</h3>
-                  <p className="text-sm text-muted-foreground">Mengembalikan aktivitas riset dan penulisan paper sebagai kegiatan berpikir, bukan malah berkutat dengan <em>prompt</em>, seolah berusaha menemukan keajaiban Ai. Eh?</p>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-1">Benefit #2</div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Percakapan Natural</h3>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Ngobrol saja, tak perlu prompt rumit</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Memahami bahasa Indonesia sehari-hari</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Se-ngelantur apapun, bakal balik <br /> ke bahasan utama. </li>
+                  </ul>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <ShieldCheck className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <ShieldCheck className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Sitasi Akurat</h3>
-                  <p className="text-sm text-muted-foreground">Seluruh sitasi didapatkan  Agen Makalah, dari sumber-sumber akurat, kemudian ditautkan ke dalam naskah dalam URL vali, dengan format rujukan pustaka sesuai arahan Anda.</p>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-1">Benefit #3</div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Sitasi Akurat</h3>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Sumber kredibel + URL valid</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Format sesuai preferensi Anda</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Anti link mati</li>
+                  </ul>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <MessageSquare className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <ListChecks className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Obrolan Natural</h3>
-                  <p className="text-sm text-muted-foreground">Ngobrol saja dengan bahasa sehari-hari, Agen Makalah pasti memahami, bahkan mengonformasi interpretasi saat menemukan ambiguitas.</p>
+                  <div className="text-xs uppercase tracking-wider text-primary/80 mb-1">Benefit #4</div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Dipandu Bertahap</h3>
+                  <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Workflow ketat anti melenceng</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Memproses sejak ide hingga paper utuh.</li>
+                    <li className="flex gap-2"><BadgeCheck className="h-4 w-4 text-success-600 mt-0.5" aria-hidden="true" /> Obrolan apapun, ujungnya jadi paper!</li>
+                  </ul>
                 </div>
               </div>
             </Card>
-
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <ListChecks className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Dipandu Bertahap</h3>
-                  <p className="text-sm text-muted-foreground">Agen Makalah dibekali <em>workflow</em> konsisten yang memandu penyusunan paper tahap demi tahap, tanpa melenceng.</p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-8 border-border bg-card rounded">
-              <div className="flex items-start gap-4">
-                <Target className="h-8 w-8 md:h-8 md:w-8 text-primary mt-0.5 shrink-0" aria-hidden="true" />
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-foreground mb-1.5 md:mb-2">Konteks Terjaga</h3>
-                  <p className="text-sm text-muted-foreground">Obrolan se-<em>ngelantur</em> apapun, akan selalu dikembalikan ke bahasan utama.</p>
-                </div>
-              </div>
-            </Card>
-
-
           </div>
         </div>
       </section>

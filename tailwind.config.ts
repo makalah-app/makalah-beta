@@ -151,7 +151,7 @@ const config: Config = {
   				}
   			}
   		},
-  		colors: {
+      colors: {
   			accent: {
   				'400': 'var(--accent-400)',
   				'500': 'var(--accent-500)',
@@ -177,45 +177,45 @@ const config: Config = {
   			avatar: {
   				'500': 'var(--avatar-500)'
   			},
-  			background: 'var(--background)',
-  			foreground: 'var(--foreground)',
-  			card: {
-  				DEFAULT: 'var(--card)',
-  				foreground: 'var(--card-foreground)'
-  			},
-  			popover: {
-  				DEFAULT: 'var(--popover)',
-  				foreground: 'var(--popover-foreground)'
-  			},
-  			primary: {
-  				DEFAULT: 'var(--primary)',
-  				foreground: 'var(--primary-foreground)'
-  			},
-  			secondary: {
-  				DEFAULT: 'var(--secondary)',
-  				foreground: 'var(--secondary-foreground)'
-  			},
-  			muted: {
-  				DEFAULT: 'var(--muted)',
-  				foreground: 'var(--muted-foreground)'
-  			},
-  			destructive: {
-  				DEFAULT: 'var(--destructive)',
-  				foreground: 'var(--destructive-foreground)'
-  			},
-  			border: 'var(--border)',
-  			input: 'var(--input)',
-  			ring: 'var(--ring)',
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
-  			},
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)'
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)'
+        },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)'
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)'
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)'
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)'
+        },
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))'
+        },
   			'user-message': {
   				DEFAULT: 'var(--user-message-bg)',
   				border: 'var(--user-message-border)'
