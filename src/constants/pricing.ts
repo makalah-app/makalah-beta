@@ -24,7 +24,8 @@ export const pricingTiers: PricingTier[] = [
     ],
     cta: {
       label: 'Coba Gratis',
-      href: '/auth?tab=register',
+      // Arahkan ke login (default tab login) ketimbang register
+      href: '/auth',
     },
   },
   {
