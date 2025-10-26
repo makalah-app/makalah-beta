@@ -325,13 +325,13 @@ export default function HomePage() {
               Bagaimana cara kerjanya?
             </h3>
             <p className="mt-3 text-md text-base md:text-lg text-foreground text-center">
-              Pelajari kepiawaian Agen Makalah Ai dalam mengasistensi riset dan penyusunan paper akademik.
+              Pelajari cara Agen Makalah mengasistensi riset dan penyusunan paper akademik.
             </p>
-            <div className="relative group cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
+            <div className="relative group w-full max-w-xl md:max-w-2xl mx-auto cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
-                  <div className="w-20 h-20 rounded bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-12 md:w-24 md:h-20 rounded bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-8 h-8 text-white " fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
@@ -356,7 +356,7 @@ export default function HomePage() {
           <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-10 text-center md:text-left justify-items-center md:justify-items-start">
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
-              <ul className="space-y-4 text-xs">
+              <ul className="space-y-2 text-xs">
                 <li>
                   <Link href="/documentation" className="transition-colors hover:text-primary text-muted-foreground">
                     Dokumentasi
@@ -381,7 +381,7 @@ export default function HomePage() {
             </div>
             <div>
               <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
-              <ul className="space-y-4 text-xs">
+              <ul className="space-y-2 text-xs">
                 <li>
                   <Link href="/about#bergabung-dengan-tim" className="transition-colors hover:text-primary text-muted-foreground">
                     Karir
