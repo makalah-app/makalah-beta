@@ -6,32 +6,27 @@ import { Button } from "../src/components/ui/button";
 import { Card } from "../src/components/ui/card";
 import { Badge } from "../src/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogTrigger, DialogClose } from "../src/components/ui/dialog";
-import { pricingTiers } from "@/constants/pricing";
-import { cn } from "../src/lib/utils";
-import { BadgeCheck, Brain, MessageSquare, ListChecks, Target, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
+import { BadgeCheck, Brain, MessageSquare, ListChecks, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 // Page no longer defines scoped fonts; global config handles fonts
 import Link from "next/link";
 import ChatInputHeroMock from "../src/components/marketing/ChatInputHeroMock";
-// Carousel removed; revert to original grid layout for pricing
+import { PricingSection } from '@/components/pricing/PricingSection';
 
 // Fonts are configured globally in app/layout.tsx
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
   const [isPawangDialogOpen, setIsPawangDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const savedTheme = (localStorage.getItem("theme") as "light" | "dark") || "light";
-    setTheme(savedTheme);
   }, []);
 
   const handleChatWithAgent = () => {
@@ -296,9 +291,9 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="px-6 py-20 bg-background section-screen">
-        <div className="max-w-5xl mx-auto space-y-12">
-          <div className="text-center space-y-4">
+      <section className="px-6 py-20 bg-background relative section-screen">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center space-y-4 mb-12">
             <h3
               className="text-3xl md:text-3xl font-semibold font-heading"
             >
@@ -315,71 +310,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {pricingTiers.map((tier) => (
-              <Card
-                key={tier.name}
-                className={cn(
-                  'flex h-full flex-col gap-6 border border-border bg-card p-8 shadow-lg transition-colors',
-                  tier.featured ? 'border-primary' : 'hover:bg-card/80',
-                  tier.name === 'Gratis' && 'border-2 border-orange-500'
-                )}
-              >
-                <div className="space-y-4 text-left">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-light text-foreground font-heading">{tier.name}</h4>
-                    {tier.badge ? (
-                      <Badge variant={tier.featured ? 'default' : 'secondary'}>{tier.badge}</Badge>
-                    ) : null}
-                  </div>
-                  <div>
-                  <div className="mb-2">
-                    <h3
-                      className={cn(
-                        "text-3xl font-semibold",
-                        /x/i.test(tier.priceLabel)
-                          ? "line-through decoration-red-600 decoration-4 decoration-skip-ink-none text-muted-foreground opacity-80"
-                          : "text-foreground"
-                      )}
-                      title={/x/i.test(tier.priceLabel) ? "Harga belum aktif" : undefined}
-                      style={/x/i.test(tier.priceLabel)
-                        ? { textDecorationColor: 'rgb(220 38 38)', textDecorationThickness: '4px', textDecorationSkipInk: 'none' }
-                        : undefined}
-                    >
-                      {tier.priceLabel}
-                    </h3>
-                      {tier.priceUnit && (
-                        <div className="text-sm font-light text-muted-foreground mt-0.5">{tier.priceUnit}</div>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{tier.tagline}</p>
-                  </div>
-                  <ul className="space-y-2 text-sm leading-relaxed text-muted-foreground">
-                    {tier.description.map((item) => (
-                      <li key={item} className="flex items-start gap-3">
-                        <BadgeCheck className="mt-0.5 h-5 w-5 text-success-600" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="mt-auto">
-                  {tier.cta.disabled ? (
-                    <Button
-                      className="w-full bg-muted-foreground text-background hover:bg-muted-foreground disabled:opacity-100 disabled:pointer-events-none"
-                      disabled
-                    >
-                      {tier.cta.label}
-                    </Button>
-                  ) : (
-                    <Button className="w-full btn-green-solid" asChild>
-                      <Link href={tier.cta.href ?? '/auth?tab=register'}>{tier.cta.label}</Link>
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            ))}
-          </div>
+          <PricingSection className="px-0 py-0" />
         </div>
       </section>
 
