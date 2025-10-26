@@ -49,16 +49,13 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
               </div>
               <h1 className="text-3xl font-semibold text-foreground">Selamat Datang</h1>
             </div>
-            <p className="text-lg mb-8 text-muted-foreground">
-              Pelajari tentang Makalah AI dan cara memulai menulis makalah akademik yang lebih baik
-            </p>
           </div>
 
           <div className="space-y-6">
             <p className="text-muted-foreground">
               Makalah AI adalah platform penulisan makalah akademik berbasis AI (Large language model) yang memandu Anda melalui 7
               fase terstruktur untuk menghasilkan karya akademik berkualitas tinggi. Platform ini dirancang khusus
-              untuk peneliti dan mahasiswa Indonesia yang ingin meningkatkan kualitas penulisan akademik mereka.
+              untuk peneliti dan mahasiswa Indonesia yang ingin meningkatkan kualitas penulisan akademik.
             </p>
 
             <Card className="border-l-4 border-l-primary">
