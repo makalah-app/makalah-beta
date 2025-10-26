@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cpu, History, RefreshCw, Save, Loader2, Zap, Check, Copy, Database } from 'lucide-react';
 import DatabasePrompts from '@/components/admin/DatabasePrompts';
 
@@ -404,7 +405,7 @@ function AdminPromptContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Page Header */}
       <div className="flex items-start gap-3">
         <Cpu className="h-6 w-6 text-primary mt-1" />
@@ -431,7 +432,23 @@ function AdminPromptContent() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        {/* Mobile: Dropdown selector to avoid overflow */}
+        <div className="md:hidden">
+          <label htmlFor="prompt-tab" className="sr-only">Pilih bagian</label>
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger id="prompt-tab" className="w-full">
+              <SelectValue placeholder="Pilih bagian" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system-prompt">System Prompt OpenAI</SelectItem>
+              <SelectItem value="fallback">System Prompt OpenRouter</SelectItem>
+              <SelectItem value="database">Database Prompts</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs list */}
+        <TabsList className="hidden md:grid w-full grid-cols-3">
           <TabsTrigger value="system-prompt" className="flex items-center gap-2">
             <Cpu className="h-4 w-4" />
             System Prompt OpenAI
@@ -464,36 +481,44 @@ function AdminPromptContent() {
         <TabsContent value="system-prompt" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-4">
-                <div className="flex items-start gap-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                {/* Left: Icon + Title + Description */}
+                <div className="flex items-start gap-3 min-w-0">
                   <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                     <Cpu className="h-5 w-5" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <CardTitle className="text-xl">System Prompt OpenAI</CardTitle>
-                    <CardDescription>System prompt untuk OpenAI models</CardDescription>
+                    <CardDescription className="break-words">System prompt untuk OpenAI models</CardDescription>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  {hasUnsavedChanges && (
-                    <Badge variant="destructive" className="text-xs font-medium">
-                      Unsaved Changes
+
+                {/* Right: Actions (mobile stacked) */}
+                <div className="flex w-full flex-col gap-2 md:w-auto md:items-end">
+                  <div className="order-1 md:order-none">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full md:w-auto"
+                      onClick={() => setShowPromptHistory((prev) => !prev)}
+                    >
+                      <History className="mr-2 h-4 w-4" />
+                      {showPromptHistory ? 'Sembunyikan riwayat' : 'Lihat riwayat'}
+                    </Button>
+                  </div>
+                  <div className="order-2 md:order-none flex items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {hasUnsavedChanges && (
+                      <Badge variant="destructive" className="text-xs font-medium shrink-0">
+                        Unsaved Changes
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="text-xs font-medium shrink-0">
+                      {promptCharCount} karakter
                     </Badge>
-                  )}
-                  <Badge variant="outline" className="text-xs font-medium">
-                    {promptCharCount} karakter
-                  </Badge>
-                  <Badge variant="outline" className="text-xs font-medium">
-                    Versi {promptVersion}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPromptHistory((prev) => !prev)}
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    {showPromptHistory ? 'Sembunyikan riwayat' : 'Lihat riwayat'}
-                  </Button>
+                    <Badge variant="outline" className="text-xs font-medium shrink-0">
+                      Versi {promptVersion}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -538,12 +563,12 @@ function AdminPromptContent() {
               </div>
 
               {/* Alert: Kapan OpenAI Prompt Aktif */}
-              <Alert className="border-white/20 bg-white/10 backdrop-blur-sm text-white">
-                <Cpu className="h-4 w-4 text-white/90" />
-                <AlertTitle className="text-white">Kapan System Prompt OpenAI Aktif?</AlertTitle>
-                <AlertDescription className="text-white/90">
+              <Alert variant="glass" className="p-3 md:p-4">
+                <Cpu className="h-4 w-4 md:h-5 md:w-5 text-white/90" />
+                <AlertTitle className="text-white text-sm md:text-base font-semibold">Kapan System Prompt OpenAI Aktif?</AlertTitle>
+                <AlertDescription className="text-white/90 text-xs md:text-sm leading-relaxed break-words">
                   System prompt ini otomatis digunakan saat:
-                  <ul className="list-disc list-inside mt-2 space-y-1">
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-xs md:text-sm">
                     <li>Primary provider di Konfigurasi Model = <strong>OpenAI</strong></li>
                     <li>Model aktif: GPT-4o, GPT-4o-mini, atau model OpenAI lainnya</li>
                   </ul>
@@ -553,11 +578,11 @@ function AdminPromptContent() {
 
               {/* Action Buttons */}
               <div className="pt-6 border-t border-border">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
                   <Button
                     variant="outline"
                     onClick={handleReset}
-                    className="text-xs"
+                    className="text-xs w-full md:w-auto"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Reset to default
@@ -566,7 +591,7 @@ function AdminPromptContent() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="min-w-[140px]"
+                    className="w-full md:w-auto min-w-[140px]"
                   >
                     {saving ? (
                       <>
@@ -589,14 +614,14 @@ function AdminPromptContent() {
         <TabsContent value="fallback" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex items-start gap-3">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex items-start gap-3 min-w-0">
                   <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10 text-primary shrink-0">
                     <Zap className="h-5 w-5" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <CardTitle className="text-xl">System Prompt OpenRouter</CardTitle>
-                    <CardDescription>System prompt untuk OpenRouter Gemini models (2.5 Flash & Pro). Aktif saat primary provider = OpenRouter.</CardDescription>
+                    <CardDescription className="break-words">System prompt untuk OpenRouter Gemini models (2.5 Flash & Pro). Aktif saat primary provider = OpenRouter.</CardDescription>
                   </div>
                 </div>
               </div>
@@ -622,12 +647,12 @@ function AdminPromptContent() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={saveFallbackPrompt}
-                      disabled={fallbackSaving || fallbackContent.length < 100}
-                      className="flex items-center gap-2"
-                    >
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-start">
+                  <Button
+                    onClick={saveFallbackPrompt}
+                    disabled={fallbackSaving || fallbackContent.length < 100}
+                    className="flex items-center gap-2 w-full md:w-auto"
+                  >
                       {fallbackSaving ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -644,24 +669,25 @@ function AdminPromptContent() {
                           Save Fallback Prompt
                         </>
                       )}
-                    </Button>
+                  </Button>
 
-                    <Button
-                      variant="outline"
-                      onClick={() => setFallbackContent(systemPrompt)}
-                      disabled={fallbackSaving}
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy from System Prompt
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setFallbackContent(systemPrompt)}
+                    disabled={fallbackSaving}
+                    className="w-full md:w-auto"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy from System Prompt
+                  </Button>
+                </div>
 
-                  <Alert>
-                    <Zap className="h-4 w-4" />
-                    <AlertTitle>Kapan System Prompt OpenRouter Aktif?</AlertTitle>
-                    <AlertDescription>
+                  <Alert variant="glass" className="p-3 md:p-4">
+                    <Zap className="h-4 w-4 md:h-5 md:w-5 text-white/90" />
+                    <AlertTitle className="text-white text-sm md:text-base font-semibold">Kapan System Prompt OpenRouter Aktif?</AlertTitle>
+                    <AlertDescription className="text-white/90 text-xs md:text-sm leading-relaxed break-words">
                       System prompt ini otomatis digunakan saat:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-xs md:text-sm">
                         <li>Primary provider di Konfigurasi Model = <strong>OpenRouter</strong></li>
                         <li>Model aktif: Gemini 2.5 Flash, Gemini 2.5 Pro, atau model OpenRouter lainnya</li>
                         <li>Admin swap provider dari OpenAI ke OpenRouter</li>

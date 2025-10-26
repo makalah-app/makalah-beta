@@ -11,10 +11,12 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-       default:
+        default:
           "bg-success-800 text-success-foreground border-success-800 [&>svg]:text-success-foreground [&>svg~*]:pl-10",
         destructive:
           "bg-destructive text-white border-destructive [&>svg]:text-white [&>svg~*]:pl-10",
+        glass:
+          "bg-white/10 text-white border-white/20 backdrop-blur-sm [&>svg]:text-white/90 [&>svg~*]:pl-10",
       },
     },
     defaultVariants: {

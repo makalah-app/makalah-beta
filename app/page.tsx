@@ -123,7 +123,7 @@ export default function HomePage() {
             Ngobrol<span className="text-primary font-bold">+</span>Riset <br />
             <span className="text-primary font-bold">+</span>Brainstorming
             <br />
-            <span className="text-primary">=</span>Paper Akademik
+            <span className="text-primary font-bold">=</span>Paper<span className="text-primary font-bold">_</span>Akademik
           </h1>
 
           <p className="text-md md:text-xl mb-6 max-w-2xl mx-auto leading-relaxed text-foreground">

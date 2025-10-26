@@ -20,7 +20,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Global Header */}
-      <GlobalHeader showNavigation={true} />
+      <GlobalHeader showNavigation={true} className="z-[50]" />
 
       {/* Settings Content Area */}
       <div className="flex flex-1">
@@ -30,29 +30,28 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          {/* Mobile Menu Trigger - Positioned in content area */}
-          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden absolute top-6 right-6 z-30 h-10 w-10 rounded border border-border bg-background/95 backdrop-blur text-muted-foreground hover:text-primary hover:border-primary"
-                aria-label="Buka menu pengaturan"
+        <div className="flex-1 min-w-0">
+          {/* Mobile Header ala Admin pattern */}
+          <div className="flex md:hidden items-center p-4 border-b border-border bg-background/95 backdrop-blur mb-4">
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Buka menu pengaturan">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                overlayClassName="z-[40] top-20"
+                className="z-[60] top-20 bottom-0 h-auto w-64 p-0 overflow-y-auto"
+                hideCloseButton
               >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-64 p-0 [&>button[data-radix-dialog-close]]:top-4 [&>button[data-radix-dialog-close]]:right-4"
-            >
-              <SettingsSidebar currentPath={pathname} onNavigate={() => setSidebarOpen(false)} />
-            </SheetContent>
-          </Sheet>
+                <SettingsSidebar currentPath={pathname} onNavigate={() => setSidebarOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </div>
 
-          {/* Page Content with relative positioning for mobile menu */}
-          <div className="relative p-6 md:p-8">
+          {/* Page Content */}
+          <div className="p-6 md:p-8 max-w-full overflow-x-hidden">
             {children}
           </div>
         </div>

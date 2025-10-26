@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+ 
 
 interface WaitlistItem {
   id: string;
@@ -27,10 +28,11 @@ interface WaitlistItem {
 export default function AdminWaitingListPage() {
   return (
     <AdminPanel title="Waiting List" requiredPermissions={['admin.system']} showBreadcrumbs={false} showHeader={false}>
-      <div className="flex flex-col gap-2 mb-6">
+      <div className="hidden md:flex flex-col gap-2 mb-6">
         <h1 className="text-2xl font-semibold">Waiting List</h1>
         <p className="text-sm text-muted-foreground">Kelola email daftar tunggu uji coba.</p>
       </div>
+
       <WaitingListTable />
     </AdminPanel>
   );

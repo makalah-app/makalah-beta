@@ -66,8 +66,8 @@ export function SettingsSidebar({ currentPath, onNavigate }: SettingsSidebarProp
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="p-6 border-b border-border">
+      {/* Header (hidden on mobile to avoid redundancy) */}
+      <div className="hidden md:block p-6 border-b border-border">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-start justify-center pt-1 rounded bg-primary/10 text-primary -mt-[2px] shrink-0">
             <Settings className="h-5 w-5" />
@@ -91,13 +91,13 @@ export function SettingsSidebar({ currentPath, onNavigate }: SettingsSidebarProp
                 key={item.id}
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start items-start gap-3 h-auto p-3 text-left",
+                  "w-full justify-start items-start gap-3 h-auto p-3 text-left whitespace-normal",
                   isActive && "bg-secondary text-secondary-foreground"
                 )}
                 onClick={() => handleNavigation(item.href)}
               >
                 <Icon className="h-4 w-4 shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1 min-w-0">
+                <div className="flex flex-col gap-1 min-w-0 break-words">
                   <span className="font-medium text-sm">{item.label}</span>
                   <span className="text-xs text-muted-foreground">{item.description}</span>
                 </div>
