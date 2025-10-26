@@ -73,7 +73,7 @@ export function PricingSection({ className }: PricingSectionProps) {
                   </Button>
                 ) : (
                   <Button className="w-full btn-green-solid" asChild>
-                    <Link href={tier.cta.href ?? '/auth?tab=register'}>{tier.cta.label}</Link>
+                    <Link href={tier.cta.href ?? '/auth'}>{tier.cta.label}</Link>
                   </Button>
                 )}
               </div>
