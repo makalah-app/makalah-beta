@@ -205,6 +205,33 @@ h6 {
   }
 }
 
+/* ---------------------------------------------
+   Chat Typography Profile (scoped)
+   Gunakan di container halaman chat:
+   <div class="chat-typography"> ... </div>
+   - Inter: body & headings (h1–h5, nav)
+   - JetBrains Mono: code/inline code
+---------------------------------------------- */
+.chat-typography {
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.chat-typography h1,
+.chat-typography h2,
+.chat-typography h3,
+.chat-typography h4,
+.chat-typography h5,
+.chat-typography nav {
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+}
+
+.chat-typography code,
+.chat-typography pre,
+.chat-typography kbd,
+.chat-typography samp {
+  font-family: var(--font-mono), monospace !important;
+}
+
   /* Global input styling with 3px border radius */
   input[type="text"],
   input[type="email"],

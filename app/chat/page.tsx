@@ -708,7 +708,7 @@ function ChatPageContent() {
             </SidebarFooter>
           </Sidebar>
 
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col chat-typography">
             {/* Mobile Header Bar - Only visible on mobile and when sidebar closed */}
             <MobileHeader />
 
