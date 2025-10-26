@@ -23,7 +23,6 @@ const navigationSections = [
     items: [
       { id: 'chat-agent', label: 'Chat dengan AI', icon: Users },
       { id: 'workflow', label: '7 Fase Penulisan', icon: Settings },
-      { id: 'collaboration', label: 'Kolaborasi Tim', icon: Users },
     ],
   },
   {
@@ -57,7 +56,7 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
 
           <div className="space-y-6">
             <p className="text-muted-foreground">
-              Makalah AI adalah platform kolaborasi penulisan makalah akademik berbasis AI yang memandu Anda melalui 7
+              Makalah AI adalah platform penulisan makalah akademik berbasis AI (Large language model) yang memandu Anda melalui 7
               fase terstruktur untuk menghasilkan karya akademik berkualitas tinggi. Platform ini dirancang khusus
               untuk peneliti dan mahasiswa Indonesia yang ingin meningkatkan kualitas penulisan akademik mereka.
             </p>
@@ -76,9 +75,6 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
                   </li>
                   <li>
                     • <strong>Web Search Integration</strong> - Pencarian akademik yang terintegrasi dengan AI
-                  </li>
-                  <li>
-                    • <strong>Kolaborasi Real-time</strong> - Bekerja sama dengan tim peneliti lainnya
                   </li>
                 </ul>
               </CardContent>
