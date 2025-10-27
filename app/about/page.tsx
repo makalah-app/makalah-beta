@@ -25,7 +25,6 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
-  UserCog,
   Briefcase,
   Quote,
   Mail,
@@ -116,31 +115,33 @@ export default function AboutPage() {
             <Accordion type="single" collapsible>
               {[
                 {
-                  title: 'Mematikan Rasa Ingin Tahu',
+                  title: 'Ai Mematikan Rasa Ingin Tahu?',
                   description:
-                    'AI sering bikin malas berpikir. Makalah justru memantik diskusi dan menyangga teknis penulisan, supaya fokus ke tajamnya gagasan.',
+                    'Konon AI kerap bikin malas berpikir. Baiklah, Makalah sebaliknya, justru memantik diskusi dan menyangga teknis penulisan, supaya pengguna fokus menajamkan dan elaborasi gagasan.',
                   icon: Brain,
                 },
                 {
                   title: 'Prompting Yang Ribet',
                   description:
-                    'Makalah lepas dari prompt kompleks. Agen memahami kebutuhan lewat percakapan alamiah yang iteratif.',
+                    'Makalah hadir untuk membantah asumsi: berinteraksi dengan Ai memerlukan prompting yang sakti mandraguna. Tidak! Yang diperlukan Makalah adalah percakapan iteratif, informatif, dalam bahasa sehari-hari. Singkatnya: ngobrol!',
                   icon: MessageSquare,
                 },
                 {
-                  title: 'Kontribusi Siapa?',
-                  description:
-                    'Gagasan milik manusia, AI hanya tukang. Paper dibuat bersama AI—bukan dibuatkan AI.',
-                  icon: UserCog,
-                },
-                {
                   title: 'Sitasi & Provenance',
-                  description: 'Sumber dan asal-ide sering kabur. Makalah bantu sitasi ketat dan jejak ide.',
+                  description:
+                    'Makalah memastikan setiap sumber tersitasi dengan format standar dan menyimpan asal-usul ide (provenance) agar kutipan mudah dilacak dan diaudit.',
                   icon: Quote,
                 },
                 {
-                  title: 'Versi & Kolaborasi',
-                  description: 'Perubahan tercecer. Makalah sediakan versioning yang jelas dan bisa diaudit.',
+                  title: 'Plagiarisme? Dipagari Etis',
+                  description:
+                    'LLM dipagari etis untuk tidak menulis persis teks berhak cipta lebih dari 10 kata. Batasan ini sekaligus menutup celah plagiarisme dan menjaga orisinalitas gagasan pengguna.',
+                  icon: ShieldCheck,
+                },
+                {
+                  title: 'Transparansi proses penyusunan',
+                  description:
+                    'Riwayat interaksi terekam rapi—menjamin akuntabilitas dan membedakan kolaborasi dengan generasi otomatis.',
                   icon: GitBranch,
                 },
                 {
@@ -162,35 +163,37 @@ export default function AboutPage() {
             </Accordion>
           </div>
 
-          {/* Desktop: Cards */}
-          <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+          {/* Desktop: Cards (polished, consistent with Home) */}
+          <div className="hidden md:grid md:grid-cols-2 gap-8">
             {[
               {
-                title: 'Mematikan Rasa Ingin Tahu',
+                title: 'Ai Mematikan Rasa Ingin Tahu?',
                 description:
-                  'AI sering bikin malas berpikir. Makalah justru memantik diskusi dan menyangga teknis penulisan, supaya fokus ke tajamnya gagasan.',
+                  'Konon AI kerap bikin malas berpikir. Baiklah, Makalah sebaliknya, justru memantik diskusi dan menyangga teknis penulisan, supaya pengguna fokus menajamkan dan elaborasi gagasan.',
                 icon: Brain,
               },
               {
                 title: 'Prompting Yang Ribet',
                 description:
-                  'Makalah lepas dari prompt kompleks. Agen memahami kebutuhan lewat percakapan alamiah yang iteratif.',
+                  'Makalah hadir untuk membantah asumsi: berinteraksi dengan Ai memerlukan prompting yang sakti mandraguna. Tidak! Yang diperlukan Makalah adalah percakapan iteratif, informatif, dalam bahasa sehari-hari. Singkatnya: ngobrol!',
                 icon: MessageSquare,
               },
               {
-                title: 'Kontribusi Siapa?',
-                description:
-                  'Gagasan milik manusia, AI hanya tukang. Paper dibuat bersama AI—bukan dibuatkan AI.',
-                icon: UserCog,
-              },
-              {
                 title: 'Sitasi & Provenance',
-                description: 'Sumber dan asal-ide sering kabur. Makalah bantu sitasi ketat dan jejak ide.',
+                description:
+                  'Makalah memastikan setiap sumber tersitasi dengan format standar dan menyimpan asal-usul ide (provenance) agar kutipan mudah dilacak dan diaudit.',
                 icon: Quote,
               },
               {
-                title: 'Versi & Kolaborasi',
-                description: 'Perubahan tercecer. Makalah sediakan versioning yang jelas dan bisa diaudit.',
+                title: 'Plagiarisme? Dipagari Etis',
+                description:
+                  'LLM dipagari etis untuk tidak menulis persis teks berhak cipta—menutup celah plagiarisme dan menjaga orisinalitas gagasan pengguna.',
+                icon: ShieldCheck,
+              },
+              {
+                title: 'Transparansi proses penyusunan',
+                description:
+                  'Riwayat interaksi terekam rapi—menjamin akuntabilitas dan membedakan kolaborasi dengan generasi otomatis.',
                 icon: GitBranch,
               },
               {
@@ -200,125 +203,28 @@ export default function AboutPage() {
                 icon: AlertTriangle,
               },
             ].map((item, idx) => (
-              <Card key={idx} className="border-border bg-card hover:bg-card/80 transition-colors">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
-                    <item.icon className="w-6 h-6 text-primary" aria-hidden="true" />
+              <Card
+                key={idx}
+                className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+                <div className="flex items-start gap-4 relative">
+                  <item.icon className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold text-foreground">{item.title}</h3>
+                    <p className="mt-3 text-sm text-muted-foreground">{item.description}</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
         </div>
       </section>
-
-      {/* Solusi Inti Makalah (Accordion mobile, Cards desktop) */}
-      <section className="px-6 py-16 border-t border-border">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Solusi Makalah</h2>
-          {/* Mobile: Accordion */}
-          <div className="md:hidden">
-            <Accordion type="single" collapsible>
-              {[
-                {
-                  title: 'Jejak Pakai Transparan',
-                  description: 'Timeline siapa-melakukan-apa; bedakan intervensi AI vs manusia.',
-                  icon: Clock,
-                },
-                {
-                  title: 'Cite-as-you-write',
-                  description: 'Sitasi dan referensi saat menulis, lengkap metadata.',
-                  icon: FileText,
-                },
-                {
-                  title: 'Versioning & Diff',
-                  description: 'Bandingkan perubahan; rekomendasi AI vs edit penulis terbaca jelas.',
-                  icon: GitMerge,
-                },
-                {
-                  title: 'Research Graph',
-                  description: 'Peta konsep–referensi–penelitian untuk menemukan celah (gap).',
-                  icon: Workflow,
-                },
-                {
-                  title: 'Reviewer Toolkit',
-                  description: 'Cek struktur, koherensi, dan kelengkapan metodologis.',
-                  icon: ClipboardList,
-                },
-                {
-                  title: 'Laporan Kepatuhan',
-                  description: 'Ringkasan penggunaan AI siap diserahkan ke dosen/jurnal.',
-                  icon: ShieldCheck,
-              },
-            ].map((item, idx) => (
-              <AccordionItem key={idx} value={`solution-${idx}`}>
-                <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline py-3">
-                  {item.title}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4 leading-relaxed">
-                  {item.description}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-            </Accordion>
-          </div>
-
-          {/* Desktop: Cards */}
-          <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
-            {[
-              {
-                title: 'Jejak Pakai Transparan',
-                description: 'Timeline siapa-melakukan-apa; bedakan intervensi AI vs manusia.',
-                icon: Clock,
-              },
-              {
-                title: 'Cite-as-you-write',
-                description: 'Sitasi dan referensi saat menulis, lengkap metadata.',
-                icon: FileText,
-              },
-              {
-                title: 'Versioning & Diff',
-                description: 'Bandingkan perubahan; rekomendasi AI vs edit penulis terbaca jelas.',
-                icon: GitMerge,
-              },
-              {
-                title: 'Research Graph',
-                description: 'Peta konsep–referensi–penelitian untuk menemukan celah (gap).',
-                icon: Workflow,
-              },
-              {
-                title: 'Reviewer Toolkit',
-                description: 'Cek struktur, koherensi, dan kelengkapan metodologis.',
-                icon: ClipboardList,
-              },
-              {
-                title: 'Laporan Kepatuhan',
-                description: 'Ringkasan penggunaan AI siap diserahkan ke dosen/jurnal.',
-                icon: ShieldCheck,
-              },
-            ].map((item, idx) => (
-              <Card key={idx} className="border-border bg-card hover:bg-card/80 transition-colors">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
-                    <item.icon className="w-6 h-6 text-primary" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      
 
       {/* Masa Depan Makalah (Peran/Agen) — Accordion mobile, Cards desktop */}
       <section className="px-6 py-16 border-t border-border">
         <div className="max-w-6xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Ai Agents</h2>
+          <h2 className="text-2xl md:text-3xl mb-1 font-semibold font-heading text-center">Ai Agents: Fitur & Pengembangan</h2>
           {/* Mobile: Accordion */}
           <div className="md:hidden">
             <Accordion type="single" collapsible>
@@ -384,8 +290,8 @@ export default function AboutPage() {
             </Accordion>
           </div>
 
-          {/* Desktop: Cards */}
-          <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+          {/* Desktop: Cards (polished, consistent with Home) */}
+          <div className="hidden md:grid md:grid-cols-2 gap-8">
             {[
               {
                 title: 'Sparring Partner',
@@ -425,101 +331,24 @@ export default function AboutPage() {
                 status: 'building' as const,
               },
             ].map((item, idx) => (
-              <Card key={idx} className="border-border bg-card hover:bg-card/80 transition-colors">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center">
-                      <item.icon className="w-6 h-6 text-primary" aria-hidden="true" />
-                    </div>
-                     <Badge
-                       variant={item.status === 'available' ? 'default' : 'secondary'}
-                       className="px-2 py-0.5 text-[10px]"
-                     >
-                       {item.status === 'available' ? 'Tersedia' : 'Proses'}
-                     </Badge>
+              <Card
+                key={idx}
+                className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+                <Badge
+                  variant={item.status === 'available' ? 'default' : 'secondary'}
+                  className="absolute top-4 right-4 px-2 py-0.5 text-[10px]"
+                >
+                  {item.status === 'available' ? 'Tersedia' : 'Proses'}
+                </Badge>
+                <div className="flex items-start gap-4 relative">
+                  <item.icon className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold text-foreground">{item.title}</h3>
+                    <p className="mt-3 text-sm text-muted-foreground">{item.description}</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Prinsip & Etika Penggunaan AI (Accordion mobile, Cards desktop) */}
-      <section className="px-6 py-16 border-t border-border">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Prinsip &amp; Etika</h2>
-          {/* Mobile: Accordion */}
-          <div className="md:hidden">
-            <Accordion type="single" collapsible>
-              {[
-              {
-                title: 'Transparansi',
-                description: 'Semua intervensi AI tercatat. Porsi kontribusi terlihat jelas.',
-                icon: Eye,
-              },
-              {
-                title: 'Akuntabilitas',
-                description: 'Penulis paham dan menyetujui setiap rekomendasi AI.',
-                icon: Shield,
-              },
-              {
-                title: 'Sitasi Ketat',
-                description: 'Semua ide/teks yang dipengaruhi sumber tercantum.',
-                icon: Quote,
-              },
-              {
-                title: 'Privasi & Keamanan',
-                description: 'Data riset dilindungi, akses berbasis peran, jejak diaudit.',
-                icon: Lock,
-              },
-            ].map((item, idx) => (
-              <AccordionItem key={idx} value={`principle-${idx}`}>
-                <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline py-3">
-                  {item.title}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4 leading-relaxed">
-                  {item.description}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-            </Accordion>
-          </div>
-
-          {/* Desktop: Cards */}
-          <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 gap-6 md:gap-8">
-            {[
-              {
-                title: 'Transparansi',
-                description: 'Semua intervensi AI tercatat. Porsi kontribusi terlihat jelas.',
-                icon: Eye,
-              },
-              {
-                title: 'Akuntabilitas',
-                description: 'Penulis paham dan menyetujui setiap rekomendasi AI.',
-                icon: Shield,
-              },
-              {
-                title: 'Sitasi Ketat',
-                description: 'Semua ide/teks yang dipengaruhi sumber tercantum.',
-                icon: Quote,
-              },
-              {
-                title: 'Privasi & Keamanan',
-                description: 'Data riset dilindungi, akses berbasis peran, jejak diaudit.',
-                icon: Lock,
-              },
-            ].map((item, idx) => (
-              <Card key={idx} className="border-border bg-card hover:bg-card/80 transition-colors">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
-                    <item.icon className="w-6 h-6 text-primary" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.description}</p>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
@@ -560,35 +389,37 @@ export default function AboutPage() {
             </Accordion>
           </div>
 
-          {/* Desktop: Cards side by side */}
-          <div className="hidden md:grid md:grid-cols-2 gap-6 md:gap-8">
+          {/* Desktop: Cards side by side (polished, consistent with Home) */}
+          <div className="hidden md:grid md:grid-cols-2 gap-8">
             {/* Karier Card */}
-            <Card className="border-border bg-card">
-              <CardContent className="p-6 md:p-8">
-                <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
-                  <Briefcase className="w-6 h-6 text-primary" aria-hidden="true" />
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <Briefcase className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Karier</h3>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Update posisi akan kami tampilkan di halaman ini.
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Karier</h3>
-                <p className="text-muted-foreground">
-                  Saat ini belum ada pembukaan resmi. Update posisi akan kami tampilkan di halaman ini.
-                </p>
-              </CardContent>
+              </div>
             </Card>
 
             {/* Kontak Card */}
-            <Card className="border-border bg-card">
-              <CardContent className="p-6 md:p-8">
-                <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
-                  <Mail className="w-6 h-6 text-primary" aria-hidden="true" />
+            <Card className="group relative p-8 border border-border/60 bg-card/60 rounded-lg hover:border-primary/50 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+              <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition" />
+              <div className="flex items-start gap-4 relative">
+                <Mail className="h-7 w-7 text-primary mt-0.5 shrink-0" aria-hidden="true" />
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-foreground">Kontak</h3>
+                  <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <p><strong>PT The Management Asia</strong></p>
+                    <p>Menara Cakrawala 12th floor unit 05A</p>
+                    <p>Jalan MH. Thamrin, Jakarta Pusat</p>
+                    <p>dukungan@makalah.ai</p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Kontak</h3>
-                <div className="space-y-2">
-                  <p className="text-muted-foreground"><strong>PT The Management Asia</strong></p>
-                  <p className="text-muted-foreground">Menara Cakrawala 12th floor unit 05A</p>
-                  <p className="text-muted-foreground">Jalan MH. Thamrin, Jakarta Pusat</p>
-                  <p className="text-muted-foreground">dukungan@makalah.ai</p>
-                </div>
-              </CardContent>
+              </div>
             </Card>
           </div>
         </div>
