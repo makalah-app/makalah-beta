@@ -334,94 +334,91 @@ export default function HomePage() {
           <PricingSection />
       </section>
 
-      {/* Learn + Resources (combined bottom section) */}
+      {/* HIDDEN: Learn + Resources (combined bottom section) moved to footer */}
+      {false && (
       <section className="px-6 py-8 bg-background section-screen-with-footer">
         <div className="w-full flex flex-col items-center gap-10 my-auto">
-          {/* Tutorial highlight */}
-          <div className="w-full max-w-3xl">
-            <h3
-              className="text-3xl md:text-3xl font-semibold text-foreground font-heading text-center"
-            >
-              Bagaimana cara kerjanya?
-            </h3>
-            <p className="mt-3 text-md text-base md:text-lg text-foreground text-center">
-              Pelajari cara Agen Makalah mengasistensi riset dan penyusunan paper akademik.
-            </p>
-            <div className="relative group w-full max-w-xl md:max-w-2xl mx-auto cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
-              <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
-                  <div className="w-16 h-12 md:w-24 md:h-20 rounded bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-8 h-8 text-white " fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+          {false && (
+            <div className="w-full max-w-3xl">
+              <h3
+                className="text-3xl md:text-3xl font-semibold text-foreground font-heading text-center"
+              >
+                Bagaimana cara kerjanya?
+              </h3>
+              <p className="mt-3 text-md text-base md:text-lg text-foreground text-center">
+                Pelajari cara Agen Makalah mengasistensi riset dan penyusunan paper akademik.
+              </p>
+              <div className="relative group w-full max-w-xl md:max-w-2xl mx-auto cursor-pointer overflow-hidden border-2 border-border transition-all hover:-translate-y-2 rounded mt-6 md:mt-8">
+                <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-all">
+                    <div className="w-16 h-12 md:w-24 md:h-20 rounded bg-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-8 h-8 text-white " fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded">
+                    12:34
                   </div>
                 </div>
-                <div className="absolute bottom-4 right-4 px-2 py-1 text-white text-sm font-medium bg-black/80 rounded">
-                  12:34
-                </div>
+                {/* Video stands alone without title/description */}
               </div>
-              {/* Video stands alone without title/description */}
             </div>
-          </div>
+          )}
 
-          {/* Internal sub-separator between Tutorial and Resources */}
-          <div className="w-full my-4" aria-hidden="true">
-            <div
-              className="h-[2px] w-full rounded"
-              style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.55 }}
-            />
-          </div>
+          {/* HIDDEN: Internal sub-separator between Tutorial and Resources */}
+          {false && (
+            <div className="w-full my-4" aria-hidden="true">
+              <div
+                className="h-[2px] w-full rounded"
+                style={{ background: 'linear-gradient(90deg, transparent, var(--primary), transparent)', opacity: 0.55 }}
+              />
+            </div>
+          )}
 
-          {/* Resources + Company (narrow) */}
-          <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-10 text-center md:text-left justify-items-center md:justify-items-start">
-            <div>
-              <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <Link href="/documentation" className="transition-colors hover:text-primary text-muted-foreground">
-                    Dokumentasi
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/tutorial" className="transition-colors hover:text-primary text-muted-foreground">
-                    Tutorial Video
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/faq" className="transition-colors hover:text-primary text-muted-foreground">
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/blog" className="transition-colors hover:text-primary text-muted-foreground">
-                    Blog
-                  </Link>
-                </li>
-              </ul>
+          {/* HIDDEN: Resources + Company (dipindah ke footer) */}
+          {false && (
+            <div className="w-full max-w-md grid grid-cols-1 sm:grid-cols-2 gap-10 text-center md:text-left justify-items-center md:justify-items-start">
+              <div>
+                <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Sumber Daya</h3>
+                <ul className="space-y-2 text-xs">
+                  <li>
+                    <Link href="/documentation" className="transition-colors hover:text-primary text-muted-foreground">
+                      Dokumentasi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/faq" className="transition-colors hover:text-primary text-muted-foreground">
+                      FAQ
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
+                <ul className="space-y-2 text-xs">
+                  <li>
+                    <Link href="/about#bergabung-dengan-tim" className="transition-colors hover:text-primary text-muted-foreground">
+                      Karir
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/about#hubungi-kami" className="transition-colors hover:text-primary text-muted-foreground">
+                      Kontak
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/documentation#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
+                      Kebijakan Privasi
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold mb-6 text-foreground font-heading">Perusahaan</h3>
-              <ul className="space-y-2 text-xs">
-                <li>
-                  <Link href="/about#bergabung-dengan-tim" className="transition-colors hover:text-primary text-muted-foreground">
-                    Karir
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about#hubungi-kami" className="transition-colors hover:text-primary text-muted-foreground">
-                    Kontak
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/documentation#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
-                    Kebijakan Privasi
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </section>
+      )}
     </div>
   );
 }
