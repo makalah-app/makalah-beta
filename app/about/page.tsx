@@ -43,10 +43,10 @@ export default function AboutPage() {
       <section className="px-6 py-20 text-center relative hero-vivid hero-grid-thin">
         <div className="relative z-10 max-w-3xl mx-auto space-y-4">
           <h1 className="text-3xl md:text-4xl font-semibold leading-tight font-heading">
-            AI Yang Menumbuhkan Pikiran.
+            AI Yang Menumbuhkan Pikiran
           </h1>
           <p className="text-lg md:text-md text-white">
-            Teknologi tidak menggantikan manusia, melainkan melengkapi agar kian berdaya.
+            Teknologi tidak menggantikan manusia, melainkan melengkapi agar kian berdaya
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             <a
@@ -64,7 +64,7 @@ export default function AboutPage() {
       {/* Manifesto */}
       <section className="px-6 py-16">
         <div className="max-w-4xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Manifesto</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Jadi, begini...</h2>
           {/* Ringkasan singkat selalu tampil */}
           <div className="prose prose-invert max-w-none text-foreground">
             <h5>
@@ -343,19 +343,19 @@ export default function AboutPage() {
               },
               {
                 title: 'Gap Thinker',
-                description: 'Agen Ai menyorot celah riset dari berbagai paper referensi awal, menemukan potensi topik baru yang lebih besar.',
+                description: 'Agen Ai menyorot celah riset dari berbagai paper referensi awal, menemukan potensi topik baru yang lebih segar.',
                 icon: Lightbulb,
                 status: 'building' as const,
               },
               {
                 title: 'Novelty Finder',
-                description: 'Agen Ai yang mampu memetakan kebaruan dan posisi kontribusi dalam satu topik yang telah banyak diulas.',
+                description: 'Agen Ai yang mampu memetakan kebaruan dan posisi kontribusi penyusun paper, dalam topik yang telah banyak diulas.',
                 icon: Sparkles,
                 status: 'building' as const,
               },
               {
                 title: 'Graph Elaborator',
-                description: 'Bayangkan, pengguna mengirimkan konsep tertentu, kemudian agen Ai memetakan konsep itu dalam bentuk grafik, mengaitkannya dengan referensi pendukung, serta konsep-konsep sejenis yang pernah ada sebelumnya. Ya, itu akan ada dalam Makalah',
+                description: 'Bayangkan, pengguna mengirimkan konsep tertentu, kemudian agen Ai memetakan konsep itu dalam bentuk grafik, mengaitkannya dengan referensi pendukung, serta konsep-konsep sejenis yang pernah ada sebelumnya. Memudahkan pemahaman? Tentu. Bahkan mendukung pembelajaran cepat. Ya, itu akan ada dalam Makalah',
                 icon: Share2,
                 status: 'building' as const,
               },

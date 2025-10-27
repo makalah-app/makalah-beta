@@ -29,6 +29,8 @@ export default function HomePage() {
     setMounted(true);
   }, []);
 
+  // Tidak pakai coachmark overlay; cukup animated arrow di dalam badge
+
   const handleChatWithAgent = () => {
     if (isAuthenticated) {
       router.push('/chat');
@@ -68,22 +70,48 @@ export default function HomePage() {
           <div className="mt-2 md:mt-2">
             {/* New Badge */}
             <div className="flex justify-center mb-4">
-              <Dialog open={isPawangDialogOpen} onOpenChange={setIsPawangDialogOpen}>
+              <Dialog
+                open={isPawangDialogOpen}
+                onOpenChange={setIsPawangDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Badge
                     variant="default"
                     className="bg-success-600 hover:bg-success-700 text-white text-xs px-4 py-2 rounded-full font-semibold transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-lg shadow-md relative overflow-hidden group"
                   >
                     <span className="relative z-10 flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-300"></span>
+                      {/* Arrow merah dengan batang yang jelas */}
+                      <span className="inline-flex items-center justify-center text-yellow-400">
+                        <svg
+                          className="w-12 h-4"
+                          viewBox="0 0 44 14"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          aria-hidden
+                        >
+                          <defs>
+                            <mask id="pawangMask" maskUnits="userSpaceOnUse" x="0" y="0" width="44" height="14">
+                              <rect x="0" y="0" width="0" height="14" fill="#fff">
+                                <animate attributeName="width" values="0;44;44;0" keyTimes="0;0.7;0.85;1" dur="1.6s" repeatCount="indefinite" />
+                              </rect>
+                            </mask>
+                          </defs>
+                          <g mask="url(#pawangMask)">
+                            {/* Satu path utuh: batang + pucuk */}
+                            <path
+                              d="M2 5.5 H30 L30 3 L42 7 L30 11 L30 8.5 H2 Z"
+                              fill="currentColor"
+                            />
+                          </g>
+                        </svg>
                       </span>
                       Anda Pawang, Ai Tukang
                     </span>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                   </Badge>
                 </DialogTrigger>
+
+                {/* Animasi panah dibuat via SVG mask agar batang dan pucuk jadi satu bentuk utuh */}
 
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-card-foreground rounded border border-border shadow-lg">
                   <DialogHeader>
