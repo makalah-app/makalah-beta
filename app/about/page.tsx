@@ -28,6 +28,7 @@ import {
   UserCog,
   Briefcase,
   Quote,
+  Mail,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -525,10 +526,10 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Karier (Accordion mobile, Card desktop) */}
-      <section id="karier" className="px-6 py-16 border-t border-border">
+      {/* Karier & Kontak (Accordion mobile, Cards desktop side by side) */}
+      <section id="karier-kontak" className="px-6 py-16 border-t border-border">
         <div className="max-w-6xl mx-auto space-y-6">
-          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Karier</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Karier &amp; Kontak</h2>
 
           {/* Mobile: Accordion */}
           <div className="md:hidden">
@@ -543,19 +544,50 @@ export default function AboutPage() {
                   </p>
                 </AccordionContent>
               </AccordionItem>
+              <AccordionItem value="contact">
+                <AccordionTrigger className="text-left font-medium text-foreground hover:no-underline py-3">
+                  Hubungi Kami
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-4 leading-relaxed">
+                  <div className="space-y-2">
+                    <p><strong>PT The Management Asia</strong></p>
+                    <p>Menara Cakrawala 12th floor unit 05A</p>
+                    <p>Jalan MH. Thamrin, Jakarta Pusat</p>
+                    <p>dukungan@makalah.ai</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           </div>
 
-          {/* Desktop: Card */}
-          <div className="hidden md:block">
+          {/* Desktop: Cards side by side */}
+          <div className="hidden md:grid md:grid-cols-2 gap-6 md:gap-8">
+            {/* Karier Card */}
             <Card className="border-border bg-card">
               <CardContent className="p-6 md:p-8">
                 <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
                   <Briefcase className="w-6 h-6 text-primary" aria-hidden="true" />
                 </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Karier</h3>
                 <p className="text-muted-foreground">
                   Saat ini belum ada pembukaan resmi. Update posisi akan kami tampilkan di halaman ini.
                 </p>
+              </CardContent>
+            </Card>
+
+            {/* Kontak Card */}
+            <Card className="border-border bg-card">
+              <CardContent className="p-6 md:p-8">
+                <div className="w-12 h-12 bg-primary/10 rounded flex items-center justify-center mb-4">
+                  <Mail className="w-6 h-6 text-primary" aria-hidden="true" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Kontak</h3>
+                <div className="space-y-2">
+                  <p className="text-muted-foreground"><strong>PT The Management Asia</strong></p>
+                  <p className="text-muted-foreground">Menara Cakrawala 12th floor unit 05A</p>
+                  <p className="text-muted-foreground">Jalan MH. Thamrin, Jakarta Pusat</p>
+                  <p className="text-muted-foreground">dukungan@makalah.ai</p>
+                </div>
               </CardContent>
             </Card>
           </div>

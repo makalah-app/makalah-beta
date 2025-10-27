@@ -64,7 +64,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-background text-foreground">
       {/* Hero Section */}
-      <section className="px-6 py-0 text-center relative section-screen-with-header hero-vivid hero-grid-thin">
+      <section className="px-6 py-0 text-center relative section-screen-with-header home-hero hero-vivid hero-grid-thin">
         
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div className="mt-2 md:mt-2">
