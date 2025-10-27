@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import BrandLogo from '@/components/ui/BrandLogo';
 import { cn } from '../../lib/utils';
@@ -61,28 +62,65 @@ export const Footer: React.FC<FooterProps> = ({
         </defs>
         <rect width="100%" height="100%" fill="url(#diagonal-stripes-footer)" />
       </svg>
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between">
-          {/* Brand Section */}
-          <div className="flex items-center group relative">
+      <div className="max-w-6xl mx-auto">
+        {/* 2 columns layout: Left (logo+copyright), Right (resources+company, right-aligned) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          {/* Brand + Copyright */}
+          <div className="flex items-start gap-3">
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="transition-opacity duration-200"
               aria-label="Scroll to top"
             >
-              <BrandLogo variant="mono" size="xs" className="opacity-60 group-hover:hidden" />
-              <BrandLogo variant="white" size="xs" className="hidden group-hover:block opacity-100" />
-              {/* Tooltip */}
-              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                Naik
-              </span>
+              <BrandLogo variant="mono" size="xs" className="opacity-60 hover:opacity-100" />
             </button>
+            <p className="text-xxs text-muted-foreground leading-relaxed">
+              &copy; 2025 Makalah AI
+              <br />
+              Semua hak cipta dilindungi.
+            </p>
           </div>
 
-          {/* Copyright */}
-          <p className="text-xxs text-muted-foreground">
-            &copy; 2025 Makalah AI. Semua hak cipta dilindungi.
-          </p>
+          {/* Right: Sumber Daya + Perusahaan (right-aligned, precise grid) */}
+          <div className="flex flex-col items-start text-left md:ml-auto md:w-full">
+            <div className="grid md:grid-cols-[minmax(200px,auto)_minmax(200px,auto)] md:gap-12 md:justify-end md:ml-auto">
+              <div className="md:justify-self-end">
+                <h3 className="text-sm font-bold mb-3 text-foreground font-heading">Sumber Daya</h3>
+                <ul className="space-y-2 text-xs">
+                  <li>
+                    <Link href="/documentation" className="transition-colors hover:text-primary text-muted-foreground">
+                      Dokumentasi
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/faq" className="transition-colors hover:text-primary text-muted-foreground">
+                      FAQ
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-6 md:mt-0 md:justify-self-end">
+                <h3 className="text-sm font-bold mb-3 text-foreground font-heading">Perusahaan</h3>
+                <ul className="space-y-2 text-xs">
+                  <li>
+                    <Link href="/about#bergabung-dengan-tim" className="transition-colors hover:text-primary text-muted-foreground">
+                      Karir
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/about#hubungi-kami" className="transition-colors hover:text-primary text-muted-foreground">
+                      Kontak
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/documentation#privacy-policy" className="transition-colors hover:text-primary text-muted-foreground">
+                      Kebijakan Privasi
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
