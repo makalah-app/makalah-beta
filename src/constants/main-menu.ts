@@ -6,8 +6,11 @@ export interface MainMenuItem {
 
 export const MAIN_MENU_ITEMS: MainMenuItem[] = [
   { label: 'Dokumentasi', href: '/documentation' },
-  { label: 'Tutorial', href: '/tutorial' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Harga', href: '/pricing' },
+  // HIDDEN: Tutorial (sementara disembunyikan dari header utama)
+  // { label: 'Tutorial', href: '/tutorial' },
+  // HIDDEN: Blog (sementara disembunyikan dari header utama)
+  // { label: 'Blog', href: '/blog' },
+  // HIDDEN: Harga (sementara disembunyikan dari header utama)
+  // { label: 'Harga', href: '/pricing' },
   { label: 'Tentang', href: '/about' },
 ];
