@@ -80,29 +80,23 @@ export default function HomePage() {
                     className="bg-success-600 hover:bg-success-700 text-white text-xs px-4 py-2 rounded-full font-semibold transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-lg shadow-md relative overflow-hidden group"
                   >
                     <span className="relative z-10 flex items-center gap-2">
-                      {/* Arrow merah dengan batang yang jelas */}
-                      <span className="inline-flex items-center justify-center text-yellow-400">
+                      {/* Bulatan berkedip kuning ke putih */}
+                      <span className="inline-flex items-center justify-center">
                         <svg
-                          className="w-12 h-4"
-                          viewBox="0 0 44 14"
+                          className="w-4 h-4"
+                          viewBox="0 0 16 16"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
                           aria-hidden
                         >
-                          <defs>
-                            <mask id="pawangMask" maskUnits="userSpaceOnUse" x="0" y="0" width="44" height="14">
-                              <rect x="0" y="0" width="0" height="14" fill="#fff">
-                                <animate attributeName="width" values="0;44;44;0" keyTimes="0;0.7;0.85;1" dur="1.6s" repeatCount="indefinite" />
-                              </rect>
-                            </mask>
-                          </defs>
-                          <g mask="url(#pawangMask)">
-                            {/* Satu path utuh: batang + pucuk */}
-                            <path
-                              d="M2 5.5 H30 L30 3 L42 7 L30 11 L30 8.5 H2 Z"
-                              fill="currentColor"
+                          <circle cx="8" cy="8" r="6" fill="currentColor">
+                            <animate
+                              attributeName="fill"
+                              values="#facc15;#ffffff;#facc15;#ffffff"
+                              dur="1.2s"
+                              repeatCount="indefinite"
                             />
-                          </g>
+                          </circle>
                         </svg>
                       </span>
                       Anda Pawang, Ai Tukang
@@ -111,7 +105,7 @@ export default function HomePage() {
                   </Badge>
                 </DialogTrigger>
 
-                {/* Animasi panah dibuat via SVG mask agar batang dan pucuk jadi satu bentuk utuh */}
+                {/* Animasi bulatan berkedip kuning ke putih */}
 
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-card-foreground rounded border border-border shadow-lg">
                   <DialogHeader>
@@ -319,9 +313,8 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="px-6 py-20 bg-background relative section-screen">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center space-y-4 mb-12">
+      <section className="py-16 bg-background relative">
+        <div className="px-6 text-center space-y-4 mb-12">
             <h3
               className="text-3xl md:text-3xl font-semibold font-heading"
             >
@@ -338,8 +331,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <PricingSection className="px-0 py-0" />
-        </div>
+          <PricingSection />
       </section>
 
       {/* Learn + Resources (combined bottom section) */}
