@@ -3,6 +3,7 @@ import { Inter, Nunito_Sans, JetBrains_Mono, Victor_Mono } from 'next/font/googl
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import { Analytics } from '@vercel/analytics/react';
 import LogoLoadingSpinner from '@/components/ui/LogoLoadingSpinner';
 
 const AppProviders = dynamic(() => import('./providers-client'), {
@@ -69,6 +70,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         suppressHydrationWarning
       >
         <AppProviders>{children}</AppProviders>
+        {/* Vercel Web Analytics */}
+        <Analytics />
       </body>
     </html>
   );
