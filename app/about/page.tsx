@@ -62,7 +62,7 @@ export default function AboutPage() {
       </section>
 
       {/* Manifesto */}
-      <section className="px-6 py-16">
+      <section className="px-6 py-16 section-separator">
         <div className="max-w-4xl mx-auto space-y-6">
           <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Jadi, begini...</h2>
           {/* Ringkasan singkat selalu tampil */}
@@ -107,7 +107,7 @@ export default function AboutPage() {
       </section>
 
       {/* Apa Persoalan Yang Dijawab (Accordion mobile, Cards desktop) */}
-      <section className="px-6 py-16 border-t border-border">
+      <section className="px-6 py-16 section-separator">
         <div className="max-w-6xl mx-auto space-y-6">
           <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Apa Saja Persoalan Yang Dijawab?</h2>
           {/* Mobile: Accordion */}
@@ -222,7 +222,7 @@ export default function AboutPage() {
       </section>
 
       {/* Masa Depan Makalah (Peran/Agen) — Accordion mobile, Cards desktop */}
-      <section className="px-6 py-16 border-t border-border">
+      <section className="px-6 py-16 section-separator">
         <div className="max-w-6xl mx-auto space-y-6">
           <h2 className="text-2xl md:text-3xl mb-1 font-semibold font-heading text-center">Ai Agents: Fitur & Pengembangan</h2>
           {/* Mobile: Accordion */}
@@ -356,7 +356,7 @@ export default function AboutPage() {
       </section>
 
       {/* Karier & Kontak (Accordion mobile, Cards desktop side by side) */}
-      <section id="karier-kontak" className="px-6 py-16 border-t border-border">
+      <section id="karier-kontak" className="px-6 py-16 section-separator">
         <div className="max-w-6xl mx-auto space-y-6">
           <h2 className="text-2xl md:text-3xl font-semibold font-heading text-center">Karier &amp; Kontak</h2>
 
