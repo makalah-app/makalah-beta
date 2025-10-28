@@ -202,25 +202,25 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
               <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center">
                 <Brain className="w-5 h-5 text-primary" />
               </div>
-              <h1 className="text-3xl font-semibold text-foreground">Selamat Datang di Makalah AI</h1>
+              <h1 className="text-3xl font-semibold text-foreground">Selamat Datang</h1>
             </div>
           </div>
 
           <div className="space-y-6">
             <p className="text-muted-foreground">
-              Makalah AI bantu lu nyusun makalah akademik end-to-end lewat percakapan yang terarah. Alurnya mengikuti 7 fase kerja akademik (dari definisi topik sampai finalisasi), tapi UI-nya tetap simpel: lu chat, AI ngerespon, dan progres lu otomatis disimpan.
+              Makalah AI membantu Anda menyusun makalah akademik secara end‑to‑end melalui percakapan yang terarah. Alur kerja mengikuti tujuh fase akademik (dari penetapan topik hingga finalisasi), dengan antarmuka yang tetap sederhana: Anda berdiskusi, AI merespons, dan progres tersimpan otomatis.
             </p>
 
             <Card className="border-l-4 border-l-primary">
               <CardHeader>
-                <CardTitle className="text-primary">Apa yang bisa dilakukan?</CardTitle>
-                <CardDescription>Fokus ke kualitas isi. Sisanya dibantu AI.</CardDescription>
+                <CardTitle className="text-primary">Apa yang dapat dilakukan?</CardTitle>
+                <CardDescription>Fokus pada kualitas isi; pemrosesan dibantu AI.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li>• <strong>Chat Akademik</strong> — diskusi topik, refine research question, sampai nulis per bagian.</li>
-                  <li>• <strong>Kerangka 7 Fase</strong> — AI menjaga alur kerja supaya nggak loncat-loncat.</li>
-                  <li>• <strong>Web Search (otomatis)</strong> — ketika perlu, AI bisa nyari info eksternal dari web provider yang didukung.</li>
+                  <li>• <strong>Chat akademik</strong> — diskusi topik, memperjelas pertanyaan riset (RQ), hingga penulisan per bagian.</li>
+                  <li>• <strong>Kerangka tujuh fase</strong> — AI membantu menjaga alur kerja agar tetap terstruktur dan tidak melompat‑lompat.</li>
+                  <li>• <strong>Pencarian web (otomatis)</strong> — bila diperlukan dan didukung penyedia, AI menelusuri informasi eksternal yang relevan.</li>
                 </ul>
               </CardContent>
             </Card>
@@ -230,7 +230,7 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
                 <CardHeader>
                   <Zap className="w-8 h-8 mb-2 text-primary" />
                   <CardTitle className="text-lg">Panduan Cepat</CardTitle>
-                  <CardDescription>Mulai bikin draft pertama dalam 5 menit.</CardDescription>
+                  <CardDescription>Mulai menyusun draf pertama dalam 5 menit.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button size="sm">Mulai Sekarang</Button>
@@ -241,7 +241,7 @@ const renderContent = (activeSection: string, setActiveSection: (id: string) => 
                 <CardHeader>
                   <Book className="w-8 h-8 mb-2 text-primary" />
                   <CardTitle className="text-lg">7 Fase Penulisan</CardTitle>
-                  <CardDescription>Metode kerja yang dipakai Makalah AI.</CardDescription>
+                  <CardDescription>Metode kerja yang digunakan Makalah AI.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button size="sm">Pelajari Lebih Lanjut</Button>
